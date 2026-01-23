@@ -7,58 +7,15 @@ import pathlib
 import subprocess
 import argparse
 import logging
-from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
 
-from logger import setup_logging
+from app.setup_configuration import *
 
-# ====== CONFIGURA ESTO ======
-PROJECT_PATH = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\sensei_projects\pizza_shop"
-USER_PATH    = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\users\user_1"
-LOGS_FOLDER  = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\logs_folder"
+from app.architecture import Architecture
 
-# Comando de salida del chat. Cambia si tu CLI usa otro (por ej. "exit", "/quit", etc.)
-EXIT_COMMAND = "exit"
+from typing import Dict, Any
 
-OUT_DIR = pathlib.Path(__file__).parent / "out"
-RUNS_DIR = OUT_DIR / "runs"
-RESULTS_PATH = OUT_DIR / "results.jsonl"
+from app.logger import setup_logging
 
-SENPAI_PREFIX_RE = re.compile(r"Senpai:\s*(.*)$")
-
-@dataclass
-class Architecture:
-    id: str
-    cmd: List[str]  # comando base, ej: ["C:\\path\\to\\venv\\python.exe","-m","tu_cli_modulo"]
-    cwd: Optional[str] = None
-    env: Optional[Dict[str, str]] = None
-    env_file: Optional[str] = None
-
-def load_architectures(path: str) -> List[Architecture]:
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    archs = []
-    for a in data["architectures"]:
-        archs.append(
-            Architecture(
-                id=a["id"],
-                cmd=a["cmd"],
-                cwd=a.get("cwd"),
-                env=a.get("env"),
-                env_file=a.get("env_file"),
-            )
-        )
-    return archs
-
-def load_prompts_jsonl(path: str) -> List[Dict[str, str]]:
-    prompts = []
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            prompts.append(json.loads(line))
-    return prompts
 
 def extract_senpai_answer(stdout: str) -> str:
     """
@@ -74,42 +31,6 @@ def extract_senpai_answer(stdout: str) -> str:
         return "\n".join(answers).strip()
     return stdout.strip()
 
-def ensure_dirs():
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    RUNS_DIR.mkdir(parents=True, exist_ok=True)
-
-def build_cmd(arch: Architecture, cid: int) -> List[str]:
-    # Monta: <cmd base> -cid <cid> -v -pp ... -up ... -lf ...
-    return (
-        arch.cmd
-        + ["-cid", str(cid), "-v", "-pp", PROJECT_PATH, "-up", USER_PATH, "-lf", LOGS_FOLDER]
-    )
-
-def parse_env_file(path: str) -> Dict[str, str]:
-    env = {}
-    with open(path, "r", encoding="utf-8") as f:
-        for raw in f:
-            line = raw.strip()
-            if not line or line.startswith("#") or line.startswith(";"):
-                continue
-            if line.startswith("export "):
-                line = line[len("export ") :].strip()
-            if "=" not in line:
-                continue
-            key, value = line.split("=", 1)
-            key = key.strip()
-            value = value.strip().strip('"').strip("'")
-            if key:
-                env[key] = value
-    return env
-
-def build_env(arch: Architecture) -> Dict[str, str]:
-    env = os.environ.copy()
-    if arch.env_file:
-        env.update(parse_env_file(arch.env_file))
-    if arch.env:
-        env.update(arch.env)
-    return env
 
 def run_one(arch: Architecture, prompt_id: str, prompt_text: str, cid: int, timeout_s: int) -> Dict[str, Any]:
     run_id = f"{arch.id}__{prompt_id}__{cid}__{uuid.uuid4().hex[:8]}"
@@ -199,8 +120,8 @@ def main():
     ensure_dirs()
     logging.info("Loading architectures and prompts")
 
-    archs = load_architectures(str(pathlib.Path(__file__).parent / "configs" / "architectures.json"))
-    prompts = load_prompts_jsonl(str(pathlib.Path(__file__).parent / "configs" / "prompts.jsonl"))
+    archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
+    prompts = load_prompts_jsonl(str(pathlib.Path(__file__).parent.parent / "configs" / "prompts.jsonl"))
 
     timeout_s = 60
     # CID base para ir incrementando y asegurar unicidad si tu sistema espera int.

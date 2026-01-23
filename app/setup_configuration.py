@@ -1,0 +1,91 @@
+import os
+import re
+import json
+import pathlib
+
+from typing import List, Dict
+from app.architecture import Architecture
+
+
+# ====== CONFIGURA ESTO ======
+PROJECT_PATH = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\sensei_projects\pizza_shop"
+USER_PATH    = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\users\user_1"
+LOGS_FOLDER  = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\logs_folder"
+
+# Comando de salida del chat. Cambia si tu CLI usa otro (por ej. "exit", "/quit", etc.)
+EXIT_COMMAND = "exit"
+
+OUT_DIR = pathlib.Path(__file__).parent.parent / "out"
+RUNS_DIR = OUT_DIR / "runs"
+RESULTS_PATH = OUT_DIR / "results.jsonl"
+
+SENPAI_PREFIX_RE = re.compile(r"Senpai:\s*(.*)$")
+
+
+def load_architectures(path: str) -> List[Architecture]:
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    archs = []
+    for a in data["architectures"]:
+        archs.append(
+            Architecture(
+                id=a["id"],
+                cmd=a["cmd"],
+                cwd=a.get("cwd"),
+                env=a.get("env"),
+                env_file=a.get("env_file"),
+            )
+        )
+    return archs
+
+
+def load_prompts_jsonl(path: str) -> List[Dict[str, str]]:
+    prompts = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            prompts.append(json.loads(line))
+    return prompts
+
+
+def build_cmd(arch: Architecture, cid: int) -> List[str]:
+    # Monta: <cmd base> -cid <cid> -v -pp ... -up ... -lf ...
+    return (
+        arch.cmd
+        + ["-cid", str(cid), "-v", "-pp", PROJECT_PATH, "-up", USER_PATH, "-lf", LOGS_FOLDER]
+    )
+
+
+def parse_env_file(path: str) -> Dict[str, str]:
+    env = {}
+    with open(path, "r", encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#") or line.startswith(";"):
+                continue
+            if line.startswith("export "):
+                line = line[len("export ") :].strip()
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key:
+                env[key] = value
+    return env
+
+
+def ensure_dirs():
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def build_env(arch: Architecture) -> Dict[str, str]:
+    env = os.environ.copy()
+    if arch.env_file:
+        env.update(parse_env_file(arch.env_file))
+    if arch.env:
+        env.update(arch.env)
+    return env
