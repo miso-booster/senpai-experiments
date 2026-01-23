@@ -5,8 +5,12 @@ import time
 import uuid
 import pathlib
 import subprocess
+import argparse
+import logging
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
+
+from logger import setup_logging
 
 # ====== CONFIGURA ESTO ======
 PROJECT_PATH = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\sensei_projects\pizza_shop"
@@ -14,7 +18,7 @@ USER_PATH    = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\users\user_1"
 LOGS_FOLDER  = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\logs_folder"
 
 # Comando de salida del chat. Cambia si tu CLI usa otro (por ej. "exit", "/quit", etc.)
-EXIT_COMMAND = "/exit"
+EXIT_COMMAND = "exit"
 
 OUT_DIR = pathlib.Path(__file__).parent / "out"
 RUNS_DIR = OUT_DIR / "runs"
@@ -113,6 +117,10 @@ def run_one(arch: Architecture, prompt_id: str, prompt_text: str, cid: int, time
     run_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = build_cmd(arch, cid)
+    logging.info("Run start arch=%s prompt=%s cid=%s", arch.id, prompt_id, cid)
+    logging.debug("Cmd: %s", cmd)
+    if arch.cwd:
+        logging.debug("CWD: %s", arch.cwd)
 
     # Alimentamos stdin con prompt + comando de salida para que el loop termine
     stdin_payload = prompt_text.rstrip() + "\n" + EXIT_COMMAND + "\n"
@@ -144,6 +152,15 @@ def run_one(arch: Architecture, prompt_id: str, prompt_text: str, cid: int, time
         returncode = None
 
     answer = extract_senpai_answer(stdout)
+    logging.info(
+        "Run end arch=%s prompt=%s cid=%s rc=%s timed_out=%s latency=%.3fs",
+        arch.id,
+        prompt_id,
+        cid,
+        returncode,
+        timed_out,
+        t1 - t0,
+    )
 
     # Guardar artefactos
     (run_dir / "cmd.json").write_text(json.dumps(cmd, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -174,7 +191,13 @@ def append_jsonl(path: pathlib.Path, obj: Dict[str, Any]):
         f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
+    args = parser.parse_args()
+    setup_logging(args.verbose)
+
     ensure_dirs()
+    logging.info("Loading architectures and prompts")
 
     archs = load_architectures(str(pathlib.Path(__file__).parent / "configs" / "architectures.json"))
     prompts = load_prompts_jsonl(str(pathlib.Path(__file__).parent / "configs" / "prompts.jsonl"))
@@ -187,6 +210,7 @@ def main():
     # RESULTS_PATH.unlink(missing_ok=True)
 
     for arch in archs:
+        logging.info("Architecture start id=%s", arch.id)
         for p in prompts:
             cid_counter += 1
             res = run_one(
@@ -197,7 +221,14 @@ def main():
                 timeout_s=timeout_s,
             )
             append_jsonl(RESULTS_PATH, res)
-            print(f"[OK] {res['arch_id']} {res['prompt_id']} latency={res['latency_s']}s timed_out={res['timed_out']}")
+            logging.info(
+                "[OK] %s %s latency=%.3fs timed_out=%s",
+                res["arch_id"],
+                res["prompt_id"],
+                res["latency_s"],
+                res["timed_out"],
+            )
+        logging.info("Architecture end id=%s", arch.id)
 
 if __name__ == "__main__":
     main()
