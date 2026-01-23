@@ -14,7 +14,7 @@ from app.architecture import Architecture
 
 from typing import Dict, Any
 
-from app.logger import setup_logging
+from app.setup_logger import setup_logging
 
 
 def extract_senpai_answer(stdout: str) -> str:
