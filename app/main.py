@@ -32,9 +32,16 @@ def extract_senpai_answer(stdout: str) -> str:
     return stdout.strip()
 
 
-def run_one(arch: Architecture, prompt_id: str, prompt_text: str, cid: int, timeout_s: int) -> Dict[str, Any]:
+def run_one(
+    arch: Architecture,
+    prompt_id: str,
+    prompt_text: str,
+    cid: int,
+    timeout_s: int,
+    run_group_id: str,
+) -> Dict[str, Any]:
     run_id = f"{arch.id}__{prompt_id}__{cid}__{uuid.uuid4().hex[:8]}"
-    run_dir = RUNS_DIR / run_id
+    run_dir = RUNS_DIR / run_group_id / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = build_cmd(arch, cid)
@@ -92,6 +99,7 @@ def run_one(arch: Architecture, prompt_id: str, prompt_text: str, cid: int, time
 
     result = {
         "run_id": run_id,
+        "run_group_id": run_group_id,
         "arch_id": arch.id,
         "prompt_id": prompt_id,
         "cid": cid,
@@ -126,6 +134,7 @@ def main():
     timeout_s = 60
     # CID base para ir incrementando y asegurar unicidad si tu sistema espera int.
     cid_counter = 1000
+    run_group_id = uuid.uuid4().hex
 
     # Limpia results.jsonl si quieres empezar de cero
     # RESULTS_PATH.unlink(missing_ok=True)
@@ -140,6 +149,7 @@ def main():
                 prompt_text=p["text"],
                 cid=cid_counter,
                 timeout_s=timeout_s,
+                run_group_id=run_group_id,
             )
             append_jsonl(RESULTS_PATH, res)
             logging.info(
