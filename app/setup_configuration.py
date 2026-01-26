@@ -2,13 +2,16 @@ import os
 import re
 import json
 import pathlib
+import logging
 
 from typing import List, Dict
 from app.architecture import Architecture
 
 
+
+
 # ====== CONFIGURA ESTO ======
-PROJECT_PATH = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\sensei_projects\pizza_shop"
+PROJECTS_PATH = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\sensei_projects"
 USER_PATH    = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\users\user_1"
 LOGS_FOLDER  = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\logs_folder"
 
@@ -39,22 +42,28 @@ def load_architectures(path: str) -> List[Architecture]:
     return archs
 
 
-def load_prompts_jsonl(path: str) -> List[Dict[str, str]]:
-    prompts = []
+def load_prompts_json(path: str) -> List[Dict[str, str]]:
     with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            prompts.append(json.loads(line))
-    return prompts
+        data = json.load(f)
+    return data
 
 
-def build_cmd(arch: Architecture, cid: int) -> List[str]:
+def project_exists(project_name: str) -> bool:
+    project_path = pathlib.Path(PROJECTS_PATH) / project_name
+    return project_path.exists()
+
+
+def build_cmd(arch: Architecture, cid: int, sensei_project: str) -> List[str]:
     # Monta: <cmd base> -cid <cid> -v -pp ... -up ... -lf ...
+
+    project_path = pathlib.Path(PROJECTS_PATH) / sensei_project
+    if not project_path.exists():
+        message = f"Sensei project folder does not exist: {project_path}"
+        logging.error(message)
+        raise FileNotFoundError(message)
     return (
         arch.cmd
-        + ["-cid", str(cid), "-v", "-pp", PROJECT_PATH, "-up", USER_PATH, "-lf", LOGS_FOLDER]
+        + ["-cid", str(cid), "-v", "-pp", str(project_path), "-up", USER_PATH, "-lf", LOGS_FOLDER]
     )
 
 
