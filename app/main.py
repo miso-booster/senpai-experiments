@@ -134,7 +134,8 @@ def main():
     timeout_s = 60
     # CID base para ir incrementando y asegurar unicidad si tu sistema espera int.
     cid_counter = 1000
-    run_group_id = uuid.uuid4().hex
+    now = time.time()
+    run_group_id = time.strftime("%Y%m%d_%H%M%S", time.localtime(now)) + f"_{int((now % 1) * 1000):03d}"
 
     # Limpia results.jsonl si quieres empezar de cero
     # RESULTS_PATH.unlink(missing_ok=True)
