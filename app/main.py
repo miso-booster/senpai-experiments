@@ -36,16 +36,15 @@ def run_one(
     arch: Architecture,
     prompt_id: str,
     prompt_text: str,
-    cid: int,
+    sensei_project: str,
     timeout_s: int,
     run_group_id: str,
 ) -> Dict[str, Any]:
-    run_id = f"{arch.id}__{prompt_id}__{cid}__{uuid.uuid4().hex[:8]}"
+    cmd = build_cmd(arch, sensei_project)
+    run_id = f"{arch.id}__{prompt_id}__{sensei_project}__{uuid.uuid4().hex[:8]}"
     run_dir = RUNS_DIR / run_group_id / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
-
-    cmd = build_cmd(arch, cid)
-    logging.info("Run start arch=%s prompt=%s cid=%s", arch.id, prompt_id, cid)
+    logging.info("Run start arch=%s prompt=%s", arch.id, prompt_id)
     logging.debug("Cmd: %s", cmd)
     if arch.cwd:
         logging.debug("CWD: %s", arch.cwd)
@@ -81,10 +80,9 @@ def run_one(
 
     answer = extract_senpai_answer(stdout)
     logging.info(
-        "Run end arch=%s prompt=%s cid=%s rc=%s timed_out=%s latency=%.3fs",
+        "Run end arch=%s prompt=%s rc=%s timed_out=%s latency=%.3fs",
         arch.id,
         prompt_id,
-        cid,
         returncode,
         timed_out,
         t1 - t0,
@@ -102,7 +100,6 @@ def run_one(
         "run_group_id": run_group_id,
         "arch_id": arch.id,
         "prompt_id": prompt_id,
-        "cid": cid,
         "timeout_s": timeout_s,
         "timed_out": timed_out,
         "returncode": returncode,
@@ -129,12 +126,11 @@ def main():
     logging.info("Loading architectures and prompts")
 
     archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
-    prompts = load_prompts_jsonl(str(pathlib.Path(__file__).parent.parent / "configs" / "prompts.jsonl"))
+    prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "prompts.json"))
 
     timeout_s = 60
-    # CID base para ir incrementando y asegurar unicidad si tu sistema espera int.
-    cid_counter = 1000
-    run_group_id = uuid.uuid4().hex
+    now = time.time()
+    run_group_id = time.strftime("%Y%m%d_%H%M%S", time.localtime(now)) + f"_{int((now % 1) * 1000):03d}"
 
     # Limpia results.jsonl si quieres empezar de cero
     # RESULTS_PATH.unlink(missing_ok=True)
@@ -142,23 +138,25 @@ def main():
     for arch in archs:
         logging.info("Architecture start id=%s", arch.id)
         for p in prompts:
-            cid_counter += 1
-            res = run_one(
-                arch=arch,
-                prompt_id=p["id"],
-                prompt_text=p["text"],
-                cid=cid_counter,
-                timeout_s=timeout_s,
-                run_group_id=run_group_id,
-            )
-            append_jsonl(RESULTS_PATH, res)
-            logging.info(
-                "[OK] %s %s latency=%.3fs timed_out=%s",
-                res["arch_id"],
-                res["prompt_id"],
-                res["latency_s"],
-                res["timed_out"],
-            )
+            try:
+                res = run_one(
+                    arch=arch,
+                    prompt_id=p["id"],
+                    prompt_text=p["text"],
+                    sensei_project=p["project"],
+                    timeout_s=timeout_s,
+                    run_group_id=run_group_id,
+                )
+                append_jsonl(RESULTS_PATH, res)
+                logging.info(
+                    "[OK] %s %s latency=%.3fs timed_out=%s",
+                    res["arch_id"],
+                    res["prompt_id"],
+                    res["latency_s"],
+                    res["timed_out"],
+                )
+            except FileNotFoundError as e:
+                logging.warning("Skipping prompt_id=%s project=%s: %s", p.get("id"), p.get("project"), e)
         logging.info("Architecture end id=%s", arch.id)
 
 if __name__ == "__main__":
