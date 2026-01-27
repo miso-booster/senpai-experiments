@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import re
 import time
@@ -19,16 +19,25 @@ from app.setup_logger import setup_logging
 
 def extract_senpai_answer(stdout: str) -> str:
     """
-    Extrae todas las líneas que contengan 'Senpai:' y las concatena.
-    Si no encuentra nada, devuelve stdout completo (fallback).
+    Extrae bloques completos desde 'Senpai:' hasta el siguiente 'You:' (o EOF).
+    Esto evita truncar respuestas multil\u00ednea donde solo la primera l\u00ednea tiene prefijo.
     """
+    # 1) Captura por bloques multil\u00ednea (m\u00e1s robusto).
+    block_re = re.compile(r"(?ms)^Senpai:\\s*(.*?)(?=^You:|\\Z)")
+    blocks = [b.strip() for b in block_re.findall(stdout) if b.strip()]
+    if blocks:
+        return "\\n\\n".join(blocks).strip()
+
+    # 2) Fallback: comportamiento anterior por l\u00edneas con prefijo.
     answers = []
     for line in stdout.splitlines():
         m = SENPAI_PREFIX_RE.search(line)
         if m:
             answers.append(m.group(1).strip())
     if answers:
-        return "\n".join(answers).strip()
+        return "\\n".join(answers).strip()
+
+    # 3) \u00daltimo fallback: todo el stdout.
     return stdout.strip()
 
 
@@ -40,7 +49,7 @@ def run_one(
     timeout_s: int,
     run_group_id: str,
 ) -> Dict[str, Any]:
-    cmd = build_cmd(arch, sensei_project)
+    cmd = build_cmd(arch, sensei_project, prompt_text)
     run_id = f"{arch.id}__{prompt_id}__{sensei_project}__{uuid.uuid4().hex[:8]}"
     run_dir = RUNS_DIR / run_group_id / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -56,7 +65,7 @@ def run_one(
     try:
         proc = subprocess.run(
             cmd,
-            input=stdin_payload,
+            # input=stdin_payload,
             capture_output=True,
             text=True,
             timeout=timeout_s,
@@ -161,3 +170,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
