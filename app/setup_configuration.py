@@ -53,8 +53,8 @@ def project_exists(project_name: str) -> bool:
     return project_path.exists()
 
 
-def build_cmd(arch: Architecture, cid: int, sensei_project: str) -> List[str]:
-    # Monta: <cmd base> -cid <cid> -v -pp ... -up ... -lf ...
+def build_cmd(arch: Architecture, sensei_project: str) -> List[str]:
+    # Monta: <cmd base> -v -pp ... -up ... -lf ... (sin -cid)
 
     project_path = pathlib.Path(PROJECTS_PATH) / sensei_project
     if not project_path.exists():
@@ -63,7 +63,7 @@ def build_cmd(arch: Architecture, cid: int, sensei_project: str) -> List[str]:
         raise FileNotFoundError(message)
     return (
         arch.cmd
-        + ["-cid", str(cid), "-v", "-pp", str(project_path), "-up", USER_PATH, "-lf", LOGS_FOLDER]
+        + ["-v", "-pp", str(project_path), "-up", USER_PATH, "-lf", LOGS_FOLDER]
     )
 
 

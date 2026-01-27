@@ -37,15 +37,14 @@ def run_one(
     prompt_id: str,
     prompt_text: str,
     sensei_project: str,
-    cid: int,
     timeout_s: int,
     run_group_id: str,
 ) -> Dict[str, Any]:
-    cmd = build_cmd(arch, cid, sensei_project)
-    run_id = f"{arch.id}__{prompt_id}__{sensei_project}__{cid}__{uuid.uuid4().hex[:8]}"
+    cmd = build_cmd(arch, sensei_project)
+    run_id = f"{arch.id}__{prompt_id}__{sensei_project}__{uuid.uuid4().hex[:8]}"
     run_dir = RUNS_DIR / run_group_id / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
-    logging.info("Run start arch=%s prompt=%s cid=%s", arch.id, prompt_id, cid)
+    logging.info("Run start arch=%s prompt=%s", arch.id, prompt_id)
     logging.debug("Cmd: %s", cmd)
     if arch.cwd:
         logging.debug("CWD: %s", arch.cwd)
@@ -81,10 +80,9 @@ def run_one(
 
     answer = extract_senpai_answer(stdout)
     logging.info(
-        "Run end arch=%s prompt=%s cid=%s rc=%s timed_out=%s latency=%.3fs",
+        "Run end arch=%s prompt=%s rc=%s timed_out=%s latency=%.3fs",
         arch.id,
         prompt_id,
-        cid,
         returncode,
         timed_out,
         t1 - t0,
@@ -102,7 +100,6 @@ def run_one(
         "run_group_id": run_group_id,
         "arch_id": arch.id,
         "prompt_id": prompt_id,
-        "cid": cid,
         "timeout_s": timeout_s,
         "timed_out": timed_out,
         "returncode": returncode,
@@ -132,8 +129,6 @@ def main():
     prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "prompts.json"))
 
     timeout_s = 60
-    # CID base para ir incrementando y asegurar unicidad si tu sistema espera int.
-    cid_counter = 1000
     now = time.time()
     run_group_id = time.strftime("%Y%m%d_%H%M%S", time.localtime(now)) + f"_{int((now % 1) * 1000):03d}"
 
@@ -143,14 +138,12 @@ def main():
     for arch in archs:
         logging.info("Architecture start id=%s", arch.id)
         for p in prompts:
-            cid_counter += 1
             try:
                 res = run_one(
                     arch=arch,
                     prompt_id=p["id"],
                     prompt_text=p["text"],
                     sensei_project=p["project"],
-                    cid=cid_counter,
                     timeout_s=timeout_s,
                     run_group_id=run_group_id,
                 )
