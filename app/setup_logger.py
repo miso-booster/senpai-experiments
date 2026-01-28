@@ -39,8 +39,15 @@ def _supports_color(stream) -> bool:
 
 
 def setup_logging(verbose: bool = False) -> None:
-    level = logging.DEBUG if verbose else logging.INFO
     root_logger = logging.getLogger()
+    root_logger.handlers = []
+
+    if not verbose:
+        logging.disable(logging.CRITICAL)
+        return
+
+    logging.disable(logging.NOTSET)
+    level = logging.DEBUG
     root_logger.setLevel(level)
 
     handler = logging.StreamHandler(stream=sys.stdout)
