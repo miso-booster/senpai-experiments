@@ -46,11 +46,12 @@ def run_one(
     prompt_id: str,
     prompt_text: str,
     sensei_project: str,
+    prompt_type: str,
     timeout_s: int,
     run_group_id: str,
 ) -> Dict[str, Any]:
     cmd = build_cmd(arch, sensei_project, prompt_text)
-    run_id = f"{arch.id}__{prompt_id}__{sensei_project}__{uuid.uuid4().hex[:8]}"
+    run_id = f"{arch.id}__{prompt_id}__{sensei_project}__{prompt_type}__{uuid.uuid4().hex[:8]}"
     run_dir = RUNS_DIR / run_group_id / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     logging.info("Run start arch=%s prompt=%s", arch.id, prompt_id)
@@ -153,6 +154,7 @@ def main():
                     prompt_id=p["id"],
                     prompt_text=p["text"],
                     sensei_project=p["project"],
+                    prompt_type=p["type"],
                     timeout_s=timeout_s,
                     run_group_id=run_group_id,
                 )
