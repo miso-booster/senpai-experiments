@@ -7,6 +7,8 @@ import pathlib
 import subprocess
 import argparse
 import logging
+import sys
+import threading
 
 from app.setup_configuration import *
 
@@ -49,8 +51,9 @@ def run_one(
     prompt_type: str,
     timeout_s: int,
     run_group_id: str,
+    verbose: bool
 ) -> Dict[str, Any]:
-    cmd = build_cmd(arch, sensei_project, prompt_text)
+    cmd = build_cmd(arch, sensei_project, prompt_text, verbose)
     run_id = f"{arch.id}__{prompt_id}__{sensei_project}__{prompt_type}__{uuid.uuid4().hex[:8]}"
     run_dir = RUNS_DIR / run_group_id / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -64,16 +67,46 @@ def run_one(
 
     t0 = time.perf_counter()
     try:
-        proc = subprocess.run(
+        proc = subprocess.Popen(
             cmd,
-            # input=stdin_payload,
-            capture_output=True,
+            # stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout_s,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
             env=build_env(arch),
             cwd=arch.cwd,
         )
-        timed_out = False
+
+        stdout_lines = []
+        stderr_lines = []
+
+        def _tee(stream, sink, collector):
+            for line in stream:
+                collector.append(line)
+                sink.write(line)
+                sink.flush()
+
+        t_out = threading.Thread(target=_tee, args=(proc.stdout, sys.stdout, stdout_lines), daemon=True)
+        t_err = threading.Thread(target=_tee, args=(proc.stderr, sys.stderr, stderr_lines), daemon=True)
+        t_out.start()
+        t_err.start()
+
+        try:
+            proc.wait(timeout=timeout_s)
+            timed_out = False
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            proc.kill()
+            proc.wait()
+
+        t_out.join(timeout=1)
+        t_err.join(timeout=1)
+
+        stdout = "".join(stdout_lines)
+        stderr = "".join(stderr_lines)
     except subprocess.TimeoutExpired as e:
         proc = None
         timed_out = True
@@ -82,8 +115,6 @@ def run_one(
     t1 = time.perf_counter()
 
     if proc is not None:
-        stdout = proc.stdout or ""
-        stderr = proc.stderr or ""
         returncode = proc.returncode
     else:
         returncode = None
@@ -157,6 +188,7 @@ def main():
                     prompt_type=p["type"],
                     timeout_s=timeout_s,
                     run_group_id=run_group_id,
+                    verbose=args.verbose
                 )
                 append_jsonl(RESULTS_PATH, res)
                 logging.info(
@@ -168,6 +200,10 @@ def main():
                 )
             except FileNotFoundError as e:
                 logging.warning("Skipping prompt_id=%s project=%s: %s", p.get("id"), p.get("project"), e)
+            print("\n"
+                  "------------------------------------------------------------------------------------------------\n"
+                  "------------------------------------------------------------------------------------------------"
+                  "\n")
         logging.info("Architecture end id=%s", arch.id)
 
 if __name__ == "__main__":

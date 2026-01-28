@@ -53,7 +53,7 @@ def project_exists(project_name: str) -> bool:
     return project_path.exists()
 
 
-def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str) -> List[str]:
+def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose: bool) -> List[str]:
     # Monta: <cmd base> -v -pp ... -up ... -lf ... (sin -cid)
 
     project_path = pathlib.Path(PROJECTS_PATH) / sensei_project
@@ -61,10 +61,16 @@ def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str) -> List
         message = f"Sensei project folder does not exist: {project_path}"
         logging.error(message)
         raise FileNotFoundError(message)
-    return (
+
+    cmd = (
         arch.cmd
         + ["-pp", str(project_path), "-up", USER_PATH, "-lf", LOGS_FOLDER, "-stp", user_prompt.rstrip()]
     )
+
+    if verbose:
+        cmd.append("-v")
+
+    return cmd
 
 
 def parse_env_file(path: str) -> Dict[str, str]:
