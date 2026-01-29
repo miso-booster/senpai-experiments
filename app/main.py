@@ -21,25 +21,12 @@ from app.setup_logger import setup_logging
 
 def extract_senpai_answer(stdout: str) -> str:
     """
-    Extrae bloques completos desde 'Senpai:' hasta el siguiente 'You:' (o EOF).
-    Esto evita truncar respuestas multil\u00ednea donde solo la primera l\u00ednea tiene prefijo.
+    Extrae texto entre delimitadores $$$ ... $$$.
     """
-    # 1) Captura por bloques multil\u00ednea (m\u00e1s robusto).
-    block_re = re.compile(r"(?ms)^Senpai:\\s*(.*?)(?=^You:|\\Z)")
+    block_re = re.compile(r"(?s)\$\$\$\s*(.*?)\s*\$\$\$")
     blocks = [b.strip() for b in block_re.findall(stdout) if b.strip()]
     if blocks:
         return "\\n\\n".join(blocks).strip()
-
-    # 2) Fallback: comportamiento anterior por l\u00edneas con prefijo.
-    answers = []
-    for line in stdout.splitlines():
-        m = SENPAI_PREFIX_RE.search(line)
-        if m:
-            answers.append(m.group(1).strip())
-    if answers:
-        return "\\n".join(answers).strip()
-
-    # 3) \u00daltimo fallback: todo el stdout.
     return stdout.strip()
 
 
