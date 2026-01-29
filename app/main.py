@@ -86,6 +86,7 @@ def run_one(
             timed_out = False
         except subprocess.TimeoutExpired:
             timed_out = True
+            logging.warning(f"Process timed out: {run_id}")
             proc.kill()
             proc.wait()
 
@@ -117,7 +118,10 @@ def run_one(
     )
 
     # Guardar artefactos
-    (run_dir / "cmd.json").write_text(json.dumps(cmd, ensure_ascii=False, indent=2), encoding="utf-8")
+    (run_dir / "cmd.json").write_text(
+        json.dumps(cmd, ensure_ascii=False, indent=2, default=str),
+        encoding="utf-8",
+    )
     (run_dir / "stdin.txt").write_text(stdin_payload, encoding="utf-8")
     (run_dir / "stdout.txt").write_text(stdout, encoding="utf-8", errors="ignore")
     (run_dir / "stderr.txt").write_text(stderr, encoding="utf-8", errors="ignore")
