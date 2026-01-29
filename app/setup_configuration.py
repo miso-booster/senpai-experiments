@@ -8,13 +8,6 @@ from typing import List, Dict
 from app.architecture import Architecture
 
 
-
-
-# ====== CONFIGURA ESTO ======
-PROJECTS_PATH = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\sensei_projects"
-USER_PATH    = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\users\user_1"
-LOGS_FOLDER  = r"E:\ESCRITORIO\Py_projects\Senpai-Assistant\logs_folder"
-
 # Comando de salida del chat. Cambia si tu CLI usa otro (por ej. "exit", "/quit", etc.)
 EXIT_COMMAND = "exit"
 
@@ -48,15 +41,18 @@ def load_prompts_json(path: str) -> List[Dict[str, str]]:
     return data
 
 
-def project_exists(project_name: str) -> bool:
-    project_path = pathlib.Path(PROJECTS_PATH) / project_name
-    return project_path.exists()
+# def project_exists(project_name: str) -> bool:
+#     project_path = pathlib.Path(PROJECTS_PATH) / project_name
+#     return project_path.exists()
 
 
 def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose: bool) -> List[str]:
     # Monta: <cmd base> -v -pp ... -up ... -lf ... (sin -cid)
 
-    project_path = pathlib.Path(PROJECTS_PATH) / sensei_project
+    project_path = pathlib.Path(arch.cwd) / "sensei_projects" / sensei_project
+    user_path = pathlib.Path(arch.cwd) / "users" / "user_1"
+    logs_folder = pathlib.Path(arch.cwd) / "logs_folder"
+
     if not project_path.exists():
         message = f"Sensei project folder does not exist: {project_path}"
         logging.error(message)
@@ -64,7 +60,16 @@ def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose
 
     cmd = (
         arch.cmd
-        + ["-pp", str(project_path), "-up", USER_PATH, "-lf", LOGS_FOLDER, "-stp", user_prompt.rstrip()]
+        + [
+            "-pp",
+            str(project_path),
+            "-up",
+            str(user_path),
+            "-lf",
+            str(logs_folder),
+            "-stp",
+            user_prompt.rstrip(),
+        ]
     )
 
     if verbose:
