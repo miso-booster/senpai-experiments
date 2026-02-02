@@ -66,6 +66,25 @@ Outputs
 - Per-run JSONL results: `out/results.jsonl`
 - Per-group CSV: `out/runs/<run_group_id>/results.csv`
 
+Ranking sheets (offline evaluation)
+----------------------------------
+Generate a randomized ranking markdown + key + answers template:
+
+```powershell
+uv run python -m app.generate_rankings --run-group-id <run_group_id>
+```
+
+This writes to `out/runs/<run_group_id>/ranking/` (CSV delimiter is `;`):
+- `ranking.md` (responses randomized per prompt)
+- `key.csv` (label -> arch/run mapping)
+- `answers.csv` (template to fill in ranks)
+
+Aggregate multiple subjects (expects `answers_*.csv` and `key.csv`):
+
+```powershell
+uv run python -m app.aggregate_rankings --answers-dir out/runs/<run_group_id>/ranking
+```
+
 Output structure per execution
 ------------------------------
 Each execution writes to:
