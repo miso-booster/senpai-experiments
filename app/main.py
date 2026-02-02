@@ -11,7 +11,7 @@ from typing import Dict, Any
 from app.setup_logger import setup_logging
 
 columns = [
-    "run_id", "run_group_id", "arch_id", "prompt_id", "timeout_s",
+    "run_id", "run_group_id", "arch_id", "prompt_id", "prompt", "timeout_s",
     "timed_out", "returncode", "latency_s","answer", "stdout_chars",
     "stderr_chars", "answer_chars", "run_dir"
 ]
