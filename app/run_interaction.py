@@ -1,4 +1,4 @@
-
+import os
 import re
 import json
 import uuid
@@ -11,7 +11,8 @@ import pathlib
 
 from typing import Dict, Any
 from app.architecture import Architecture
-from app.setup_configuration import build_cmd, build_env
+from app.setup_configuration import build_cmd, build_env, parse_env_file
+from app.fallback_detector import detect_fallback
 
 
 EXIT_COMMAND = "exit"
@@ -108,6 +109,16 @@ def run_one(
         returncode = None
 
     answer = extract_senpai_answer(stdout)
+    # Ensure only OPENAI_API_KEY is loaded for fallback detection.
+    if arch.env_file and "OPENAI_API_KEY" not in os.environ:
+        try:
+            env_from_file = parse_env_file(arch.env_file)
+            api_key = env_from_file.get("OPENAI_API_KEY")
+            if api_key:
+                os.environ["OPENAI_API_KEY"] = api_key
+        except FileNotFoundError:
+            logging.warning("Env file not found for fallback detection: %s", arch.env_file)
+    fallback = detect_fallback(prompt_text, answer)
     logging.info(
         "Run end arch=%s prompt=%s rc=%s timed_out=%s latency=%.3fs",
         arch.id,
@@ -138,6 +149,7 @@ def run_one(
         "returncode": returncode,
         "latency_s": round(t1 - t0, 6),
         "answer": answer,
+        "fallback": fallback,
         "stdout_chars": len(stdout),
         "stderr_chars": len(stderr),
         "answer_chars": len(answer),
