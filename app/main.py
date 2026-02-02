@@ -35,7 +35,7 @@ def main():
     archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
     prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "prompts.json"))
 
-    timeout_s = 60
+    timeout_s = 300
     now = time.time()
     run_group_id = time.strftime("%Y%m%d_%H%M%S", time.localtime(now)) + f"_{int((now % 1) * 1000):03d}"
     group_results = []
