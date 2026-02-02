@@ -132,6 +132,7 @@ def run_one(
         "run_group_id": run_group_id,
         "arch_id": arch.id,
         "prompt_id": prompt_id,
+        "prompt": prompt_text,
         "timeout_s": timeout_s,
         "timed_out": timed_out,
         "returncode": returncode,

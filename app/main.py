@@ -11,7 +11,7 @@ from typing import Dict, Any
 from app.setup_logger import setup_logging
 
 columns = [
-    "run_id", "run_group_id", "arch_id", "prompt_id", "timeout_s",
+    "run_id", "run_group_id", "arch_id", "prompt_id", "prompt", "timeout_s",
     "timed_out", "returncode", "latency_s","answer", "stdout_chars",
     "stderr_chars", "answer_chars", "run_dir"
 ]
@@ -80,7 +80,8 @@ def main():
         group_dir.mkdir(parents=True, exist_ok=True)
         group_csv_path = group_dir / "results.csv"
         df = pd.DataFrame(group_results)
-        df.to_csv(group_csv_path, index=False, encoding="utf-8", sep=";")
+        # Use UTF-8 BOM for better compatibility with Excel on Windows.
+        df.to_csv(group_csv_path, index=False, encoding="utf-8-sig", sep=";")
 
 if __name__ == "__main__":
     main()
