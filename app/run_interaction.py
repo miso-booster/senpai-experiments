@@ -9,9 +9,9 @@ import threading
 import subprocess
 import pathlib
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 from app.architecture import Architecture
-from setup_configuration import build_cmd, build_env
+from app.setup_configuration import build_cmd, build_env
 
 
 EXIT_COMMAND = "exit"
