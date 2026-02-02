@@ -85,6 +85,11 @@ Aggregate multiple subjects (expects `answers_*.csv` and `key.csv`):
 uv run python -m app.aggregate_rankings --answers-dir out/runs/<run_group_id>/ranking
 ```
 
+This also writes metrics CSVs in the same folder:
+- `metrics_overall.csv` (per-architecture avg rank, Borda, win rate)
+- `metrics_per_prompt.csv` (per-prompt avg rank + win rate)
+- `metrics_pairwise.csv` (pairwise win rates)
+
 Output structure per execution
 ------------------------------
 Each execution writes to:
