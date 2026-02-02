@@ -1,6 +1,5 @@
 import argparse
 import csv
-import json
 import pathlib
 import random
 import time
@@ -158,7 +157,13 @@ def main() -> None:
         prompt_text = prompt_text_by_id.get(pid, "(prompt text not found in configs)")
         rows_copy = list(rows)
         rng.shuffle(rows_copy)
-        labels = [chr(ord("A") + i) for i in range(len(rows_copy))]
+        num_responses = len(rows_copy)
+        if num_responses > 26:
+            raise ValueError(
+                f"Prompt {pid} has {num_responses} responses, but at most 26 (A-Z) "
+                "are supported for labeling."
+            )
+        labels = [chr(ord("A") + i) for i in range(num_responses)]
         max_responses = max(max_responses, len(labels))
 
         md_lines.append(f"## Prompt {pid}")

@@ -65,9 +65,10 @@ def main() -> None:
 
     pairwise_wins: Dict[Tuple[str, str], int] = {}
 
+    # Load the key once and reuse it for all answers files.
+    key_map = _load_key(key_path)
     for answers_path in answers_files:
         subject_id = answers_path.stem.replace("answers_", "", 1)
-        key_map = _load_key(key_path)
 
         with answers_path.open("r", encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f, delimiter=";")
