@@ -80,7 +80,8 @@ def main():
         group_dir.mkdir(parents=True, exist_ok=True)
         group_csv_path = group_dir / "results.csv"
         df = pd.DataFrame(group_results)
-        df.to_csv(group_csv_path, index=False, encoding="utf-8", sep=";")
+        # Use UTF-8 BOM for better compatibility with Excel on Windows.
+        df.to_csv(group_csv_path, index=False, encoding="utf-8-sig", sep=";")
 
 if __name__ == "__main__":
     main()
