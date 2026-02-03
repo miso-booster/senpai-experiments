@@ -3,7 +3,14 @@ import logging
 import os
 from typing import Optional
 
-from openai import OpenAI
+from openai import (
+    APIConnectionError,
+    APITimeoutError,
+    AuthenticationError,
+    BadRequestError,
+    OpenAI,
+    RateLimitError,
+)
 
 
 DEFAULT_FALLBACK_MODEL = "gpt-4o-mini-2024-07-18"
@@ -65,6 +72,18 @@ def detect_fallback(prompt_text: str, answer_text: str) -> bool:
         content = response.choices[0].message.content or "{}"
         data = json.loads(content)
         return bool(data.get("fallback", False))
-    except Exception:
-        logging.exception("Fallback detection failed; defaulting to False.")
+    except AuthenticationError as e:
+        logging.error("Fallback detection auth error: %s: %s", type(e).__name__, e)
+        return False
+    except RateLimitError as e:
+        logging.warning("Fallback detection rate limited: %s: %s", type(e).__name__, e)
+        return False
+    except (APIConnectionError, APITimeoutError) as e:
+        logging.warning("Fallback detection network/timeout error: %s: %s", type(e).__name__, e)
+        return False
+    except BadRequestError as e:
+        logging.error("Fallback detection bad request (model/config): %s: %s", type(e).__name__, e)
+        return False
+    except Exception as e:
+        logging.exception("Fallback detection failed: %s: %s", type(e).__name__, e)
         return False
