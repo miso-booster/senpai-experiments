@@ -109,7 +109,7 @@ def run_one(
         returncode = None
 
     answer = extract_senpai_answer(stdout)
-    # Ensure only OPENAI_API_KEY is loaded for fallback detection.
+    # Load only OPENAI_API_KEY from env file into os.environ for fallback detection.
     if arch.env_file and "OPENAI_API_KEY" not in os.environ:
         try:
             env_from_file = parse_env_file(arch.env_file)
@@ -155,21 +155,5 @@ def run_one(
         "answer_chars": len(answer),
         "run_dir": str(run_dir),
     }
-
-    # result_list = [
-    #     run_id,
-    #     run_group_id,
-    #     arch.id,
-    #     prompt_id,
-    #     timeout_s,
-    #     timed_out,
-    #     returncode,
-    #     round(t1 - t0, 6),
-    #     answer,
-    #     len(stdout),
-    #     len(stderr),
-    #     len(answer),
-    #     str(run_dir),
-    # ]
 
     return result_json
