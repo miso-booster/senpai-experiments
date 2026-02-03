@@ -62,7 +62,11 @@ def detect_fallback(prompt_text: str, answer_text: str) -> bool:
 
     def _parse_response(response) -> bool:
         content = response.choices[0].message.content or "{}"
-        data = json.loads(content)
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError as e:
+            logging.error("Fallback detection JSON parse error: %s: %s", type(e).__name__, e)
+            return False
         return bool(data.get("fallback", False))
 
     def _handle_exception(e: Exception) -> bool:
