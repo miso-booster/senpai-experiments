@@ -1,0 +1,68 @@
+[project-context] Loaded 3 profile(s) [pizza_test_profile.yaml, user_sim_pizzaorder_custom.yml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from C:\Users\Usuario\Desktop\PROYECTO\BOOSTER\Senpai-Assistant\sensei_projects\pizza_shop
+No conversation ID provided; running without conversation persistence.
+Verbose activated
+[intent-classifier] {'intent': 'create_profile', 'raw': '{"intent": "create_profile", "reason": "user wants a new SENSEI profile for a specific scenario"}'}
+$$$
+That sounds like a fun scenario to test! 😊 You can create a profile that allows the user to start by asking for a custom pizza and then change their mind to request a predefined pizza. Here's a sample profile you can use as a template:
+
+```yaml
+test_name: "custom_to_predefined_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer who initially wants a custom pizza but changes your mind halfway through."
+  context:
+    - "You prefer vegetarian options."
+  goals:
+    - "I would like to order a custom pizza with {{custom_size}} size and {{custom_toppings}}."
+    - "Actually, can I get a {{predefined_pizza}} instead?"
+    - custom_size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - custom_toppings:
+        function: random(2)
+        type: list
+        data: [mushrooms, olives, bell peppers, spinach, onions]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Veggie Supreme, Hawaiian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you repeat that?"
+  output:
+    - order_id:
+        type: string
+        description: "The order identifier"
+    - total_price:
+        type: currency
+        description: "Final price for the pizza order"
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 2
+  interaction_style:
+    - random:
+      - long phrases
+      - change your mind
+```
+
+### Explanation:
+- **User Role**: The user is described as someone who starts with a custom pizza order but changes their mind.
+- **Goals**: The user has two main goals: to order a custom pizza and then switch to a predefined pizza.
+- **Custom Size and Toppings**: The size and toppings for the custom pizza are randomly selected from specified options.
+- **Predefined Pizza**: The user can also randomly choose from a list of predefined pizzas.
+- **Interaction Style**: The `change your mind` interaction style is included to simulate the user changing their order.
+
+Feel free to modify any part of this profile to better fit your needs! Happy testing! 🍕✨
+$$$
