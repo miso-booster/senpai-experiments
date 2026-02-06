@@ -1,0 +1,56 @@
+That sounds like a fun scenario to test! 😊 You can create a profile that captures this behavior by using the `interaction_style` feature to allow the user to change their mind during the conversation. 
+
+Here's a sample profile you can use as a template:
+
+```yaml
+test_name: "custom_to_predefined_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer who initially wants to order a custom pizza but changes your mind halfway through."
+  context:
+    - "You are looking for a pizza that suits your taste and preferences."
+  goals:
+    - "I want to order a custom pizza with {{custom_toppings}}."
+    - "Actually, I would like to order a {{predefined_pizza}} instead."
+    - custom_toppings:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, olives, bell peppers, onions]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you repeat your order?"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the pizza order."
+
+conversation:
+  number: 2
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - change your mind
+    - single questions
+```
+
+### Key Points:
+- **User Role**: The user starts by wanting a custom pizza but changes their mind to a predefined pizza.
+- **Goals**: The profile includes two goals where the user first asks for a custom pizza and then switches to a predefined one.
+- **Interaction Style**: The `change your mind` style allows for the user to express a change of opinion during the conversation.
+
+Feel free to adjust the toppings and predefined pizza options to match your preferences! Happy testing! 🍕✨
