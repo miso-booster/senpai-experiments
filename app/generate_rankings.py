@@ -9,9 +9,19 @@ from app.setup_configuration import RUNS_DIR, load_prompts_json
 
 
 def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
-    with results_path.open("r", encoding="utf-8", newline="") as f:
-        reader = csv.DictReader(f, delimiter=";")
-        return list(reader)
+    encodings = ("utf-8-sig", "utf-8", "cp1252", "latin-1")
+    errors: List[str] = []
+    for encoding in encodings:
+        try:
+            with results_path.open("r", encoding=encoding, newline="") as f:
+                reader = csv.DictReader(f, delimiter=";")
+                return list(reader)
+        except UnicodeDecodeError as exc:
+            errors.append(f"{encoding}: {exc}")
+    error_detail = "; ".join(errors) if errors else "unknown decode error"
+    raise ValueError(
+        f"Failed to decode {results_path} with supported encodings ({', '.join(encodings)}). {error_detail}"
+    )
 
 
 def _load_prompts(prompts_path: pathlib.Path) -> Tuple[List[str], Dict[str, str]]:

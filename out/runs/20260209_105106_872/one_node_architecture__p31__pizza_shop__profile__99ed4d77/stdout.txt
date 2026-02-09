@@ -1,0 +1,76 @@
+[get-or-build-index] Retrieving project embedding from database E:\ESCRITORIO\Py_projects\SENPAI\one_node\Senpai-Assistant\app\embedding_files\pizza_shop\pizza_shop.pkl
+No conversation ID provided; persistence is disabled and this conversation will not be saved.
+ephemeral conversation id (not persisted): 1d1cf6d1f2a944cc97c4e4d86107fcc5
+Verbose activated
+Best profile candidate for query: pizza_order_test_custom.yml score: 0.5723329782485962
+$$$
+Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included 4 goals with 4 variables, and two of them use pairwise functions to help determine the conversation number. Let’s dive right in! 🍕😊
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A rude customer who demands quick service and doesn't tolerate delays."
+  context:
+    - "Impatient and expects immediate responses."
+  goals:
+    - "I want a {{size}} pizza with {{toppings}} and make it quick!"
+    - "How much will it cost for {{cans}} cans of {{drink}}?"
+    - "I need it ready by {{ready_time}}!"
+    - "Don't mess this up, just tell me the total!"
+
+inputs:
+  - name: size
+    type: string
+    data: ['small', 'medium', 'large', 'extra large']
+    function: pairwise()
+  - name: toppings
+    type: string
+    data: ['cheese', 'pepperoni', 'mushrooms', 'olives']
+    function: pairwise()
+  - name: cans
+    type: int
+    data: {'min': 1, 'max': 6, 'step': 1}
+    function: forward()
+  - name: drink
+    type: string
+    data: ['coke', 'sprite', 'fanta']
+    function: forward()
+  - name: ready_time
+    type: string
+    data: ['ASAP', 'in 10 minutes', 'in 15 minutes']
+    function: random()
+
+chatbot:
+  is_starter: false
+  fallback: "I’m sorry, but I need a moment to check that."
+  output:
+    - total_price:
+        type: currency
+        description: "The final price of the pizza order"
+    - order_id:
+        type: string
+        description: "Your order ID"
+    - time_to_ready:
+        type: time(hh:mm:ss)
+        description: "The time when the order will be ready"
+
+conversation:
+  number: combinations(0.5, pairwise) # Using pairwise functions for size and toppings
+  goal_style:
+    steps: 5
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+```
+
+Feel free to tweak any part of it to better fit your needs! If you have any other requests or need further adjustments, just let me know! 😊
+$$$
