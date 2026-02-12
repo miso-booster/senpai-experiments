@@ -42,10 +42,11 @@ def run_one(
         run_group_id: str,
         verbose: bool
 ) -> Dict[str, Any]:
-    cmd = build_cmd(arch, sensei_project, prompt_text, verbose)
     run_id = f"{arch.id}__{prompt_id}__{sensei_project}__{prompt_type}__{uuid.uuid4().hex[:8]}"
-    run_dir = RUNS_DIR / run_group_id / run_id
+    run_dir = RUNS_DIR / run_group_id / "run_register" / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+    tracing_dir = RUNS_DIR / run_group_id / f"tracing_{run_id}.csv"
+    cmd = build_cmd(arch, sensei_project, prompt_text, verbose, tracing_dir)
     logging.info("Run start arch=%s prompt=%s", arch.id, prompt_id)
     logging.debug("Cmd: %s", cmd)
     if arch.cwd:
@@ -64,7 +65,7 @@ def run_one(
             encoding="utf-8",
             errors="replace",
             bufsize=1,
-            env=build_env(arch),
+            env=build_env(arch, run_group_id),
             cwd=arch.cwd,
         )
 

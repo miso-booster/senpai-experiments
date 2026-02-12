@@ -4,6 +4,7 @@ import json
 import pathlib
 import logging
 
+
 from typing import List, Dict
 from app.architecture import Architecture
 
@@ -46,7 +47,7 @@ def load_prompts_json(path: str) -> List[Dict[str, str]]:
 #     return project_path.exists()
 
 
-def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose: bool) -> List[str]:
+def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose: bool, tracing_dir: pathlib.Path) -> List[str]:
     # Monta: <cmd base> -v -pp ... -up ... -lf ... (sin -cid)
 
     project_path = pathlib.Path(arch.cwd) / "sensei_projects" / sensei_project
@@ -69,6 +70,8 @@ def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose
             str(logs_folder),
             "-stp",
             user_prompt.rstrip(),
+            "-tp",
+            tracing_dir
         ]
     )
 
@@ -102,10 +105,15 @@ def ensure_dirs():
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def build_env(arch: Architecture) -> Dict[str, str]:
+def build_env(arch: Architecture, timestamp: str) -> Dict[str, str]:
     env = os.environ.copy()
     if arch.env_file:
         env.update(parse_env_file(arch.env_file))
     if arch.env:
         env.update(arch.env)
+    env["AUTOMATION_RUN_TIMESTAMP"] = timestamp
+
+    langsmith_project = env.get("LANGSMITH_PROJECT")
+    if langsmith_project:
+        env["LANGSMITH_PROJECT"] = f"{langsmith_project}_{timestamp}"
     return env
