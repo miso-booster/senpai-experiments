@@ -17,6 +17,7 @@ _TRACE_FILENAME_STEM = "langsmith_tracing"
 _TRACE_COLUMNS = [
     "automation_run_timestamp",
     "conversation_id",
+    "langsmith_run_id",
     "run_id",
     "parent_run_id",
     "trace_id",
@@ -84,6 +85,7 @@ def append_langsmith_traces_to_csv(
     start_time: datetime,
     *,
     env: dict[str, str] | None = None,
+    run_id: str
 ) -> None:
     """Append LangSmith traces from one automation execution to a local CSV."""
     env_data = env or os.environ
@@ -151,8 +153,8 @@ def append_langsmith_traces_to_csv(
     existing_run_ids = _load_existing_run_ids(csv_path)
     rows: list[dict[str, Any]] = []
     for run in runs:
-        run_id = str(run.id)
-        if run_id in existing_run_ids:
+        langsmith_run_id = str(run.id)
+        if langsmith_run_id in existing_run_ids:
             continue
 
         latency_ms: float | None = None
@@ -164,6 +166,7 @@ def append_langsmith_traces_to_csv(
             {
                 "automation_run_timestamp": automation_run_timestamp,
                 "conversation_id": conversation_id,
+                "langsmith_run_id": langsmith_run_id,
                 "run_id": run_id,
                 "parent_run_id": str(run.parent_run_id) if run.parent_run_id else None,
                 "trace_id": str(run.trace_id) if getattr(run, "trace_id", None) else None,
@@ -186,7 +189,7 @@ def append_langsmith_traces_to_csv(
 
     file_exists = csv_path.exists()
     with csv_path.open("a", encoding="utf-8", newline="") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=_TRACE_COLUMNS, delimiter=";")
+        writer = csv.DictWriter(csv_file, fieldnames=_TRACE_COLUMNS, delimiter=",", quoting=csv.QUOTE_MINIMAL)
         if not file_exists:
             writer.writeheader()
         writer.writerows(rows)

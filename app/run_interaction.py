@@ -148,6 +148,7 @@ def run_one(
             conversation_id=conversation_id,
             start_time=trace_start_time,
             env=run_env,
+            run_id = run_id
         )
     except Exception:
         logging.exception("Failed to export LangSmith traces to CSV for run_id=%s", run_id)
