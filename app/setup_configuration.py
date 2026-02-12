@@ -47,7 +47,7 @@ def load_prompts_json(path: str) -> List[Dict[str, str]]:
 #     return project_path.exists()
 
 
-def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose: bool, tracing_dir: pathlib.Path) -> List[str]:
+def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose: bool) -> List[str]:
     # Monta: <cmd base> -v -pp ... -up ... -lf ... (sin -cid)
 
     project_path = pathlib.Path(arch.cwd) / "sensei_projects" / sensei_project
@@ -70,8 +70,6 @@ def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose
             str(logs_folder),
             "-stp",
             user_prompt.rstrip(),
-            "-tp",
-            tracing_dir
         ]
     )
 

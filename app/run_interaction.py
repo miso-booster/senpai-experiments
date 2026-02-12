@@ -8,11 +8,13 @@ import logging
 import threading
 import subprocess
 import pathlib
+from datetime import datetime, timezone
 
 from typing import Dict, Any
 from app.architecture import Architecture
 from app.setup_configuration import build_cmd, build_env, parse_env_file
 from app.fallback_detector import detect_fallback
+from app.local_tracing import append_langsmith_traces_to_csv
 
 
 EXIT_COMMAND = "exit"
@@ -32,6 +34,14 @@ def extract_senpai_answer(stdout: str) -> str:
     return stdout.strip()
 
 
+def extract_conversation_id(stdout: str) -> str | None:
+    """Extract conversation ID printed by Senpai main."""
+    match = re.search(r"conversation ID:\s*([A-Za-z0-9_-]+)", stdout)
+    if not match:
+        return None
+    return match.group(1)
+
+
 def run_one(
         arch: Architecture,
         prompt_id: str,
@@ -46,7 +56,8 @@ def run_one(
     run_dir = RUNS_DIR / run_group_id / "run_register" / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     tracing_dir = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.csv"
-    cmd = build_cmd(arch, sensei_project, prompt_text, verbose, tracing_dir)
+    cmd = build_cmd(arch, sensei_project, prompt_text, verbose)
+    run_env = build_env(arch, run_group_id)
     logging.info("Run start arch=%s prompt=%s", arch.id, prompt_id)
     logging.debug("Cmd: %s", cmd)
     if arch.cwd:
@@ -56,6 +67,7 @@ def run_one(
     stdin_payload = prompt_text.rstrip() + "\n" + EXIT_COMMAND + "\n"
 
     t0 = time.perf_counter()
+    trace_start_time = datetime.now(timezone.utc)
     try:
         proc = subprocess.Popen(
             cmd,
@@ -65,7 +77,7 @@ def run_one(
             encoding="utf-8",
             errors="replace",
             bufsize=1,
-            env=build_env(arch, run_group_id),
+            env=run_env,
             cwd=arch.cwd,
         )
 
@@ -110,6 +122,7 @@ def run_one(
         returncode = None
 
     answer = extract_senpai_answer(stdout)
+    conversation_id = extract_conversation_id(stdout)
     # Load only OPENAI_API_KEY from env file into os.environ for fallback detection.
     if arch.env_file and "OPENAI_API_KEY" not in os.environ:
         try:
@@ -128,6 +141,16 @@ def run_one(
         timed_out,
         t1 - t0,
     )
+
+    try:
+        append_langsmith_traces_to_csv(
+            tracing_path=tracing_dir,
+            conversation_id=conversation_id,
+            start_time=trace_start_time,
+            env=run_env,
+        )
+    except Exception:
+        logging.exception("Failed to export LangSmith traces to CSV for run_id=%s", run_id)
 
     # Guardar artefactos
     (run_dir / "cmd.json").write_text(
@@ -154,6 +177,7 @@ def run_one(
         "stdout_chars": len(stdout),
         "stderr_chars": len(stderr),
         "answer_chars": len(answer),
+        "conversation_id": conversation_id,
         "run_dir": str(run_dir),
     }
 
