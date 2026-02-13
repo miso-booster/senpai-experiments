@@ -15,6 +15,7 @@ from app.architecture import Architecture
 from app.setup_configuration import build_cmd, build_env, parse_env_file
 from app.fallback_detector import detect_fallback
 from app.local_tracing import append_langsmith_traces_to_csv
+from app.yaml_validation import validate_answer_yaml
 
 
 EXIT_COMMAND = "exit"
@@ -133,6 +134,7 @@ def run_one(
         except FileNotFoundError:
             logging.warning("Env file not found for fallback detection: %s", arch.env_file)
     fallback = detect_fallback(prompt_text, answer)
+    is_yaml_valid = validate_answer_yaml(prompt_type, answer)
     logging.info(
         "Run end arch=%s prompt=%s rc=%s timed_out=%s latency=%.3fs",
         arch.id,
@@ -175,6 +177,7 @@ def run_one(
         "latency_s": round(t1 - t0, 6),
         "answer": answer,
         "fallback": fallback,
+        "is_yaml_valid": is_yaml_valid,
         "stdout_chars": len(stdout),
         "stderr_chars": len(stderr),
         "answer_chars": len(answer),

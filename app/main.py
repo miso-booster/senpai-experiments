@@ -10,12 +10,11 @@ from typing import Dict, Any
 
 from app.setup_logger import setup_logging
 
-columns = [
+RESULT_COLUMNS = [
     "run_id", "run_group_id", "arch_id", "prompt_id", "prompt", "timeout_s",
-    "timed_out", "returncode", "latency_s", "answer", "fallback", "stdout_chars",
-    "stderr_chars", "answer_chars", "run_dir"
+    "timed_out", "returncode", "latency_s", "answer", "fallback", "is_yaml_valid", "stdout_chars",
+    "stderr_chars", "answer_chars", "conversation_id", "run_dir"
 ]
-results_df = pd.DataFrame(columns=columns)
 
 
 def append_jsonl(path: pathlib.Path, obj: Dict[str, Any]):
@@ -79,10 +78,9 @@ def main():
         group_dir = RUNS_DIR / run_group_id
         group_dir.mkdir(parents=True, exist_ok=True)
         group_csv_path = group_dir / "results.csv"
-        df = pd.DataFrame(group_results)
+        df = pd.DataFrame(group_results, columns=RESULT_COLUMNS)
         # Use UTF-8 BOM for better compatibility with Excel on Windows.
         df.to_csv(group_csv_path, index=False, encoding="utf-8-sig", sep=";")
 
 if __name__ == "__main__":
     main()
-
