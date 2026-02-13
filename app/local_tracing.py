@@ -76,7 +76,11 @@ def _load_existing_run_ids(csv_path: Path) -> set[str]:
         return set()
     with csv_path.open("r", encoding="utf-8", newline="") as csv_file:
         reader = csv.DictReader(csv_file, delimiter=";")
-        return {row.get("run_id", "") for row in reader if row.get("run_id")}
+        return {
+            row.get("langsmith_run_id", "")
+            for row in reader
+            if row.get("langsmith_run_id")
+        }
 
 
 def append_langsmith_traces_to_csv(
@@ -189,7 +193,7 @@ def append_langsmith_traces_to_csv(
 
     file_exists = csv_path.exists()
     with csv_path.open("a", encoding="utf-8", newline="") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=_TRACE_COLUMNS, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+        writer = csv.DictWriter(csv_file, fieldnames=_TRACE_COLUMNS, delimiter=";", quoting=csv.QUOTE_MINIMAL)
         if not file_exists:
             writer.writeheader()
         writer.writerows(rows)
