@@ -126,7 +126,7 @@ def validate_answer_yaml_status(prompt_type: str, answer_text: str) -> str | Non
 
 def validate_answer_yaml(prompt_type: str, answer_text: str) -> bool | None:
     status = validate_answer_yaml_status(prompt_type, answer_text)
-    if status is None:
+    if status is None or status == "no_yaml":
         return None
     if status == "valid":
         return True
