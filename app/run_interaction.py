@@ -153,7 +153,7 @@ def run_one(
     except Exception:
         logging.exception("Failed to export LangSmith traces to CSV for run_id=%s", run_id)
 
-    # Guardar artefactos
+    # Save artifacts
     (run_dir / "cmd.json").write_text(
         json.dumps(cmd, ensure_ascii=False, indent=2, default=str),
         encoding="utf-8",
