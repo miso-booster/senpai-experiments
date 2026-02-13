@@ -99,7 +99,17 @@ def validate_answer_yaml_status(prompt_type: str, answer_text: str) -> str | Non
 
     collected_errors: list[str] = []
     for candidate in candidates:
-        result = validator(candidate)
+        try:
+            result = validator(candidate)
+        except Exception as exc:
+            collected_errors.append(f"{type(exc).__name__}: {exc}")
+            logging.debug(
+                "YAML validator raised for prompt_type=%s: %s: %s",
+                prompt_type,
+                type(exc).__name__,
+                exc,
+            )
+            continue
         if result.is_valid:
             return "valid"
         if result.errors:
