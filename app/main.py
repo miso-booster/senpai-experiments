@@ -12,7 +12,7 @@ from app.setup_logger import setup_logging
 
 columns = [
     "run_id", "run_group_id", "arch_id", "prompt_id", "prompt", "timeout_s",
-    "timed_out", "returncode", "latency_s", "answer", "fallback", "stdout_chars",
+    "timed_out", "returncode", "latency_s", "answer", "fallback", "is_yaml_valid", "stdout_chars",
     "stderr_chars", "answer_chars", "run_dir"
 ]
 results_df = pd.DataFrame(columns=columns)
@@ -85,4 +85,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
