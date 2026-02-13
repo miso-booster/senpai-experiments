@@ -103,7 +103,7 @@ folder under `out/runs/`.
 `results.jsonl` / `results.csv` include `is_yaml_valid`:
 - `true` when YAML is valid for `profile`, `rule`, or `connector` prompts.
 - `false` when YAML is invalid or when no YAML is found for those prompt types.
-- empty for non-YAML prompt types (for example `documentation`).
+- `null` in `results.jsonl` (`None` in Python) and empty in `results.csv` for non-YAML prompt types (for example `documentation`).
 
 Individual run folders
 ----------------------
