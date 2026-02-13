@@ -94,6 +94,14 @@ def _build_validation_candidates(answer_text: str) -> list[str]:
 
 
 def validate_answer_yaml_status(prompt_type: str, answer_text: str) -> str | None:
+    """Return detailed YAML validation status for a prompt answer.
+
+    Returns:
+    - "valid": YAML was found and passed validation.
+    - "invalid": YAML was found but failed validation.
+    - "no_yaml": this prompt type is YAML-validated, but no YAML was found.
+    - None: this prompt type has no registered YAML validator.
+    """
     validator = _VALIDATORS.get((prompt_type or "").strip().lower())
     if validator is None:
         return None
