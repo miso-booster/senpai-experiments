@@ -17,7 +17,7 @@ _MARKDOWN_FENCE_RE = re.compile(
     r"```(?P<lang>[^\n`]*)\n(?P<code>[\s\S]*?)```",
     re.MULTILINE,
 )
-_YAML_TOP_LEVEL_KEY_RE = re.compile(r"^\s*[A-Za-z_][A-Za-z0-9_-]*\s*:")
+_YAML_TOP_LEVEL_KEY_RE = re.compile(r"^\s*[A-Za-z_][A-Za-z0-9_-]*\s*:", re.MULTILINE)
 
 
 def _extract_fenced_code_blocks(answer_text: str) -> list[tuple[str, str]]:
