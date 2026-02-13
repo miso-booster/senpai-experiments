@@ -125,6 +125,13 @@ def validate_answer_yaml_status(prompt_type: str, answer_text: str) -> str | Non
 
 
 def validate_answer_yaml(prompt_type: str, answer_text: str) -> bool | None:
+    """Return YAML validity for supported prompt types.
+
+    Returns:
+    - True: YAML was found and validated successfully.
+    - False: YAML was found but is invalid.
+    - None: prompt type is unsupported or no YAML was found.
+    """
     status = validate_answer_yaml_status(prompt_type, answer_text)
     if status is None or status == "no_yaml":
         return None
