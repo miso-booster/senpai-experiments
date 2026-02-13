@@ -1,11 +1,16 @@
 import logging
 import re
-from typing import Any, Callable
+from typing import Callable, Protocol
 
 from senpai_validators import validate_connector, validate_profile, validate_rule
 
 
-ValidatorFn = Callable[[str], Any]
+class ValidationResult(Protocol):
+    is_valid: bool
+    errors: list[str] | None
+
+
+ValidatorFn = Callable[[str], ValidationResult]
 
 _VALIDATORS: dict[str, ValidatorFn] = {
     "connector": validate_connector,
