@@ -53,8 +53,8 @@ def _resolve_tracing_csv_path(tracing_path: str | Path, automation_run_timestamp
         stem = base_path.stem
     else:
         directory = base_path
-        stem = _TRACE_FILENAME_STEM
-    return directory / f"{stem}_{automation_run_timestamp}.csv"
+        stem = f"{_TRACE_FILENAME_STEM}_{automation_run_timestamp}"
+    return directory / f"{stem}.csv"
 
 
 def _serialize_trace_field(value: Any) -> str | int | float | None:
