@@ -44,11 +44,10 @@ def count_fenced_code_lines(text: str) -> int:
     in_fence = False
     for line in text.splitlines():
         stripped_left = line.lstrip()
-        stripped = line.strip()
         if not in_fence and stripped_left.startswith("```"):
             in_fence = True
             continue
-        if in_fence and stripped == "```":
+        if in_fence and stripped_left.startswith("```"):
             in_fence = False
             continue
         if in_fence:
