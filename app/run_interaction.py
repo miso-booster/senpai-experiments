@@ -35,6 +35,26 @@ def extract_senpai_answer(stdout: str) -> str:
     return stdout.strip()
 
 
+def count_fenced_code_lines(text: str) -> int:
+    """
+    Count lines inside Markdown fenced code blocks delimited by triple backticks.
+    Fence marker lines themselves are excluded.
+    """
+    total_lines = 0
+    in_fence = False
+    for line in text.splitlines():
+        stripped_left = line.lstrip()
+        if not in_fence and stripped_left.startswith("```"):
+            in_fence = True
+            continue
+        if in_fence and stripped_left.startswith("```"):
+            in_fence = False
+            continue
+        if in_fence:
+            total_lines += 1
+    return total_lines
+
+
 def extract_conversation_id(stdout: str) -> str | None:
     """Extract conversation ID printed by Senpai main."""
     match = re.search(r"conversation ID:\s*([A-Za-z0-9_-]+)", stdout)
@@ -123,6 +143,7 @@ def run_one(
         returncode = None
 
     answer = extract_senpai_answer(stdout)
+    answer_code_lines = count_fenced_code_lines(answer)
     conversation_id = extract_conversation_id(stdout)
     # Load only OPENAI_API_KEY from env file into os.environ for fallback detection.
     if arch.env_file and "OPENAI_API_KEY" not in os.environ:
@@ -181,6 +202,7 @@ def run_one(
         "stdout_chars": len(stdout),
         "stderr_chars": len(stderr),
         "answer_chars": len(answer),
+        "answer_code_lines": answer_code_lines,
         "conversation_id": conversation_id,
         "run_dir": str(run_dir),
     }

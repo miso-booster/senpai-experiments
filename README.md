@@ -105,6 +105,10 @@ folder under `out/runs/`.
 - `false` when YAML is found but invalid for those prompt types.
 - `null` in `results.jsonl` (`None` in Python) and empty in `results.csv` when no YAML is found, or for non-YAML prompt types (for example `documentation`).
 
+`results.jsonl` / `results.csv` also include `answer_code_lines`:
+- Number of lines found inside Markdown fenced code blocks (triple backticks) in the assistant answer.
+- Fence marker lines themselves are not counted.
+
 Individual run folders
 ----------------------
 Inside each run group, every architecture/prompt pair gets its own folder:
