@@ -60,6 +60,15 @@ def _blockquote(text: str) -> str:
     return "\n".join(out)
 
 
+def _yaml_status_label(value: str | None) -> str:
+    normalized = (value or "").strip().lower()
+    if normalized in {"true", "1", "yes"}:
+        return "true"
+    if normalized in {"false", "0", "no"}:
+        return "false"
+    return "n/a"
+
+
 def _resolve_results_path(args: argparse.Namespace) -> pathlib.Path:
     if args.results:
         return pathlib.Path(args.results)
@@ -184,6 +193,9 @@ def main() -> None:
         for label, row in zip(labels, rows_copy):
             md_lines.append(f"### Response {label}")
             md_lines.append("")
+            yaml_status = _yaml_status_label(row.get("is_yaml_valid"))
+            md_lines.append(f"YAML: `{yaml_status}`")
+            md_lines.append("")
             md_lines.append(_blockquote(row.get("answer", "")))
             md_lines.append("")
 
@@ -195,6 +207,7 @@ def main() -> None:
                     "run_id": row.get("run_id", ""),
                     "run_group_id": row.get("run_group_id", ""),
                     "run_dir": row.get("run_dir", ""),
+                    "is_yaml_valid": row.get("is_yaml_valid", ""),
                 }
             )
 
@@ -210,6 +223,7 @@ def main() -> None:
                 "run_id",
                 "run_group_id",
                 "run_dir",
+                "is_yaml_valid",
             ],
             delimiter=";",
         )

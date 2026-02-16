@@ -79,6 +79,9 @@ This writes to `out/runs/<run_group_id>/ranking/` (CSV delimiter is `;`):
 - `key.csv` (label -> arch/run mapping)
 - `answers.csv` (template to fill in ranks)
 
+Each response in `ranking.md` now includes `YAML: true|false|n/a` based on
+`is_yaml_valid` from `results.csv`.
+
 Aggregate multiple subjects (expects `answers_*.csv` and `key.csv`):
 
 ```powershell
