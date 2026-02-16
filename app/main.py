@@ -13,7 +13,7 @@ from app.setup_logger import setup_logging
 RESULT_COLUMNS = [
     "run_id", "run_group_id", "arch_id", "prompt_id", "prompt", "timeout_s",
     "timed_out", "returncode", "latency_s", "answer", "fallback", "is_yaml_valid", "stdout_chars",
-    "stderr_chars", "answer_chars", "conversation_id", "run_dir"
+    "stderr_chars", "answer_chars", "answer_code_lines", "conversation_id", "run_dir"
 ]
 
 
