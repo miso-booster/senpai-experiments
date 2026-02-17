@@ -8,13 +8,11 @@ import logging
 import threading
 import subprocess
 import pathlib
-from datetime import datetime, timezone
 
 from typing import Dict, Any
 from app.architecture import Architecture
 from app.setup_configuration import build_cmd, build_env, parse_env_file
 from app.fallback_detector import detect_fallback
-from app.local_tracing import append_langsmith_traces_to_csv
 from app.yaml_validation import validate_answer_yaml
 
 
@@ -76,8 +74,7 @@ def run_one(
     run_id = f"{arch.id}__{prompt_id}__{sensei_project}__{prompt_type}__{uuid.uuid4().hex[:8]}"
     run_dir = RUNS_DIR / run_group_id / "run_register" / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
-    tracing_dir = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.csv"
-    cmd = build_cmd(arch, sensei_project, prompt_text, verbose)
+    cmd = build_cmd(arch, sensei_project, prompt_text, verbose, run_id)
     run_env = build_env(arch, run_group_id)
     logging.info("Run start arch=%s prompt=%s", arch.id, prompt_id)
     logging.debug("Cmd: %s", cmd)
@@ -88,7 +85,6 @@ def run_one(
     stdin_payload = prompt_text.rstrip() + "\n" + EXIT_COMMAND + "\n"
 
     t0 = time.perf_counter()
-    trace_start_time = datetime.now(timezone.utc)
     try:
         proc = subprocess.Popen(
             cmd,
@@ -164,17 +160,6 @@ def run_one(
         timed_out,
         t1 - t0,
     )
-
-    try:
-        append_langsmith_traces_to_csv(
-            tracing_path=tracing_dir,
-            conversation_id=conversation_id,
-            start_time=trace_start_time,
-            env=run_env,
-            run_id=run_id
-        )
-    except Exception:
-        logging.exception("Failed to export LangSmith traces to CSV for run_id=%s", run_id)
 
     # Save artifacts
     (run_dir / "cmd.json").write_text(

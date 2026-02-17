@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import csv
 import json
 import logging
 import os
@@ -11,6 +10,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
+from app.utilities import escape_multiline_text
+
 logger = logging.getLogger(__name__)
 
 _TRACE_FILENAME_STEM = "langsmith_tracing"
@@ -18,15 +21,13 @@ _TRACE_COLUMNS = [
     "automation_run_timestamp",
     "conversation_id",
     "langsmith_run_id",
-    "run_id",
     "parent_run_id",
     "trace_id",
     "run_type",
     "name",
     "start_time",
     "end_time",
-    "latency_ms",
-    "inputs",
+    "latency_s",
     "outputs",
     "error",
     "execution_order",
@@ -66,32 +67,19 @@ def _serialize_trace_field(value: Any) -> str | int | float | None:
     if isinstance(value, (dict, list, tuple)):
         return json.dumps(value, ensure_ascii=False, default=str)
     if isinstance(value, (str, int, float)):
+        if isinstance(value, str):
+            return escape_multiline_text(value)
         return value
     return str(value)
 
 
-def _load_existing_run_ids(csv_path: Path) -> set[str]:
-    """Read existing run IDs to avoid duplicate rows when retrying exports."""
-    if not csv_path.exists():
-        return set()
-    with csv_path.open("r", encoding="utf-8", newline="") as csv_file:
-        reader = csv.DictReader(csv_file, delimiter=";")
-        return {
-            row.get("langsmith_run_id", "")
-            for row in reader
-            if row.get("langsmith_run_id")
-        }
-
-
-def append_langsmith_traces_to_csv(
+def export_langsmith_traces_to_csv(
     tracing_path: str | Path,
-    conversation_id: str | None,
     start_time: datetime,
     *,
     env: dict[str, str] | None = None,
-    run_id: str
 ) -> None:
-    """Append LangSmith traces from one automation execution to a local CSV."""
+    """Export LangSmith traces for one automation execution to a local CSV."""
     env_data = env or os.environ
     if env_data.get("LANGSMITH_TRACING", "").lower() != "true":
         logger.debug("Skipping tracing export because LANGSMITH_TRACING is not enabled.")
@@ -136,7 +124,6 @@ def append_langsmith_traces_to_csv(
             client.list_runs(
                 project_name=project_name,
                 start_time=query_start_time,
-                limit=100,
             )
         )
         if runs:
@@ -154,32 +141,39 @@ def append_langsmith_traces_to_csv(
         )
         return
 
-    existing_run_ids = _load_existing_run_ids(csv_path)
     rows: list[dict[str, Any]] = []
-    for run in runs:
+    # LangSmith `list_runs` returns runs in reverse chronological order (newest first).
+    # Iterate in reverse so that rows are written oldest-first for chronological CSV output.
+    for run in reversed(runs):
         langsmith_run_id = str(run.id)
-        if langsmith_run_id in existing_run_ids:
-            continue
-
-        latency_ms: float | None = None
+        latency_s: float | None = None
         if run.start_time and run.end_time:
-            latency_ms = (run.end_time - run.start_time).total_seconds() * 1000
+            latency_s = (run.end_time - run.start_time).total_seconds()
 
         run_extra = getattr(run, "extra", None) or {}
+        run_metadata = run.metadata
+        conversation_id = None
+        if isinstance(run_metadata, dict):
+            conversation_id = (
+                    run_metadata.get("conversation_id")
+                    or run_metadata.get("senpai_conversation_id")
+                    or run_metadata.get("chat_conversation_id")
+                    or run_metadata.get("thread_id")  # Standard LangSmith thread key
+                    or run_metadata.get("session_id")
+            )
+
         rows.append(
             {
                 "automation_run_timestamp": automation_run_timestamp,
                 "conversation_id": conversation_id,
                 "langsmith_run_id": langsmith_run_id,
-                "run_id": run_id,
                 "parent_run_id": str(run.parent_run_id) if run.parent_run_id else None,
                 "trace_id": str(run.trace_id) if getattr(run, "trace_id", None) else None,
                 "run_type": getattr(run, "run_type", None),
                 "name": getattr(run, "name", None),
                 "start_time": _serialize_trace_field(getattr(run, "start_time", None)),
                 "end_time": _serialize_trace_field(getattr(run, "end_time", None)),
-                "latency_ms": latency_ms,
-                "inputs": _serialize_trace_field(getattr(run, "inputs", None)),
+                "latency_s": latency_s,
                 "outputs": _serialize_trace_field(getattr(run, "outputs", None)),
                 "error": _serialize_trace_field(getattr(run, "error", None)),
                 "execution_order": getattr(run, "execution_order", None),
@@ -192,10 +186,15 @@ def append_langsmith_traces_to_csv(
         return
 
     file_exists = csv_path.exists()
-    with csv_path.open("a", encoding="utf-8", newline="") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=_TRACE_COLUMNS, delimiter=";", quoting=csv.QUOTE_MINIMAL)
-        if not file_exists:
-            writer.writeheader()
-        writer.writerows(rows)
+    trace_df = pd.DataFrame(rows, columns=_TRACE_COLUMNS)
+    trace_df.to_csv(
+        csv_path,
+        sep=";",
+        index=False,
+        mode="a",
+        header=not file_exists,
+        encoding="utf-8-sig",
+        lineterminator="\r\n",
+    )
 
     logger.info("Exported %d LangSmith runs to '%s'.", len(rows), csv_path)

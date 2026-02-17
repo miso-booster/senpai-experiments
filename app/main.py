@@ -1,10 +1,14 @@
-﻿import time
+import time
 import pathlib
 import argparse
+import csv
 import pandas as pd
+from datetime import datetime, timezone
 
 from app.run_interaction import run_one
 from app.setup_configuration import *
+from app.local_tracing import export_langsmith_traces_to_csv
+from app.utilities import escape_multiline_text
 
 from typing import Dict, Any
 
@@ -22,6 +26,22 @@ def append_jsonl(path: pathlib.Path, obj: Dict[str, Any]):
         f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
 
+def _collect_langsmith_export_envs(archs: list[Any], run_group_id: str) -> list[dict[str, str]]:
+    export_envs: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for arch in archs:
+        env = build_env(arch, run_group_id)
+        project_name = env.get("LANGSMITH_PROJECT") or env.get("LANGCHAIN_PROJECT") or ""
+        api_url = env.get("LANGSMITH_ENDPOINT") or env.get("LANGCHAIN_ENDPOINT") or "https://api.smith.langchain.com"
+        api_key = env.get("LANGSMITH_API_KEY") or env.get("LANGCHAIN_API_KEY") or ""
+        signature = (project_name, api_url, api_key)
+        if signature in seen:
+            continue
+        seen.add(signature)
+        export_envs.append(env)
+    return export_envs
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
@@ -37,7 +57,9 @@ def main():
     timeout_s = 300
     now = time.time()
     run_group_id = time.strftime("%Y%m%d_%H%M%S", time.localtime(now)) + f"_{int((now % 1) * 1000):03d}"
+    automation_start_time = datetime.now(timezone.utc)
     group_results = []
+    tracing_envs = _collect_langsmith_export_envs(archs, run_group_id)
 
     # Limpia results.jsonl si quieres empezar de cero
     # RESULTS_PATH.unlink(missing_ok=True)
@@ -79,8 +101,35 @@ def main():
         group_dir.mkdir(parents=True, exist_ok=True)
         group_csv_path = group_dir / "results.csv"
         df = pd.DataFrame(group_results, columns=RESULT_COLUMNS)
+        object_columns = df.select_dtypes(include=["object"]).columns
+        for col in object_columns:
+            df[col] = df[col].map(escape_multiline_text)
         # Use UTF-8 BOM for better compatibility with Excel on Windows.
-        df.to_csv(group_csv_path, index=False, encoding="utf-8-sig", sep=";")
+        df.to_csv(
+            group_csv_path,
+            index=False,
+            encoding="utf-8-sig",
+            sep=";",
+            quotechar='"',
+            quoting=csv.QUOTE_ALL,
+            lineterminator="\r\n",
+        )
+
+        tracing_csv_path = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.csv"
+        for export_env in tracing_envs:
+            try:
+                export_langsmith_traces_to_csv(
+                    tracing_path=tracing_csv_path,
+                    start_time=automation_start_time,
+                    env=export_env,
+                )
+            except Exception:
+                project_name = export_env.get("LANGSMITH_PROJECT") or export_env.get("LANGCHAIN_PROJECT")
+                logging.exception(
+                    "Failed to export LangSmith traces for project=%s run_group_id=%s",
+                    project_name,
+                    run_group_id,
+                )
 
 if __name__ == "__main__":
     main()
