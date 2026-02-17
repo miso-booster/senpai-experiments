@@ -111,7 +111,6 @@ def main():
             encoding="utf-8-sig",
             sep=";",
             quotechar='"',
-            escapechar="\\",
             quoting=csv.QUOTE_ALL,
             lineterminator="\r\n",
         )
