@@ -47,7 +47,7 @@ def load_prompts_json(path: str) -> List[Dict[str, str]]:
 #     return project_path.exists()
 
 
-def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose: bool) -> List[str]:
+def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose: bool, run_id: str) -> List[str]:
     # Monta: <cmd base> -v -pp ... -up ... -lf ... (sin -cid)
 
     project_path = pathlib.Path(arch.cwd) / "sensei_projects" / sensei_project
@@ -62,6 +62,8 @@ def build_cmd(arch: Architecture, sensei_project: str, user_prompt: str, verbose
     cmd = (
         arch.cmd
         + [
+            "-cid",
+            str(run_id),
             "-pp",
             str(project_path),
             "-up",
