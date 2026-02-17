@@ -27,7 +27,7 @@ _TRACE_COLUMNS = [
     "name",
     "start_time",
     "end_time",
-    "latency_ms",
+    "latency_s",
     "outputs",
     "error",
     "execution_order",
@@ -60,8 +60,6 @@ def _resolve_tracing_csv_path(tracing_path: str | Path, automation_run_timestamp
 
 def _serialize_trace_field(value: Any) -> str | int | float | None:
     """Serialize LangSmith run fields for CSV output."""
-
-
     if value is None:
         return None
     if isinstance(value, datetime):
@@ -148,9 +146,9 @@ def export_langsmith_traces_to_csv(
     # Iterate in reverse so that rows are written oldest-first for chronological CSV output.
     for run in reversed(runs):
         langsmith_run_id = str(run.id)
-        latency_ms: float | None = None
+        latency_s: float | None = None
         if run.start_time and run.end_time:
-            latency_ms = (run.end_time - run.start_time).total_seconds()
+            latency_s = (run.end_time - run.start_time).total_seconds()
 
         run_extra = getattr(run, "extra", None) or {}
         run_metadata = run.metadata
@@ -175,7 +173,7 @@ def export_langsmith_traces_to_csv(
                 "name": getattr(run, "name", None),
                 "start_time": _serialize_trace_field(getattr(run, "start_time", None)),
                 "end_time": _serialize_trace_field(getattr(run, "end_time", None)),
-                "latency_ms": latency_ms,
+                "latency_s": latency_s,
                 "outputs": _serialize_trace_field(getattr(run, "outputs", None)),
                 "error": _serialize_trace_field(getattr(run, "error", None)),
                 "execution_order": getattr(run, "execution_order", None),
