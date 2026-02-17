@@ -12,6 +12,8 @@ from typing import Any
 
 import pandas as pd
 
+from app.utilities import escape_multiline_text
+
 logger = logging.getLogger(__name__)
 
 _TRACE_FILENAME_STEM = "langsmith_tracing"
@@ -58,9 +60,7 @@ def _resolve_tracing_csv_path(tracing_path: str | Path, automation_run_timestamp
 
 def _serialize_trace_field(value: Any) -> str | int | float | None:
     """Serialize LangSmith run fields for CSV output."""
-    def _escape_multiline_text(text: str) -> str:
-        # Keep logical line breaks while forcing one physical CSV row per record.
-        return text.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\\n")
+
 
     if value is None:
         return None
@@ -70,7 +70,7 @@ def _serialize_trace_field(value: Any) -> str | int | float | None:
         return json.dumps(value, ensure_ascii=False, default=str)
     if isinstance(value, (str, int, float)):
         if isinstance(value, str):
-            return _escape_multiline_text(value)
+            return escape_multiline_text(value)
         return value
     return str(value)
 

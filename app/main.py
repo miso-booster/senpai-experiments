@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from app.run_interaction import run_one
 from app.setup_configuration import *
 from app.local_tracing import export_langsmith_traces_to_csv
+from app.utilities import escape_multiline_text
 
 from typing import Dict, Any
 
@@ -23,12 +24,6 @@ RESULT_COLUMNS = [
 def append_jsonl(path: pathlib.Path, obj: Dict[str, Any]):
     with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(obj, ensure_ascii=False) + "\n")
-
-
-def _escape_multiline_text(value: Any) -> Any:
-    if not isinstance(value, str):
-        return value
-    return value.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\\n")
 
 
 def _collect_langsmith_export_envs(archs, run_group_id: str) -> list[dict[str, str]]:
@@ -108,7 +103,7 @@ def main():
         df = pd.DataFrame(group_results, columns=RESULT_COLUMNS)
         object_columns = df.select_dtypes(include=["object"]).columns
         for col in object_columns:
-            df[col] = df[col].map(_escape_multiline_text)
+            df[col] = df[col].map(escape_multiline_text)
         # Use UTF-8 BOM for better compatibility with Excel on Windows.
         df.to_csv(
             group_csv_path,
