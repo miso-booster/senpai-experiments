@@ -75,24 +75,6 @@ def _serialize_trace_field(value: Any) -> str | int | float | None:
     return str(value)
 
 
-def _load_existing_run_ids(csv_path: Path) -> set[str]:
-    """Read existing run IDs to avoid duplicate rows when retrying exports."""
-    if not csv_path.exists():
-        return set()
-    existing_df = pd.read_csv(
-        csv_path,
-        sep=";",
-        encoding="utf-8-sig",
-        dtype={"langsmith_run_id": "string"},
-        usecols=["langsmith_run_id"],
-    )
-    return {
-        run_id
-        for run_id in existing_df["langsmith_run_id"].dropna().astype(str)
-        if run_id
-    }
-
-
 def export_langsmith_traces_to_csv(
     tracing_path: str | Path,
     start_time: datetime,
