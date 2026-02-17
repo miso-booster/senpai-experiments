@@ -162,6 +162,8 @@ def export_langsmith_traces_to_csv(
         return
 
     rows: list[dict[str, Any]] = []
+    # LangSmith `list_runs` returns runs in reverse chronological order (newest first).
+    # Iterate in reverse so that rows are written oldest-first for chronological CSV output.
     for run in reversed(runs):
         langsmith_run_id = str(run.id)
         latency_ms: float | None = None
