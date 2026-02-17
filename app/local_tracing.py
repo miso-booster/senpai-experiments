@@ -136,7 +136,6 @@ def export_langsmith_traces_to_csv(
     lookback_seconds = int(env_data.get("LANGSMITH_EXPORT_LOOKBACK_SECONDS", "30"))
     retries = int(env_data.get("LANGSMITH_EXPORT_RETRIES", "4"))
     retry_delay_seconds = float(env_data.get("LANGSMITH_EXPORT_RETRY_DELAY_SECONDS", "0.8"))
-    export_limit = int(env_data.get("LANGSMITH_EXPORT_LIMIT", "100"))
     query_start_time = start_time - timedelta(seconds=max(0, lookback_seconds))
 
     runs: list[Any] = []
