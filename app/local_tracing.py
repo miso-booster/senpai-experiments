@@ -157,11 +157,11 @@ def export_langsmith_traces_to_csv(
         conversation_id = None
         if isinstance(run_metadata, dict):
             conversation_id = (
-                    run.metadata.get("conversation_id")
-                    or run.metadata.get("senpai_conversation_id")
-                    or run.metadata.get("chat_conversation_id")
-                    or run.metadata.get("thread_id")  # Standard LangSmith thread key
-                    or run.metadata.get("session_id")
+                    run_metadata.get("conversation_id")
+                    or run_metadata.get("senpai_conversation_id")
+                    or run_metadata.get("chat_conversation_id")
+                    or run_metadata.get("thread_id")  # Standard LangSmith thread key
+                    or run_metadata.get("session_id")
             )
 
         rows.append(
