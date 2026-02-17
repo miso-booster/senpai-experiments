@@ -26,7 +26,7 @@ def append_jsonl(path: pathlib.Path, obj: Dict[str, Any]):
         f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
 
-def _collect_langsmith_export_envs(archs, run_group_id: str) -> list[dict[str, str]]:
+def _collect_langsmith_export_envs(archs: list[Any], run_group_id: str) -> list[dict[str, str]]:
     export_envs: list[dict[str, str]] = []
     seen: set[tuple[str, str, str]] = set()
     for arch in archs:
