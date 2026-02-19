@@ -1,4 +1,4 @@
-"""Local CSV export helpers for LangSmith traces."""
+"""Local XLSX export helpers for LangSmith traces."""
 
 from __future__ import annotations
 
@@ -28,7 +28,6 @@ _TRACE_COLUMNS = [
     "start_time",
     "end_time",
     "latency_s",
-    "outputs",
     "error",
     "execution_order",
     "tags",
@@ -46,20 +45,20 @@ def _resolve_automation_run_timestamp(env: dict[str, str] | None = None) -> str:
     )
 
 
-def _resolve_tracing_csv_path(tracing_path: str | Path, automation_run_timestamp: str) -> Path:
-    """Build the timestamped CSV path used to store LangSmith traces."""
+def _resolve_tracing_xlsx_path(tracing_path: str | Path, automation_run_timestamp: str) -> Path:
+    """Build the timestamped XLSX path used to store LangSmith traces."""
     base_path = Path(tracing_path).expanduser()
-    if base_path.suffix.lower() == ".csv":
+    if base_path.suffix.lower() == ".xlsx":
         directory = base_path.parent
         stem = base_path.stem
     else:
         directory = base_path
         stem = f"{_TRACE_FILENAME_STEM}_{automation_run_timestamp}"
-    return directory / f"{stem}.csv"
+    return directory / f"{stem}.xlsx"
 
 
 def _serialize_trace_field(value: Any) -> str | int | float | None:
-    """Serialize LangSmith run fields for CSV output."""
+    """Serialize LangSmith run fields for XLSX output."""
     if value is None:
         return None
     if isinstance(value, datetime):
@@ -73,13 +72,13 @@ def _serialize_trace_field(value: Any) -> str | int | float | None:
     return str(value)
 
 
-def export_langsmith_traces_to_csv(
+def export_langsmith_traces_to_xlsx(
     tracing_path: str | Path,
     start_time: datetime,
     *,
     env: dict[str, str] | None = None,
 ) -> None:
-    """Export LangSmith traces for one automation execution to a local CSV."""
+    """Export LangSmith traces for one automation execution to a local XLSX."""
     env_data = env or os.environ
     if env_data.get("LANGSMITH_TRACING", "").lower() != "true":
         logger.debug("Skipping tracing export because LANGSMITH_TRACING is not enabled.")
@@ -108,8 +107,8 @@ def export_langsmith_traces_to_csv(
         return
 
     automation_run_timestamp = _resolve_automation_run_timestamp(env_data)
-    csv_path = _resolve_tracing_csv_path(tracing_path, automation_run_timestamp)
-    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    xlsx_path = _resolve_tracing_xlsx_path(tracing_path, automation_run_timestamp)
+    xlsx_path.parent.mkdir(parents=True, exist_ok=True)
 
     client = Client(api_url=api_url, api_key=api_key)
 
@@ -143,7 +142,7 @@ def export_langsmith_traces_to_csv(
 
     rows: list[dict[str, Any]] = []
     # LangSmith `list_runs` returns runs in reverse chronological order (newest first).
-    # Iterate in reverse so that rows are written oldest-first for chronological CSV output.
+    # Iterate in reverse so that rows are written oldest-first for chronological XLSX output.
     for run in reversed(runs):
         langsmith_run_id = str(run.id)
         latency_s: float | None = None
@@ -174,7 +173,6 @@ def export_langsmith_traces_to_csv(
                 "start_time": _serialize_trace_field(getattr(run, "start_time", None)),
                 "end_time": _serialize_trace_field(getattr(run, "end_time", None)),
                 "latency_s": latency_s,
-                "outputs": _serialize_trace_field(getattr(run, "outputs", None)),
                 "error": _serialize_trace_field(getattr(run, "error", None)),
                 "execution_order": getattr(run, "execution_order", None),
                 "tags": _serialize_trace_field(getattr(run, "tags", None)),
@@ -182,19 +180,17 @@ def export_langsmith_traces_to_csv(
             }
         )
     if not rows:
-        logger.info("No new LangSmith runs to append to '%s'.", csv_path)
+        logger.info("No new LangSmith runs to append to '%s'.", xlsx_path)
         return
 
-    file_exists = csv_path.exists()
     trace_df = pd.DataFrame(rows, columns=_TRACE_COLUMNS)
-    trace_df.to_csv(
-        csv_path,
-        sep=";",
-        index=False,
-        mode="a",
-        header=not file_exists,
-        encoding="utf-8-sig",
-        lineterminator="\r\n",
-    )
+    if xlsx_path.exists():
+        try:
+            existing_df = pd.read_excel(xlsx_path)
+            trace_df = pd.concat([existing_df, trace_df], ignore_index=True)
+        except Exception:
+            logger.exception("Failed to read existing tracing file '%s'. Rewriting it.", xlsx_path)
+    trace_df = trace_df.drop_duplicates(subset=["langsmith_run_id"], keep="last")
+    trace_df.to_excel(xlsx_path, index=False)
 
-    logger.info("Exported %d LangSmith runs to '%s'.", len(rows), csv_path)
+    logger.info("Exported %d LangSmith runs to '%s'.", len(rows), xlsx_path)

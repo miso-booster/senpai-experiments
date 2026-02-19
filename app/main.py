@@ -1,13 +1,12 @@
 import time
 import pathlib
 import argparse
-import csv
 import pandas as pd
 from datetime import datetime, timezone
 
 from app.run_interaction import run_one
 from app.setup_configuration import *
-from app.local_tracing import export_langsmith_traces_to_csv
+from app.local_tracing import export_langsmith_traces_to_xlsx
 from app.utilities import escape_multiline_text
 
 from typing import Dict, Any
@@ -99,27 +98,18 @@ def main():
     if group_results:
         group_dir = RUNS_DIR / run_group_id
         group_dir.mkdir(parents=True, exist_ok=True)
-        group_csv_path = group_dir / "results.csv"
+        group_xlsx_path = group_dir / "results.xlsx"
         df = pd.DataFrame(group_results, columns=RESULT_COLUMNS)
         object_columns = df.select_dtypes(include=["object"]).columns
         for col in object_columns:
             df[col] = df[col].map(escape_multiline_text)
-        # Use UTF-8 BOM for better compatibility with Excel on Windows.
-        df.to_csv(
-            group_csv_path,
-            index=False,
-            encoding="utf-8-sig",
-            sep=";",
-            quotechar='"',
-            quoting=csv.QUOTE_ALL,
-            lineterminator="\r\n",
-        )
+        df.to_excel(group_xlsx_path, index=False)
 
-        tracing_csv_path = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.csv"
+        tracing_xlsx_path = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.xlsx"
         for export_env in tracing_envs:
             try:
-                export_langsmith_traces_to_csv(
-                    tracing_path=tracing_csv_path,
+                export_langsmith_traces_to_xlsx(
+                    tracing_path=tracing_xlsx_path,
                     start_time=automation_start_time,
                     env=export_env,
                 )
