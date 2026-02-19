@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 from app.run_interaction import run_one
 from app.setup_configuration import *
 from app.local_tracing import export_langsmith_traces_to_xlsx
-from app.utilities import escape_multiline_text
 
 from typing import Dict, Any
 
@@ -102,7 +101,11 @@ def main():
         df = pd.DataFrame(group_results, columns=RESULT_COLUMNS)
         object_columns = df.select_dtypes(include=["object"]).columns
         for col in object_columns:
-            df[col] = df[col].map(escape_multiline_text)
+            df[col] = df[col].map(
+                lambda value: value.replace("\r\n", "\n").replace("\r", "\n")
+                if isinstance(value, str)
+                else value
+            )
         df.to_excel(group_xlsx_path, index=False)
 
         tracing_xlsx_path = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.xlsx"

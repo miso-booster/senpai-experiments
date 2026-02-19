@@ -12,8 +12,6 @@ from typing import Any
 
 import pandas as pd
 
-from app.utilities import escape_multiline_text
-
 logger = logging.getLogger(__name__)
 
 _TRACE_FILENAME_STEM = "langsmith_tracing"
@@ -67,7 +65,7 @@ def _serialize_trace_field(value: Any) -> str | int | float | None:
         return json.dumps(value, ensure_ascii=False, default=str)
     if isinstance(value, (str, int, float)):
         if isinstance(value, str):
-            return escape_multiline_text(value)
+            return value.replace("\r\n", "\n").replace("\r", "\n")
         return value
     return str(value)
 
@@ -193,4 +191,9 @@ def export_langsmith_traces_to_xlsx(
     trace_df = trace_df.drop_duplicates(subset=["langsmith_run_id"], keep="last")
     trace_df.to_excel(xlsx_path, index=False)
 
-    logger.info("Exported %d LangSmith runs to '%s'.", len(rows), xlsx_path)
+    logger.info(
+        "Exported %d LangSmith runs to '%s' (fetched %d new runs before deduplication).",
+        len(trace_df),
+        xlsx_path,
+        len(rows),
+    )
