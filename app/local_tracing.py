@@ -64,8 +64,6 @@ def _serialize_trace_field(value: Any) -> str | int | float | None:
     if isinstance(value, (dict, list, tuple)):
         return json.dumps(value, ensure_ascii=False, default=str)
     if isinstance(value, (str, int, float)):
-        if isinstance(value, str):
-            return value.replace("\r\n", "\n").replace("\r", "\n")
         return value
     return str(value)
 

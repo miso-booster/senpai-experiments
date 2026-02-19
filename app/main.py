@@ -99,13 +99,6 @@ def main():
         group_dir.mkdir(parents=True, exist_ok=True)
         group_xlsx_path = group_dir / "results.xlsx"
         df = pd.DataFrame(group_results, columns=RESULT_COLUMNS)
-        object_columns = df.select_dtypes(include=["object"]).columns
-        for col in object_columns:
-            df[col] = df[col].map(
-                lambda value: value.replace("\r\n", "\n").replace("\r", "\n")
-                if isinstance(value, str)
-                else value
-            )
         df.to_excel(group_xlsx_path, index=False)
 
         tracing_xlsx_path = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.xlsx"
