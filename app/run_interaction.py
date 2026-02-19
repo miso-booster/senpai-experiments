@@ -53,6 +53,11 @@ def count_fenced_code_lines(text: str) -> int:
     return total_lines
 
 
+def count_words(text: str) -> int:
+    """Count words in free text using whitespace tokenization."""
+    return len(text.split())
+
+
 def extract_conversation_id(stdout: str) -> str | None:
     """Extract conversation ID printed by Senpai main."""
     match = re.search(r"conversation ID:\s*([A-Za-z0-9_-]+)", stdout)
@@ -140,6 +145,7 @@ def run_one(
 
     answer = extract_senpai_answer(stdout)
     answer_code_lines = count_fenced_code_lines(answer)
+    answer_word_count = count_words(answer)
     conversation_id = extract_conversation_id(stdout)
     # Load only OPENAI_API_KEY from env file into os.environ for fallback detection.
     if arch.env_file and "OPENAI_API_KEY" not in os.environ:
@@ -187,6 +193,7 @@ def run_one(
         "stdout_chars": len(stdout),
         "stderr_chars": len(stderr),
         "answer_chars": len(answer),
+        "answer_word_count": answer_word_count,
         "answer_code_lines": answer_code_lines,
         "conversation_id": conversation_id,
         "run_dir": str(run_dir),
