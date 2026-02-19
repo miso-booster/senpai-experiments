@@ -112,6 +112,9 @@ folder under `out/runs/`.
 - Number of lines found inside Markdown fenced code blocks (triple backticks) in the assistant answer.
 - Fence marker lines themselves are not counted.
 
+`results.jsonl` / `results.csv` also include `answer_word_count`:
+- Number of words in the assistant answer (split by whitespace).
+
 Individual run folders
 ----------------------
 Inside each run group, every architecture/prompt pair gets its own folder:
