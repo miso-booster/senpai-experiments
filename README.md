@@ -64,7 +64,7 @@ OPENAI_API_KEY=your_openai_key
 Outputs
 -------
 - Per-run JSONL results: `out/results.jsonl`
-- Per-group CSV: `out/runs/<run_group_id>/results.csv`
+- Per-group Excel: `out/runs/<run_group_id>/results.xlsx`
 
 Ranking sheets (offline evaluation)
 ----------------------------------
@@ -80,7 +80,7 @@ This writes to `out/runs/<run_group_id>/ranking/` (CSV delimiter is `;`):
 - `answers.csv` (template to fill in ranks)
 
 Each response in `ranking.md` now includes `YAML: true|false|n/a` based on
-`is_yaml_valid` from `results.csv`.
+`is_yaml_valid` from `results.xlsx`.
 
 Aggregate multiple subjects (expects `answers_*.csv` and `key.csv`):
 
@@ -98,17 +98,17 @@ Output structure per execution
 Each execution writes to:
 
 - `out/results.jsonl` (append-only): one JSON line per architecture/prompt run.
-- `out/runs/<run_group_id>/results.csv`: a snapshot for that execution only.
+- `out/runs/<run_group_id>/results.xlsx`: a snapshot for that execution only.
 
 `<run_group_id>` is a timestamp with milliseconds, so each execution gets its own
 folder under `out/runs/`.
 
-`results.jsonl` / `results.csv` include `is_yaml_valid`:
+`results.jsonl` / `results.xlsx` include `is_yaml_valid`:
 - `true` when YAML is valid for `profile`, `rule`, or `connector` prompts.
 - `false` when YAML is found but invalid for those prompt types.
-- `null` in `results.jsonl` (`None` in Python) and empty in `results.csv` when no YAML is found, or for non-YAML prompt types (for example `documentation`).
+- `null` in `results.jsonl` (`None` in Python) and empty in `results.xlsx` when no YAML is found, or for non-YAML prompt types (for example `documentation`).
 
-`results.jsonl` / `results.csv` also include `answer_code_lines`:
+`results.jsonl` / `results.xlsx` also include `answer_code_lines`:
 - Number of lines found inside Markdown fenced code blocks (triple backticks) in the assistant answer.
 - Fence marker lines themselves are not counted.
 

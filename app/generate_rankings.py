@@ -5,23 +5,15 @@ import random
 import time
 from typing import Dict, List, Tuple
 
+import pandas as pd
+
 from app.setup_configuration import RUNS_DIR, load_prompts_json
 
 
 def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
-    encodings = ("utf-8-sig", "utf-8", "cp1252", "latin-1")
-    errors: List[str] = []
-    for encoding in encodings:
-        try:
-            with results_path.open("r", encoding=encoding, newline="") as f:
-                reader = csv.DictReader(f, delimiter=";")
-                return list(reader)
-        except UnicodeDecodeError as exc:
-            errors.append(f"{encoding}: {exc}")
-    error_detail = "; ".join(errors) if errors else "unknown decode error"
-    raise ValueError(
-        f"Failed to decode {results_path} with supported encodings ({', '.join(encodings)}). {error_detail}"
-    )
+    df = pd.read_excel(results_path)
+    df = df.fillna("")
+    return df.astype(str).to_dict(orient="records")
 
 
 def _load_prompts(prompts_path: pathlib.Path) -> Tuple[List[str], Dict[str, str]]:
@@ -73,7 +65,7 @@ def _resolve_results_path(args: argparse.Namespace) -> pathlib.Path:
     if args.results:
         return pathlib.Path(args.results)
     if args.run_group_id:
-        return RUNS_DIR / args.run_group_id / "results.csv"
+        return RUNS_DIR / args.run_group_id / "results.xlsx"
     raise SystemExit("Provide --results or --run-group-id")
 
 
@@ -89,9 +81,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Generate randomized ranking markdown + key + answers template."
     )
-    parser.add_argument("--results", help="Path to results.csv")
+    parser.add_argument("--results", help="Path to results.xlsx")
     parser.add_argument(
-        "--run-group-id", help="Run group id to locate out/runs/<id>/results.csv"
+        "--run-group-id", help="Run group id to locate out/runs/<id>/results.xlsx"
     )
     parser.add_argument(
         "--prompts",
@@ -106,7 +98,7 @@ def main() -> None:
 
     results_path = _resolve_results_path(args)
     if not results_path.exists():
-        raise SystemExit(f"results.csv not found: {results_path}")
+        raise SystemExit(f"results.xlsx not found: {results_path}")
 
     prompts_path = pathlib.Path(args.prompts)
     if not prompts_path.exists():
