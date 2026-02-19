@@ -12,7 +12,7 @@ from app.setup_configuration import RUNS_DIR, load_prompts_json
 
 def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
     df = pd.read_excel(results_path)
-    df = df.where(pd.notna(df), "")
+    df = df.fillna("")
     return df.astype(str).to_dict(orient="records")
 
 
