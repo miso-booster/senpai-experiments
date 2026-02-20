@@ -9,10 +9,8 @@ import threading
 import subprocess
 import pathlib
 
-from datetime import datetime, timezone
 from typing import Dict, Any
 from app.architecture import Architecture
-from app.local_tracing import count_langsmith_llm_calls
 from app.setup_configuration import build_cmd, build_env, parse_env_file
 from app.fallback_detector import detect_fallback
 from app.yaml_validation import validate_answer_yaml
@@ -91,7 +89,6 @@ def run_one(
     # Alimentamos stdin con prompt + comando de salida para que el loop termine
     stdin_payload = prompt_text.rstrip() + "\n" + EXIT_COMMAND + "\n"
 
-    run_start_time = datetime.now(timezone.utc)
     t0 = time.perf_counter()
     try:
         proc = subprocess.Popen(
@@ -150,12 +147,6 @@ def run_one(
     answer_code_lines = count_fenced_code_lines(answer)
     answer_word_count = count_words(answer)
     conversation_id = extract_conversation_id(stdout)
-    llm_call_count = count_langsmith_llm_calls(
-        start_time=run_start_time,
-        env=run_env,
-        conversation_id=conversation_id,
-        run_id=run_id,
-    )
     # Load only OPENAI_API_KEY from env file into os.environ for fallback detection.
     if arch.env_file and "OPENAI_API_KEY" not in os.environ:
         try:
@@ -204,7 +195,7 @@ def run_one(
         "answer_chars": len(answer),
         "answer_word_count": answer_word_count,
         "answer_code_lines": answer_code_lines,
-        "llm_call_count": llm_call_count,
+        "llm_call_count": None,
         "conversation_id": conversation_id,
         "run_dir": str(run_dir),
     }

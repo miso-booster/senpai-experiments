@@ -197,133 +197,51 @@ def export_langsmith_traces_to_xlsx(
     )
 
 
-def count_langsmith_llm_calls(
-    start_time: datetime,
-    *,
-    env: dict[str, str] | None = None,
-    conversation_id: str | None = None,
-    run_id: str | None = None,
-) -> int | None:
-    """Count LangSmith runs with run_type='llm' for one automation interaction."""
-    env_data = env or os.environ
-    if env_data.get("LANGSMITH_TRACING", "").lower() != "true":
-        return None
+def update_results_llm_counts_from_tracing(
+    tracing_path: str | Path,
+    results_path: str | Path,
+) -> None:
+    """
+    Update results.xlsx with llm call counts computed from tracing.xlsx.
 
-    project_name = env_data.get("LANGSMITH_PROJECT") or env_data.get("LANGCHAIN_PROJECT")
-    api_key = env_data.get("LANGSMITH_API_KEY") or env_data.get("LANGCHAIN_API_KEY")
-    if not project_name or not api_key:
-        return None
+    Mapping rule:
+    - tracing.conversation_id -> results.run_id
+    """
+    tracing_file = Path(tracing_path).expanduser()
+    results_file = Path(results_path).expanduser()
 
-    api_url = (
-        env_data.get("LANGSMITH_ENDPOINT")
-        or env_data.get("LANGCHAIN_ENDPOINT")
-        or "https://api.smith.langchain.com"
-    )
+    if not tracing_file.exists():
+        logger.warning("Cannot update llm counts: tracing file does not exist: %s", tracing_file)
+        return
+    if not results_file.exists():
+        logger.warning("Cannot update llm counts: results file does not exist: %s", results_file)
+        return
 
     try:
-        from langsmith import Client
-    except ImportError:
-        logger.warning("Skipping llm call counting because langsmith is not installed.")
-        return None
+        tracing_df = pd.read_excel(tracing_file)
+        results_df = pd.read_excel(results_file)
+    except Exception:
+        logger.exception("Failed reading tracing/results xlsx files to update llm counts.")
+        return
 
-    lookback_seconds = int(env_data.get("LANGSMITH_EXPORT_LOOKBACK_SECONDS", "30"))
-    retries = int(env_data.get("LANGSMITH_COUNT_RETRIES", env_data.get("LANGSMITH_EXPORT_RETRIES", "6")))
-    retry_delay_seconds = float(
-        env_data.get("LANGSMITH_COUNT_RETRY_DELAY_SECONDS", env_data.get("LANGSMITH_EXPORT_RETRY_DELAY_SECONDS", "2.0"))
+    required_tracing_cols = {"conversation_id", "run_type"}
+    if not required_tracing_cols.issubset(tracing_df.columns):
+        logger.warning(
+            "Cannot update llm counts: tracing file is missing columns %s",
+            sorted(required_tracing_cols - set(tracing_df.columns)),
+        )
+        return
+    if "run_id" not in results_df.columns:
+        logger.warning("Cannot update llm counts: results file is missing 'run_id' column.")
+        return
+
+    llm_mask = tracing_df["run_type"].astype(str).str.lower().eq("llm")
+    conv_series = tracing_df["conversation_id"].astype(str)
+    valid_conv_mask = tracing_df["conversation_id"].notna() & conv_series.ne("") & conv_series.ne("nan")
+    llm_counts = tracing_df[llm_mask & valid_conv_mask].groupby("conversation_id").size().to_dict()
+
+    results_df["llm_call_count"] = (
+        results_df["run_id"].map(llm_counts).fillna(0).astype(int)
     )
-    query_start_time = start_time - timedelta(seconds=max(0, lookback_seconds))
-
-    client = Client(api_url=api_url, api_key=api_key)
-    runs: list[Any] = []
-    for attempt in range(retries + 1):
-        runs = list(
-            client.list_runs(
-                project_name=project_name,
-                start_time=query_start_time,
-            )
-        )
-        if runs:
-            break
-        if attempt < retries:
-            time.sleep(max(0.0, retry_delay_seconds))
-
-    candidate_ids = {str(v) for v in (conversation_id, run_id) if v}
-
-    def _extract_run_ids(run_obj: Any) -> set[str]:
-        ids: set[str] = set()
-
-        metadata = getattr(run_obj, "metadata", None)
-        if isinstance(metadata, dict):
-            for key in (
-                "conversation_id",
-                "senpai_conversation_id",
-                "chat_conversation_id",
-                "thread_id",
-                "session_id",
-                "run_id",
-                "cid",
-            ):
-                value = metadata.get(key)
-                if value:
-                    ids.add(str(value))
-
-        extra = getattr(run_obj, "extra", None)
-        if isinstance(extra, dict):
-            extra_metadata = extra.get("metadata")
-            if isinstance(extra_metadata, dict):
-                for key in (
-                    "conversation_id",
-                    "senpai_conversation_id",
-                    "chat_conversation_id",
-                    "thread_id",
-                    "session_id",
-                    "run_id",
-                    "cid",
-                ):
-                    value = extra_metadata.get(key)
-                    if value:
-                        ids.add(str(value))
-        return ids
-
-    def _count_llm_for_runs(run_items: list[Any]) -> int:
-        if not run_items:
-            return 0
-
-        trace_ids: set[str] = set()
-        for run in run_items:
-            if candidate_ids:
-                run_ids = _extract_run_ids(run)
-                if candidate_ids.isdisjoint(run_ids):
-                    continue
-            trace_id = getattr(run, "trace_id", None)
-            if trace_id:
-                trace_ids.add(str(trace_id))
-
-        # Fallback when no identifying ids were found: count all llm runs in the queried window.
-        if not trace_ids:
-            return sum(1 for run in run_items if getattr(run, "run_type", None) == "llm")
-
-        return sum(
-            1
-            for run in run_items
-            if getattr(run, "run_type", None) == "llm"
-            and getattr(run, "trace_id", None)
-            and str(getattr(run, "trace_id")) in trace_ids
-        )
-
-    # Poll until count stabilizes once to reduce eventual-consistency misses.
-    previous_count = _count_llm_for_runs(runs)
-    for attempt in range(retries):
-        time.sleep(max(0.0, retry_delay_seconds))
-        runs = list(
-            client.list_runs(
-                project_name=project_name,
-                start_time=query_start_time,
-            )
-        )
-        current_count = _count_llm_for_runs(runs)
-        if current_count == previous_count:
-            return current_count
-        previous_count = current_count
-
-    return previous_count
+    results_df.to_excel(results_file, index=False)
+    logger.info("Updated llm_call_count in '%s' from tracing '%s'.", results_file, tracing_file)

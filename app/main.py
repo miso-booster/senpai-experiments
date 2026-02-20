@@ -15,7 +15,7 @@ from app.setup_configuration import (
     load_prompts_json,
     build_env,
 )
-from app.local_tracing import export_langsmith_traces_to_xlsx
+from app.local_tracing import export_langsmith_traces_to_xlsx, update_results_llm_counts_from_tracing
 
 from typing import Dict, Any
 
@@ -48,6 +48,68 @@ def _collect_langsmith_export_envs(archs: list[Any], run_group_id: str) -> list[
         seen.add(signature)
         export_envs.append(env)
     return export_envs
+
+
+def _export_tracing_with_completeness_retry(
+    *,
+    tracing_xlsx_path: pathlib.Path,
+    tracing_envs: list[dict[str, str]],
+    automation_start_time: datetime,
+    expected_conversations: int,
+) -> None:
+    retries = 8
+    retry_delay_s = 2.0
+
+    for attempt in range(1, retries + 1):
+        for export_env in tracing_envs:
+            try:
+                export_langsmith_traces_to_xlsx(
+                    tracing_path=tracing_xlsx_path,
+                    start_time=automation_start_time,
+                    env=export_env,
+                )
+            except Exception:
+                project_name = export_env.get("LANGSMITH_PROJECT") or export_env.get("LANGCHAIN_PROJECT")
+                logging.exception(
+                    "Failed to export LangSmith traces for project=%s run_group_id=%s",
+                    project_name,
+                    tracing_xlsx_path.parent.name,
+                )
+
+        observed_conversations = 0
+        if tracing_xlsx_path.exists():
+            try:
+                trace_df = pd.read_excel(tracing_xlsx_path)
+                if "conversation_id" in trace_df.columns:
+                    observed_conversations = int(trace_df["conversation_id"].nunique(dropna=True))
+            except Exception:
+                logging.exception("Failed reading tracing file '%s' for completeness check.", tracing_xlsx_path)
+
+        if observed_conversations == expected_conversations:
+            logging.info(
+                "Tracing completeness check passed: expected=%s observed=%s",
+                expected_conversations,
+                observed_conversations,
+            )
+            return
+
+        if attempt < retries:
+            logging.warning(
+                "Tracing completeness mismatch (attempt %s/%s): expected=%s observed=%s. Retrying in %.1fs.",
+                attempt,
+                retries,
+                expected_conversations,
+                observed_conversations,
+                retry_delay_s,
+            )
+            time.sleep(retry_delay_s)
+
+    logging.warning(
+        "Tracing completeness not reached after %s attempts: expected=%s observed=%s.",
+        retries,
+        expected_conversations,
+        observed_conversations,
+    )
 
 
 def main():
@@ -112,20 +174,16 @@ def main():
         df.to_excel(group_xlsx_path, index=False)
 
         tracing_xlsx_path = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.xlsx"
-        for export_env in tracing_envs:
-            try:
-                export_langsmith_traces_to_xlsx(
-                    tracing_path=tracing_xlsx_path,
-                    start_time=automation_start_time,
-                    env=export_env,
-                )
-            except Exception:
-                project_name = export_env.get("LANGSMITH_PROJECT") or export_env.get("LANGCHAIN_PROJECT")
-                logging.exception(
-                    "Failed to export LangSmith traces for project=%s run_group_id=%s",
-                    project_name,
-                    run_group_id,
-                )
+        _export_tracing_with_completeness_retry(
+            tracing_xlsx_path=tracing_xlsx_path,
+            tracing_envs=tracing_envs,
+            automation_start_time=automation_start_time,
+            expected_conversations=len(group_results),
+        )
+        update_results_llm_counts_from_tracing(
+            tracing_path=tracing_xlsx_path,
+            results_path=group_xlsx_path,
+        )
 
 if __name__ == "__main__":
     main()
