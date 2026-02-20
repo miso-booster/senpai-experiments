@@ -216,7 +216,7 @@ def main():
             tracing_envs=tracing_envs,
             automation_start_time=automation_start_time,
             expected_conversations=len(group_results),
-            expected_run_ids={str(item["run_id"]) for item in group_results},
+            expected_run_ids={str(item["run_id"]) for item in group_results if item.get("run_id") is not None},
             mandatory_columns=MANDATORY_TRACING_COLUMNS,
         )
         update_results_llm_counts_from_tracing(
