@@ -195,3 +195,53 @@ def export_langsmith_traces_to_xlsx(
         xlsx_path,
         len(rows),
     )
+
+
+def update_results_llm_counts_from_tracing(
+    tracing_path: str | Path,
+    results_path: str | Path,
+) -> None:
+    """
+    Update results.xlsx with llm call counts computed from tracing.xlsx.
+
+    Mapping rule:
+    - tracing.conversation_id -> results.run_id
+    """
+    tracing_file = Path(tracing_path).expanduser()
+    results_file = Path(results_path).expanduser()
+
+    if not tracing_file.exists():
+        logger.warning("Cannot update llm counts: tracing file does not exist: %s", tracing_file)
+        return
+    if not results_file.exists():
+        logger.warning("Cannot update llm counts: results file does not exist: %s", results_file)
+        return
+
+    try:
+        tracing_df = pd.read_excel(tracing_file)
+        results_df = pd.read_excel(results_file)
+    except Exception:
+        logger.exception("Failed reading tracing/results xlsx files to update llm counts.")
+        return
+
+    required_tracing_cols = {"conversation_id", "run_type"}
+    if not required_tracing_cols.issubset(tracing_df.columns):
+        logger.warning(
+            "Cannot update llm counts: tracing file is missing columns %s",
+            sorted(required_tracing_cols - set(tracing_df.columns)),
+        )
+        return
+    if "run_id" not in results_df.columns:
+        logger.warning("Cannot update llm counts: results file is missing 'run_id' column.")
+        return
+
+    llm_mask = tracing_df["run_type"].astype(str).str.lower().eq("llm")
+    conv_series = tracing_df["conversation_id"].astype(str)
+    valid_conv_mask = tracing_df["conversation_id"].notna() & conv_series.ne("") & conv_series.ne("nan")
+    llm_counts = tracing_df[llm_mask & valid_conv_mask].groupby("conversation_id").size().to_dict()
+
+    results_df["llm_call_count"] = (
+        results_df["run_id"].map(llm_counts).fillna(0).astype(int)
+    )
+    results_df.to_excel(results_file, index=False)
+    logger.info("Updated llm_call_count in '%s' from tracing '%s'.", results_file, tracing_file)

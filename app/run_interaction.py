@@ -195,6 +195,7 @@ def run_one(
         "answer_chars": len(answer),
         "answer_word_count": answer_word_count,
         "answer_code_lines": answer_code_lines,
+        "llm_call_count": None,
         "conversation_id": conversation_id,
         "run_dir": str(run_dir),
     }
