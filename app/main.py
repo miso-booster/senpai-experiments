@@ -27,6 +27,7 @@ RESULT_COLUMNS = [
     "stderr_chars", "answer_chars", "answer_word_count", "answer_code_lines", "llm_call_count",
     "conversation_id", "run_dir"
 ]
+MANDATORY_TRACING_COLUMNS = ["end_time", "latency_s"]
 
 
 def append_jsonl(path: pathlib.Path, obj: Dict[str, Any]):
@@ -56,6 +57,8 @@ def _export_tracing_with_completeness_retry(
     tracing_envs: list[dict[str, str]],
     automation_start_time: datetime,
     expected_conversations: int,
+    expected_run_ids: set[str],
+    mandatory_columns: list[str],
 ) -> None:
     retries = 8
     retry_delay_s = 2.0
@@ -77,38 +80,72 @@ def _export_tracing_with_completeness_retry(
                 )
 
         observed_conversations = 0
+        incomplete_rows = 0
+        missing_mandatory_columns: list[str] = []
         if tracing_xlsx_path.exists():
             try:
                 trace_df = pd.read_excel(tracing_xlsx_path)
                 if "conversation_id" in trace_df.columns:
-                    observed_conversations = int(trace_df["conversation_id"].nunique(dropna=True))
+                    conversation_series = trace_df["conversation_id"].astype(str)
+                    relevant_rows = trace_df[conversation_series.isin(expected_run_ids)].copy()
+                    observed_conversations = int(relevant_rows["conversation_id"].nunique(dropna=True))
+                else:
+                    relevant_rows = trace_df.iloc[0:0].copy()
+
+                missing_mandatory_columns = [
+                    column for column in mandatory_columns if column not in trace_df.columns
+                ]
+
+                if not missing_mandatory_columns and not relevant_rows.empty:
+                    empty_any_mask = pd.Series(False, index=relevant_rows.index)
+                    for column in mandatory_columns:
+                        column_values = relevant_rows[column]
+                        empty_mask = column_values.isna()
+                        if column_values.dtype == "object":
+                            empty_mask = empty_mask | column_values.astype(str).str.strip().eq("")
+                        empty_any_mask = empty_any_mask | empty_mask
+                    incomplete_rows = int(empty_any_mask.sum())
             except Exception:
                 logging.exception("Failed reading tracing file '%s' for completeness check.", tracing_xlsx_path)
 
-        if observed_conversations == expected_conversations:
+        completeness_ok = observed_conversations == expected_conversations
+        mandatory_ok = (not missing_mandatory_columns) and (incomplete_rows == 0)
+
+        if completeness_ok and mandatory_ok:
             logging.info(
-                "Tracing completeness check passed: expected=%s observed=%s",
+                "Tracing completeness check passed: expected=%s observed=%s incomplete_rows=%s",
                 expected_conversations,
                 observed_conversations,
+                incomplete_rows,
             )
             return
 
         if attempt < retries:
             logging.warning(
-                "Tracing completeness mismatch (attempt %s/%s): expected=%s observed=%s. Retrying in %.1fs.",
+                (
+                    "Tracing completeness mismatch (attempt %s/%s): expected=%s observed=%s "
+                    "incomplete_rows=%s missing_mandatory_columns=%s. Retrying in %.1fs."
+                ),
                 attempt,
                 retries,
                 expected_conversations,
                 observed_conversations,
+                incomplete_rows,
+                missing_mandatory_columns,
                 retry_delay_s,
             )
             time.sleep(retry_delay_s)
 
     logging.warning(
-        "Tracing completeness not reached after %s attempts: expected=%s observed=%s.",
+        (
+            "Tracing completeness not reached after %s attempts: expected=%s observed=%s "
+            "incomplete_rows=%s missing_mandatory_columns=%s."
+        ),
         retries,
         expected_conversations,
         observed_conversations,
+        incomplete_rows,
+        missing_mandatory_columns,
     )
 
 
@@ -179,6 +216,8 @@ def main():
             tracing_envs=tracing_envs,
             automation_start_time=automation_start_time,
             expected_conversations=len(group_results),
+            expected_run_ids={str(item["run_id"]) for item in group_results},
+            mandatory_columns=MANDATORY_TRACING_COLUMNS,
         )
         update_results_llm_counts_from_tracing(
             tracing_path=tracing_xlsx_path,
