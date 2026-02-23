@@ -15,7 +15,10 @@ from app.setup_configuration import (
     load_prompts_json,
     build_env,
 )
-from app.local_tracing import export_langsmith_traces_to_xlsx, update_results_llm_counts_from_tracing
+from app.local_tracing import (
+    export_langsmith_traces_to_xlsx,
+    update_results_metrics_from_tracing,
+)
 
 from typing import Dict, Any
 
@@ -220,7 +223,7 @@ def main():
             expected_run_ids={str(item["run_id"]) for item in group_results if item.get("run_id") is not None},
             mandatory_columns=MANDATORY_TRACING_COLUMNS,
         )
-        update_results_llm_counts_from_tracing(
+        update_results_metrics_from_tracing(
             tracing_path=tracing_xlsx_path,
             results_path=group_xlsx_path,
         )

@@ -225,7 +225,7 @@ def export_langsmith_traces_to_xlsx(
     )
 
 
-def update_results_llm_counts_from_tracing(
+def update_results_metrics_from_tracing(
     tracing_path: str | Path,
     results_path: str | Path,
 ) -> None:
@@ -265,11 +265,11 @@ def update_results_llm_counts_from_tracing(
         )
         return
 
-    required_tracing_cols = {"conversation_id", "run_type", "name", "input_tokens"}
-    if not required_tracing_cols.issubset(tracing_df.columns):
+    required_tracing_cols_for_llm = {"conversation_id", "run_type"}
+    if not required_tracing_cols_for_llm.issubset(tracing_df.columns):
         logger.warning(
             "Cannot update tracing-derived metrics: tracing file is missing columns %s",
-            sorted(required_tracing_cols - set(tracing_df.columns)),
+            sorted(required_tracing_cols_for_llm - set(tracing_df.columns)),
         )
         return
     if "run_id" not in results_df.columns:
@@ -292,35 +292,50 @@ def update_results_llm_counts_from_tracing(
         .to_dict()
     )
 
-    langgraph_mask = tracing_df["name"].astype(str).str.strip().eq("LangGraph")
-    langgraph_rows = tracing_df[langgraph_mask & valid_conv_mask].copy()
-    if not langgraph_rows.empty:
-        # Keep the first LangGraph row seen per conversation; this row contains the aggregate totals.
-        langgraph_rows = langgraph_rows.drop_duplicates(
-            subset=["conversation_id"], keep="first"
+    total_input_tokens_updated = False
+    if {"name", "input_tokens"}.issubset(tracing_df.columns):
+        langgraph_mask = tracing_df["name"].astype(str).str.strip().eq("LangGraph")
+        langgraph_rows = tracing_df[langgraph_mask & valid_conv_mask].copy()
+        if not langgraph_rows.empty:
+            # Keep the first LangGraph row seen per conversation; this row contains the aggregate totals.
+            langgraph_rows = langgraph_rows.drop_duplicates(
+                subset=["conversation_id"], keep="first"
+            )
+            langgraph_rows["input_tokens"] = pd.to_numeric(
+                langgraph_rows["input_tokens"], errors="coerce"
+            )
+            total_input_tokens_by_conv = langgraph_rows.set_index("conversation_id")[
+                "input_tokens"
+            ].to_dict()
+        else:
+            total_input_tokens_by_conv = {}
+        results_df["total_input_tokens"] = (
+            pd.to_numeric(
+                results_df["run_id"].map(total_input_tokens_by_conv), errors="coerce"
+            )
+            .fillna(0)
+            .astype(int)
         )
-        langgraph_rows["input_tokens"] = pd.to_numeric(
-            langgraph_rows["input_tokens"], errors="coerce"
-        )
-        total_input_tokens_by_conv = langgraph_rows.set_index("conversation_id")[
-            "input_tokens"
-        ].to_dict()
+        total_input_tokens_updated = True
     else:
-        total_input_tokens_by_conv = {}
+        logger.warning(
+            "Skipping total_input_tokens update: tracing file is missing columns %s",
+            sorted({"name", "input_tokens"} - set(tracing_df.columns)),
+        )
 
     results_df["llm_call_count"] = (
         results_df["run_id"].map(llm_counts).fillna(0).astype(int)
     )
-    results_df["total_input_tokens"] = (
-        pd.to_numeric(
-            results_df["run_id"].map(total_input_tokens_by_conv), errors="coerce"
-        )
-        .fillna(0)
-        .astype(int)
-    )
     results_df.to_excel(results_file, index=False)
-    logger.info(
-        "Updated llm_call_count and total_input_tokens in '%s' from tracing '%s'.",
-        results_file,
-        tracing_file,
-    )
+    if total_input_tokens_updated:
+        logger.info(
+            "Updated llm_call_count and total_input_tokens in '%s' from tracing '%s'.",
+            results_file,
+            tracing_file,
+        )
+    else:
+        logger.info(
+            "Updated llm_call_count in '%s' from tracing '%s' (total_input_tokens skipped).",
+            results_file,
+            tracing_file,
+        )
