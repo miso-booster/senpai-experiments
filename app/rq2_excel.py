@@ -35,6 +35,8 @@ def save_outputs(
     per_exec_arch: pd.DataFrame,
     exec_summary: pd.DataFrame,
     run_inventory: pd.DataFrame,
+    fallback_summary: pd.DataFrame,
+    yaml_validity_summary: pd.DataFrame,
     export_csvs: bool,
     detailed_sheets: bool,
 ) -> None:
@@ -47,6 +49,10 @@ def save_outputs(
         per_exec_arch.to_csv(out_dir / "summary_per_execution_architecture.csv", index=False)
         exec_summary.to_csv(out_dir / "summary_across_executions.csv", index=False)
         run_inventory.to_csv(out_dir / "run_inventory.csv", index=False)
+        if not fallback_summary.empty:
+            fallback_summary.to_csv(out_dir / "summary_fallback.csv", index=False)
+        if not yaml_validity_summary.empty:
+            yaml_validity_summary.to_csv(out_dir / "summary_yaml_validity.csv", index=False)
 
     response_time_summary = _build_metric_sheet(
         row_summary,
@@ -69,6 +75,10 @@ def save_outputs(
         response_time_summary.to_excel(writer, index=False, sheet_name="response_time")
         input_tokens_summary.to_excel(writer, index=False, sheet_name="input_tokens")
         llm_calls_summary.to_excel(writer, index=False, sheet_name="llm_calls")
+        if not fallback_summary.empty:
+            fallback_summary.to_excel(writer, index=False, sheet_name="fallback")
+        if not yaml_validity_summary.empty:
+            yaml_validity_summary.to_excel(writer, index=False, sheet_name="yaml_validity")
         if detailed_sheets:
             row_summary.to_excel(writer, index=False, sheet_name="per_response_summary")
             exec_summary.to_excel(writer, index=False, sheet_name="across_executions_summary")

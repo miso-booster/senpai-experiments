@@ -91,3 +91,50 @@ def generate_plots(
         ax.tick_params(axis="x", rotation=20)
         ax.grid(axis="y", alpha=0.3)
     _save(fig, "RQ2_per_response_distributions")
+
+    # Figure 3: quality/reliability rates (if available)
+    quality_panels: list[tuple[str, pd.Series, str]] = []
+
+    if "fallback" in filtered_rows.columns:
+        fallback_rate = (
+            filtered_rows.groupby("arch_id")["fallback"]
+            .apply(lambda s: (s == True).sum() / s.notna().sum() if s.notna().sum() else float("nan"))  # noqa: E712
+            .reindex(arch_order)
+        )
+        quality_panels.append(("Fallback Rate", fallback_rate, "Rate"))
+
+    if "is_yaml_valid" in filtered_rows.columns:
+        yaml_valid_rate = (
+            filtered_rows.groupby("arch_id")["is_yaml_valid"]
+            .apply(
+                lambda s: (
+                    (pd.to_numeric(s, errors="coerce") == 1).sum()
+                    / pd.to_numeric(s, errors="coerce").notna().sum()
+                    if pd.to_numeric(s, errors="coerce").notna().sum()
+                    else float("nan")
+                )
+            )
+            .reindex(arch_order)
+        )
+        quality_panels.append(("YAML Valid Rate", yaml_valid_rate, "Rate"))
+
+    if quality_panels:
+        fig, axes = plt.subplots(1, len(quality_panels), figsize=(5.5 * len(quality_panels), 4.5))
+        axes = [axes] if len(quality_panels) == 1 else axes
+        for ax, (title, series, ylabel) in zip(axes, quality_panels):
+            ax.bar(
+                series.index,
+                series.fillna(0),
+                color=[color_map[a] for a in series.index],
+                alpha=0.9,
+            )
+            ax.set_ylim(0, 1)
+            ax.set_title(title)
+            ax.set_ylabel(ylabel)
+            ax.tick_params(axis="x", rotation=20)
+            ax.grid(axis="y", alpha=0.3)
+
+            for i, value in enumerate(series):
+                if pd.notna(value):
+                    ax.text(i, min(value + 0.02, 0.98), f"{value:.2%}", ha="center", va="bottom", fontsize=9)
+        _save(fig, "RQ2_quality_rates")

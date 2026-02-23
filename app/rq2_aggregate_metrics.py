@@ -22,6 +22,7 @@ NUMERIC_COLUMNS = (
     "latency_s",
     "total_input_tokens",
     "llm_call_count",
+    "is_yaml_valid",
     "returncode",
     "timeout_s",
 )
@@ -151,6 +152,8 @@ def load_all_results(workbooks: Sequence[Path], sheet_name: str | None) -> pd.Da
 
     if "timed_out" in df.columns:
         df["timed_out"] = _safe_bool(df["timed_out"])
+    if "fallback" in df.columns:
+        df["fallback"] = _safe_bool(df["fallback"])
 
     if "arch_id" in df.columns:
         df["arch_id"] = df["arch_id"].astype(str).str.strip()
@@ -217,6 +220,58 @@ def build_row_level_summary(df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.
         summaries.append(row)
 
     return pd.DataFrame(summaries).sort_values("arch_id").reset_index(drop=True)
+
+
+def build_fallback_summary(df: pd.DataFrame) -> pd.DataFrame:
+    if "fallback" not in df.columns:
+        return pd.DataFrame()
+
+    rows: list[dict[str, float | int | str]] = []
+    for arch, group in df.groupby("arch_id", sort=True):
+        series = group["fallback"]
+        observed = series.notna().sum()
+        true_count = int((series == True).sum())  # noqa: E712
+        false_count = int((series == False).sum())  # noqa: E712
+        rows.append(
+            {
+                "arch_id": arch,
+                "n_responses": int(len(group)),
+                "n_runs": int(group["run_group_id"].nunique()),
+                "fallback_observed_n": int(observed),
+                "fallback_count": true_count,
+                "non_fallback_count": false_count,
+                "fallback_rate": (true_count / observed) if observed else float("nan"),
+            }
+        )
+    return pd.DataFrame(rows).sort_values("arch_id").reset_index(drop=True)
+
+
+def build_yaml_validity_summary(df: pd.DataFrame) -> pd.DataFrame:
+    if "is_yaml_valid" not in df.columns:
+        return pd.DataFrame()
+
+    rows: list[dict[str, float | int | str]] = []
+    for arch, group in df.groupby("arch_id", sort=True):
+        series = pd.to_numeric(group["is_yaml_valid"], errors="coerce")
+        applicable = int(series.notna().sum())
+        valid_count = int((series == 1).sum())
+        invalid_count = int((series == 0).sum())
+        missing_count = int(len(group) - applicable)
+        rows.append(
+            {
+                "arch_id": arch,
+                "n_responses": int(len(group)),
+                "n_runs": int(group["run_group_id"].nunique()),
+                "yaml_applicable_n": applicable,
+                "yaml_valid_count": valid_count,
+                "yaml_invalid_count": invalid_count,
+                "yaml_missing_n": missing_count,
+                "yaml_valid_rate_on_applicable": (
+                    valid_count / applicable if applicable else float("nan")
+                ),
+            }
+        )
+    return pd.DataFrame(rows).sort_values("arch_id").reset_index(drop=True)
 
 
 def build_per_execution_arch_summary(df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.DataFrame:
@@ -312,6 +367,8 @@ def main() -> None:
     per_exec_arch = build_per_execution_arch_summary(filtered_rows, available_metric_cols)
     exec_summary = build_execution_level_summary(per_exec_arch, available_metric_cols)
     run_inventory = build_run_inventory(all_rows, filtered_rows)
+    fallback_summary = build_fallback_summary(filtered_rows)
+    yaml_validity_summary = build_yaml_validity_summary(filtered_rows)
 
     save_outputs(
         out_dir=out_dir,
@@ -321,6 +378,8 @@ def main() -> None:
         per_exec_arch=per_exec_arch,
         exec_summary=exec_summary,
         run_inventory=run_inventory,
+        fallback_summary=fallback_summary,
+        yaml_validity_summary=yaml_validity_summary,
         export_csvs=args.export_csvs,
         detailed_sheets=args.detailed_sheets,
     )
