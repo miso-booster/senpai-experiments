@@ -93,6 +93,12 @@ This also writes metrics CSVs in the same folder:
 - `metrics_per_prompt.csv` (per-prompt avg rank + win rate)
 - `metrics_pairwise.csv` (pairwise win rates)
 
+RQ2 architecture metrics aggregation
+------------------------------------
+```powershell
+python -m app.rq2_aggregate_metrics
+```
+
 Output structure per execution
 ------------------------------
 Each execution writes to:
