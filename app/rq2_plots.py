@@ -4,6 +4,14 @@ from typing import Sequence
 import pandas as pd
 
 
+def _rate_equals_one(series: pd.Series) -> float:
+    numeric = pd.to_numeric(series, errors="coerce")
+    observed = numeric.notna().sum()
+    if not observed:
+        return float("nan")
+    return float((numeric == 1).sum() / observed)
+
+
 def _ordered_arches(df: pd.DataFrame, preferred: Sequence[str] | None) -> list[str]:
     detected = [a for a in sorted(df["arch_id"].dropna().astype(str).unique()) if a]
     if not preferred:
@@ -106,14 +114,7 @@ def generate_plots(
     if "is_yaml_valid" in filtered_rows.columns:
         yaml_valid_rate = (
             filtered_rows.groupby("arch_id")["is_yaml_valid"]
-            .apply(
-                lambda s: (
-                    (pd.to_numeric(s, errors="coerce") == 1).sum()
-                    / pd.to_numeric(s, errors="coerce").notna().sum()
-                    if pd.to_numeric(s, errors="coerce").notna().sum()
-                    else float("nan")
-                )
-            )
+            .apply(_rate_equals_one)
             .reindex(arch_order)
         )
         quality_panels.append(("YAML Valid Rate", yaml_valid_rate, "Rate"))
