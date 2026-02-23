@@ -28,8 +28,15 @@ def _ordered_arches(df: pd.DataFrame, preferred: Sequence[str] | None) -> list[s
     if not preferred:
         return detected
     preferred_clean = [a.strip() for a in preferred if a.strip()]
-    extras = [a for a in detected if a not in preferred_clean]
-    return preferred_clean + extras
+    valid_preferred = [a for a in preferred_clean if a in detected]
+    missing_preferred = sorted({a for a in preferred_clean if a not in detected})
+    if missing_preferred:
+        print(
+            "[WARN] Ignoring architectures not found in plot data: "
+            + ", ".join(missing_preferred)
+        )
+    extras = [a for a in detected if a not in valid_preferred]
+    return valid_preferred + extras
 
 
 def generate_plots(

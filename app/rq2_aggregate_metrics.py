@@ -96,18 +96,33 @@ def parse_args() -> argparse.Namespace:
 
 
 def _safe_bool(series: pd.Series) -> pd.Series:
-    """Coerce common truthy/falsey string-like values to booleans."""
-    if series.dtype == bool:
+    """Coerce common truthy/falsey values (including 1.0/0.0) to booleans."""
+    if pd.api.types.is_bool_dtype(series):
         return series
+
+    # First handle common string tokens (including Excel float-like strings).
     mapping = {
         "true": True,
         "false": False,
         "1": True,
         "0": False,
+        "1.0": True,
+        "0.0": False,
         "yes": True,
         "no": False,
     }
-    return series.astype(str).str.strip().str.lower().map(mapping)
+    out = series.astype(str).str.strip().str.lower().map(mapping)
+
+    # Then fill remaining values from numeric coercion when possible.
+    numeric = pd.to_numeric(series, errors="coerce")
+    numeric_bool = numeric.map({1: True, 0: False})
+    return out.where(out.notna(), numeric_bool)
+
+
+def _clean_string_id(series: pd.Series) -> pd.Series:
+    """Strip identifier-like strings while preserving missing values."""
+    cleaned = series.astype("string").str.strip()
+    return cleaned.mask(cleaned == "", pd.NA)
 
 
 def discover_workbooks(runs_dir: Path, results_name: str) -> list[Path]:
@@ -161,9 +176,9 @@ def load_all_results(workbooks: Sequence[Path], sheet_name: str | None) -> pd.Da
         df["fallback"] = _safe_bool(df["fallback"])
 
     if "arch_id" in df.columns:
-        df["arch_id"] = df["arch_id"].astype(str).str.strip()
+        df["arch_id"] = _clean_string_id(df["arch_id"])
     if "run_group_id" in df.columns:
-        df["run_group_id"] = df["run_group_id"].astype(str).str.strip()
+        df["run_group_id"] = _clean_string_id(df["run_group_id"])
 
     return df
 
