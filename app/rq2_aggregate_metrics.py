@@ -240,9 +240,11 @@ def build_fallback_summary(df: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, float | int | str]] = []
     for arch, group in df.groupby("arch_id", sort=True):
         series = group["fallback"]
-        observed = series.notna().sum()
-        true_count = int((series == True).sum())  # noqa: E712
-        false_count = int((series == False).sum())  # noqa: E712
+        observed_mask = series.notna()
+        observed = int(observed_mask.sum())
+        bool_series = series.fillna(False).astype(bool)
+        true_count = int((observed_mask & bool_series).sum())
+        false_count = int((observed_mask & ~bool_series).sum())
         rows.append(
             {
                 "arch_id": arch,
