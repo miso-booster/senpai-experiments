@@ -15,7 +15,10 @@ from app.setup_configuration import (
     load_prompts_json,
     build_env,
 )
-from app.local_tracing import export_langsmith_traces_to_xlsx, update_results_llm_counts_from_tracing
+from app.local_tracing import (
+    export_langsmith_traces_to_xlsx,
+    update_results_metrics_from_tracing,
+)
 
 from typing import Dict, Any
 
@@ -25,6 +28,7 @@ RESULT_COLUMNS = [
     "run_id", "run_group_id", "arch_id", "prompt_id", "prompt", "timeout_s",
     "timed_out", "returncode", "latency_s", "answer", "fallback", "is_yaml_valid", "stdout_chars",
     "stderr_chars", "answer_chars", "answer_word_count", "answer_code_lines", "llm_call_count",
+    "total_input_tokens",
     "conversation_id", "run_dir"
 ]
 MANDATORY_TRACING_COLUMNS = ["end_time", "latency_s"]
@@ -219,7 +223,7 @@ def main():
             expected_run_ids={str(item["run_id"]) for item in group_results if item.get("run_id") is not None},
             mandatory_columns=MANDATORY_TRACING_COLUMNS,
         )
-        update_results_llm_counts_from_tracing(
+        update_results_metrics_from_tracing(
             tracing_path=tracing_xlsx_path,
             results_path=group_xlsx_path,
         )
