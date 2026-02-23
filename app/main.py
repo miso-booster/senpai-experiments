@@ -25,6 +25,7 @@ RESULT_COLUMNS = [
     "run_id", "run_group_id", "arch_id", "prompt_id", "prompt", "timeout_s",
     "timed_out", "returncode", "latency_s", "answer", "fallback", "is_yaml_valid", "stdout_chars",
     "stderr_chars", "answer_chars", "answer_word_count", "answer_code_lines", "llm_call_count",
+    "total_input_tokens",
     "conversation_id", "run_dir"
 ]
 MANDATORY_TRACING_COLUMNS = ["end_time", "latency_s"]
