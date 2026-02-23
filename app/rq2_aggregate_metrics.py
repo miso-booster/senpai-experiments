@@ -372,10 +372,10 @@ def main() -> None:
 
     _require_columns(all_rows, ("arch_id", "run_group_id"))
     available_metric_cols = [m for m in METRICS if m in all_rows.columns]
+    missing_metric_cols = [m for m in METRICS if m not in all_rows.columns]
     _require_columns(all_rows, available_metric_cols)
     if len(available_metric_cols) != len(METRICS):
-        missing = [m for m in METRICS if m not in all_rows.columns]
-        print(f"[WARN] Missing metric columns; skipping: {', '.join(missing)}")
+        print(f"[WARN] Missing metric columns; skipping: {', '.join(missing_metric_cols)}")
 
     filtered_rows = filter_rows(all_rows, args.architectures, args.include_failed)
     if filtered_rows.empty:
@@ -398,6 +398,7 @@ def main() -> None:
         run_inventory=run_inventory,
         fallback_summary=fallback_summary,
         yaml_validity_summary=yaml_validity_summary,
+        missing_metrics=missing_metric_cols,
         export_csvs=args.export_csvs,
         detailed_sheets=args.detailed_sheets,
     )
@@ -417,6 +418,11 @@ def main() -> None:
         "[INFO] Primary metric in plots: per-response averages/variability "
         "(one row = one prompt x one architecture response)."
     )
+    if missing_metric_cols:
+        print(
+            "[INFO] Missing metric report added for: "
+            + ", ".join(missing_metric_cols)
+        )
     print("[INFO] Files:")
     for path in sorted(out_dir.iterdir()):
         print(f"  - {path.name}")
