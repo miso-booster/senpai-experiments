@@ -10,6 +10,7 @@ def _build_metric_sheet(
     value_name_prefix: str,
     unit_suffix: str = "",
 ) -> pd.DataFrame:
+    """Create a compact architecture-level sheet for one RQ2 metric family."""
     rows = []
     for _, r in row_summary.iterrows():
         rows.append(
@@ -40,6 +41,23 @@ def save_outputs(
     export_csvs: bool,
     detailed_sheets: bool,
 ) -> None:
+    """Write the RQ2 workbook and optional CSV exports.
+
+    Parameters
+    ----------
+    out_dir:
+        Destination directory for workbook, plots, and optional CSV files.
+    all_rows, filtered_rows:
+        Raw concatenated rows and the subset used for metrics/plots.
+    row_summary, per_exec_arch, exec_summary, run_inventory:
+        Precomputed summaries produced by the aggregation pipeline.
+    fallback_summary, yaml_validity_summary:
+        Optional quality/reliability summaries; empty dataframes are skipped.
+    export_csvs:
+        When True, also export CSV versions of the summary tables.
+    detailed_sheets:
+        When True, include additional detailed sheets beyond the compact defaults.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if export_csvs:

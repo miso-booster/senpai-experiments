@@ -29,6 +29,7 @@ NUMERIC_COLUMNS = (
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for the RQ2 aggregation workflow."""
     parser = argparse.ArgumentParser(
         description=(
             "Aggregate multiple execution results.xlsx files and compare "
@@ -95,6 +96,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def _safe_bool(series: pd.Series) -> pd.Series:
+    """Coerce common truthy/falsey string-like values to booleans."""
     if series.dtype == bool:
         return series
     mapping = {
@@ -109,10 +111,12 @@ def _safe_bool(series: pd.Series) -> pd.Series:
 
 
 def discover_workbooks(runs_dir: Path, results_name: str) -> list[Path]:
+    """Return all run workbooks matching the expected results filename."""
     return sorted(p for p in runs_dir.glob(f"*/{results_name}") if p.is_file())
 
 
 def load_workbook(path: Path, sheet_name: str | None) -> pd.DataFrame:
+    """Load one results workbook and attach source/run metadata columns."""
     xl = pd.ExcelFile(path)
     chosen_sheet = sheet_name or xl.sheet_names[0]
     df = pd.read_excel(path, sheet_name=chosen_sheet)
@@ -131,6 +135,7 @@ def load_workbook(path: Path, sheet_name: str | None) -> pd.DataFrame:
 
 
 def load_all_results(workbooks: Sequence[Path], sheet_name: str | None) -> pd.DataFrame:
+    """Load and concatenate all results workbooks into a single dataframe."""
     frames: list[pd.DataFrame] = []
     for wb in workbooks:
         try:
@@ -164,12 +169,14 @@ def load_all_results(workbooks: Sequence[Path], sheet_name: str | None) -> pd.Da
 
 
 def _require_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
+    """Exit with a clear message if any required columns are missing."""
     missing = [col for col in required if col not in df.columns]
     if missing:
         raise SystemExit(f"Missing required columns: {', '.join(missing)}")
 
 
 def filter_rows(df: pd.DataFrame, architectures: Sequence[str] | None, include_failed: bool) -> pd.DataFrame:
+    """Filter by architecture list and optionally remove failed/timed-out rows."""
     out = df.copy()
     if architectures:
         wanted = {a.strip() for a in architectures if a.strip()}
@@ -188,6 +195,7 @@ def filter_rows(df: pd.DataFrame, architectures: Sequence[str] | None, include_f
 
 
 def _series_cv(series: pd.Series) -> float:
+    """Compute coefficient of variation (std/mean) for a numeric series."""
     mean = series.mean(skipna=True)
     std = series.std(skipna=True, ddof=1)
     if pd.isna(mean) or mean == 0 or pd.isna(std):
@@ -196,6 +204,7 @@ def _series_cv(series: pd.Series) -> float:
 
 
 def build_row_level_summary(df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.DataFrame:
+    """Build per-architecture summaries using one row per response as the unit."""
     summaries: list[dict[str, float | int | str]] = []
     for arch, group in df.groupby("arch_id", sort=True):
         row: dict[str, float | int | str] = {
@@ -224,6 +233,7 @@ def build_row_level_summary(df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.
 
 
 def build_fallback_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Summarize fallback counts and rates per architecture when available."""
     if "fallback" not in df.columns:
         return pd.DataFrame()
 
@@ -248,6 +258,7 @@ def build_fallback_summary(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_yaml_validity_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Summarize YAML validity counts and rates per architecture when available."""
     if "is_yaml_valid" not in df.columns:
         return pd.DataFrame()
 
@@ -276,6 +287,7 @@ def build_yaml_validity_summary(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_per_execution_arch_summary(df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.DataFrame:
+    """Aggregate metrics per (run_group_id, architecture) across that run's responses."""
     agg: dict[str, tuple[str, str]] = {}
     for metric in metric_cols:
         agg[f"{metric}__mean"] = (metric, "mean")
@@ -296,6 +308,7 @@ def build_per_execution_arch_summary(df: pd.DataFrame, metric_cols: Sequence[str
 
 
 def build_execution_level_summary(per_exec_arch_df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.DataFrame:
+    """Summarize variability across executions using per-execution architecture means."""
     rows: list[dict[str, float | int | str]] = []
     for arch, group in per_exec_arch_df.groupby("arch_id", sort=True):
         row: dict[str, float | int | str] = {
@@ -317,6 +330,7 @@ def build_execution_level_summary(per_exec_arch_df: pd.DataFrame, metric_cols: S
 
 
 def build_run_inventory(all_rows_df: pd.DataFrame, filtered_df: pd.DataFrame) -> pd.DataFrame:
+    """Compare available vs. included row counts per run and architecture."""
     all_counts = (
         all_rows_df.groupby(["run_group_id", "arch_id"], dropna=False)
         .size()
@@ -337,6 +351,7 @@ def build_run_inventory(all_rows_df: pd.DataFrame, filtered_df: pd.DataFrame) ->
 
 
 def main() -> None:
+    """Run the full RQ2 aggregation pipeline and write workbook/plots outputs."""
     args = parse_args()
     runs_dir = Path(args.runs_dir)
     out_dir = Path(args.out_dir)

@@ -5,6 +5,7 @@ import pandas as pd
 
 
 def _rate_equals_one(series: pd.Series) -> float:
+    """Return the share of observed numeric values that equal 1."""
     numeric = pd.to_numeric(series, errors="coerce")
     observed = numeric.notna().sum()
     if not observed:
@@ -13,6 +14,7 @@ def _rate_equals_one(series: pd.Series) -> float:
 
 
 def _ordered_arches(df: pd.DataFrame, preferred: Sequence[str] | None) -> list[str]:
+    """Return a stable architecture order, honoring an optional preferred list."""
     detected = [a for a in sorted(df["arch_id"].dropna().astype(str).unique()) if a]
     if not preferred:
         return detected
@@ -29,6 +31,13 @@ def generate_plots(
     plot_format: str,
     dpi: int,
 ) -> None:
+    """Generate RQ2 comparison plots from filtered per-response rows.
+
+    Creates:
+    - mean/std bar charts for the primary RQ2 metrics
+    - boxplots for per-response variability
+    - quality rate bars (fallback, YAML validity) when those columns exist
+    """
     try:
         import matplotlib
 
