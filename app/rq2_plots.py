@@ -85,14 +85,20 @@ def generate_plots(
             .agg(mean="mean", std="std")
             .reindex(arch_order)
         )
-        ax.bar(
-            stat.index,
-            stat["mean"].fillna(0),
-            yerr=stat["std"].fillna(0),
-            capsize=5,
-            color=[color_map[a] for a in stat.index],
-            alpha=0.9,
-        )
+        labels = list(stat.index)
+        x_all = list(range(len(labels)))
+        valid_mean = stat["mean"].notna()
+        x_valid = [x_all[i] for i, ok in enumerate(valid_mean.tolist()) if ok]
+        if x_valid:
+            ax.bar(
+                x_valid,
+                stat.loc[valid_mean, "mean"],
+                yerr=stat.loc[valid_mean, "std"].fillna(0),
+                capsize=5,
+                color=[color_map[labels[i]] for i in x_valid],
+                alpha=0.9,
+            )
+        ax.set_xticks(x_all, labels)
         ax.set_title(f"Average per response: {label}")
         ax.set_ylabel(label)
         ax.tick_params(axis="x", rotation=20)
