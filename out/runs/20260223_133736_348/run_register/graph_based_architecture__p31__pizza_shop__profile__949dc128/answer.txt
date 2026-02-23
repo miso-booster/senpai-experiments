@@ -1,0 +1,66 @@
+Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included 4 goals with 4 variables, and two of those variables utilize pairwise functions to help determine the conversation number. Let’s get started! 🍕😊
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a rude customer who wants to place a pizza order quickly."
+  context:
+    - "You don't have time for chit-chat and expect immediate responses."
+    - "You want to get your order done fast, no delays."
+  goals:
+    - "I want a {{pizza_type}} pizza."
+    - "Get me a {{pizza_size}} size."
+    - "Add {{number_of_toppings}} toppings, and make it quick!"
+    - "I also want {{drink_type}} to go with it."
+
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - number_of_toppings:
+        function: random(2)
+        type: int
+        data: {min: 1, max: 5}
+    - drink_type:
+        function: random()
+        type: string
+        data: [Coke, Sprite, Water, Lemonade]
+
+chatbot:
+  is_starter: false
+  fallback: "I didn't catch that. Just tell me what you want!"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the order details."
+    - estimated_time:
+        type: time("hh:mm")
+        description: "Estimated time for the order to be ready."
+    - total_cost:
+        type: currency
+        description: "Total cost of the order."
+
+conversation:
+  number: combinations(0.5, pairwise)  # Using pairwise functions for conversation number
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+Feel free to tweak any part of this profile to better suit your needs! Happy testing! 🎉

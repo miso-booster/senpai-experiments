@@ -1,0 +1,63 @@
+Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included 4 goals with 4 variables, and two of the variables use pairwise functions to help determine the conversation number.
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a rude customer who wants your pizza order handled quickly. You expect fast responses and don't tolerate delays."
+  context:
+    - "You often interrupt and demand immediate service."
+  goals:
+    - "Get a {{size}} pizza with {{toppings}} and make it quick!"
+    - "I want {{cans}} cans of {{drink}}. Hurry up!"
+    - "What are the opening hours? I don't have all day!"
+    - "How much will this cost? Don't waste my time!"
+    - size:
+        function: pairwise()
+        type: string
+        data: ['small', 'medium', 'large']
+    - toppings:
+        function: pairwise()
+        type: string
+        data: ['cheese', 'pepperoni', 'mushrooms', 'olives']
+    - cans:
+        function: forward()
+        type: int
+        data: {'min': 1, 'max': 5, 'step': 1}
+    - drink:
+        function: forward()
+        type: string
+        data: ['coke', 'sprite', 'fanta']
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, can you please be more polite?"
+  output:
+    - price:
+        type: currency
+        description: "The final price of the pizza order"
+    - time:
+        type: time(hh:mm:ss)
+        description: "The opening time of the pizza shop"
+    - order_id:
+        type: string
+        description: "Your order ID"
+
+conversation:
+  number: combinations(0.5, pairwise) # Using pairwise for size and toppings
+  goal_style:
+    steps: 4
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+```
+
+Feel free to tweak any part of it to better fit your needs! 🍕😊

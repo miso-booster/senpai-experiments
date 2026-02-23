@@ -1,0 +1,74 @@
+I've loaded the documentation for SENSEI profiles from the file `sensei-chat-guide.md`. This guide provides a comprehensive overview of how to create and structure profiles, including defining user goals, interaction styles, and chatbot outputs.
+
+### Profile Structure Overview
+Here's a brief outline of the key sections we'll need to include in your pizza ordering profile:
+
+1. **Test Name**: A descriptive name for the profile.
+2. **LLM Configuration**: Settings for the language model (temperature, model type).
+3. **User Definition**:
+   - **Language**: The language the user will communicate in.
+   - **Role**: A description of the user's persona.
+   - **Context**: Any specific preferences or constraints.
+   - **Goals**: The user's objectives during the conversation (e.g., ordering a custom pizza, changing to a predefined pizza).
+4. **Chatbot Output**: Fields that will be extracted at the end of the conversation (e.g., order details).
+5. **Conversation Control**: How many interactions to simulate and the style of interaction.
+
+### Interaction Style
+To capture the user's change of mind during the conversation, we can use the `interaction_style` section to include the "change your mind" behavior.
+
+### Next Steps
+I'll draft a profile that reflects these requirements. Here’s a proposed structure for your pizza ordering profile:
+
+```yaml
+test_name: "custom_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer who wants to order a pizza. You start by customizing your pizza but may change your mind halfway through."
+  context:
+    - "You enjoy a variety of toppings but also have a favorite predefined pizza."
+  goals:
+    - "Order a custom pizza with {{size}} size, {{toppings}} toppings."
+    - "Change my mind and ask for the predefined pizza: {{predefined_pizza}}."
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: random(3)
+        type: string
+        data: [pepperoni, mushrooms, onions, sausage, bacon, extra cheese, black olives, green peppers]
+    - predefined_pizza:
+        function: default()
+        type: string
+        data: ["Margherita", "Pepperoni", "BBQ Chicken"]
+
+chatbot:
+  is_starter: true
+  fallback: "Sorry, could you repeat that?"
+  output:
+    - order_details:
+        type: string
+        description: "Details of the pizza order including size and toppings."
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 5
+  interaction_style:
+    - change your mind
+```
+
+### Summary of the Profile
+- **User Role**: A customer who starts with a custom pizza order but may switch to a predefined option.
+- **Goals**: Includes both custom and predefined pizza options.
+- **Chatbot Output**: Captures the order details at the end of the conversation.
+
+Let me know if this structure works for you or if you have any changes or additional requirements! 😊

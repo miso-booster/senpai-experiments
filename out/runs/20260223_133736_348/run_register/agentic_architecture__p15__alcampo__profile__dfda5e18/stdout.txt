@@ -1,0 +1,66 @@
+conversation ID: agentic_architecture__p15__alcampo__profile__dfda5e18
+$$$
+He cargado la documentación de perfiles, específicamente el archivo `sensei-chat-guide.md`, que proporciona una guía sobre cómo funcionan los perfiles y cómo se deben estructurar. 
+
+### Propuesta de perfil para el chatbot de Alcampo
+
+A continuación, te propongo un perfil que puede probar la capacidad del chatbot para recomendar recetas y planificar menús. Este perfil incluirá secciones clave como el nombre de la prueba, el contexto del usuario, los objetivos y la salida del chatbot.
+
+```yaml
+test_name: "Alcampo_Recetas_y_Planificación"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres un cliente que busca recomendaciones de recetas y planificación de menús."
+  context:
+    - "Te gusta cocinar y estás interesado en recetas saludables."
+  goals:
+    - "Recomiéndame una receta con {{ingredientes}}."
+    - "Ayúdame a planificar un menú para {{número_días}} días."
+    - ingredientes:
+        function: random()
+        type: string
+        data: [pollo, pescado, verduras, pasta, arroz]
+    - número_días:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 7
+
+chatbot:
+  is_starter: true
+  fallback: "Lo siento, no entiendo. ¿Puedes reformular tu pregunta?"
+  output:
+    - receta_recomendada:
+        type: string
+        description: "La receta recomendada por el chatbot."
+    - menú_planificado:
+        type: list[string]
+        description: "Lista de platos planificados para los días solicitados."
+
+conversation:
+  number: combinations(0.5, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - single questions
+```
+
+### Descripción del perfil:
+- **test_name**: Nombre del perfil para identificar la prueba.
+- **user**: Define el rol del usuario y sus objetivos, como pedir recetas y planificar menús.
+- **chatbot.output**: Define los campos que el chatbot debe devolver, como la receta recomendada y el menú planificado.
+- **conversation**: Controla cómo se desarrollará la conversación, incluyendo el número de interacciones y el estilo de interacción.
+
+¿Te parece bien este perfil? ¿Hay algo que te gustaría ajustar o añadir? 😊
+$$$

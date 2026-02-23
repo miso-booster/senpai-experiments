@@ -1,0 +1,31 @@
+Hey there! 😊 Let's take a look at your rule `check_cau_information`. 
+
+### Current Rule:
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Issues:
+1. **Redundancy**: The `when` condition is checking if the contact details are correct, and then the `oracle` is doing the exact same check. This is unnecessary because the `oracle` should be used to validate the output based on the conditions set in `when`.
+
+### Suggested Fix:
+We can modify the rule to focus on checking if the contact details are correct without repeating the same conditions. Here’s a revised version:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: "True"  # This allows the rule to always check the output
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Explanation:
+- **`when: True`**: This means that the rule will always evaluate the `oracle` condition. It’s a way of saying, "I want to check the output regardless of any specific input conditions."
+- **`oracle`**: This now serves its purpose correctly by validating whether the contact details provided in the conversation match the expected values.
+
+### Summary:
+By simplifying the `when` condition and keeping the `oracle` focused on checking the correctness of the output, your rule becomes more efficient and clear! If you have any more questions or need further assistance, feel free to ask! 😊

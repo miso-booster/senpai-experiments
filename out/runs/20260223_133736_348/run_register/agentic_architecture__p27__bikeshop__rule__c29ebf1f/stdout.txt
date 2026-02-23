@@ -1,0 +1,36 @@
+conversation ID: agentic_architecture__p27__bikeshop__rule__c29ebf1f
+$$$
+Your rule has a few issues that need to be addressed to align with the Sensei-check DSL syntax and best practices. Here’s the original rule along with the identified issues and the updated version.
+
+### Original Rule
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 2
+when: conv[0].tune_up_price == 50
+if: conv[0].tune_up_price is not None
+then: "The tune-up price is $50."
+```
+
+### Issues Identified
+1. **Conversations Count**: The rule specifies `conversations: 2`, but the logic only checks one conversation (`conv[0]`). If you want to evaluate a single conversation, it should be set to `1`.
+2. **Use of `when`**: The `when` clause is not necessary if you're only checking a single condition in `if` and `then`. Instead, you can directly use the `if` clause for the condition.
+3. **Output in `then`**: The `then` clause should typically assert a condition rather than provide a message. If you want to provide feedback, you can use an `on-error` clause.
+
+### Updated Rule
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+if: conv[0].tune_up_price is not None and extract_float(conv[0].tune_up_price) == 50
+then: "The tune-up price is $50."
+on-error: "The tune-up price is not $50."
+```
+
+### Changes Made
+- **Conversations Count**: Changed to `1` since we're checking a single conversation.
+- **Condition Logic**: Merged the price check into the `if` clause. It now checks if `tune_up_price` is not `None` and if it equals 50.
+- **Output Handling**: Changed the `then` clause to provide a message indicating the price is correct, and added an `on-error` clause to provide feedback when the condition fails.
+
+This structure aligns better with the Sensei-check guidelines and ensures that the rule functions correctly. If you have any further questions or need additional modifications, feel free to ask! 😊
+$$$
