@@ -3,6 +3,12 @@ from pathlib import Path
 import pandas as pd
 
 
+def _has_metric_family(row_summary: pd.DataFrame, metric_prefix: str) -> bool:
+    """Return True when row_summary contains columns for the given metric family."""
+    prefix = f"{metric_prefix}__"
+    return any(col.startswith(prefix) for col in row_summary.columns)
+
+
 def _build_metric_sheet(
     row_summary: pd.DataFrame,
     *,
@@ -38,6 +44,7 @@ def save_outputs(
     run_inventory: pd.DataFrame,
     fallback_summary: pd.DataFrame,
     yaml_validity_summary: pd.DataFrame,
+    missing_metrics: list[str],
     export_csvs: bool,
     detailed_sheets: bool,
 ) -> None:
@@ -53,6 +60,8 @@ def save_outputs(
         Precomputed summaries produced by the aggregation pipeline.
     fallback_summary, yaml_validity_summary:
         Optional quality/reliability summaries; empty dataframes are skipped.
+    missing_metrics:
+        Metric column names expected by RQ2 but not present in the input data.
     export_csvs:
         When True, also export CSV versions of the summary tables.
     detailed_sheets:
@@ -71,32 +80,64 @@ def save_outputs(
             fallback_summary.to_csv(out_dir / "summary_fallback.csv", index=False)
         if not yaml_validity_summary.empty:
             yaml_validity_summary.to_csv(out_dir / "summary_yaml_validity.csv", index=False)
+        if missing_metrics:
+            pd.DataFrame({"missing_metric": missing_metrics}).to_csv(
+                out_dir / "missing_metrics.csv", index=False
+            )
 
-    response_time_summary = _build_metric_sheet(
-        row_summary,
-        metric_prefix="latency_s",
-        value_name_prefix="response_time",
-        unit_suffix="_s",
-    )
-    input_tokens_summary = _build_metric_sheet(
-        row_summary,
-        metric_prefix="total_input_tokens",
-        value_name_prefix="input_tokens",
-    )
-    llm_calls_summary = _build_metric_sheet(
-        row_summary,
-        metric_prefix="llm_call_count",
-        value_name_prefix="llm_calls",
-    )
+    metric_sheets: list[tuple[str, pd.DataFrame]] = []
+    if _has_metric_family(row_summary, "latency_s"):
+        metric_sheets.append(
+            (
+                "response_time",
+                _build_metric_sheet(
+                    row_summary,
+                    metric_prefix="latency_s",
+                    value_name_prefix="response_time",
+                    unit_suffix="_s",
+                ),
+            )
+        )
+    if _has_metric_family(row_summary, "total_input_tokens"):
+        metric_sheets.append(
+            (
+                "input_tokens",
+                _build_metric_sheet(
+                    row_summary,
+                    metric_prefix="total_input_tokens",
+                    value_name_prefix="input_tokens",
+                ),
+            )
+        )
+    if _has_metric_family(row_summary, "llm_call_count"):
+        metric_sheets.append(
+            (
+                "llm_calls",
+                _build_metric_sheet(
+                    row_summary,
+                    metric_prefix="llm_call_count",
+                    value_name_prefix="llm_calls",
+                ),
+            )
+        )
 
     with pd.ExcelWriter(out_dir / "RQ2_architecture_metrics.xlsx", engine="openpyxl") as writer:
-        response_time_summary.to_excel(writer, index=False, sheet_name="response_time")
-        input_tokens_summary.to_excel(writer, index=False, sheet_name="input_tokens")
-        llm_calls_summary.to_excel(writer, index=False, sheet_name="llm_calls")
+        for sheet_name, df in metric_sheets:
+            df.to_excel(writer, index=False, sheet_name=sheet_name)
         if not fallback_summary.empty:
             fallback_summary.to_excel(writer, index=False, sheet_name="fallback")
         if not yaml_validity_summary.empty:
             yaml_validity_summary.to_excel(writer, index=False, sheet_name="yaml_validity")
+        if missing_metrics:
+            pd.DataFrame(
+                {
+                    "missing_metric": missing_metrics,
+                    "note": [
+                        "Sheet not generated because this column was not present in the aggregated inputs."
+                    ]
+                    * len(missing_metrics),
+                }
+            ).to_excel(writer, index=False, sheet_name="missing_metrics")
         if detailed_sheets:
             row_summary.to_excel(writer, index=False, sheet_name="per_response_summary")
             exec_summary.to_excel(writer, index=False, sheet_name="across_executions_summary")
