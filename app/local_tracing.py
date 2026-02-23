@@ -28,6 +28,10 @@ _TRACE_COLUMNS = [
     "latency_s",
     "error",
     "execution_order",
+    "input_tokens",
+    "output_tokens",
+    "total_tokens",
+    "llm_cost",
     "tags",
     "metadata",
 ]
@@ -144,6 +148,10 @@ def export_langsmith_traces_to_xlsx(
         latency_s: float | None = None
         if run.start_time and run.end_time:
             latency_s = (run.end_time - run.start_time).total_seconds()
+        input_tokens = getattr(run, "prompt_tokens", None)
+        output_tokens = getattr(run, "completion_tokens", None)
+        total_tokens = getattr(run, "total_tokens", None)
+        llm_cost = getattr(run, "total_cost", None)
 
         run_extra = getattr(run, "extra", None) or {}
         run_metadata = run.metadata
@@ -171,6 +179,10 @@ def export_langsmith_traces_to_xlsx(
                 "latency_s": latency_s,
                 "error": _serialize_trace_field(getattr(run, "error", None)),
                 "execution_order": getattr(run, "execution_order", None),
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "total_tokens": total_tokens,
+                "llm_cost": llm_cost,
                 "tags": _serialize_trace_field(getattr(run, "tags", None)),
                 "metadata": _serialize_trace_field(run_extra.get("metadata")),
             }
