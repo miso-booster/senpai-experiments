@@ -178,7 +178,8 @@ def filter_rows(df: pd.DataFrame, architectures: Sequence[str] | None, include_f
     if not include_failed:
         mask = pd.Series(True, index=out.index)
         if "timed_out" in out.columns:
-            mask &= out["timed_out"].fillna(False) != True
+            timed_out_mask = _safe_bool(out["timed_out"]).fillna(False).astype(bool)
+            mask &= ~timed_out_mask
         if "returncode" in out.columns:
             mask &= out["returncode"].fillna(0) == 0
         out = out[mask]
