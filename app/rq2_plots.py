@@ -13,6 +13,15 @@ def _rate_equals_one(series: pd.Series) -> float:
     return float((numeric == 1).sum() / observed)
 
 
+def _true_rate(series: pd.Series) -> float:
+    """Return the share of observed values that are True."""
+    observed = series.notna().sum()
+    if not observed:
+        return float("nan")
+    # `fallback` is normalized upstream to booleans/NA before plotting.
+    return float(series.fillna(False).astype(bool).sum() / observed)
+
+
 def _ordered_arches(df: pd.DataFrame, preferred: Sequence[str] | None) -> list[str]:
     """Return a stable architecture order, honoring an optional preferred list."""
     detected = [a for a in sorted(df["arch_id"].dropna().astype(str).unique()) if a]
@@ -115,7 +124,7 @@ def generate_plots(
     if "fallback" in filtered_rows.columns:
         fallback_rate = (
             filtered_rows.groupby("arch_id")["fallback"]
-            .apply(lambda s: (s == True).sum() / s.notna().sum() if s.notna().sum() else float("nan"))  # noqa: E712
+            .apply(_true_rate)
             .reindex(arch_order)
         )
         quality_panels.append(("Fallback Rate", fallback_rate, "Rate"))
