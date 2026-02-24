@@ -1,0 +1,70 @@
+Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included 4 goals with 4 variables, and two of the variables use pairwise functions to allow for conversation number determination. Let’s dive in! 🍕✨
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A rude customer who wants their pizza order handled quickly."
+  context:
+    - "You are impatient and expect fast service."
+    - "You often interrupt and demand immediate answers."
+  goals:
+    - "Get me a {{pizza_type}} pizza, and it better be quick!"
+    - "I want a {{pizza_size}} size for that pizza!"
+    - "How much is it for {{number_of_drinks}} drinks?"
+    - "I need it ready in {{pickup_time}}!"
+
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - pickup_time:
+        function: random()
+        type: string
+        data: [15 minutes, 30 minutes, 45 minutes]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, can you be more specific? I need to get this order right."
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the pizza order and pickup time."
+    - total_cost:
+        type: currency
+        description: "Total cost of the order including drinks."
+    - estimated_ready_time:
+        type: time("hh:mm")
+        description: "Estimated time when the order will be ready."
+
+conversation:
+  number: combinations(0.5, pairwise) # Using pairwise functions for conversation number
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - random:
+        - single questions
+        - change your mind
+```
+
+Feel free to adjust any part of this profile to better fit your needs! Happy testing! 😊🍕

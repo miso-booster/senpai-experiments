@@ -1,0 +1,131 @@
+2026-02-24 12:01:36,361 [[92mINFO[0m] (root) - [92mVerbose enabled.[0m
+2026-02-24 12:01:36,361 [[92mINFO[0m] (app.utils.tracing) - [92mAll LangSmith environment variables are set. LangSmith tracing enabled for project 'senpai-assistant'.[0m
+2026-02-24 12:01:36,362 [[92mINFO[0m] (app.embeddings.embedding_build) - [92mEmbedding index up to date (profiles, rules): E:\ESCRITORIO\Py_projects\SENPAI\agentic\Senpai-Assistant\app\embedding_files\pizza_shop\pizza_shop.pkl[0m
+2026-02-24 12:01:36,362 [[92mINFO[0m] (app.embeddings.embedding_build) - [92mEmbedding index up to date (connectors): E:\ESCRITORIO\Py_projects\SENPAI\agentic\Senpai-Assistant\app\embedding_files\connectors\connectors.pkl[0m
+2026-02-24 12:01:37,920 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-02-24 12:01:50,675 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-02-24 12:01:50,818 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[validation_decision] decided requires_validation=True[0m
+2026-02-24 12:01:50,819 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[tool_validation] skipped (no tool calls found).[0m
+2026-02-24 12:01:50,873 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] classifier cache hit (message): True[0m
+2026-02-24 12:01:50,873 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: profile[0m
+2026-02-24 12:01:50,874 [[93mWARNING[0m] (app.assistant.validation_middleware) - [93mvalidator input 1:
+# block 1
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+chatbot:
+  output:
+    pizza_types: 
+      description: List of available pizza types.
+    margarita_price: 
+      description: Price of a Margarita pizza.
+    drinks: 
+      description: List of available drinks and their prices.
+    shop_hours: 
+      description: Operating hours of the shop.
+    delivery_option: 
+      description: Information on whether the shop delivers.
+  conversation:
+    number: 3
+    max_cost: 0.5
+    goal_style:
+      all_answered:
+        export: false
+        limit: 20
+  interaction_style:
+  - single question
+```
+validator feedback 1:
+Profile block 1 (yaml)
+Errors:
+- Missing required top-level fields: conversation.
+- chatbot.output: Input should be a valid list
+- conversation: Field required
+- If you haven't already, use the get_docs tool for profiles to review the schema and examples.
+Warnings:
+- chatbot: unexpected fields present: conversation, interaction_style.
+- chatbot.fallback is recommended to avoid loops in conversations.
+
+[message_validation] failed (see feedback)[0m
+2026-02-24 12:01:52,046 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-02-24 12:02:05,158 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: profile[0m
+2026-02-24 12:02:05,160 [[93mWARNING[0m] (app.assistant.validation_middleware) - [93mvalidator input 2:
+# block 1
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+chatbot:
+  output:
+    - pizza_types: 
+        type: list[string]
+        description: List of available pizza types.
+    - margarita_price: 
+        type: currency
+        description: Price of a Margarita pizza.
+    - drinks: 
+        type: list[string]
+        description: List of available drinks and their prices.
+    - shop_hours: 
+        type: string
+        description: Operating hours of the shop.
+    - delivery_option: 
+        type: boolean
+        description: Information on whether the shop delivers.
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single question
+```
+validator feedback 2:
+Profile block 1 (yaml)
+Errors:
+- conversation.interaction_style '['single question']' are invalid interaction styles. Allowed styles: all questions, change language, change your mind, default, long phrases, make spelling mistakes, single questions.
+- If you haven't already, use the get_docs tool for profiles to review the schema and examples.
+Warnings:
+- chatbot.fallback is recommended to avoid loops in conversations.
+
+[message_validation] failed (see feedback)[0m
+2026-02-24 12:02:05,610 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-02-24 12:02:20,875 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: profile[0m
+2026-02-24 12:02:20,878 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] passed (1 block).[0m

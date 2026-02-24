@@ -1,0 +1,38 @@
+Let's review your rule `check_cau_information` and ensure it aligns with the SENSEI-check guidelines. Here’s the original rule you provided:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Issues Identified
+1. **Conversations Count**: The rule is set to check only one conversation (`conversations: 1`), but it seems to be structured like a metamorphic rule which typically requires at least two conversations.
+2. **Field Names**: The fields `contact_email`, `contact_phone`, and `physical_address` must be defined in the `chatbot.output` of the relevant profile. If they are not, the rule will not work.
+
+### Suggested Fix
+To correct the rule, we need to:
+1. Change the `conversations` count to at least `2` if it is meant to compare two sets of information.
+2. Ensure that the fields used in the `when` and `oracle` expressions match the actual fields defined in the profile's `chatbot.output`.
+
+Here’s a revised version of your rule assuming that the fields are correctly defined in the profile:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 2  # Changed to 2 for a metamorphic comparison
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Explanation
+- **Conversations**: The `conversations: 2` indicates that this rule is meant to compare two conversations. This is typical for metamorphic rules, which check how outputs change when inputs change.
+- **Field Validation**: Ensure that `contact_email`, `contact_phone`, and `physical_address` are defined in the `chatbot.output` of the profile you are targeting. If they are not, you will need to update the profile accordingly.
+
+### Next Steps
+1. **Confirm Profile Fields**: Check the profile to ensure that the fields used in the rule exist.
+2. **Test the Rule**: After making these adjustments, run the rule to verify that it behaves as expected.
+
+If you need help with checking the profile or further adjustments, just let me know! 😊

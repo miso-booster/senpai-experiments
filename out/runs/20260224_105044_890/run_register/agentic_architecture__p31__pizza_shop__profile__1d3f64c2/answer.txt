@@ -1,0 +1,77 @@
+Let's create a profile for a pizza shop where the user is rude and wants things done quickly. This profile will include four goals, with two variables using pairwise functions to allow for conversation number determination through a pairwise matrix.
+
+Here's how the profile will be structured:
+
+### Pizza Shop Profile YAML
+
+```yaml
+test_name: "pizza_shop_user"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A rude customer who wants their pizza fast."
+  context:
+    - "The user is impatient and demands quick responses."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}}."
+    - "Make it {{extra}} and hurry up!"
+    - "I want it ready in {{time}} minutes."
+    - "What's the total price in {{currency}}?"
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, onions, olives]
+    - extra:
+        function: pairwise()
+        type: string
+        data: [extra cheese, spicy sauce]
+    - time:
+        function: random()
+        type: int
+        data:
+          min: 10
+          max: 30
+    - currency:
+        function: random()
+        type: string
+        data: [USD, EUR]
+
+chatbot:
+  is_starter: false
+  fallback: "Could you please rephrase that?"
+  output:
+    - total_price:
+        type: currency
+        description: "Final price including taxes and add-ons"
+    - order_id:
+        type: string
+        description: "Order confirmation ID"
+
+conversation:
+  number: combinations(0.5, pairwise) # Two pairwise functions have been declared
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### Explanation of the Profile
+
+- **Goals**: The profile includes four goals that the user will pursue during the conversation. Each goal incorporates variables that are either randomly selected or determined through pairwise combinations.
+- **Pairwise Functions**: The `toppings` and `extra` variables both use pairwise functions to ensure that combinations of toppings and extras are covered efficiently.
+- **Conversation Control**: The conversation number is set to use a combination of pairwise functions, which allows for a structured exploration of the different combinations of inputs.
+
+Feel free to adjust any specific details or add more variables as needed! 😊

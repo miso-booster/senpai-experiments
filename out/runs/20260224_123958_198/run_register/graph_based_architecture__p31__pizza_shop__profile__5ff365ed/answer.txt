@@ -1,0 +1,75 @@
+Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included 4 goals with 4 variables, and I've set up 2 of the variables to use pairwise functions. Let's dive in! 🍕✨
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a rude customer who wants to place a pizza order quickly without any nonsense."
+  context:
+    - "You expect fast responses and don't tolerate delays."
+    - "You want to get your order sorted out as soon as possible."
+  goals:
+    - "Get me a {{pizza_type}} pizza with {{toppings}}."
+    - "I want a {{pizza_size}} pizza, and make it quick!"
+    - "How much for {{number_of_drinks}} {{drink_type}}?"
+    - "Just tell me the total cost already!"
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [extra cheese, mushrooms, olives, pepperoni]
+    - pizza_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, can you repeat that? I need to process your order quickly."
+  output:
+    - total_cost:
+        type: currency
+        description: "The total cost of the pizza and drinks."
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the order details."
+
+conversation:
+  number: combinations(0.5, pairwise) # This will use the pairwise function to determine conversation number.
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - long phrases
+    - single questions
+```
+
+### Breakdown of the Profile:
+- **User Role**: The user is characterized as rude and impatient, demanding quick responses.
+- **Goals**: There are four goals that include variables for pizza type, toppings, size, and drinks.
+- **Pairwise Functions**: The `pizza_type` and `toppings` variables use pairwise functions to ensure a variety of combinations during the conversation.
+- **Conversation Control**: The conversation number is set to use combinations based on the pairwise function.
+
+Feel free to adjust any details to better fit your needs! Happy testing! 😊🍕

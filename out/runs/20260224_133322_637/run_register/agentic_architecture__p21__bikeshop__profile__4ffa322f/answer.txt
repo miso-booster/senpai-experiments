@@ -1,0 +1,60 @@
+I've loaded the relevant documentation for SENSEI profiles from the file `sensei-chat-guide.md`. Now, let's create a profile for a user who wants to set an appointment at a bike shop to have their wheels changed. This profile will include various variables to test different days and times for the appointment.
+
+Here's a proposed structure for the profile:
+
+```yaml
+test_name: "bike_shop_appointment"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer looking to set an appointment to change their bike wheels."
+  context:
+    - "The user is flexible with dates and times."
+  goals:
+    - "Schedule an appointment for wheel change on {{appointment_date}} at {{appointment_time}}."
+    - appointment_date:
+        function: random()
+        type: string
+        data:
+          - any(3 dates within the next 30 days)
+    - appointment_time:
+        function: random()
+        type: string
+        data:
+          - "10:00 AM"
+          - "1:00 PM"
+          - "3:00 PM"
+          - "5:00 PM"
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry, could you please provide more details?"
+  output:
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the appointment date and time."
+
+conversation:
+  number: combinations(0.5, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - single questions
+```
+
+### Summary of the Profile:
+- **User Role**: A customer wanting to schedule a wheel change.
+- **Goals**: Includes variables for `appointment_date` and `appointment_time` to test different scheduling scenarios.
+- **Chatbot Output**: Captures the confirmation of the appointment.
+- **Conversation Style**: Allows for a mix of long phrases and single questions to simulate different interaction styles.
+
+Would you like to proceed with this profile, or do you have any modifications in mind? 😊

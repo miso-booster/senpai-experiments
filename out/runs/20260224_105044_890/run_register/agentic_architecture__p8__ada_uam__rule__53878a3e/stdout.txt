@@ -1,0 +1,41 @@
+conversation ID: agentic_architecture__p8__ada_uam__rule__53878a3e
+$$$
+Let's take a look at your rule `check_cau_information` and see if it aligns with the guidelines from the documentation. Here’s a breakdown of the rule you provided:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Issues Identified
+1. **Field Names**: The fields `contact_email`, `contact_phone`, and `physical_address` must exist in the `chatbot.output` of a relevant SENSEI Chat profile. If these fields are not defined in the profile, the rule will not function correctly.
+   
+2. **Single Conversation**: The rule is set to check only one conversation. If you are checking for correctness of contact details, it may be more appropriate to use a two-conversation rule to compare different sets of information.
+
+3. **Oracle Usage**: The oracle is essentially repeating the condition from the `when` clause. While this is not incorrect, it may be more beneficial to define a different relational check if you are comparing two conversations.
+
+### Suggested Update
+To ensure that the fields used in the rule correspond to the actual fields defined in the `chatbot.output` of a profile, here’s a version of the rule that checks the correctness of the contact details:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 2
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+if:   conv[1].contact_email != conv[0].contact_email or conv[1].contact_phone != conv[0].contact_phone or conv[1].physical_address != conv[0].physical_address
+then: 'False'
+```
+
+### Explanation of Changes
+- **Conversations**: Changed to `2` to allow for a comparison between two sets of contact details.
+- **If/Then Structure**: Added an `if` condition to check if the details in the second conversation differ from the first. This provides a clearer relational check rather than just repeating the `when` condition. The `then` clause now returns a string.
+
+### Next Steps
+1. **Confirm Profile Fields**: Check the relevant SENSEI Chat profile to ensure that `contact_email`, `contact_phone`, and `physical_address` are defined in the `chatbot.output`.
+2. **Update Profile if Necessary**: If those fields do not exist, you will need to update the profile to include them.
+
+Would you like me to help you find the relevant profile to confirm the fields? 😊
+$$$

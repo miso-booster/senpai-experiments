@@ -1,0 +1,31 @@
+Hey there! 😊 Let's take a look at your rule `check_cau_information` together!
+
+### Current Rule
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Issues
+1. **Redundant Conditions**: The `when` clause is checking if the contact details are correct, and the `oracle` is doing the same. This means the rule is not structured correctly for a metamorphic test, as it should not be checking the same condition in both places.
+
+### Suggested Fix
+To properly structure this rule, you should use the `when` clause to set the condition under which you want to check the correctness of the information. The `oracle` should be a condition that is expected to hold true based on the input. Here’s how you can fix it:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+if: "True"
+then: "True"
+```
+
+### Explanation
+- **`when` Clause**: This checks if the provided contact details match the expected values. If this condition is true, it means we are in a scenario where we expect the information to be correct.
+- **`oracle` Clause**: Instead of repeating the checks, we set it to `True`, indicating that if the `when` condition is satisfied, we assume the information is correct. This is a more appropriate use of the oracle in a metamorphic rule.
+
+This way, your rule is structured correctly for testing! If you have any more questions or need further assistance, feel free to ask! 😊
