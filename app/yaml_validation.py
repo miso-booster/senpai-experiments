@@ -1,5 +1,6 @@
 import logging
 import re
+import textwrap
 from typing import Callable, Protocol
 
 from senpai_validators import validate_connector, validate_profile, validate_rule
@@ -29,7 +30,10 @@ def _extract_fenced_code_blocks(answer_text: str) -> list[tuple[str, str]]:
     blocks: list[tuple[str, str]] = []
     for match in _MARKDOWN_FENCE_RE.finditer(answer_text):
         language = match.group("lang").strip().lower()
-        code = match.group("code").strip()
+        # Markdown fenced code blocks nested under list items often include a
+        # shared indentation prefix in the raw text. Dedent before stripping so
+        # valid YAML isn't rejected due to preserved list indentation.
+        code = textwrap.dedent(match.group("code")).strip()
         if code:
             blocks.append((language, code))
     return blocks
