@@ -156,6 +156,13 @@ def _export_tracing_with_completeness_retry(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
+    parser.add_argument(
+        "-r",
+        "--runs",
+        type=int,
+        default=1,
+        help= "Indicates the amount of runs to make."
+    )
     args = parser.parse_args()
     setup_logging(args.verbose)
 
@@ -166,67 +173,68 @@ def main():
     prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "prompts.json"))
 
     timeout_s = 300
-    now = time.time()
-    run_group_id = time.strftime("%Y%m%d_%H%M%S", time.localtime(now)) + f"_{int((now % 1) * 1000):03d}"
-    automation_start_time = datetime.now(timezone.utc)
-    group_results = []
-    tracing_envs = _collect_langsmith_export_envs(archs, run_group_id)
 
     # Limpia results.jsonl si quieres empezar de cero
     # RESULTS_PATH.unlink(missing_ok=True)
 
-    for arch in archs:
-        logging.info("Architecture start id=%s", arch.id)
-        for p in prompts:
-            try:
-                res = run_one(
-                    arch=arch,
-                    prompt_id=p["id"],
-                    prompt_text=p["text"],
-                    sensei_project=p["project"],
-                    prompt_type=p["type"],
-                    timeout_s=timeout_s,
-                    run_group_id=run_group_id,
-                    verbose=args.verbose
-                )
-                append_jsonl(RESULTS_PATH, res)
-                group_results.append(res)
-                logging.info(
-                    "[OK] %s %s latency=%.3fs timed_out=%s",
-                    res["arch_id"],
-                    res["prompt_id"],
-                    res["latency_s"],
-                    res["timed_out"],
-                )
+    for i in range(args.runs):
+        now = time.time()
+        run_group_id = time.strftime("%Y%m%d_%H%M%S", time.localtime(now)) + f"_{int((now % 1) * 1000):03d}"
+        automation_start_time = datetime.now(timezone.utc)
+        group_results = []
+        tracing_envs = _collect_langsmith_export_envs(archs, run_group_id)
+        for arch in archs:
+            logging.info("Architecture start id=%s", arch.id)
+            for p in prompts:
+                try:
+                    res = run_one(
+                        arch=arch,
+                        prompt_id=p["id"],
+                        prompt_text=p["text"],
+                        sensei_project=p["project"],
+                        prompt_type=p["type"],
+                        timeout_s=timeout_s,
+                        run_group_id=run_group_id,
+                        verbose=args.verbose
+                    )
+                    append_jsonl(RESULTS_PATH, res)
+                    group_results.append(res)
+                    logging.info(
+                        "[OK] %s %s latency=%.3fs timed_out=%s",
+                        res["arch_id"],
+                        res["prompt_id"],
+                        res["latency_s"],
+                        res["timed_out"],
+                    )
 
-            except FileNotFoundError as e:
-                logging.warning("Skipping prompt_id=%s project=%s: %s", p.get("id"), p.get("project"), e)
-            print("\n"
-                  "------------------------------------------------------------------------------------------------\n"
-                  "------------------------------------------------------------------------------------------------"
-                  "\n")
-        logging.info("Architecture end id=%s", arch.id)
+                except FileNotFoundError as e:
+                    logging.warning("Skipping prompt_id=%s project=%s: %s", p.get("id"), p.get("project"), e)
+                print("\n"
+                      "------------------------------------------------------------------------------------------------\n"
+                      "------------------------------------------------------------------------------------------------"
+                      "\n")
+            logging.info("Architecture end id=%s", arch.id)
 
-    if group_results:
-        group_dir = RUNS_DIR / run_group_id
-        group_dir.mkdir(parents=True, exist_ok=True)
-        group_xlsx_path = group_dir / "results.xlsx"
-        df = pd.DataFrame(group_results, columns=RESULT_COLUMNS)
-        df.to_excel(group_xlsx_path, index=False)
+        if group_results:
+            group_dir = RUNS_DIR / run_group_id
+            group_dir.mkdir(parents=True, exist_ok=True)
+            group_xlsx_path = group_dir / "results.xlsx"
+            df = pd.DataFrame(group_results, columns=RESULT_COLUMNS)
+            df.to_excel(group_xlsx_path, index=False)
 
-        tracing_xlsx_path = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.xlsx"
-        _export_tracing_with_completeness_retry(
-            tracing_xlsx_path=tracing_xlsx_path,
-            tracing_envs=tracing_envs,
-            automation_start_time=automation_start_time,
-            expected_conversations=len(group_results),
-            expected_run_ids={str(item["run_id"]) for item in group_results if item.get("run_id") is not None},
-            mandatory_columns=MANDATORY_TRACING_COLUMNS,
-        )
-        update_results_metrics_from_tracing(
-            tracing_path=tracing_xlsx_path,
-            results_path=group_xlsx_path,
-        )
+            tracing_xlsx_path = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.xlsx"
+            _export_tracing_with_completeness_retry(
+                tracing_xlsx_path=tracing_xlsx_path,
+                tracing_envs=tracing_envs,
+                automation_start_time=automation_start_time,
+                expected_conversations=len(group_results),
+                expected_run_ids={str(item["run_id"]) for item in group_results if item.get("run_id") is not None},
+                mandatory_columns=MANDATORY_TRACING_COLUMNS,
+            )
+            update_results_metrics_from_tracing(
+                tracing_path=tracing_xlsx_path,
+                results_path=group_xlsx_path,
+            )
 
 if __name__ == "__main__":
     main()
