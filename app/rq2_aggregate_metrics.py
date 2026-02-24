@@ -38,8 +38,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--runs-dir",
-        default="out/runs",
-        help="Directory containing run folders (default: out/runs)",
+        default="out/runs/architecture_comparison",
+        help="Directory containing run folders (default: out/runs/architecture_comparison)",
     )
     parser.add_argument(
         "--results-name",
