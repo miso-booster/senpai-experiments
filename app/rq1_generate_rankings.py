@@ -7,9 +7,10 @@ from typing import Dict, List, Tuple
 
 import pandas as pd
 
-from app.setup_configuration import RUNS_DIR, load_prompts_json
+from app.setup_configuration import OUT_DIR, RUNS_DIR, load_prompts_json
 
 DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
+DEFAULT_RQ1_OUT_ROOT = OUT_DIR / "RQ1"
 
 
 def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
@@ -97,7 +98,7 @@ def _resolve_out_dir(
 ) -> pathlib.Path:
     if out_dir_arg:
         return pathlib.Path(out_dir_arg)
-    return results_path.parent / "ranking"
+    return DEFAULT_RQ1_OUT_ROOT / results_path.parent.name
 
 
 def main() -> None:
@@ -128,7 +129,7 @@ def main() -> None:
         help="Path to prompts.json",
     )
     parser.add_argument(
-        "--out-dir", help="Output directory (default: results parent / ranking)"
+        "--out-dir", help="Output directory (default: out/RQ1/<run_id>)"
     )
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
     args = parser.parse_args()

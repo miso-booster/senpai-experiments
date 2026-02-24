@@ -77,7 +77,7 @@ uv run python -m app.rq1_generate_rankings
 By default this uses the first run folder under `out/runs/architecture_comparison/`.
 You can select a specific run with `--run-id <run_id>`.
 
-This writes to `out/runs/architecture_comparison/<run_id>/ranking/` (CSV delimiter is `;`):
+This writes to `out/RQ1/<run_id>/` (CSV delimiter is `;`):
 - `ranking.md` (responses randomized per prompt)
 - `key.csv` (label -> arch/run mapping)
 - `answers.csv` (template to fill in ranks)
@@ -91,7 +91,7 @@ Aggregate multiple subjects (expects `answers_*.csv` and `key.csv`):
 uv run python -m app.rq1_aggregate_rankings
 ```
 
-By default this reads `out/runs/architecture_comparison/<run_id>/ranking/` from the
+By default this reads `out/RQ1/<run_id>/` for the
 first run folder. You can select a specific run with `--run-id <run_id>` or pass
 `--answers-dir` directly.
 

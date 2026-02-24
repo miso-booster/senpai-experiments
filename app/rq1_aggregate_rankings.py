@@ -3,9 +3,10 @@ import csv
 import pathlib
 from typing import Dict, List, Tuple
 
-from app.setup_configuration import RUNS_DIR
+from app.setup_configuration import OUT_DIR, RUNS_DIR
 
 DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
+DEFAULT_RQ1_OUT_ROOT = OUT_DIR / "RQ1"
 
 
 def _load_key(path: pathlib.Path) -> Dict[Tuple[str, str], Dict[str, str]]:
@@ -60,7 +61,7 @@ def _resolve_answers_dir(args: argparse.Namespace) -> pathlib.Path:
     if args.answers_dir:
         return pathlib.Path(args.answers_dir)
     run_dir = _resolve_run_dir(pathlib.Path(args.runs_dir), args.run_id)
-    return run_dir / "ranking"
+    return DEFAULT_RQ1_OUT_ROOT / run_dir.name
 
 
 def main() -> None:
@@ -69,7 +70,7 @@ def main() -> None:
         "--answers-dir",
         help=(
             "Directory containing answers_*.csv files. If omitted, uses "
-            "<runs-dir>/<run-id>/ranking or the first run folder under runs-dir."
+            "out/RQ1/<run_id> for the selected/first run."
         ),
     )
     parser.add_argument(
