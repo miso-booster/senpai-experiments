@@ -1,0 +1,83 @@
+Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. This profile includes four goals, with two of them using pairwise functions to allow for a conversation number to be determined by the pairwise matrix. Let's dive right in! 🍕😊
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A rude customer who wants their pizza order handled quickly."
+  context:
+    - "You are impatient and expect quick responses."
+    - "You don't tolerate any delays or unnecessary details."
+  goals:
+    - "What kinds of pizzas do you have?"
+    - "I want a {{pizza_type}} pizza."
+    - "Make it {{pizza_size}} and hurry up!"
+    - "Get me {{number_of_drinks}} {{drink_type}} drinks."
+
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - drink_type:
+        function: random()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Can you be more specific?"
+  output:
+    - pizza_options:
+        type: string
+        description: "The list of available pizza types."
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the pizza order."
+    - drink_options:
+        type: string
+        description: "The list of available drinks."
+    - total_cost:
+        type: currency
+        description: "The total cost of the order."
+
+conversation:
+  number: combinations(0.5, pairwise) # Using pairwise functions for conversation number
+  goal_style:
+    steps: 5
+  interaction_style:
+    - long phrases
+    - change your mind
+```
+
+### Breakdown of the Profile:
+- **User Role**: The user is described as a rude customer who wants quick responses.
+- **Goals**: 
+  - Asking about available pizza types.
+  - Ordering a specific pizza type.
+  - Specifying the size and emphasizing urgency.
+  - Requesting a certain number of drinks.
+- **Variables**: 
+  - `pizza_type` and `pizza_size` use the `pairwise()` function to allow for a conversation number based on combinations.
+  - `number_of_drinks` uses a forward function to specify how many drinks are needed.
+  - `drink_type` uses a random function to select from a list of drinks.
+
+Feel free to tweak any part of it to better fit your needs! Happy testing! 🍕✨

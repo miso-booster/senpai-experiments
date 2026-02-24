@@ -1,0 +1,42 @@
+conversation ID: agentic_architecture__p40__pizza_shop__rule__1891ee2c
+$$$
+To create a metamorphic rule that checks if adding a drink costs an extra $2, we need to ensure that the rule references the correct output field from the profile's `chatbot.output`. Based on the documentation, here's how we can structure the rule:
+
+### Metamorphic Rule Structure
+
+- **Name**: A descriptive name for the rule.
+- **Description**: A brief explanation of what the rule checks.
+- **Conversations**: This should be set to 2, as we are comparing two conversations.
+- **When**: This condition checks that both conversations have the same size and number of pizzas, and that one includes a drink.
+- **If**: This condition checks that the second conversation includes a drink.
+- **Then**: This checks that the price of the first conversation (without a drink) is $2 less than the price of the second conversation (with a drink).
+
+### Example YAML for the Rule
+
+Here's how the YAML for this metamorphic rule would look:
+
+```yaml
+name: drink_price_check
+description: Adding a drink costs 2 dollars extra
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].number == conv[1].number and conv[1].drink is not None
+if:   conv[0].drink is None
+then: extract_float(conv[1].price) == extract_float(conv[0].price) + 2
+```
+
+### Explanation of the YAML
+
+- **name**: `drink_price_check` - A unique identifier for the rule.
+- **description**: Clearly states the purpose of the rule.
+- **conversations**: Set to `2` to indicate that we are comparing two conversations.
+- **when**: Ensures that both conversations have the same size and number of pizzas, and that the second conversation includes a drink.
+- **if**: Checks that the first conversation does not have a drink.
+- **then**: Asserts that the price of the second conversation (with a drink) is exactly $2 more than the price of the first conversation (without a drink).
+
+### Next Steps
+
+- Make sure the profile you are using has the `drink` and `price` fields defined in its `chatbot.output`.
+- If everything looks good, you can implement this rule in your project!
+
+If you need any adjustments or further assistance, just let me know! 😊
+$$$

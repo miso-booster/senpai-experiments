@@ -1,0 +1,61 @@
+[project-context] Loaded 8 profile(s) [general_information_seeker.yaml, pizza_and_drink_order_placement.yaml, pizza_and_drinks_information_seeker.yaml, pizza_order_test_custom.yml, pizzaorder_ivan_test.yml, unrecognized_query_handler.yaml, user_experiencing_input_issues.yaml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\sensei_projects\pizza_shop
+conversation ID: graph_based_architecture__p35__pizza_shop__profile__eb3e7d7a
+Verbose activated
+[intent-classifier] {'intent': 'create_profile', 'raw': '{"intent": "create_profile", "reason": "user wants a new SENSEI profile for a specific pizza ordering scenario"}'}
+[validation-decision] {'decision': 'TRUE', 'reason': 'user expects a correct rule'}
+$$$
+That sounds like a fun scenario to test! 😊 You can create a profile that captures this behavior by using the `change your mind` interaction style. Here’s a sample profile that you can use as a template:
+
+```yaml
+test_name: "custom_to_predefined_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer who initially wants to order a custom pizza but changes your mind and decides to order a predefined pizza instead."
+  context:
+    - "You are ordering for a casual gathering with friends."
+  goals:
+    - "I want to order a custom pizza with {{custom_toppings}}."
+    - "Actually, can I get a {{predefined_pizza}} instead?"
+    - custom_toppings:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, olives, bell peppers, extra cheese]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, BBQ Chicken]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Can you repeat your order?"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the pizza order, including type and toppings."
+
+conversation:
+  number: 2
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+### Explanation:
+- **User Role**: The user is defined as someone who initially wants a custom pizza but changes their mind.
+- **Goals**: The user first expresses a desire for a custom pizza and then asks for a predefined pizza.
+- **Interaction Style**: The `change your mind` style allows the user to switch their request during the conversation.
+- **Output**: The chatbot will confirm the order based on the final pizza choice.
+
+Feel free to adjust any details to better fit your testing needs! Happy testing! 🍕
+$$$

@@ -1,0 +1,80 @@
+conversation ID: agentic_architecture__p31__pizza_shop__profile__fa43420b
+$$$
+Let's create a profile for a pizza shop where the user is rude and wants things done quickly. We'll include four goals, two of which will utilize pairwise functions to determine the conversation number based on a pairwise matrix.
+
+Here's the profile structure:
+
+```yaml
+test_name: "pizza_shop_user"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a rude customer who wants fast service."
+  context:
+    - "You expect quick responses and are impatient."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}} and {{cans}} cans of {{drink}}"
+    - "Get the total price in {{currency}} quickly"
+    - "Ask for a delivery time of {{delivery_time}}"
+    - "Request a discount if the order is late"
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, onions, olives]
+    - cans:
+        function: random(2)
+        type: int
+        data: [1, 2, 3, 4]
+    - drink:
+        function: random()
+        type: string
+        data: [Coke, Sprite, Fanta]
+    - currency:
+        function: random()
+        type: string
+        data: [USD, EUR]
+    - delivery_time:
+        function: pairwise()
+        type: string
+        data: [15 minutes, 30 minutes, 45 minutes]
+
+chatbot:
+  is_starter: true
+  fallback: "I can't help you with that."
+  output:
+    - total_price:
+        type: currency
+        description: "Final price including taxes and add-ons"
+    - delivery_time:
+        type: string
+        description: "Estimated delivery time"
+
+conversation:
+  number: combinations(0.5, pairwise) # Utilizing pairwise functions for conversation number
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - single questions
+```
+
+### Summary of the Profile
+- **User Role**: Rude customer wanting fast service.
+- **Goals**: Includes ordering pizza, getting prices, and requesting delivery times.
+- **Variables**: Two pairwise functions for toppings and delivery time, ensuring varied combinations.
+- **Chatbot Output**: Captures total price and delivery time.
+
+This profile is designed to simulate a fast-paced, demanding customer interaction in a pizza shop setting. If you need any modifications or additional features, just let me know! 🍕
+$$$

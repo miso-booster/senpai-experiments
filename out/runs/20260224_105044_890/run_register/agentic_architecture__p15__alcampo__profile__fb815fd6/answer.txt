@@ -1,0 +1,73 @@
+He cargado la documentación sobre perfiles, específicamente el archivo `sensei-chat-guide.md`, que proporciona información sobre cómo estructurar un perfil para un chatbot. Aquí hay un resumen de lo que encontré y cómo podemos proceder para crear el perfil que deseas:
+
+### Estructura del Perfil
+Un perfil en SENSEI se define en un archivo YAML y tiene varias secciones clave:
+
+- **test_name**: Nombre del perfil.
+- **llm**: Configuración del modelo de lenguaje.
+- **user**: Define el lenguaje, rol, contexto y objetivos del usuario simulado.
+- **chatbot**: Configura el comportamiento del chatbot y los campos de salida que se extraerán.
+- **conversation**: Controla el número de conversaciones y el estilo de interacción.
+
+### Campos Clave para el Perfil de Recetas
+Para un perfil que recomiende recetas y planifique menús, podríamos considerar los siguientes campos en `chatbot.output`:
+
+- **receta_recomendada**: Tipo de string, descripción de la receta recomendada.
+- **ingredientes**: Lista de strings, ingredientes necesarios.
+- **tiempo_preparacion**: Tipo de tiempo, tiempo estimado para preparar la receta.
+- **dificultad**: Tipo de string, nivel de dificultad de la receta.
+
+### Ejemplo de Perfil
+Aquí tienes un ejemplo básico de cómo podría verse este perfil:
+
+```yaml
+test_name: "perfil_recetas_alcampo"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres un usuario que busca recomendaciones de recetas y planificación de menús."
+  context:
+    - "Te gusta cocinar y buscas recetas saludables."
+  goals:
+    - "Recomiéndame una receta para {{tipo_comida}}."
+    - tipo_comida:
+        function: random()
+        type: string
+        data: [cena, almuerzo, desayuno]
+
+chatbot:
+  is_starter: true
+  fallback: "Lo siento, no entendí eso. ¿Podrías reformularlo?"
+  output:
+    - receta_recomendada:
+        type: string
+        description: "Nombre de la receta recomendada."
+    - ingredientes:
+        type: list[string]
+        description: "Lista de ingredientes necesarios."
+    - tiempo_preparacion:
+        type: time("hh:mm")
+        description: "Tiempo estimado para preparar la receta."
+    - dificultad:
+        type: string
+        description: "Nivel de dificultad de la receta."
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 3
+  interaction_style:
+    - random:
+      - long phrases
+      - single questions
+```
+
+### Próximos Pasos
+¿Te gustaría que realice algún ajuste en este perfil o que lo guarde con un nombre específico? 😊

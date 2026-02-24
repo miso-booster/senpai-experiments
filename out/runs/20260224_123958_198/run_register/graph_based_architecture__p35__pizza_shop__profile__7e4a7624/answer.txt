@@ -1,0 +1,58 @@
+That sounds like a fun scenario to test! 😊 You can create a profile that captures the user's initial intention to order a custom pizza and then allows them to change their mind and request a predefined pizza instead. Here’s a sample profile to get you started:
+
+```yaml
+test_name: "custom_to_predefined_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer trying to order a pizza. You initially want a custom pizza but change your mind halfway through."
+  context:
+    - "You are planning a casual get-together with friends."
+  goals:
+    - "I want to order a custom pizza with {{custom_toppings}}."
+    - "Actually, can I get a {{predefined_pizza}} instead?"
+    - custom_toppings:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, olives, onions, extra cheese]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Can you please clarify?"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the pizza order, whether custom or predefined."
+    - estimated_time:
+        type: time("hh:mm")
+        description: "Estimated time for the pizza to be ready."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+### Explanation:
+- **User Role**: The user is a customer who initially wants a custom pizza but changes their mind.
+- **Goals**: The user has two main goals: to order a custom pizza and then to switch to a predefined pizza.
+- **Chatbot Output**: The chatbot will confirm the order and provide an estimated time for readiness.
+- **Interaction Style**: The `change your mind` style allows the user to switch their request during the conversation.
+
+Feel free to adjust the toppings and predefined pizza options as needed! Happy testing! 🍕✨ If you have any more questions or need further adjustments, just let me know!

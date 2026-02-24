@@ -1,0 +1,32 @@
+Hey there! 😊 Let's take a closer look at your rule named `check_cau_information`. 
+
+### Current Rule:
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Issues:
+1. **Redundant Conditions**: The `when` and `oracle` sections are checking the same conditions. This isn't necessary because the `oracle` is meant to assert the expected outcome based on the conditions defined in `when`. 
+
+### Suggested Fix:
+You should define the `when` condition to filter conversations and then use the `oracle` to check if the expected outcome is met. Here’s a revised version:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: "True"  # This asserts that if the when condition is met, the information is correct.
+```
+
+### Explanation:
+- **`when`**: This part checks if the conversation contains the correct contact details for the CAU. If they match, the rule proceeds to evaluate the `oracle`.
+- **`oracle`**: Instead of repeating the same checks, we can simply assert `True` here. This means that if the `when` condition is satisfied, we expect the information to be correct, and thus the rule will pass.
+
+This way, the rule is cleaner and follows the intended logic of checking the correctness of the provided information without redundancy. 
+
+Feel free to ask if you have any more questions or need further clarification! 😊
