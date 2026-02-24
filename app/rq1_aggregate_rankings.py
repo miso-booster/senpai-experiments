@@ -3,6 +3,10 @@ import csv
 import pathlib
 from typing import Dict, List, Tuple
 
+from app.setup_configuration import RUNS_DIR
+
+DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
+
 
 def _load_key(path: pathlib.Path) -> Dict[Tuple[str, str], Dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as f:
@@ -30,14 +34,66 @@ def _rank_columns(fieldnames: List[str]) -> List[str]:
     return sorted(cols, key=_rank_key)
 
 
+def _resolve_run_dir(runs_dir: pathlib.Path, run_id: str | None) -> pathlib.Path:
+    if not runs_dir.exists():
+        raise SystemExit(f"runs-dir not found: {runs_dir}")
+    if not runs_dir.is_dir():
+        raise SystemExit(f"runs-dir is not a directory: {runs_dir}")
+
+    if run_id:
+        run_dir = runs_dir / run_id
+        if not run_dir.exists():
+            raise SystemExit(f"run_id not found in {runs_dir}: {run_id}")
+        if not run_dir.is_dir():
+            raise SystemExit(f"run_id path is not a directory: {run_dir}")
+        return run_dir
+
+    run_dirs = sorted(p for p in runs_dir.iterdir() if p.is_dir())
+    if not run_dirs:
+        raise SystemExit(f"No run directories found in: {runs_dir}")
+    selected = run_dirs[0]
+    print(f"Using first run in {runs_dir}: {selected.name}")
+    return selected
+
+
+def _resolve_answers_dir(args: argparse.Namespace) -> pathlib.Path:
+    if args.answers_dir:
+        return pathlib.Path(args.answers_dir)
+    run_dir = _resolve_run_dir(pathlib.Path(args.runs_dir), args.run_id)
+    return run_dir / "ranking"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Aggregate subject answers into a long-form CSV.")
-    parser.add_argument("--answers-dir", required=True, help="Directory containing answers_*.csv files")
+    parser.add_argument(
+        "--answers-dir",
+        help=(
+            "Directory containing answers_*.csv files. If omitted, uses "
+            "<runs-dir>/<run-id>/ranking or the first run folder under runs-dir."
+        ),
+    )
+    parser.add_argument(
+        "--run-id",
+        "--run-group-id",
+        dest="run_id",
+        help=(
+            "Run folder id inside the runs directory "
+            "(alias: --run-group-id). Used when --answers-dir is omitted."
+        ),
+    )
+    parser.add_argument(
+        "--runs-dir",
+        default=str(DEFAULT_RQ1_RUNS_DIR),
+        help=(
+            "Directory containing run folders "
+            f"(default: {DEFAULT_RQ1_RUNS_DIR})"
+        ),
+    )
     parser.add_argument("--key", help="Key CSV to use for all answers files (default: <answers-dir>/key.csv)")
     parser.add_argument("--out", help="Output CSV path (default: <answers-dir>/combined_rankings.csv)")
     args = parser.parse_args()
 
-    answers_dir = pathlib.Path(args.answers_dir)
+    answers_dir = _resolve_answers_dir(args)
     if not answers_dir.exists():
         raise SystemExit(f"answers-dir not found: {answers_dir}")
 
