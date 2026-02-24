@@ -9,6 +9,8 @@ import pandas as pd
 
 from app.setup_configuration import RUNS_DIR, load_prompts_json
 
+DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
+
 
 def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
     df = pd.read_excel(results_path)
@@ -61,12 +63,33 @@ def _yaml_status_label(value: str | None) -> str:
     return "n/a"
 
 
+def _resolve_run_dir(runs_dir: pathlib.Path, run_id: str | None) -> pathlib.Path:
+    if not runs_dir.exists():
+        raise SystemExit(f"runs-dir not found: {runs_dir}")
+    if not runs_dir.is_dir():
+        raise SystemExit(f"runs-dir is not a directory: {runs_dir}")
+
+    if run_id:
+        run_dir = runs_dir / run_id
+        if not run_dir.exists():
+            raise SystemExit(f"run_id not found in {runs_dir}: {run_id}")
+        if not run_dir.is_dir():
+            raise SystemExit(f"run_id path is not a directory: {run_dir}")
+        return run_dir
+
+    run_dirs = sorted(p for p in runs_dir.iterdir() if p.is_dir())
+    if not run_dirs:
+        raise SystemExit(f"No run directories found in: {runs_dir}")
+    selected = run_dirs[0]
+    print(f"Using first run in {runs_dir}: {selected.name}")
+    return selected
+
+
 def _resolve_results_path(args: argparse.Namespace) -> pathlib.Path:
     if args.results:
         return pathlib.Path(args.results)
-    if args.run_group_id:
-        return RUNS_DIR / args.run_group_id / "results.xlsx"
-    raise SystemExit("Provide --results or --run-group-id")
+    run_dir = _resolve_run_dir(pathlib.Path(args.runs_dir), args.run_id)
+    return run_dir / "results.xlsx"
 
 
 def _resolve_out_dir(
@@ -83,7 +106,21 @@ def main() -> None:
     )
     parser.add_argument("--results", help="Path to results.xlsx")
     parser.add_argument(
-        "--run-group-id", help="Run group id to locate out/runs/<id>/results.xlsx"
+        "--run-id",
+        "--run-group-id",
+        dest="run_id",
+        help=(
+            "Run folder id inside the runs directory "
+            "(alias: --run-group-id). If omitted, the first run folder is used."
+        ),
+    )
+    parser.add_argument(
+        "--runs-dir",
+        default=str(DEFAULT_RQ1_RUNS_DIR),
+        help=(
+            "Directory containing run folders "
+            f"(default: {DEFAULT_RQ1_RUNS_DIR})"
+        ),
     )
     parser.add_argument(
         "--prompts",

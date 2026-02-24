@@ -71,10 +71,13 @@ Ranking sheets (offline evaluation)
 Generate a randomized ranking markdown + key + answers template:
 
 ```powershell
-uv run python -m app.generate_rankings --run-group-id <run_group_id>
+uv run python -m app.rq1_generate_rankings
 ```
 
-This writes to `out/runs/<run_group_id>/ranking/` (CSV delimiter is `;`):
+By default this uses the first run folder under `out/runs/architecture_comparison/`.
+You can select a specific run with `--run-id <run_id>`.
+
+This writes to `out/runs/architecture_comparison/<run_id>/ranking/` (CSV delimiter is `;`):
 - `ranking.md` (responses randomized per prompt)
 - `key.csv` (label -> arch/run mapping)
 - `answers.csv` (template to fill in ranks)
@@ -85,8 +88,12 @@ Each response in `ranking.md` now includes `YAML: true|false|n/a` based on
 Aggregate multiple subjects (expects `answers_*.csv` and `key.csv`):
 
 ```powershell
-uv run python -m app.aggregate_rankings --answers-dir out/runs/<run_group_id>/ranking
+uv run python -m app.rq1_aggregate_rankings
 ```
+
+By default this reads `out/runs/architecture_comparison/<run_id>/ranking/` from the
+first run folder. You can select a specific run with `--run-id <run_id>` or pass
+`--answers-dir` directly.
 
 This also writes metrics CSVs in the same folder:
 - `metrics_overall.csv` (per-architecture avg rank, Borda, win rate)
