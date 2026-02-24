@@ -71,7 +71,7 @@ Ranking sheets (offline evaluation)
 Generate a randomized ranking markdown + key + answers template:
 
 ```powershell
-uv run python -m app.generate_rankings --run-group-id <run_group_id>
+uv run python -m app.rq1_generate_rankings --run-group-id <run_group_id>
 ```
 
 This writes to `out/runs/<run_group_id>/ranking/` (CSV delimiter is `;`):
@@ -85,7 +85,7 @@ Each response in `ranking.md` now includes `YAML: true|false|n/a` based on
 Aggregate multiple subjects (expects `answers_*.csv` and `key.csv`):
 
 ```powershell
-uv run python -m app.aggregate_rankings --answers-dir out/runs/<run_group_id>/ranking
+uv run python -m app.rq1_aggregate_rankings --answers-dir out/runs/<run_group_id>/ranking
 ```
 
 This also writes metrics CSVs in the same folder:
