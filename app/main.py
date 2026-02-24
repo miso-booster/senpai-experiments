@@ -169,8 +169,8 @@ def main():
     ensure_dirs()
     logging.info("Loading architectures and prompts")
 
-    archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
-    prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "prompts.json"))
+    archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures_ro3.json"))
+    prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "ro3_prompts.json"))
 
     timeout_s = 300
 

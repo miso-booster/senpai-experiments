@@ -1,0 +1,59 @@
+Here's a summary of the rules and their conditions:
+
+### Rules Overview
+
+1. **conversation_lengths.yaml**
+   - **Description**: Checks if the number of turns of the user and the chatbot equals the conversation length.
+   - **Active**: False
+   - **Oracle**: `conversation_length() == conversation_length('assistant') + conversation_length('user')`
+
+2. **more_toppings_cost_more.yaml**
+   - **Description**: Validates that adding more toppings to a custom pizza costs more.
+   - **Active**: True
+   - **When**: `conv[0].size == conv[1].size and conv[0].drink == conv[1].drink`
+   - **If/Then**: If the number of toppings in `conv[0]` is greater than in `conv[1]`, then the price of `conv[0]` should be greater than that of `conv[1]`.
+
+3. **only_talks_about_pizzas.yaml**
+   - **Description**: Ensures the chatbot only talks about pizzas.
+   - **Active**: True
+   - **Oracle**: `only_talks_about('pizza orders, drink orders, information on delivery of pizzas, information about the pizza shop')`
+
+4. **ordering_conversation_turns.yaml**
+   - **Description**: Validates that the user always orders a pizza before ordering drinks.
+   - **Active**: False
+   - **Oracle**: `utterance_index('user', 'ordering a pizza') < utterance_index('user', 'ordering drink')`
+
+5. **ordering_conversation_turns_assistant.yaml**
+   - **Description**: Ensures the assistant confirms the pizza order after the user orders a pizza.
+   - **Active**: False
+   - **Oracle**: `utterance_index('user', 'ordering a pizza') < utterance_index('assistant', 'confirms pizza order')`
+
+6. **same_number_of_toppings_cost_the_same.yaml**
+   - **Description**: Checks that pizzas with the same number of toppings cost the same.
+   - **Active**: False
+   - **When**: `conv[0].drink == conv[1].drink`
+   - **If/Then**: If the sizes are the same and the number of toppings is equal, then their prices should be the same.
+
+### Mapping Rules to Profile Outputs
+
+Now, let's map these rules to the outputs of the profiles to identify which rules validate which outputs:
+
+- **Active Rules**:
+  - **more_toppings_cost_more.yaml**: Relates to profiles that include pricing for custom pizzas (e.g., `pizza_order_test_custom.yml`, `pizza_and_drink_order_placement.yaml`).
+  - **only_talks_about_pizzas.yaml**: Relates to all profiles that focus on pizza orders and drinks (e.g., `general_information_seeker.yaml`, `pizza_and_drink_order_placement.yaml`, `pizza_and_drinks_information_seeker.yaml`).
+
+- **Inactive Rules**:
+  - **conversation_lengths.yaml**: Not directly tied to any specific output.
+  - **ordering_conversation_turns.yaml**: Not directly tied to any specific output.
+  - **ordering_conversation_turns_assistant.yaml**: Not directly tied to any specific output.
+  - **same_number_of_toppings_cost_the_same.yaml**: Relates to profiles that include pricing for custom pizzas but is inactive.
+
+### Identifying Gaps
+1. **Coverage on Pricing**: While there are rules that check for pricing consistency (like `more_toppings_cost_more.yaml`), there may be gaps in testing other aspects of pricing, such as ensuring that prices are correctly calculated based on different sizes and toppings.
+2. **Conversation Flow**: The inactive rules related to conversation turns may indicate that there are no active tests ensuring the logical flow of ordering (e.g., ordering pizza before drinks).
+
+### Next Steps
+- **Activate Inactive Rules**: Consider activating the rules that check conversation flow and consistency in pricing.
+- **Add New Rules**: Create additional rules to cover any uncovered aspects of pricing and conversation flow.
+
+Would you like to proceed with any specific actions based on this audit? 😊

@@ -1,0 +1,82 @@
+Here are the details of the rules and their corresponding logic:
+
+### Rules Overview
+
+1. **conversation_lengths.yaml**
+   - **Description**: Checks if the number of turns of the user and the chatbot equals the conversation length.
+   - **Active**: False
+   - **Oracle**: `conversation_length() == conversation_length('assistant') + conversation_length('user')`
+
+2. **more_toppings_cost_more.yaml**
+   - **Description**: Validates that adding more toppings to a custom pizza costs more.
+   - **Active**: True
+   - **Conversations**: 2
+   - **When**: `conv[0].size == conv[1].size and conv[0].drink == conv[1].drink`
+   - **If**: `len(conv[0].toppings) > len(conv[1].toppings)`
+   - **Then**: `extract_float(conv[0].price) > extract_float(conv[1].price)`
+
+3. **only_talks_about_pizza.yaml**
+   - **Description**: Ensures the chatbot only talks about pizzas.
+   - **Active**: True
+   - **Oracle**: `only_talks_about('pizza orders, drink orders, information on delivery of pizzas, information about the pizza shop')`
+
+4. **ordering_conversation_turns.yaml**
+   - **Description**: Validates that the user always orders a pizza before drinks.
+   - **Active**: False
+   - **Oracle**: `utterance_index('user', 'ordering a pizza') < utterance_index('user', 'ordering drink')`
+
+5. **ordering_conversation_turns_assistant.yaml**
+   - **Description**: Checks that the assistant confirms the pizza order after the user orders a pizza.
+   - **Active**: False
+   - **Oracle**: `utterance_index('user', 'ordering a pizza') < utterance_index('assistant', 'confirms pizza order')`
+
+6. **same_number_of_toppings_cost_the_same.yaml**
+   - **Description**: Ensures pizzas with the same number of toppings cost the same.
+   - **Active**: False
+   - **When**: `conv[0].drink == conv[1].drink`
+   - **If**: `conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)`
+   - **Then**: `extract_float(conv[0].price) == extract_float(conv[1].price)`
+
+### Mapping Rules to Profile Outputs
+Now, let's map these rules to the outputs defined in the profiles to identify which outputs are being validated and which are not. 
+
+#### Active Rules and Their Mappings:
+- **more_toppings_cost_more.yaml**
+  - **Validates**: 
+    - `price` (from profiles that include pizza pricing)
+  
+- **only_talks_about_pizza.yaml**
+  - **Validates**: 
+    - General adherence to pizza-related outputs across profiles.
+
+#### Inactive Rules and Their Mappings:
+- **conversation_lengths.yaml**
+  - **Does not validate any specific profile output.**
+  
+- **ordering_conversation_turns.yaml**
+  - **Does not validate any specific profile output.**
+  
+- **ordering_conversation_turns_assistant.yaml**
+  - **Does not validate any specific profile output.**
+  
+- **same_number_of_toppings_cost_the_same.yaml**
+  - **Validates**:
+    - `price` (from profiles that include pizza pricing)
+
+### Identifying Gaps
+From the mapping:
+- **Outputs that are not validated by any rules**:
+  - `available_information`, `opening_hours`, `estimated_order_time`, `drink_options_and_prices`, `custom_pizza_pricing` (from `general_information_seeker.yaml`).
+  - `pizza_options`, `drink_options`, `order_summary`, `total_cost`, `estimated_readiness_time`, `pickup_location`, `order_id` (from `pizza_and_drink_order_placement.yaml`).
+  - `pizza_types`, `margarita_price`, `drinks_and_prices`, `operating_hours`, `delivery_availability` (from `pizza_and_drinks_information_seeker.yaml`).
+  - `available_pizza_types`, `selected_pizza_type`, `pizza_size_options`, `selected_pizza_size`, `pizza_order_confirmation`, `drink_options_and_prices`, `drink_quantity_requested`, `selected_drink_type` (from `pizzaorder_ivan_test.yaml`).
+  - `pizza_order_response`, `pizza_type_response`, `custom_pizza_response` (from `user_experiencing_input_issues.yaml`).
+
+### Summary of Gaps
+- There are several outputs across multiple profiles that currently lack validation rules. This includes essential information like opening hours, estimated order times, and various drink options and prices.
+
+### Next Steps
+1. **Create or Update Rules**: We can create new rules to cover the identified gaps.
+2. **Prioritize**: Decide which outputs are most critical to validate first.
+
+Would you like to proceed with creating specific rules for any of these gaps? If so, please let me know which outputs you'd like to focus on! 😊

@@ -1,0 +1,37 @@
+I found several rules that reference the `price` field:
+
+1. **`same_number_of_toppings_cost_the_same.yaml`**
+   - This rule checks if pizzas with the same number of toppings cost the same.
+
+2. **`more_toppings_cost_more.yaml`**
+   - This rule verifies that adding more toppings increases the total price.
+
+3. **`ordering_conversation_turns.yaml`**
+   - This rule checks the order of pizza and drink requests but may not directly relate to `price`.
+
+### **What Needs to Be Updated**
+For the first two rules, we will need to update the references from `price` to `total_cost`. Here’s how we can do that:
+
+#### **Example Updates**
+1. **`same_number_of_toppings_cost_the_same.yaml`**
+   ```yaml
+   name: same_number_of_toppings_cost_the_same
+   description: Pizzas with same number of toppings cost the same
+   conversations: 2
+   when: conv[0].drink == conv[1].drink
+   if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)
+   ```
+
+2. **`more_toppings_cost_more.yaml`**
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza costs more
+   conversations: 2
+   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+   if: len(conv[0].toppings) > len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+   ```
+
+### **Next Steps**
+If you would like to proceed with these updates or have any other questions, just let me know! 😊
