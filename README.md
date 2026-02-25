@@ -106,6 +106,31 @@ RQ2 architecture metrics aggregation
 python -m app.rq2_aggregate_metrics
 ```
 
+RQ3 tool consistency (across repeated runs)
+-------------------------------------------
+RQ3 measures tool-use consistency across repeated runs of the same prompt
+from LangSmith tracing exports (`tracing_*.xlsx`, using `run_type == "tool"`).
+
+Run the full pipeline (workbook + plots):
+
+```powershell
+python -m app.rq3 --runs-dir out/runs/tool_consistency --out-dir out/RQ3_tool_consistency
+```
+
+Main outputs
+- `out/RQ3_tool_consistency/RQ3_tool_consistency.xlsx`
+- `out/RQ3_tool_consistency/RQ3_prompt_consistency.png`
+- `out/RQ3_tool_consistency/RQ3_similarity_and_toolcount.png`
+- `out/RQ3_tool_consistency/RQ3_tool_presence_heatmap.png`
+- `out/RQ3_tool_consistency/RQ3_consistency_variability_summary.png` (boxplots)
+- `out/RQ3_tool_consistency/RQ3_consistency_variability_mean_std.png` (mean ± std)
+
+Optional split commands
+```powershell
+python -m app.rq3_tool_consistency --runs-dir out/runs/tool_consistency --out-dir out/RQ3_tool_consistency
+python -m app.rq3_plots --workbook out/RQ3_tool_consistency/RQ3_tool_consistency.xlsx
+```
+
 Output structure per execution
 ------------------------------
 Each execution writes to:
