@@ -100,25 +100,26 @@ def generate_plots(
         tp = tool_presence.copy()
         tp["presence_rate_across_runs"] = pd.to_numeric(tp["presence_rate_across_runs"], errors="coerce")
         heat = tp.pivot_table(
-            index="prompt_id",
-            columns="tool_name",
+            index="tool_name",
+            columns="prompt_id",
             values="presence_rate_across_runs",
             aggfunc="mean",
         )
-        heat = heat.reindex(index=[pid for pid in prompt_order if pid in heat.index])
+        heat = heat.reindex(columns=[pid for pid in prompt_order if pid in heat.columns])
         if not heat.empty:
             fig, ax = plt.subplots(figsize=(max(8, heat.shape[1] * 1.1), max(4, heat.shape[0] * 0.6 + 1.5)))
             im = ax.imshow(heat.fillna(0).to_numpy(), vmin=0, vmax=1, cmap="YlGnBu", aspect="auto")
-            ax.set_xticks(range(len(heat.columns)), labels=[str(c) for c in heat.columns], rotation=30, ha="right")
+            ax.set_xticks(range(len(heat.columns)), labels=[str(c) for c in heat.columns], rotation=0)
             ax.set_yticks(range(len(heat.index)), labels=[str(i) for i in heat.index])
-            ax.set_title("Tool Presence Rate Across Runs (per Prompt)")
+            ax.set_title("Tool Presence Rate Across Runs (Prompt x Tool)")
             cbar = fig.colorbar(im, ax=ax)
             cbar.set_label("Presence rate")
             for i in range(heat.shape[0]):
                 for j in range(heat.shape[1]):
                     val = heat.iloc[i, j]
                     if pd.notna(val):
-                        ax.text(j, i, f"{val:.1f}", ha="center", va="center", fontsize=8, color="black")
+                        text_color = "white" if float(val) >= 0.6 else "black"
+                        ax.text(j, i, f"{val:.1f}", ha="center", va="center", fontsize=8, color=text_color)
             _save(fig, "RQ3_tool_presence_heatmap")
 
     # Plot 4: variability across prompts using boxplots (overall and by difficulty)
