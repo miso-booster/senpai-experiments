@@ -102,7 +102,7 @@ This also writes metrics CSVs in the same folder:
 RQ2 (architecture metrics aggregation)
 -------------------------------------
 ```powershell
-python -m app.rq2_aggregate_metrics
+python -m app.rq2
 ```
 
 RQ3 (tool consistency across repeated runs)
