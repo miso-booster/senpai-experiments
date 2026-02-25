@@ -7,36 +7,32 @@ each prompt against each architecture, saving results to `out/`.
 Requirements
 ------------
 - Python 3.12+
-- uv (Python package manager)
+- `uv` (recommended) or `pip`
 
-Install dependencies (uv)
--------------------------
-If you don't have `uv` installed yet, install it with one of these:
-
-```powershell
-# Option A: pipx (recommended if available)
-pipx install uv
-
-# Option B: pip
-python -m pip install --user uv
-```
-
-Then install project dependencies:
+Install dependencies
+--------------------
+Recommended:
 
 ```powershell
 uv sync
 ```
 
+If you do not use `uv`, install from `requirements.txt`:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
 Run
 ---
 ```powershell
-uv run python -m app.main
+python -m app.main
 ```
 
 Optional verbose logging:
 
 ```powershell
-uv run python -m app.main -v
+python -m app.main -v
 ```
 
 Configuration
@@ -66,12 +62,15 @@ Outputs
 - Per-run JSONL results: `out/results.jsonl`
 - Per-group Excel: `out/runs/<run_group_id>/results.xlsx`
 
-Ranking sheets (offline evaluation)
-----------------------------------
+Research Questions
+------------------
+
+RQ1 (offline ranking sheets)
+----------------------------
 Generate a randomized ranking markdown + key + answers template:
 
 ```powershell
-uv run python -m app.rq1_generate_rankings
+python -m app.rq1_generate_rankings
 ```
 
 By default this uses the first run folder under `out/runs/architecture_comparison/`.
@@ -88,7 +87,7 @@ Each response in `ranking.md` now includes `YAML: true|false|n/a` based on
 Aggregate multiple subjects (expects `answers_*.csv` and `key.csv`):
 
 ```powershell
-uv run python -m app.rq1_aggregate_rankings
+python -m app.rq1_aggregate_rankings
 ```
 
 By default this reads `out/RQ1/<run_id>/` for the
@@ -100,14 +99,14 @@ This also writes metrics CSVs in the same folder:
 - `metrics_per_prompt.csv` (per-prompt avg rank + win rate)
 - `metrics_pairwise.csv` (pairwise win rates)
 
-RQ2 architecture metrics aggregation
-------------------------------------
+RQ2 (architecture metrics aggregation)
+-------------------------------------
 ```powershell
 python -m app.rq2_aggregate_metrics
 ```
 
-RQ3 tool consistency (across repeated runs)
--------------------------------------------
+RQ3 (tool consistency across repeated runs)
+------------------------------------------
 RQ3 measures tool-use consistency across repeated runs of the same prompt
 from LangSmith tracing exports (`tracing_*.xlsx`, using `run_type == "tool"`).
 
