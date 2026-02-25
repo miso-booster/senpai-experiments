@@ -101,6 +101,9 @@ This also writes metrics CSVs in the same folder:
 
 RQ2 (architecture metrics aggregation)
 -------------------------------------
+RQ2 aggregates metrics across multiple execution runs and generates a workbook
+plus comparison plots (averages and variability).
+
 ```powershell
 python -m app.rq2
 ```
