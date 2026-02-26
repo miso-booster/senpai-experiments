@@ -24,7 +24,7 @@ _MARKDOWN_FENCE_RE = re.compile(
     re.MULTILINE,
 )
 _YAML_TOP_LEVEL_KEY_RE = re.compile(r"^\s*[A-Za-z_][A-Za-z0-9_-]*\s*:", re.MULTILINE)
-_BLOCKQUOTE_PREFIX_RE = re.compile(r"(?m)^[ \t]{0,3}>\s?")
+_BLOCKQUOTE_PREFIX_RE = re.compile(r"(?m)^[ \t]{0,3}>[ \t]?")
 
 
 def _extract_fenced_code_blocks(answer_text: str) -> list[tuple[str, str]]:
