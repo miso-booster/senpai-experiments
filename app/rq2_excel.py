@@ -120,6 +120,17 @@ def save_outputs(
                 ),
             )
         )
+    if _has_metric_family(row_summary, "answer_code_lines"):
+        metric_sheets.append(
+            (
+                "code_lines",
+                _build_metric_sheet(
+                    row_summary,
+                    metric_prefix="answer_code_lines",
+                    value_name_prefix="code_lines",
+                ),
+            )
+        )
 
     with pd.ExcelWriter(out_dir / "RQ2_architecture_metrics.xlsx", engine="openpyxl") as writer:
         for sheet_name, df in metric_sheets:
