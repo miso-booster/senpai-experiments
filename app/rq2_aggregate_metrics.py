@@ -16,12 +16,14 @@ METRICS: dict[str, str] = {
     "latency_s": "Response time (s)",
     "total_input_tokens": "Input tokens",
     "llm_call_count": "LLM calls",
+    "answer_code_lines": "Code lines",
 }
 
 NUMERIC_COLUMNS = (
     "latency_s",
     "total_input_tokens",
     "llm_call_count",
+    "answer_code_lines",
     "is_yaml_valid",
     "returncode",
     "timeout_s",

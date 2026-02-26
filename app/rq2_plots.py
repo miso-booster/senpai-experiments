@@ -53,6 +53,7 @@ def generate_plots(
     - mean/std bar charts for the primary RQ2 metrics
     - boxplots for per-response variability
     - quality rate bars (fallback, YAML validity) when those columns exist
+    - a dedicated code-lines plot when `answer_code_lines` is available
     """
     try:
         import matplotlib
@@ -170,3 +171,30 @@ def generate_plots(
                 if pd.notna(value):
                     ax.text(i, min(value + 0.02, 0.98), f"{value:.2%}", ha="center", va="bottom", fontsize=9)
         _save(fig, "RQ2_quality_rates")
+
+    # Figure 4: dedicated code-lines metric plot (requested auxiliary metric)
+    if "answer_code_lines" in filtered_rows.columns:
+        series_by_arch = [
+            pd.to_numeric(
+                filtered_rows.loc[filtered_rows["arch_id"] == arch, "answer_code_lines"],
+                errors="coerce",
+            ).dropna()
+            for arch in arch_order
+        ]
+        if any(len(s) for s in series_by_arch):
+            fig, ax = plt.subplots(1, 1, figsize=(7.5, 4.8))
+            box = ax.boxplot(
+                series_by_arch,
+                labels=arch_order,
+                patch_artist=True,
+                showfliers=True,
+                medianprops={"color": "#d62728", "linewidth": 1.2},
+            )
+            for patch, arch in zip(box["boxes"], arch_order):
+                patch.set_facecolor(color_map[arch])
+                patch.set_alpha(0.65)
+            ax.set_title("Answer Code Lines per Response")
+            ax.set_ylabel("Code lines")
+            ax.tick_params(axis="x", rotation=20)
+            ax.grid(axis="y", alpha=0.3)
+            _save(fig, "RQ2_answer_code_lines_distribution")
