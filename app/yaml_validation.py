@@ -24,6 +24,7 @@ _MARKDOWN_FENCE_RE = re.compile(
     re.MULTILINE,
 )
 _YAML_TOP_LEVEL_KEY_RE = re.compile(r"^\s*[A-Za-z_][A-Za-z0-9_-]*\s*:", re.MULTILINE)
+_BLOCKQUOTE_PREFIX_RE = re.compile(r"(?m)^[ \t]{0,3}>[ \t]?")
 
 
 def _extract_fenced_code_blocks(answer_text: str) -> list[tuple[str, str]]:
@@ -74,18 +75,31 @@ def _extract_unfenced_yaml_candidates(answer_text: str) -> list[str]:
     return candidates
 
 
+def _normalize_markdown_parse_variants(answer_text: str) -> list[str]:
+    variants = [answer_text]
+    dequoted = _BLOCKQUOTE_PREFIX_RE.sub("", answer_text)
+    if dequoted != answer_text:
+        variants.append(dequoted)
+    return variants
+
+
 def _build_validation_candidates(answer_text: str) -> list[str]:
-    blocks = _extract_fenced_code_blocks(answer_text)
+    blocks: list[tuple[str, str]] = []
+    for variant in _normalize_markdown_parse_variants(answer_text):
+        blocks.extend(_extract_fenced_code_blocks(variant))
 
     if blocks:
         yaml_blocks = [code for lang, code in blocks if lang in {"yaml", "yml"}]
         maybe_yaml_blocks = [
-            code for lang, code in blocks
+            code
+            for lang, code in blocks
             if lang not in {"yaml", "yml"} and _YAML_TOP_LEVEL_KEY_RE.search(code)
         ]
         ordered_candidates = yaml_blocks + maybe_yaml_blocks
     else:
-        ordered_candidates = _extract_unfenced_yaml_candidates(answer_text)
+        ordered_candidates = []
+        for variant in _normalize_markdown_parse_variants(answer_text):
+            ordered_candidates.extend(_extract_unfenced_yaml_candidates(variant))
 
     deduped: list[str] = []
     seen: set[str] = set()
