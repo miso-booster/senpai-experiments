@@ -8,6 +8,7 @@ from typing import Dict, List, Tuple
 import pandas as pd
 
 from app.setup_configuration import OUT_DIR, RUNS_DIR, load_prompts_json
+from app.yaml_validation import validate_answer_yaml_status
 
 DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
 DEFAULT_RQ1_OUT_ROOT = OUT_DIR / "RQ1"
@@ -19,10 +20,13 @@ def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
     return df.astype(str).to_dict(orient="records")
 
 
-def _load_prompts(prompts_path: pathlib.Path) -> Tuple[List[str], Dict[str, str]]:
+def _load_prompts(
+    prompts_path: pathlib.Path,
+) -> Tuple[List[str], Dict[str, str], Dict[str, str]]:
     data = load_prompts_json(str(prompts_path))
     prompt_order: List[str] = []
     prompt_text_by_id: Dict[str, str] = {}
+    prompt_type_by_id: Dict[str, str] = {}
     if isinstance(data, list):
         for item in data:
             pid = item.get("id")
@@ -30,6 +34,7 @@ def _load_prompts(prompts_path: pathlib.Path) -> Tuple[List[str], Dict[str, str]
                 continue
             prompt_order.append(pid)
             prompt_text_by_id[pid] = item.get("text", "")
+            prompt_type_by_id[pid] = item.get("type", "")
     elif isinstance(data, dict):
         for item in data.get("prompts", []):
             pid = item.get("id")
@@ -37,7 +42,8 @@ def _load_prompts(prompts_path: pathlib.Path) -> Tuple[List[str], Dict[str, str]
                 continue
             prompt_order.append(pid)
             prompt_text_by_id[pid] = item.get("text", "")
-    return prompt_order, prompt_text_by_id
+            prompt_type_by_id[pid] = item.get("type", "")
+    return prompt_order, prompt_text_by_id, prompt_type_by_id
 
 
 def _blockquote(text: str) -> str:
@@ -60,6 +66,19 @@ def _yaml_status_label(value: str | None) -> str:
     if normalized in {"true", "1", "yes"}:
         return "true"
     if normalized in {"false", "0", "no"}:
+        return "false"
+    return "n/a"
+
+
+def _yaml_status_label_for_row(row: Dict[str, str], prompt_type: str | None) -> str:
+    stored = _yaml_status_label(row.get("is_yaml_valid"))
+    if stored != "n/a":
+        return stored
+
+    status = validate_answer_yaml_status(prompt_type or "", row.get("answer", ""))
+    if status == "valid":
+        return "true"
+    if status == "invalid":
         return "false"
     return "n/a"
 
@@ -149,7 +168,7 @@ def main() -> None:
     rng = random.Random(seed)
 
     results = _load_results(results_path)
-    prompt_order, prompt_text_by_id = _load_prompts(prompts_path)
+    prompt_order, prompt_text_by_id, prompt_type_by_id = _load_prompts(prompts_path)
 
     rows_by_prompt: Dict[str, List[Dict[str, str]]] = {}
     for row in results:
@@ -204,6 +223,7 @@ def main() -> None:
         if not rows:
             continue
         prompt_text = prompt_text_by_id.get(pid, "(prompt text not found in configs)")
+        prompt_type = prompt_type_by_id.get(pid, "")
         rows_copy = list(rows)
         rng.shuffle(rows_copy)
         num_responses = len(rows_copy)
@@ -223,7 +243,7 @@ def main() -> None:
         for label, row in zip(labels, rows_copy):
             md_lines.append(f"### Response {label}")
             md_lines.append("")
-            yaml_status = _yaml_status_label(row.get("is_yaml_valid"))
+            yaml_status = _yaml_status_label_for_row(row, prompt_type)
             md_lines.append(f"YAML: `{yaml_status}`")
             md_lines.append("")
             md_lines.append(_blockquote(row.get("answer", "")))

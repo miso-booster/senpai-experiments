@@ -1,6 +1,6 @@
 # Ranking sheet
 Run group: 20260224_105044_890
-Seed: 1771946583770
+Seed: 1772097816767
 
 Instructions:
 - For each prompt, you will see responses labeled A/B/C (order is random).
@@ -21,7 +21,7 @@ Create a profile about a user that wants to set up the eduroam on his device but
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > Great! I've loaded the relevant documentation for profiles from the `sensei-chat-guide.md`. Now, let's create a profile for a user who is trying to set up eduroam on their device but is facing difficulties. 
 >
@@ -89,7 +89,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Here’s a profile that describes a user trying to set up the eduroam network on their device but facing difficulties. The profile includes different methods they might attempt to set it up as variables. Let’s dive in! 😊
 >
@@ -144,7 +144,7 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Let's create a profile for a user who is trying to set up the eduroam network on their device but is having some trouble. We'll include various methods they might try to set it up as variables. Here's a sample profile in YAML format:
 >
@@ -216,6 +216,82 @@ We need a profile to mimic an erasmus user that just came and doesn't know how t
 
 YAML: `n/a`
 
+> That sounds like a great idea! To create a profile for an Erasmus user who needs help with setting up their Moodle, Sigma, and other platforms, we will need to define the chatbot outputs that will provide the necessary support.
+>
+> ### Key Outputs to Consider
+> Here are some potential outputs we might want to include in the profile:
+>
+> - **greeting**: A friendly welcome message.
+> - **setup_instructions**: Detailed instructions for setting up Moodle and Sigma.
+> - **faq**: Frequently asked questions related to the setup process.
+> - **contact_support**: Information on how to reach support if the user needs further assistance.
+>
+> ### Next Steps
+> 1. **Define the Profile**: We will create a new profile with the outputs mentioned above.
+> 2. **Confirm Outputs**: Ensure that these outputs meet your requirements for providing support.
+>
+> Let's start by creating the profile. I will first load the relevant documentation to ensure we follow the correct structure. Please hold on for a moment! 😊
+>
+> ### To-Do List
+> - [ ] Load relevant docs with `get_docs`.
+
+### Response B
+
+YAML: `true`
+
+> That sounds like a great idea! Let's create a profile for an Erasmus user who needs help setting up their Moodle and Sigma accounts. I'll keep it simple with a few key goals and outputs to ensure you can validate the support provided by the chatbot.
+>
+> Here's a sample profile you can use:
+>
+> ```yaml
+> test_name: "Erasmus User Support Profile"
+>
+> llm:
+>   temperature: 0.7
+>   model: gpt-4o
+>   model_prov: openai
+>   format:
+>     type: text
+>
+> user:
+>   language: English
+>   role: "You are an Erasmus student who has just arrived and needs help setting up Moodle and Sigma."
+>   context:
+>     - "You are unfamiliar with the university's digital platforms."
+>   goals:
+>     - "Ask for help on how to set up my Moodle account."
+>     - "Request information on how to access Sigma."
+>     - "Inquire about the requirements for logging into these platforms."
+>
+> chatbot:
+>   is_starter: false
+>   fallback: "I'm sorry, I didn't understand that. Can you please rephrase?"
+>   output:
+>     - moodle_setup_instructions:
+>         type: string
+>         description: "Instructions for setting up the Moodle account"
+>     - sigma_access_information:
+>         type: string
+>         description: "Information on how to access Sigma"
+>     - login_requirements:
+>         type: string
+>         description: "Requirements for logging into Moodle and Sigma"
+>
+> conversation:
+>   number: 2
+>   goal_style:
+>     steps: 3
+>   interaction_style:
+>     - long phrases
+>     - single questions
+> ```
+>
+> Feel free to adjust the goals and outputs as needed! This profile should help you simulate conversations with an Erasmus user seeking support for their digital platforms. Let me know if you need any more adjustments or additional features! 😊
+
+### Response C
+
+YAML: `true`
+
 > That sounds like a great idea! 😊 Let's create a simple Sensei profile for an Erasmus user who needs help setting up their Moodle and Sigma accounts. We’ll keep the input variables minimal and focus on ensuring we have the right outputs to validate the support provided by the chatbot.
 >
 > Here's a draft profile you can use:
@@ -275,82 +351,6 @@ YAML: `n/a`
 > - **Conversation Controls**: Specifies the number of interactions and how the user will interact with the chatbot.
 >
 > Feel free to adjust any parts of the profile to better fit your needs! If you have any more questions or need further modifications, just let me know! 😊
-
-### Response B
-
-YAML: `n/a`
-
-> That sounds like a great idea! Let's create a profile for an Erasmus user who needs help setting up their Moodle and Sigma accounts. I'll keep it simple with a few key goals and outputs to ensure you can validate the support provided by the chatbot.
->
-> Here's a sample profile you can use:
->
-> ```yaml
-> test_name: "Erasmus User Support Profile"
->
-> llm:
->   temperature: 0.7
->   model: gpt-4o
->   model_prov: openai
->   format:
->     type: text
->
-> user:
->   language: English
->   role: "You are an Erasmus student who has just arrived and needs help setting up Moodle and Sigma."
->   context:
->     - "You are unfamiliar with the university's digital platforms."
->   goals:
->     - "Ask for help on how to set up my Moodle account."
->     - "Request information on how to access Sigma."
->     - "Inquire about the requirements for logging into these platforms."
->
-> chatbot:
->   is_starter: false
->   fallback: "I'm sorry, I didn't understand that. Can you please rephrase?"
->   output:
->     - moodle_setup_instructions:
->         type: string
->         description: "Instructions for setting up the Moodle account"
->     - sigma_access_information:
->         type: string
->         description: "Information on how to access Sigma"
->     - login_requirements:
->         type: string
->         description: "Requirements for logging into Moodle and Sigma"
->
-> conversation:
->   number: 2
->   goal_style:
->     steps: 3
->   interaction_style:
->     - long phrases
->     - single questions
-> ```
->
-> Feel free to adjust the goals and outputs as needed! This profile should help you simulate conversations with an Erasmus user seeking support for their digital platforms. Let me know if you need any more adjustments or additional features! 😊
-
-### Response C
-
-YAML: `n/a`
-
-> That sounds like a great idea! To create a profile for an Erasmus user who needs help with setting up their Moodle, Sigma, and other platforms, we will need to define the chatbot outputs that will provide the necessary support.
->
-> ### Key Outputs to Consider
-> Here are some potential outputs we might want to include in the profile:
->
-> - **greeting**: A friendly welcome message.
-> - **setup_instructions**: Detailed instructions for setting up Moodle and Sigma.
-> - **faq**: Frequently asked questions related to the setup process.
-> - **contact_support**: Information on how to reach support if the user needs further assistance.
->
-> ### Next Steps
-> 1. **Define the Profile**: We will create a new profile with the outputs mentioned above.
-> 2. **Confirm Outputs**: Ensure that these outputs meet your requirements for providing support.
->
-> Let's start by creating the profile. I will first load the relevant documentation to ensure we follow the correct structure. Please hold on for a moment! 😊
->
-> ### To-Do List
-> - [ ] Load relevant docs with `get_docs`.
 
 ## Prompt p3
 
@@ -429,7 +429,96 @@ conversation:
 
 ### Response A
 
-YAML: `n/a`
+YAML: `false`
+
+> ¡Hola! 😊 Vamos a revisar y arreglar tu perfil para que funcione correctamente. He notado algunos problemas de formato y estructura que podemos corregir. Aquí tienes la versión ajustada:
+>
+> ```yaml
+> test_name: Asistencia Técnica y Cuentas
+> llm:
+>   temperature: 0.8
+>   model: gpt-4o-mini
+>   format:
+>     type: text
+> user:
+>   language: Spanish
+>   context:
+>     - Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad.
+>     - Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias.
+>     - Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento.
+>   goals:
+>     - Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU).
+>     - Preguntar sobre los procedimientos para obtener una cuenta ID-UAM.
+>     - Solicitar los pasos necesarios para establecer la contraseña por primera vez.
+>     - Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado.
+>     - Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}.
+>   inputs:
+>     - identificador_id_uam:
+>         type: string
+>         data:
+>           - '123456789'
+>           - '987654321'
+>           - '112233445'
+>           - '556677889'
+>           - '998877665'
+>     - user_account:
+>         type: string
+>         data:
+>           - usuario123
+>           - maria.garcia
+>           - juan_lopez_2023
+>           - pedro.salas
+>           - sara.martinez
+> chatbot:
+>   is_starter: false
+>   fallback: "¿Puedes preguntármelo de otra forma? O, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+>   output:
+>     - contact_info:
+>         type: string
+>         description: Detalles de contacto del CAU
+>     - operational_hours:
+>         type: string
+>         description: Horarios operativos del CAU
+>     - available_services_list:
+>         type: string
+>         description: Servicios disponibles para crear cuenta
+>     - password_setup_link:
+>         type: string
+>         description: Enlace para establecer contraseña
+>     - contact_information:
+>         type: string
+>         description: Opciones de asistencia para recuperación de ID-UAM
+>     - recovery_steps:
+>         type: string
+>         description: Pasos para recuperar ID-UAM
+>     - activation_code:
+>         type: string
+>         description: Código de activación para cambiar contraseña
+>     - user_account:
+>         type: string
+>         description: Nombre de usuario para recuperación
+>     - identificador_id_uam:
+>         type: string
+>         description: Identificador único de ID-UAM
+>     - password_change_steps:
+>         type: string
+>         description: Pasos para cambiar la contraseña
+> conversation:
+>   number: 5
+>   goal_style:
+>     steps: 30
+> ```
+>
+> ### Cambios realizados:
+> 1. **Indentación**: Aseguré que la indentación sea consistente, especialmente en la sección de `inputs`.
+> 2. **Estructura de `inputs`**: Añadí la sección `inputs` para que los identificadores y cuentas de usuario estén correctamente organizados.
+> 3. **Fallback**: Corregí las comillas en el mensaje de `fallback` para que sea una sola cadena.
+>
+> ¡Espero que esto te ayude! Si necesitas más ajustes o tienes alguna otra pregunta, ¡no dudes en decírmelo! 😊
+
+### Response B
+
+YAML: `true`
 
 > ¡Hola! 😊 Vamos a revisar tu perfil de asistencia técnica. He notado algunos puntos que necesitan atención para que funcione correctamente.
 >
@@ -520,9 +609,9 @@ YAML: `n/a`
 >
 > Por favor, revisa este perfil y házmelo saber si hay algo más que te gustaría ajustar o si necesitas ayuda con otra cosa. ¡Estoy aquí para ayudarte! 😊
 
-### Response B
+### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > ¡Hola! 😊 Vamos a revisar y arreglar tu perfil para que funcione correctamente. He notado algunos detalles que necesitan ajustes. Aquí tienes una versión corregida:
 >
@@ -612,162 +701,13 @@ YAML: `n/a`
 >
 > Si necesitas más ajustes o tienes otras preguntas, ¡no dudes en decírmelo! Estoy aquí para ayudarte. 😊
 
-### Response C
-
-YAML: `n/a`
-
-> ¡Hola! 😊 Vamos a revisar y arreglar tu perfil para que funcione correctamente. He notado algunos problemas de formato y estructura que podemos corregir. Aquí tienes la versión ajustada:
->
-> ```yaml
-> test_name: Asistencia Técnica y Cuentas
-> llm:
->   temperature: 0.8
->   model: gpt-4o-mini
->   format:
->     type: text
-> user:
->   language: Spanish
->   context:
->     - Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad.
->     - Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias.
->     - Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento.
->   goals:
->     - Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU).
->     - Preguntar sobre los procedimientos para obtener una cuenta ID-UAM.
->     - Solicitar los pasos necesarios para establecer la contraseña por primera vez.
->     - Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado.
->     - Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}.
->   inputs:
->     - identificador_id_uam:
->         type: string
->         data:
->           - '123456789'
->           - '987654321'
->           - '112233445'
->           - '556677889'
->           - '998877665'
->     - user_account:
->         type: string
->         data:
->           - usuario123
->           - maria.garcia
->           - juan_lopez_2023
->           - pedro.salas
->           - sara.martinez
-> chatbot:
->   is_starter: false
->   fallback: "¿Puedes preguntármelo de otra forma? O, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
->   output:
->     - contact_info:
->         type: string
->         description: Detalles de contacto del CAU
->     - operational_hours:
->         type: string
->         description: Horarios operativos del CAU
->     - available_services_list:
->         type: string
->         description: Servicios disponibles para crear cuenta
->     - password_setup_link:
->         type: string
->         description: Enlace para establecer contraseña
->     - contact_information:
->         type: string
->         description: Opciones de asistencia para recuperación de ID-UAM
->     - recovery_steps:
->         type: string
->         description: Pasos para recuperar ID-UAM
->     - activation_code:
->         type: string
->         description: Código de activación para cambiar contraseña
->     - user_account:
->         type: string
->         description: Nombre de usuario para recuperación
->     - identificador_id_uam:
->         type: string
->         description: Identificador único de ID-UAM
->     - password_change_steps:
->         type: string
->         description: Pasos para cambiar la contraseña
-> conversation:
->   number: 5
->   goal_style:
->     steps: 30
-> ```
->
-> ### Cambios realizados:
-> 1. **Indentación**: Aseguré que la indentación sea consistente, especialmente en la sección de `inputs`.
-> 2. **Estructura de `inputs`**: Añadí la sección `inputs` para que los identificadores y cuentas de usuario estén correctamente organizados.
-> 3. **Fallback**: Corregí las comillas en el mensaje de `fallback` para que sea una sola cadena.
->
-> ¡Espero que esto te ayude! Si necesitas más ajustes o tienes alguna otra pregunta, ¡no dudes en decírmelo! 😊
-
 ## Prompt p4
 
 Me gustaría que me ayudes a hacer un perfil para testear el chatbot de la UAM, tiene que ser un perfil en el que un usuario obtiene soporte sobre el CAU (Centro de Atención a Usuarios). Me gustaría conseguir el número de teléfono, email, dirección física y horarios.
 
 ### Response A
 
-YAML: `n/a`
-
-> ¡Claro! Vamos a crear un perfil para que el usuario pueda obtener soporte sobre el CAU de la UAM. Este perfil incluirá las metas necesarias para obtener el número de teléfono, correo electrónico, dirección física y horarios de servicio. Aquí tienes un ejemplo de cómo podría verse el perfil en YAML:
->
-> ```yaml
-> test_name: "Soporte CAU UAM"
->
-> llm:
->   temperature: 0.7
->   model: gpt-4o
->   model_prov: openai
->   format:
->     type: text
->
-> user:
->   language: Spanish
->   role: "Usuario que busca información de contacto y horarios del CAU."
->   goals:
->     - "Solicitar el número de teléfono del CAU."
->     - "Pedir el correo electrónico del CAU."
->     - "Consultar la dirección física del CAU."
->     - "Preguntar por los horarios de servicio del CAU."
->
-> chatbot:
->   is_starter: false
->   fallback: "Lo siento, no entendí tu pregunta. ¿Puedes reformularla?"
->   output:
->     - contact_email:
->         type: string
->         description: "Correo electrónico del CAU"
->     - contact_phone:
->         type: string
->         description: "Número de teléfono del CAU"
->     - physical_address:
->         type: string
->         description: "Dirección física del CAU"
->     - service_hours:
->         type: string
->         description: "Horas de servicio del CAU"
->
-> conversation:
->   number: 1
->   goal_style:
->     steps: 4
->   interaction_style:
->     - long phrases
->     - single questions
-> ```
->
-> ### Desglose del perfil:
-> - **test_name**: Un nombre descriptivo para el perfil.
-> - **llm**: Configuración del modelo de lenguaje.
-> - **user**: Define el rol del usuario y las metas que desea alcanzar.
-> - **chatbot**: Define la salida esperada del chatbot, que incluye los campos que queremos extraer.
-> - **conversation**: Controla el número de conversaciones y el estilo de interacción.
->
-> Puedes ajustar los valores según tus necesidades específicas. ¡Espero que esto te ayude a empezar! Si necesitas más cambios o detalles, no dudes en decírmelo 😊.
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > ¡Claro! Estoy aquí para ayudarte a crear un perfil para testear el chatbot de la UAM sobre el CAU. Vamos a estructurarlo para que el usuario pueda obtener la información que necesitas, como el número de teléfono, email, dirección física y horarios.
 >
@@ -827,9 +767,9 @@ YAML: `n/a`
 >
 > Puedes ajustar los detalles según tus necesidades específicas. ¡Espero que esto te ayude a empezar! Si necesitas más cambios o aclaraciones, no dudes en decírmelo 😊.
 
-### Response C
+### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > He revisado la documentación sobre perfiles en SENSEI, específicamente el archivo `sensei-chat-guide.md`. Ahora puedo ayudarte a crear un perfil para el soporte del CAU de la UAM. Este perfil incluirá los campos necesarios para obtener el número de teléfono, email, dirección física y horarios.
 >
@@ -900,13 +840,181 @@ YAML: `n/a`
 >
 > Si necesitas hacer ajustes o agregar algo más, ¡házmelo saber! 😊
 
+### Response C
+
+YAML: `true`
+
+> ¡Claro! Vamos a crear un perfil para que el usuario pueda obtener soporte sobre el CAU de la UAM. Este perfil incluirá las metas necesarias para obtener el número de teléfono, correo electrónico, dirección física y horarios de servicio. Aquí tienes un ejemplo de cómo podría verse el perfil en YAML:
+>
+> ```yaml
+> test_name: "Soporte CAU UAM"
+>
+> llm:
+>   temperature: 0.7
+>   model: gpt-4o
+>   model_prov: openai
+>   format:
+>     type: text
+>
+> user:
+>   language: Spanish
+>   role: "Usuario que busca información de contacto y horarios del CAU."
+>   goals:
+>     - "Solicitar el número de teléfono del CAU."
+>     - "Pedir el correo electrónico del CAU."
+>     - "Consultar la dirección física del CAU."
+>     - "Preguntar por los horarios de servicio del CAU."
+>
+> chatbot:
+>   is_starter: false
+>   fallback: "Lo siento, no entendí tu pregunta. ¿Puedes reformularla?"
+>   output:
+>     - contact_email:
+>         type: string
+>         description: "Correo electrónico del CAU"
+>     - contact_phone:
+>         type: string
+>         description: "Número de teléfono del CAU"
+>     - physical_address:
+>         type: string
+>         description: "Dirección física del CAU"
+>     - service_hours:
+>         type: string
+>         description: "Horas de servicio del CAU"
+>
+> conversation:
+>   number: 1
+>   goal_style:
+>     steps: 4
+>   interaction_style:
+>     - long phrases
+>     - single questions
+> ```
+>
+> ### Desglose del perfil:
+> - **test_name**: Un nombre descriptivo para el perfil.
+> - **llm**: Configuración del modelo de lenguaje.
+> - **user**: Define el rol del usuario y las metas que desea alcanzar.
+> - **chatbot**: Define la salida esperada del chatbot, que incluye los campos que queremos extraer.
+> - **conversation**: Controla el número de conversaciones y el estilo de interacción.
+>
+> Puedes ajustar los valores según tus necesidades específicas. ¡Espero que esto te ayude a empezar! Si necesitas más cambios o detalles, no dudes en decírmelo 😊.
+
 ## Prompt p5
 
 Create a profile to test the UAM chatbot. The profile should represent a user who is seeking support related to the CAU (User Support Center). The user wants to obtain the CAU’s phone number, email address, physical location, and opening hours.
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
+
+> Sure! Here’s a profile you can use to test the UAM chatbot, representing a user seeking support related to the CAU (User Support Center). This profile includes the user's goals to obtain the CAU's phone number, email address, physical location, and opening hours.
+>
+> ```yaml
+> test_name: "CAU Support Inquiry"
+>
+> llm:
+>   temperature: 0.8
+>   model: gpt-4o-mini
+>   format:
+>     type: text
+>
+> user:
+>   language: Spanish
+>   role: "Usuario que busca información sobre el Centro de Atención a Usuarios (CAU)."
+>   context:
+>     - "Eres un estudiante que necesita asistencia y deseas conocer los detalles de contacto del CAU."
+>   goals:
+>     - "Solicitar el número de teléfono del CAU."
+>     - "Pedir la dirección de la oficina del CAU."
+>     - "Consultar el correo electrónico de contacto del CAU."
+>     - "Preguntar sobre el horario de atención del CAU."
+>
+> chatbot:
+>   is_starter: false
+>   fallback: "Por favor, ¿me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios."
+>   output:
+>     - phone_contact:
+>         type: string
+>         description: "Número de teléfono del CAU"
+>     - email_contact:
+>         type: string
+>         description: "Correo electrónico de contacto del CAU"
+>     - physical_location:
+>         type: string
+>         description: "Dirección de la oficina del CAU"
+>     - service_hours:
+>         type: string
+>         description: "Horario de atención del CAU"
+>
+> conversation:
+>   number: 3
+>   goal_style:
+>     steps: 4
+>   interaction_style:
+>     - single questions
+> ```
+>
+> Feel free to adjust any details as needed! This profile should help you effectively test the UAM chatbot's ability to provide the required information about the CAU. Happy testing! 😊
+
+### Response B
+
+YAML: `true`
+
+> Sure! Here’s a profile that represents a user seeking support related to the CAU (User Support Center) at UAM. This profile includes the necessary fields to extract the contact information and service hours. 
+>
+> ```yaml
+> test_name: "UAM CAU Support Inquiry"
+>
+> llm:
+>   temperature: 0.7
+>   model: gpt-4o
+>   model_prov: openai
+>   format:
+>     type: text
+>
+> user:
+>   language: Spanish
+>   role: "Usuario que busca información sobre el Centro de Atención a Usuarios (CAU)."
+>   context:
+>     - "El usuario necesita obtener el número de teléfono, correo electrónico, dirección física y horas de servicio del CAU."
+>   goals:
+>     - "Solicitar el número de teléfono del CAU."
+>     - "Pedir la dirección de correo electrónico del CAU."
+>     - "Consultar la ubicación física del CAU."
+>     - "Preguntar sobre las horas de servicio del CAU."
+>
+> chatbot:
+>   is_starter: true
+>   fallback: "Lo siento, no puedo ayudar con eso."
+>   output:
+>     - contact_email:
+>         type: string
+>         description: "Correo electrónico del CAU"
+>     - contact_phone:
+>         type: string
+>         description: "Número de teléfono del CAU"
+>     - physical_address:
+>         type: string
+>         description: "Dirección física del CAU"
+>     - service_hours:
+>         type: string
+>         description: "Horas de servicio del CAU"
+>
+> conversation:
+>   number: 5
+>   goal_style:
+>     steps: 4
+>   interaction_style:
+>     - long phrases
+>     - single questions
+> ```
+>
+> Feel free to adjust any details to better fit your needs! Happy testing! 😊
+
+### Response C
+
+YAML: `true`
 
 > I've loaded the relevant documentation for creating profiles from the `sensei-chat-guide.md`. Now, let's create a profile for the user seeking support related to the CAU (User Support Center). This profile will include fields for the phone number, email address, physical location, and opening hours.
 >
@@ -968,114 +1076,6 @@ YAML: `n/a`
 >
 > Would you like to proceed with this profile, or do you have any modifications in mind? 😊
 
-### Response B
-
-YAML: `n/a`
-
-> Sure! Here’s a profile that represents a user seeking support related to the CAU (User Support Center) at UAM. This profile includes the necessary fields to extract the contact information and service hours. 
->
-> ```yaml
-> test_name: "UAM CAU Support Inquiry"
->
-> llm:
->   temperature: 0.7
->   model: gpt-4o
->   model_prov: openai
->   format:
->     type: text
->
-> user:
->   language: Spanish
->   role: "Usuario que busca información sobre el Centro de Atención a Usuarios (CAU)."
->   context:
->     - "El usuario necesita obtener el número de teléfono, correo electrónico, dirección física y horas de servicio del CAU."
->   goals:
->     - "Solicitar el número de teléfono del CAU."
->     - "Pedir la dirección de correo electrónico del CAU."
->     - "Consultar la ubicación física del CAU."
->     - "Preguntar sobre las horas de servicio del CAU."
->
-> chatbot:
->   is_starter: true
->   fallback: "Lo siento, no puedo ayudar con eso."
->   output:
->     - contact_email:
->         type: string
->         description: "Correo electrónico del CAU"
->     - contact_phone:
->         type: string
->         description: "Número de teléfono del CAU"
->     - physical_address:
->         type: string
->         description: "Dirección física del CAU"
->     - service_hours:
->         type: string
->         description: "Horas de servicio del CAU"
->
-> conversation:
->   number: 5
->   goal_style:
->     steps: 4
->   interaction_style:
->     - long phrases
->     - single questions
-> ```
->
-> Feel free to adjust any details to better fit your needs! Happy testing! 😊
-
-### Response C
-
-YAML: `n/a`
-
-> Sure! Here’s a profile you can use to test the UAM chatbot, representing a user seeking support related to the CAU (User Support Center). This profile includes the user's goals to obtain the CAU's phone number, email address, physical location, and opening hours.
->
-> ```yaml
-> test_name: "CAU Support Inquiry"
->
-> llm:
->   temperature: 0.8
->   model: gpt-4o-mini
->   format:
->     type: text
->
-> user:
->   language: Spanish
->   role: "Usuario que busca información sobre el Centro de Atención a Usuarios (CAU)."
->   context:
->     - "Eres un estudiante que necesita asistencia y deseas conocer los detalles de contacto del CAU."
->   goals:
->     - "Solicitar el número de teléfono del CAU."
->     - "Pedir la dirección de la oficina del CAU."
->     - "Consultar el correo electrónico de contacto del CAU."
->     - "Preguntar sobre el horario de atención del CAU."
->
-> chatbot:
->   is_starter: false
->   fallback: "Por favor, ¿me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios."
->   output:
->     - phone_contact:
->         type: string
->         description: "Número de teléfono del CAU"
->     - email_contact:
->         type: string
->         description: "Correo electrónico de contacto del CAU"
->     - physical_location:
->         type: string
->         description: "Dirección de la oficina del CAU"
->     - service_hours:
->         type: string
->         description: "Horario de atención del CAU"
->
-> conversation:
->   number: 3
->   goal_style:
->     steps: 4
->   interaction_style:
->     - single questions
-> ```
->
-> Feel free to adjust any details as needed! This profile should help you effectively test the UAM chatbot's ability to provide the required information about the CAU. Happy testing! 😊
-
 ## Prompt p6
 
 Create a rule that checks that ada uam gave us all the necessary information about the CAU, that we have a phone number, an email address, physical address. The chatbout outputs would be these
@@ -1093,7 +1093,7 @@ Create a rule that checks that ada uam gave us all the necessary information abo
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure! It sounds like you want to create a rule to ensure that the chatbot provides all the necessary contact information for the CAU. Here's a rule that checks for the presence of the contact email, phone number, and physical address:
 >
@@ -1108,7 +1108,28 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
+
+> Sure! To create a rule that checks if the chatbot provides all the necessary information about the CAU, including the contact email, phone number, and physical address, we can structure the rule like this:
+>
+> ```yaml
+> name: ca_contact_info_complete
+> description: Ensure all necessary contact information for CAU is provided
+> conversations: 1
+> oracle: contact_email is not None and contact_phone is not None and physical_address is not None
+> ```
+>
+> ### Explanation:
+> - **name**: This is a unique identifier for the rule.
+> - **description**: A brief explanation of what the rule checks.
+> - **conversations**: Set to `1` since we are checking the information in a single conversation.
+> - **oracle**: This condition checks that all three fields (`contact_email`, `contact_phone`, and `physical_address`) are not `None`, meaning they should all be provided in the chatbot's output.
+>
+> Feel free to adjust any part of the rule if you need to! 😊
+
+### Response C
+
+YAML: `true`
 
 > Great! I've loaded the necessary documentation for both rules and profiles. Now, let's create the rule that checks if all required information about the CAU (Centro de Atención al Usuario) has been provided, specifically the contact email, phone number, and physical address.
 >
@@ -1134,27 +1155,6 @@ YAML: `n/a`
 > - **`data_collected() == True`**: This function checks that all required fields (contact_email, contact_phone, physical_address) are filled in the conversation.
 >
 > Now, let's finalize this rule! Would you like to proceed with this YAML, or do you have any modifications in mind? 😊
-
-### Response C
-
-YAML: `n/a`
-
-> Sure! To create a rule that checks if the chatbot provides all the necessary information about the CAU, including the contact email, phone number, and physical address, we can structure the rule like this:
->
-> ```yaml
-> name: ca_contact_info_complete
-> description: Ensure all necessary contact information for CAU is provided
-> conversations: 1
-> oracle: contact_email is not None and contact_phone is not None and physical_address is not None
-> ```
->
-> ### Explanation:
-> - **name**: This is a unique identifier for the rule.
-> - **description**: A brief explanation of what the rule checks.
-> - **conversations**: Set to `1` since we are checking the information in a single conversation.
-> - **oracle**: This condition checks that all three fields (`contact_email`, `contact_phone`, and `physical_address`) are not `None`, meaning they should all be provided in the chatbot's output.
->
-> Feel free to adjust any part of the rule if you need to! 😊
 
 ## Prompt p7
 
@@ -1183,33 +1183,7 @@ These are the chatbot outputs:
 
 ### Response A
 
-YAML: `n/a`
-
-> Sure! To create a rule that checks if the chatbot provides the correct information about the CAU, we can set up a metamorphic rule in YAML format. This rule will verify that the outputs match the expected values for the contact email, contact phone, and physical address. Here’s how you can structure it:
->
-> ```yaml
-> name: check_cau_contact_info
-> description: Verifies that the CAU provides the correct contact information
-> conversations: 1
-> if: 
->   conv[0].contact_email == 'cau@uam.es' and 
->   conv[0].contact_phone == '91 497 4029' and 
->   conv[0].physical_address == 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
-> then: 'True'
-> ```
->
-> ### Explanation:
-> - **name**: A descriptive name for the rule.
-> - **description**: A brief explanation of what the rule checks.
-> - **conversations**: Set to 1 since we are checking the outputs from a single conversation.
-> - **if**: This condition checks if the outputs from the chatbot match the expected values for the email, phone number, and physical address.
-> - **then**: If the condition is true, the rule passes.
->
-> Feel free to adjust any part of the rule to better fit your project's needs! If you have any more questions or need further assistance, just let me know! 😊
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > Great! I found the profile related to the CAU, which includes the necessary outputs for your rule. Here’s a summary of the relevant `chatbot.output` fields from the profile `consultante_de_servicios_y_asistencia_del_cau.yaml`:
 >
@@ -1241,9 +1215,9 @@ YAML: `n/a`
 >
 > Would you like me to proceed with creating this rule in the project? 😊
 
-### Response C
+### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Here’s a rule that checks if the chatbot provides the correct information about the CAU, including the email, phone number, and physical address. This rule will verify that the outputs match the expected values.
 >
@@ -1259,6 +1233,32 @@ YAML: `n/a`
 >
 > This rule checks that the `contact_email`, `contact_phone`, and `physical_address` fields in the chatbot's output match the expected values. If any of these do not match, the rule will fail. Let me know if you need any adjustments or further assistance! 😊
 
+### Response C
+
+YAML: `true`
+
+> Sure! To create a rule that checks if the chatbot provides the correct information about the CAU, we can set up a metamorphic rule in YAML format. This rule will verify that the outputs match the expected values for the contact email, contact phone, and physical address. Here’s how you can structure it:
+>
+> ```yaml
+> name: check_cau_contact_info
+> description: Verifies that the CAU provides the correct contact information
+> conversations: 1
+> if: 
+>   conv[0].contact_email == 'cau@uam.es' and 
+>   conv[0].contact_phone == '91 497 4029' and 
+>   conv[0].physical_address == 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+> then: 'True'
+> ```
+>
+> ### Explanation:
+> - **name**: A descriptive name for the rule.
+> - **description**: A brief explanation of what the rule checks.
+> - **conversations**: Set to 1 since we are checking the outputs from a single conversation.
+> - **if**: This condition checks if the outputs from the chatbot match the expected values for the email, phone number, and physical address.
+> - **then**: If the condition is true, the rule passes.
+>
+> Feel free to adjust any part of the rule to better fit your project's needs! If you have any more questions or need further assistance, just let me know! 😊
+
 ## Prompt p8
 
 name: check_cau_information
@@ -1271,7 +1271,50 @@ Could check this rule, tell me if it is okay and if it is not okay fix it and th
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
+
+> Let's take a look at your rule `check_cau_information` and see if it aligns with the guidelines from the documentation. Here’s a breakdown of the rule you provided:
+>
+> ```yaml
+> name: check_cau_information
+> description: Checks that the CAU provided correct information about contact details.
+> conversations: 1
+> when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+> oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+> ```
+>
+> ### Issues Identified
+> 1. **Field Names**: The fields `contact_email`, `contact_phone`, and `physical_address` must exist in the `chatbot.output` of a relevant SENSEI Chat profile. If these fields are not defined in the profile, the rule will not function correctly.
+>
+> 2. **Single Conversation**: The rule is set to check only one conversation. If you are checking for correctness of contact details, it may be more appropriate to use a two-conversation rule to compare different sets of information.
+>
+> 3. **Oracle Usage**: The oracle is essentially repeating the condition from the `when` clause. While this is not incorrect, it may be more beneficial to define a different relational check if you are comparing two conversations.
+>
+> ### Suggested Update
+> To ensure that the fields used in the rule correspond to the actual fields defined in the `chatbot.output` of a profile, here’s a version of the rule that checks the correctness of the contact details:
+>
+> ```yaml
+> name: check_cau_information
+> description: Checks that the CAU provided correct information about contact details.
+> conversations: 2
+> when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+> if:   conv[1].contact_email != conv[0].contact_email or conv[1].contact_phone != conv[0].contact_phone or conv[1].physical_address != conv[0].physical_address
+> then: 'False'
+> ```
+>
+> ### Explanation of Changes
+> - **Conversations**: Changed to `2` to allow for a comparison between two sets of contact details.
+> - **If/Then Structure**: Added an `if` condition to check if the details in the second conversation differ from the first. This provides a clearer relational check rather than just repeating the `when` condition. The `then` clause now returns a string.
+>
+> ### Next Steps
+> 1. **Confirm Profile Fields**: Check the relevant SENSEI Chat profile to ensure that `contact_email`, `contact_phone`, and `physical_address` are defined in the `chatbot.output`.
+> 2. **Update Profile if Necessary**: If those fields do not exist, you will need to update the profile to include them.
+>
+> Would you like me to help you find the relevant profile to confirm the fields? 😊
+
+### Response B
+
+YAML: `true`
 
 > Hey there! 😊 Let's take a look at your rule `check_cau_information` together!
 >
@@ -1318,9 +1361,9 @@ YAML: `n/a`
 >
 > With this adjustment, your rule will effectively check if the CAU provided the correct contact details without redundancy. If you have any more questions or need further assistance, feel free to ask! 😊
 
-### Response B
+### Response C
 
-YAML: `n/a`
+YAML: `false`
 
 > Your rule looks like a great start! However, there are a couple of things that need adjustment to ensure it works correctly. Let's refine it a bit!
 >
@@ -1350,49 +1393,6 @@ YAML: `n/a`
 > The revised rule checks if the CAU's contact details are correct by evaluating the `when` condition. If the condition is true, the oracle confirms that the information provided is valid. This structure is more efficient and clear! 😊 
 >
 > If you have any more questions or need further assistance, feel free to ask!
-
-### Response C
-
-YAML: `n/a`
-
-> Let's take a look at your rule `check_cau_information` and see if it aligns with the guidelines from the documentation. Here’s a breakdown of the rule you provided:
->
-> ```yaml
-> name: check_cau_information
-> description: Checks that the CAU provided correct information about contact details.
-> conversations: 1
-> when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
-> oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
-> ```
->
-> ### Issues Identified
-> 1. **Field Names**: The fields `contact_email`, `contact_phone`, and `physical_address` must exist in the `chatbot.output` of a relevant SENSEI Chat profile. If these fields are not defined in the profile, the rule will not function correctly.
->
-> 2. **Single Conversation**: The rule is set to check only one conversation. If you are checking for correctness of contact details, it may be more appropriate to use a two-conversation rule to compare different sets of information.
->
-> 3. **Oracle Usage**: The oracle is essentially repeating the condition from the `when` clause. While this is not incorrect, it may be more beneficial to define a different relational check if you are comparing two conversations.
->
-> ### Suggested Update
-> To ensure that the fields used in the rule correspond to the actual fields defined in the `chatbot.output` of a profile, here’s a version of the rule that checks the correctness of the contact details:
->
-> ```yaml
-> name: check_cau_information
-> description: Checks that the CAU provided correct information about contact details.
-> conversations: 2
-> when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
-> if:   conv[1].contact_email != conv[0].contact_email or conv[1].contact_phone != conv[0].contact_phone or conv[1].physical_address != conv[0].physical_address
-> then: 'False'
-> ```
->
-> ### Explanation of Changes
-> - **Conversations**: Changed to `2` to allow for a comparison between two sets of contact details.
-> - **If/Then Structure**: Added an `if` condition to check if the details in the second conversation differ from the first. This provides a clearer relational check rather than just repeating the `when` condition. The `then` clause now returns a string.
->
-> ### Next Steps
-> 1. **Confirm Profile Fields**: Check the relevant SENSEI Chat profile to ensure that `contact_email`, `contact_phone`, and `physical_address` are defined in the `chatbot.output`.
-> 2. **Update Profile if Necessary**: If those fields do not exist, you will need to update the profile to include them.
->
-> Would you like me to help you find the relevant profile to confirm the fields? 😊
 
 ## Prompt p9
 
@@ -1447,7 +1447,23 @@ conversation:
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
+
+> ¡Claro! Aquí tienes una regla para comprobar que los horarios de atención de la biblioteca son de 9 a 20. Esta regla se basa en el campo `library_hours` que definiste en tu perfil. 
+>
+> ```yaml
+> name: library_hours_check
+> description: Verificar que los horarios de atención de la biblioteca son de 9 a 20.
+> conversations: 1
+> when: library_hours is not None
+> oracle: library_hours == "9 a 20"
+> ```
+>
+> Esta regla verifica que el campo `library_hours` no sea nulo y que contenga exactamente el texto "9 a 20". Si necesitas ajustar el formato o la lógica, ¡házmelo saber! 😊
+
+### Response B
+
+YAML: `true`
 
 > ¡Genial! Ahora que tengo toda la información necesaria, aquí tienes la regla que comprueba que el horario de la biblioteca es de 9 a 20 horas:
 >
@@ -1472,25 +1488,9 @@ YAML: `n/a`
 >
 > ¿Te gustaría que haga algo más con esta regla o necesitas ayuda con otra cosa? 😊
 
-### Response B
-
-YAML: `n/a`
-
-> ¡Claro! Aquí tienes una regla para comprobar que los horarios de atención de la biblioteca son de 9 a 20. Esta regla se basa en el campo `library_hours` que definiste en tu perfil. 
->
-> ```yaml
-> name: library_hours_check
-> description: Verificar que los horarios de atención de la biblioteca son de 9 a 20.
-> conversations: 1
-> when: library_hours is not None
-> oracle: library_hours == "9 a 20"
-> ```
->
-> Esta regla verifica que el campo `library_hours` no sea nulo y que contenga exactamente el texto "9 a 20". Si necesitas ajustar el formato o la lógica, ¡házmelo saber! 😊
-
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > ¡Claro! Aquí tienes una regla para comprobar que el horario de la biblioteca es de 9 a 20. Esta regla se basa en el perfil que proporcionaste:
 >
@@ -1616,61 +1616,7 @@ conversation:
 
 ### Response A
 
-YAML: `n/a`
-
-> That sounds like a great profile! To help you test it effectively, I suggest creating some Sensei rules that can validate the outputs from your profile. Here are a couple of rules you might find useful:
->
-> ### 1. Check for Required Outputs
-> This rule ensures that the chatbot provides all the necessary outputs after a conversation. It checks if all expected fields are filled.
->
-> ```yaml
-> name: chatbot_fills_all_slots
-> description: All conversation slots must be filled after the chatbot responds.
-> conversations: 1
-> active: true
-> oracle: data_collected() == True
-> yields: |
->   f"Missing slots: {missing_slots()}"
-> ```
->
-> ### 2. Valid Admission Links
-> This rule checks that the admission link provided by the chatbot is valid and not empty.
->
-> ```yaml
-> name: valid_admission_link
-> description: The chatbot must provide a valid URL for admission details.
-> conversations: 1
-> active: true
-> oracle: admission_to_grados_link is not None and admission_to_grados_link != ""
-> ```
->
-> ### 3. Future Students Information
-> This rule ensures that the chatbot provides information for future students.
->
-> ```yaml
-> name: future_students_info_available
-> description: The chatbot must provide information for future students.
-> conversations: 1
-> active: true
-> oracle: future_students_info is not None and future_students_info != ""
-> ```
->
-> ### 4. Welcome Day Date and Time
-> This rule checks that the chatbot provides the date and time for the Welcome Day event.
->
-> ```yaml
-> name: welcome_day_date_and_time
-> description: The chatbot must provide the date and time for the Welcome Day event.
-> conversations: 1
-> active: true
-> oracle: welcome_day_date is not None and welcome_day_time is not None
-> ```
->
-> Feel free to adjust the descriptions or the conditions based on your specific needs! These rules will help ensure that your chatbot is providing the necessary information and functioning correctly. Happy testing! 😊
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > Absolutely! It sounds like you have a rich profile to work with, and I’d love to help you create some rules to test it out! Here are a few suggestions for rules that could help you verify the outputs of your chatbot based on the provided profile:
 >
@@ -1750,9 +1696,63 @@ YAML: `n/a`
 >
 > If you have any more specific scenarios in mind or need further assistance, feel free to ask!
 
+### Response B
+
+YAML: `true`
+
+> That sounds like a great profile! To help you test it effectively, I suggest creating some Sensei rules that can validate the outputs from your profile. Here are a couple of rules you might find useful:
+>
+> ### 1. Check for Required Outputs
+> This rule ensures that the chatbot provides all the necessary outputs after a conversation. It checks if all expected fields are filled.
+>
+> ```yaml
+> name: chatbot_fills_all_slots
+> description: All conversation slots must be filled after the chatbot responds.
+> conversations: 1
+> active: true
+> oracle: data_collected() == True
+> yields: |
+>   f"Missing slots: {missing_slots()}"
+> ```
+>
+> ### 2. Valid Admission Links
+> This rule checks that the admission link provided by the chatbot is valid and not empty.
+>
+> ```yaml
+> name: valid_admission_link
+> description: The chatbot must provide a valid URL for admission details.
+> conversations: 1
+> active: true
+> oracle: admission_to_grados_link is not None and admission_to_grados_link != ""
+> ```
+>
+> ### 3. Future Students Information
+> This rule ensures that the chatbot provides information for future students.
+>
+> ```yaml
+> name: future_students_info_available
+> description: The chatbot must provide information for future students.
+> conversations: 1
+> active: true
+> oracle: future_students_info is not None and future_students_info != ""
+> ```
+>
+> ### 4. Welcome Day Date and Time
+> This rule checks that the chatbot provides the date and time for the Welcome Day event.
+>
+> ```yaml
+> name: welcome_day_date_and_time
+> description: The chatbot must provide the date and time for the Welcome Day event.
+> conversations: 1
+> active: true
+> oracle: welcome_day_date is not None and welcome_day_time is not None
+> ```
+>
+> Feel free to adjust the descriptions or the conditions based on your specific needs! These rules will help ensure that your chatbot is providing the necessary information and functioning correctly. Happy testing! 😊
+
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > It looks like you have a profile named **"Usuarios Nuevos y Admisiones"** that focuses on potential students seeking information about admission processes and available resources. To test this profile effectively, I can suggest a few rules that would help validate its functionality.
 >
@@ -1807,7 +1807,7 @@ Create a profile to ask information about suscription services and benefits. don
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > I found the documentation for creating profiles in the `sensei-chat-guide.md`. Let's create a profile that focuses on asking about subscription services and their benefits, without adding specific variables but including goals.
 >
@@ -1865,47 +1865,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
-
-> Sure! Here’s a simple profile that focuses on asking about subscription services and benefits. I've included the goals as requested, without any variables.
->
-> ```yaml
-> test_name: "Subscription Services Inquiry"
->
-> llm:
->   temperature: 0.7
->   model: gpt-4o
->   model_prov: openai
->   format:
->     type: text
->
-> user:
->   language: English
->   role: "Inquire about subscription services and their benefits."
->   goals:
->     - "Ask about the available subscription services."
->     - "Inquire about the benefits of each subscription service."
->     - "Request information on how to sign up for subscription services."
->     - "Ask if there are any current promotions for subscription services."
->     - "Inquire about the cancellation policy for subscription services."
->
-> chatbot:
->   is_starter: false
->   fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
->
-> conversation:
->   number: 1
->   goal_style:
->     steps: 5
->   interaction_style:
->     - default
-> ```
->
-> Feel free to modify any part of it to better fit your needs! If you need anything else, just let me know! 😊
-
-### Response C
-
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Here’s a simple profile that focuses on asking about subscription services and their benefits without any variables. You can customize it further if needed! 😊
 >
@@ -1960,13 +1920,53 @@ YAML: `n/a`
 >
 > Feel free to adjust any part of it to better fit your needs! If you have any more requests or need further assistance, just let me know! 😊
 
+### Response C
+
+YAML: `true`
+
+> Sure! Here’s a simple profile that focuses on asking about subscription services and benefits. I've included the goals as requested, without any variables.
+>
+> ```yaml
+> test_name: "Subscription Services Inquiry"
+>
+> llm:
+>   temperature: 0.7
+>   model: gpt-4o
+>   model_prov: openai
+>   format:
+>     type: text
+>
+> user:
+>   language: English
+>   role: "Inquire about subscription services and their benefits."
+>   goals:
+>     - "Ask about the available subscription services."
+>     - "Inquire about the benefits of each subscription service."
+>     - "Request information on how to sign up for subscription services."
+>     - "Ask if there are any current promotions for subscription services."
+>     - "Inquire about the cancellation policy for subscription services."
+>
+> chatbot:
+>   is_starter: false
+>   fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+>
+> conversation:
+>   number: 1
+>   goal_style:
+>     steps: 5
+>   interaction_style:
+>     - default
+> ```
+>
+> Feel free to modify any part of it to better fit your needs! If you need anything else, just let me know! 😊
+
 ## Prompt p12
 
 Create a profile which asks the chatbot for items to add to the user shopping cart.
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > Great! I've loaded the relevant documentation for profiles from the `sensei-chat-guide.md`. Now, let's create a profile that allows the chatbot to ask the user for items to add to their shopping cart.
 >
@@ -2031,7 +2031,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Here’s a profile that asks the chatbot for items to add to the user's shopping cart. You can customize it further based on your specific needs:
 >
@@ -2091,7 +2091,7 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Here’s a simple profile that you can use to ask the chatbot for items to add to the user's shopping cart. You can customize it further based on your specific needs! 😊
 >
@@ -2204,149 +2204,7 @@ conversation:
 
 ### Response A
 
-YAML: `n/a`
-
-> ¡Hola! 😊 Vamos a arreglar ese perfil juntos. He notado algunos problemas de formato en tu YAML que podrían estar causando que no se ejecute correctamente. Aquí tienes una versión corregida:
->
-> ```yaml
-> test_name: Fresh and Organic Product Inquiry
-> llm:
->   temperature: 0.6
->   model: gpt-4o-mini
->   format:
->     type: text
-> user:
->   language: English
->   role: Customer interested in purchasing fresh and organic products and learning about their benefits.
->   context:
->     - 'personality: personalities/formal-user'
->     - You are keen on incorporating fresh and organic products into your diet for a healthier lifestyle.
->     - With an interest in supporting local producers, you want to learn more about specific labels that emphasize quality and sustainability.
->     - Additionally, you're looking for options to enhance your smoothie recipes while ensuring you choose environmentally friendly products.
->   goals:
->     - Ask for the details of the 'Cultivamos lo Bueno' label to learn about its focus on quality and local sourcing.
->     - Inquire about the availability of organic fruits in the online store.
->     - Request recommendations for fresh fruits suitable for smoothies.
->     - Ask for the range of eco-friendly fresh products offered at Alcampo.
->     - Check what types of organic cheeses are currently available.
-> chatbot:
->   is_starter: false
->   fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
->   output:
->     - cultivos_label_focus:
->         type: string
->         description: Focus of the 'Cultivamos lo Bueno' label
->     - organic_fruit_availability:
->         type: string
->         description: Availability of organic fruits online
->     - smoothie_fruit_recommendations:
->         type: string
->         description: Recommended fresh fruits for smoothies
->     - eco_friendly_product_range:
->         type: string
->         description: Range of eco-friendly products at Alcampo
->     - organic_cheese_types:
->         type: string
->         description: Types of organic cheeses available
->     - banana_quality_guarantees:
->         type: string
->         description: Quality guarantees for Canary Island bananas
->     - red_banana_characteristics:
->         type: string
->         description: Unique characteristics of red bananas
->     - wine_types_available:
->         type: string
->         description: Types of wines offered at Alcampo
-> conversation:
->   number: 3
->   max_cost: 0.5
->   goal_style:
->     steps: 26
->   interaction_style:
->     - single questions
-> ```
->
-> ### Cambios realizados:
-> 1. **Indentación**: Asegúrate de que la indentación sea consistente, especialmente en la sección de `output`. Cada elemento debe estar correctamente alineado.
-> 2. **Formato de `output`**: Añadí un guion `-` antes de cada campo en la sección `output` para que se reconozca como una lista.
-> 3. **Corrección de nombres de campos**: Cambié el nombre del primer campo de `output` a `cultivos_label_focus` para que sea más descriptivo y evitar confusiones.
->
-> Prueba ejecutar este perfil y avísame si necesitas más ayuda. ¡Buena suerte! 🍀
-
-### Response B
-
-YAML: `n/a`
-
-> ¡Claro! Vamos a revisar y corregir el perfil que compartiste. Hay algunos problemas de formato y estructura que podrían estar causando que no se ejecute correctamente. Aquí hay una versión corregida:
->
-> ```yaml
-> test_name: Fresh and Organic Product Inquiry
-> llm:
->   temperature: 0.6
->   model: gpt-4o-mini
->   format:
->     type: text
-> user:
->   language: English
->   role: Customer interested in purchasing fresh and organic products and learning about their benefits.
->   context:
->     - personality: personalities/formal-user
->     - You are keen on incorporating fresh and organic products into your diet for a healthier lifestyle.
->     - With an interest in supporting local producers, you want to learn more about specific labels that emphasize quality and sustainability.
->     - Additionally, you're looking for options to enhance your smoothie recipes while ensuring you choose environmentally friendly products.
->   goals:
->     - Ask for the details of the 'Cultivamos lo Bueno' label to learn about its focus on quality and local sourcing.
->     - Inquire about the availability of organic fruits in the online store.
->     - Request recommendations for fresh fruits suitable for smoothies.
->     - Ask for the range of eco-friendly fresh products offered at Alcampo.
->     - Check what types of organic cheeses are currently available.
-> chatbot:
->   is_starter: false
->   fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
->   output:
->     - focus_of_label:
->         type: string
->         description: Focus of the 'Cultivamos lo Bueno' label
->     - organic_fruit_availability:
->         type: string
->         description: Availability of organic fruits online
->     - smoothie_fruit_recommendations:
->         type: string
->         description: Recommended fresh fruits for smoothies
->     - eco_friendly_product_range:
->         type: string
->         description: Range of eco-friendly products at Alcampo
->     - organic_cheese_types:
->         type: string
->         description: Types of organic cheeses available
->     - banana_quality_guarantees:
->         type: string
->         description: Quality guarantees for Canary Island bananas
->     - red_banana_characteristics:
->         type: string
->         description: Unique characteristics of red bananas
->     - wine_types_available:
->         type: string
->         description: Types of wines offered at Alcampo
-> conversation:
->   number: 3
->   max_cost: 0.5
->   goal_style:
->     steps: 26
->   interaction_style:
->     - single questions
-> ```
->
-> ### Cambios Realizados:
-> 1. **Indentación y Espacios**: Asegúrate de que la indentación sea consistente. Cada nivel debe tener dos espacios.
-> 2. **Estructura de `output`**: Cambié la forma en que se define `output` para que sea una lista de objetos, asegurando que cada salida esté correctamente estructurada.
-> 3. **Citas en el `fallback`**: Agregué comillas al texto del `fallback` para evitar problemas de interpretación.
->
-> Revisa si este perfil corregido funciona para ti. Si sigues teniendo problemas, házmelo saber y podemos investigar más a fondo. 😊
-
-### Response C
-
-YAML: `n/a`
+YAML: `true`
 
 > ¡Claro! Vamos a revisar y corregir tu perfil para que puedas ejecutarlo sin problemas. He notado algunos errores de formato y estructura en tu YAML. Aquí tienes la versión corregida:
 >
@@ -2415,6 +2273,148 @@ YAML: `n/a`
 >
 > Ahora deberías poder ejecutar tu perfil sin problemas. Si necesitas más ayuda, ¡aquí estoy! 😊
 
+### Response B
+
+YAML: `true`
+
+> ¡Hola! 😊 Vamos a arreglar ese perfil juntos. He notado algunos problemas de formato en tu YAML que podrían estar causando que no se ejecute correctamente. Aquí tienes una versión corregida:
+>
+> ```yaml
+> test_name: Fresh and Organic Product Inquiry
+> llm:
+>   temperature: 0.6
+>   model: gpt-4o-mini
+>   format:
+>     type: text
+> user:
+>   language: English
+>   role: Customer interested in purchasing fresh and organic products and learning about their benefits.
+>   context:
+>     - 'personality: personalities/formal-user'
+>     - You are keen on incorporating fresh and organic products into your diet for a healthier lifestyle.
+>     - With an interest in supporting local producers, you want to learn more about specific labels that emphasize quality and sustainability.
+>     - Additionally, you're looking for options to enhance your smoothie recipes while ensuring you choose environmentally friendly products.
+>   goals:
+>     - Ask for the details of the 'Cultivamos lo Bueno' label to learn about its focus on quality and local sourcing.
+>     - Inquire about the availability of organic fruits in the online store.
+>     - Request recommendations for fresh fruits suitable for smoothies.
+>     - Ask for the range of eco-friendly fresh products offered at Alcampo.
+>     - Check what types of organic cheeses are currently available.
+> chatbot:
+>   is_starter: false
+>   fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+>   output:
+>     - cultivos_label_focus:
+>         type: string
+>         description: Focus of the 'Cultivamos lo Bueno' label
+>     - organic_fruit_availability:
+>         type: string
+>         description: Availability of organic fruits online
+>     - smoothie_fruit_recommendations:
+>         type: string
+>         description: Recommended fresh fruits for smoothies
+>     - eco_friendly_product_range:
+>         type: string
+>         description: Range of eco-friendly products at Alcampo
+>     - organic_cheese_types:
+>         type: string
+>         description: Types of organic cheeses available
+>     - banana_quality_guarantees:
+>         type: string
+>         description: Quality guarantees for Canary Island bananas
+>     - red_banana_characteristics:
+>         type: string
+>         description: Unique characteristics of red bananas
+>     - wine_types_available:
+>         type: string
+>         description: Types of wines offered at Alcampo
+> conversation:
+>   number: 3
+>   max_cost: 0.5
+>   goal_style:
+>     steps: 26
+>   interaction_style:
+>     - single questions
+> ```
+>
+> ### Cambios realizados:
+> 1. **Indentación**: Asegúrate de que la indentación sea consistente, especialmente en la sección de `output`. Cada elemento debe estar correctamente alineado.
+> 2. **Formato de `output`**: Añadí un guion `-` antes de cada campo en la sección `output` para que se reconozca como una lista.
+> 3. **Corrección de nombres de campos**: Cambié el nombre del primer campo de `output` a `cultivos_label_focus` para que sea más descriptivo y evitar confusiones.
+>
+> Prueba ejecutar este perfil y avísame si necesitas más ayuda. ¡Buena suerte! 🍀
+
+### Response C
+
+YAML: `true`
+
+> ¡Claro! Vamos a revisar y corregir el perfil que compartiste. Hay algunos problemas de formato y estructura que podrían estar causando que no se ejecute correctamente. Aquí hay una versión corregida:
+>
+> ```yaml
+> test_name: Fresh and Organic Product Inquiry
+> llm:
+>   temperature: 0.6
+>   model: gpt-4o-mini
+>   format:
+>     type: text
+> user:
+>   language: English
+>   role: Customer interested in purchasing fresh and organic products and learning about their benefits.
+>   context:
+>     - personality: personalities/formal-user
+>     - You are keen on incorporating fresh and organic products into your diet for a healthier lifestyle.
+>     - With an interest in supporting local producers, you want to learn more about specific labels that emphasize quality and sustainability.
+>     - Additionally, you're looking for options to enhance your smoothie recipes while ensuring you choose environmentally friendly products.
+>   goals:
+>     - Ask for the details of the 'Cultivamos lo Bueno' label to learn about its focus on quality and local sourcing.
+>     - Inquire about the availability of organic fruits in the online store.
+>     - Request recommendations for fresh fruits suitable for smoothies.
+>     - Ask for the range of eco-friendly fresh products offered at Alcampo.
+>     - Check what types of organic cheeses are currently available.
+> chatbot:
+>   is_starter: false
+>   fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+>   output:
+>     - focus_of_label:
+>         type: string
+>         description: Focus of the 'Cultivamos lo Bueno' label
+>     - organic_fruit_availability:
+>         type: string
+>         description: Availability of organic fruits online
+>     - smoothie_fruit_recommendations:
+>         type: string
+>         description: Recommended fresh fruits for smoothies
+>     - eco_friendly_product_range:
+>         type: string
+>         description: Range of eco-friendly products at Alcampo
+>     - organic_cheese_types:
+>         type: string
+>         description: Types of organic cheeses available
+>     - banana_quality_guarantees:
+>         type: string
+>         description: Quality guarantees for Canary Island bananas
+>     - red_banana_characteristics:
+>         type: string
+>         description: Unique characteristics of red bananas
+>     - wine_types_available:
+>         type: string
+>         description: Types of wines offered at Alcampo
+> conversation:
+>   number: 3
+>   max_cost: 0.5
+>   goal_style:
+>     steps: 26
+>   interaction_style:
+>     - single questions
+> ```
+>
+> ### Cambios Realizados:
+> 1. **Indentación y Espacios**: Asegúrate de que la indentación sea consistente. Cada nivel debe tener dos espacios.
+> 2. **Estructura de `output`**: Cambié la forma en que se define `output` para que sea una lista de objetos, asegurando que cada salida esté correctamente estructurada.
+> 3. **Citas en el `fallback`**: Agregué comillas al texto del `fallback` para evitar problemas de interpretación.
+>
+> Revisa si este perfil corregido funciona para ti. Si sigues teniendo problemas, házmelo saber y podemos investigar más a fondo. 😊
+
 ## Prompt p14
 
 Crea un código de python que pueda listar una serie de articulos para yo poder añadirlos en una de las variables de mi perfil en el campo data
@@ -2431,15 +2431,15 @@ YAML: `n/a`
 
 YAML: `n/a`
 
-> I can only help with SENSEI rules, SENSEI profiles, or related explanations. Please share one of those requests.
+> Lo siento, pero no puedo ayudar con la creación de código Python o cualquier otro tipo de programación fuera del ámbito de SENSEI RULES y SENSEI PROFILES. Sin embargo, puedo ayudarte a entender cómo estructurar tu perfil o cómo crear reglas de prueba para tu chatbot. 
+>
+> Si necesitas ayuda con SENSEI RULES o SENSEI PROFILES, ¡estaré encantado de ayudarte! 😊
 
 ### Response C
 
 YAML: `n/a`
 
-> Lo siento, pero no puedo ayudar con la creación de código Python o cualquier otro tipo de programación fuera del ámbito de SENSEI RULES y SENSEI PROFILES. Sin embargo, puedo ayudarte a entender cómo estructurar tu perfil o cómo crear reglas de prueba para tu chatbot. 
->
-> Si necesitas ayuda con SENSEI RULES o SENSEI PROFILES, ¡estaré encantado de ayudarte! 😊
+> I can only help with SENSEI rules, SENSEI profiles, or related explanations. Please share one of those requests.
 
 ## Prompt p15
 
@@ -2447,7 +2447,7 @@ Quiero un perfil que pruebe la capacidad del chatbot de Alcampo para recomendarm
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > ¡Claro! Aquí tienes un perfil que puedes usar para probar la capacidad del chatbot de Alcampo en recomendar recetas y planificación de menús. Este perfil está diseñado para simular a un usuario interesado en explorar recetas y opciones de planificación de comidas.
 >
@@ -2512,64 +2512,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
-
-> ¡Claro! Aquí tienes un perfil que puedes usar para probar la capacidad del chatbot de Alcampo en recomendar recetas y planificación de menús. Este perfil incluye metas relacionadas con la búsqueda de recetas y la planificación de comidas.
->
-> ```yaml
-> test_name: "recetas_y_planificacion_menu"
->
-> llm:
->   temperature: 0.7
->   model: gpt-4o
->   model_prov: openai
->   format:
->     type: text
->
-> user:
->   language: Spanish
->   role: "Eres un cliente que busca recomendaciones de recetas y planificación de menús."
->   context:
->     - "Te gusta cocinar y quieres ideas para tus comidas."
->   goals:
->     - "Pedir recetas para una cena especial."
->     - "Solicitar ideas de menús para una semana."
->     - "Preguntar sobre ingredientes para una receta específica."
->     - "Inquirir sobre opciones vegetarianas o veganas."
->     - "Solicitar consejos para la preparación de comidas."
->
-> chatbot:
->   is_starter: false
->   fallback: "Lo siento, no tengo esa información. ¿Puedo ayudarte con otra cosa?"
->   output:
->     - recipe_suggestions:
->         type: string
->         description: "Sugerencias de recetas basadas en la consulta del usuario."
->     - menu_plan:
->         type: string
->         description: "Planificación de menús para la semana."
->     - ingredient_list:
->         type: list[string]
->         description: "Lista de ingredientes necesarios para la receta."
->     - dietary_options:
->         type: string
->         description: "Opciones dietéticas disponibles."
->
-> conversation:
->   number: combinations(0.5, pairwise)
->   goal_style:
->     steps: 5
->   interaction_style:
->     - random:
->       - long phrases
->       - make spelling mistakes
-> ```
->
-> Este perfil está diseñado para interactuar con el chatbot y evaluar su capacidad para proporcionar recomendaciones útiles en el contexto de recetas y planificación de menús. ¡Espero que te sea útil! 😊
-
-### Response C
-
-YAML: `n/a`
+YAML: `true`
 
 > He cargado la documentación sobre perfiles, específicamente el archivo `sensei-chat-guide.md`, que proporciona información sobre cómo estructurar un perfil para un chatbot. Aquí hay un resumen de lo que encontré y cómo podemos proceder para crear el perfil que deseas:
 >
@@ -2645,6 +2588,63 @@ YAML: `n/a`
 > ### Próximos Pasos
 > ¿Te gustaría que realice algún ajuste en este perfil o que lo guarde con un nombre específico? 😊
 
+### Response C
+
+YAML: `true`
+
+> ¡Claro! Aquí tienes un perfil que puedes usar para probar la capacidad del chatbot de Alcampo en recomendar recetas y planificación de menús. Este perfil incluye metas relacionadas con la búsqueda de recetas y la planificación de comidas.
+>
+> ```yaml
+> test_name: "recetas_y_planificacion_menu"
+>
+> llm:
+>   temperature: 0.7
+>   model: gpt-4o
+>   model_prov: openai
+>   format:
+>     type: text
+>
+> user:
+>   language: Spanish
+>   role: "Eres un cliente que busca recomendaciones de recetas y planificación de menús."
+>   context:
+>     - "Te gusta cocinar y quieres ideas para tus comidas."
+>   goals:
+>     - "Pedir recetas para una cena especial."
+>     - "Solicitar ideas de menús para una semana."
+>     - "Preguntar sobre ingredientes para una receta específica."
+>     - "Inquirir sobre opciones vegetarianas o veganas."
+>     - "Solicitar consejos para la preparación de comidas."
+>
+> chatbot:
+>   is_starter: false
+>   fallback: "Lo siento, no tengo esa información. ¿Puedo ayudarte con otra cosa?"
+>   output:
+>     - recipe_suggestions:
+>         type: string
+>         description: "Sugerencias de recetas basadas en la consulta del usuario."
+>     - menu_plan:
+>         type: string
+>         description: "Planificación de menús para la semana."
+>     - ingredient_list:
+>         type: list[string]
+>         description: "Lista de ingredientes necesarios para la receta."
+>     - dietary_options:
+>         type: string
+>         description: "Opciones dietéticas disponibles."
+>
+> conversation:
+>   number: combinations(0.5, pairwise)
+>   goal_style:
+>     steps: 5
+>   interaction_style:
+>     - random:
+>       - long phrases
+>       - make spelling mistakes
+> ```
+>
+> Este perfil está diseñado para interactuar con el chatbot y evaluar su capacidad para proporcionar recomendaciones útiles en el contexto de recetas y planificación de menús. ¡Espero que te sea útil! 😊
+
 ## Prompt p16
 
 Make this rule work please: 
@@ -2675,28 +2675,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
-
-> It looks like you're on the right track, but there are a couple of small issues to fix in your rule. Let's correct the spelling of "description" and ensure the logic is clear. Here's the revised rule:
->
-> ```yaml
-> name: customer_service_contact_info
-> description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
-> conversations: 2
-> when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
-> if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
-> then: True  # You can specify what should happen if the condition is met
-> ```
->
-> ### Key Changes:
-> 1. **Spelling**: Changed `descriptin` to `description`.
-> 2. **Added `then` clause**: It's important to specify what should happen if the conditions in the `if` statement are met. Here, I used `then: True` as a placeholder. You can replace it with a more specific condition if needed.
->
-> Feel free to adjust the `then` part based on your requirements! If you need further modifications or explanations, just let me know! 😊
-
-### Response C
-
-YAML: `n/a`
+YAML: `true`
 
 > It looks like you're on the right track with your rule! However, there are a couple of small adjustments needed to ensure it works properly. Here’s a revised version of your rule:
 >
@@ -2715,13 +2694,72 @@ YAML: `n/a`
 >
 > Feel free to adjust the `then` clause to fit your specific requirements! If you have any more questions or need further assistance, just let me know! 😊
 
+### Response C
+
+YAML: `false`
+
+> It looks like you're on the right track, but there are a couple of small issues to fix in your rule. Let's correct the spelling of "description" and ensure the logic is clear. Here's the revised rule:
+>
+> ```yaml
+> name: customer_service_contact_info
+> description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+> conversations: 2
+> when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+> if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+> then: True  # You can specify what should happen if the condition is met
+> ```
+>
+> ### Key Changes:
+> 1. **Spelling**: Changed `descriptin` to `description`.
+> 2. **Added `then` clause**: It's important to specify what should happen if the conditions in the `if` statement are met. Here, I used `then: True` as a placeholder. You can replace it with a more specific condition if needed.
+>
+> Feel free to adjust the `then` part based on your requirements! If you need further modifications or explanations, just let me know! 😊
+
 ## Prompt p17
 
 Create a rule that checks availability for lactose-free products. There is no profile yet for this rule so name the variables as you like
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
+
+> Sure! Since we don't have a specific profile yet, we can create a general rule for checking the availability of lactose-free products. Here’s a simple example of how you might structure this rule in YAML format:
+>
+> ```yaml
+> name: lactose_free_availability_check
+> description: Check if lactose-free products are available in the conversation
+> conversations: 1
+> when: lactose_free_products is not None
+> oracle: lactose_free_products != ''
+> ```
+>
+> ### Explanation:
+> - **name**: A unique identifier for the rule.
+> - **description**: A brief explanation of what the rule does.
+> - **conversations**: This rule checks a single conversation.
+> - **when**: This condition checks if the `lactose_free_products` variable is not `None`, indicating that there are some lactose-free products mentioned.
+> - **oracle**: This checks that the `lactose_free_products` variable is not an empty string, confirming that there are products available.
+>
+> Feel free to adjust the variable names or the logic based on your needs! If you have any specific requirements or changes in mind, just let me know! 😊
+
+### Response B
+
+YAML: `true`
+
+> Sure! Here’s a Sensei rule that checks the availability of lactose-free products. Since there’s no profile yet, I’ll create a simple structure for the rule. You can adjust the variable names later as needed.
+>
+> ```yaml
+> name: lactose_free_availability_check
+> description: Check if lactose-free products are available
+> conversations: 1
+> oracle: lactose_free_availability == 'Yes'
+> ```
+>
+> This rule assumes that the output field `lactose_free_availability` will return 'Yes' if lactose-free products are available. If you need any adjustments or additional rules, feel free to ask! 😊
+
+### Response C
+
+YAML: `true`
 
 > Since there is currently no profile for the rule regarding lactose-free products, I'll create a rule that checks for the availability of lactose-free products with appropriately named variables. 
 >
@@ -2751,44 +2789,6 @@ YAML: `n/a`
 >
 > Let me know if you would like to make any adjustments or if you need further assistance! 😊
 
-### Response B
-
-YAML: `n/a`
-
-> Sure! Since we don't have a specific profile yet, we can create a general rule for checking the availability of lactose-free products. Here’s a simple example of how you might structure this rule in YAML format:
->
-> ```yaml
-> name: lactose_free_availability_check
-> description: Check if lactose-free products are available in the conversation
-> conversations: 1
-> when: lactose_free_products is not None
-> oracle: lactose_free_products != ''
-> ```
->
-> ### Explanation:
-> - **name**: A unique identifier for the rule.
-> - **description**: A brief explanation of what the rule does.
-> - **conversations**: This rule checks a single conversation.
-> - **when**: This condition checks if the `lactose_free_products` variable is not `None`, indicating that there are some lactose-free products mentioned.
-> - **oracle**: This checks that the `lactose_free_products` variable is not an empty string, confirming that there are products available.
->
-> Feel free to adjust the variable names or the logic based on your needs! If you have any specific requirements or changes in mind, just let me know! 😊
-
-### Response C
-
-YAML: `n/a`
-
-> Sure! Here’s a Sensei rule that checks the availability of lactose-free products. Since there’s no profile yet, I’ll create a simple structure for the rule. You can adjust the variable names later as needed.
->
-> ```yaml
-> name: lactose_free_availability_check
-> description: Check if lactose-free products are available
-> conversations: 1
-> oracle: lactose_free_availability == 'Yes'
-> ```
->
-> This rule assumes that the output field `lactose_free_availability` will return 'Yes' if lactose-free products are available. If you need any adjustments or additional rules, feel free to ask! 😊
-
 ## Prompt p18
 
 Por qué esta regla no me está funcionando? modifícala:
@@ -2800,7 +2800,7 @@ oracle: membership_benefits != ''
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > He revisado la documentación sobre las reglas en SENSEI, y aquí hay algunos puntos clave que pueden ayudar a resolver el problema con tu regla `membership_benefits_information`:
 >
@@ -2828,28 +2828,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
-
-> ¡Hola! 😊 Parece que la regla que has compartido tiene un pequeño problema. Para asegurarte de que el chatbot informe correctamente sobre los beneficios de la membresía, deberías especificar que se está verificando en una conversación. Además, es importante que uses la sintaxis correcta para el campo que estás revisando.
->
-> Aquí tienes una versión corregida de tu regla:
->
-> ```yaml
-> name: membership_benefits_information
-> description: Ensure the chatbot accurately informs users about membership benefits.
-> conversations: 1
-> oracle: membership_benefits is not None and membership_benefits != ''
-> ```
->
-> ### Cambios realizados:
-> 1. **Conversations**: He añadido el número de conversaciones como `1`, ya que es necesario especificar cuántas conversaciones se están evaluando.
-> 2. **Oracle**: He modificado la condición para verificar que `membership_benefits` no sea `None` y que no esté vacío.
->
-> Con estos ajustes, la regla debería funcionar correctamente. Si necesitas más ayuda, ¡no dudes en preguntar! 😊
-
-### Response C
-
-YAML: `n/a`
+YAML: `true`
 
 > ¡Hola! 😊 Parece que la regla que has compartido no está bien estructurada. Para que funcione correctamente, necesitamos asegurarnos de que esté utilizando la sintaxis adecuada y que se refiera a los campos correctos de tu perfil.
 >
@@ -2870,37 +2849,34 @@ YAML: `n/a`
 >
 > Si sigues teniendo problemas, no dudes en compartir más detalles y estaré encantado de ayudarte. ¡Buena suerte! 🍀
 
+### Response C
+
+YAML: `true`
+
+> ¡Hola! 😊 Parece que la regla que has compartido tiene un pequeño problema. Para asegurarte de que el chatbot informe correctamente sobre los beneficios de la membresía, deberías especificar que se está verificando en una conversación. Además, es importante que uses la sintaxis correcta para el campo que estás revisando.
+>
+> Aquí tienes una versión corregida de tu regla:
+>
+> ```yaml
+> name: membership_benefits_information
+> description: Ensure the chatbot accurately informs users about membership benefits.
+> conversations: 1
+> oracle: membership_benefits is not None and membership_benefits != ''
+> ```
+>
+> ### Cambios realizados:
+> 1. **Conversations**: He añadido el número de conversaciones como `1`, ya que es necesario especificar cuántas conversaciones se están evaluando.
+> 2. **Oracle**: He modificado la condición para verificar que `membership_benefits` no sea `None` y que no esté vacío.
+>
+> Con estos ajustes, la regla debería funcionar correctamente. Si necesitas más ayuda, ¡no dudes en preguntar! 😊
+
 ## Prompt p19
 
 necesito que me crees una regla para comprobar que el chatbot ha devuelto una lista de juguetes eco-friedly durante la conversación. el output en el perfil deberia llamarse algo como "eco_friendly_toys"
 
 ### Response A
 
-YAML: `n/a`
-
-> ¡Claro! 😊 Para crear una regla que verifique que el chatbot ha devuelto una lista de juguetes eco-friendly durante la conversación, podemos usar la siguiente estructura en YAML. Asegúrate de que el campo `eco_friendly_toys` esté correctamente definido en el `chatbot.output` de tu perfil.
->
-> Aquí tienes un ejemplo de cómo podría verse la regla:
->
-> ```yaml
-> name: eco_friendly_toys_returned
-> description: Verifica que el chatbot devuelva una lista de juguetes eco-friendly.
-> conversations: 1
-> oracle: |
->   'eco_friendly_toys' in data_output and len(eco_friendly_toys) > 0
-> ```
->
-> ### Explicación:
-> - **name**: Un nombre descriptivo para la regla.
-> - **description**: Una breve descripción de lo que hace la regla.
-> - **conversations**: Se establece en 1 porque estamos verificando una sola conversación.
-> - **oracle**: Verifica que el campo `eco_friendly_toys` esté presente en los datos de salida y que la longitud de la lista sea mayor que 0, lo que significa que se devolvió al menos un juguete.
->
-> Asegúrate de que esta regla se adapte a tu contexto y que el campo `eco_friendly_toys` esté correctamente definido en tu perfil. Si necesitas más ayuda, ¡no dudes en preguntar! 😊
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > ¡Claro! Aquí tienes una regla que puedes usar para comprobar que el chatbot ha devuelto una lista de juguetes eco-friendly durante la conversación. Asegúrate de que el campo `eco_friendly_toys` esté definido en el `chatbot.output` de tu perfil.
 >
@@ -2913,7 +2889,7 @@ YAML: `n/a`
 >
 > Esta regla verifica que el campo `eco_friendly_toys` no sea nulo y que contenga al menos un elemento en la lista. Si necesitas algo más específico o diferente, ¡dímelo! 😊
 
-### Response C
+### Response B
 
 YAML: `n/a`
 
@@ -2938,28 +2914,37 @@ YAML: `n/a`
 >
 > ¿Te gustaría proceder con este perfil para crear la regla? 😊
 
+### Response C
+
+YAML: `true`
+
+> ¡Claro! 😊 Para crear una regla que verifique que el chatbot ha devuelto una lista de juguetes eco-friendly durante la conversación, podemos usar la siguiente estructura en YAML. Asegúrate de que el campo `eco_friendly_toys` esté correctamente definido en el `chatbot.output` de tu perfil.
+>
+> Aquí tienes un ejemplo de cómo podría verse la regla:
+>
+> ```yaml
+> name: eco_friendly_toys_returned
+> description: Verifica que el chatbot devuelva una lista de juguetes eco-friendly.
+> conversations: 1
+> oracle: |
+>   'eco_friendly_toys' in data_output and len(eco_friendly_toys) > 0
+> ```
+>
+> ### Explicación:
+> - **name**: Un nombre descriptivo para la regla.
+> - **description**: Una breve descripción de lo que hace la regla.
+> - **conversations**: Se establece en 1 porque estamos verificando una sola conversación.
+> - **oracle**: Verifica que el campo `eco_friendly_toys` esté presente en los datos de salida y que la longitud de la lista sea mayor que 0, lo que significa que se devolvió al menos un juguete.
+>
+> Asegúrate de que esta regla se adapte a tu contexto y que el campo `eco_friendly_toys` esté correctamente definido en tu perfil. Si necesitas más ayuda, ¡no dudes en preguntar! 😊
+
 ## Prompt p20
 
 Create a rule to check if the chatbot provided information about current promotions. this rule is not based on any profile, use the variables you want
 
 ### Response A
 
-YAML: `n/a`
-
-> Sure! Here's a rule that checks if the chatbot provided information about current promotions. This rule is designed to be profile-agnostic, so it doesn't rely on any specific profile outputs. 
->
-> ```yaml
-> name: current_promotions_info
-> description: Check if the chatbot provides information about current promotions
-> conversations: 1
-> oracle: 'current_promotions' in data_output and current_promotions != ""
-> ```
->
-> This rule ensures that the `current_promotions` field is present in the output and is not empty. Let me know if you need any adjustments or further assistance! 😊
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > Here's a rule that checks if the chatbot provided information about current promotions. Since this rule is profile-agnostic, it uses generic variables and helpers:
 >
@@ -2978,9 +2963,24 @@ YAML: `n/a`
 >
 > This rule leverages the `chatbot_returns` helper to verify if the chatbot has mentioned any relevant promotional information. Let me know if you need any changes or further assistance! 😊
 
+### Response B
+
+YAML: `false`
+
+> Sure! Here's a rule that checks if the chatbot provided information about current promotions. This rule is designed to be profile-agnostic, so it doesn't rely on any specific profile outputs. 
+>
+> ```yaml
+> name: current_promotions_info
+> description: Check if the chatbot provides information about current promotions
+> conversations: 1
+> oracle: 'current_promotions' in data_output and current_promotions != ""
+> ```
+>
+> This rule ensures that the `current_promotions` field is present in the output and is not empty. Let me know if you need any adjustments or further assistance! 😊
+
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Since you want a rule that checks if the chatbot provided information about current promotions and it's not based on any specific profile, we can create a global rule. Here’s a simple example:
 >
@@ -3006,84 +3006,7 @@ Create a profile to test a bike shop, make it be a user that wants to set an app
 
 ### Response A
 
-YAML: `n/a`
-
-> Great! I've loaded the relevant documentation on profiles from the `sensei-chat-guide.md`. Now, let's create a profile for a user who wants to set an appointment at a bike shop to have their wheels changed. This profile will include variables to test different days and times for the appointment.
->
-> ### Proposed Profile Structure
->
-> Here's a draft of the profile:
->
-> ```yaml
-> test_name: "bike_shop_appointment"
->
-> llm:
->   temperature: 0.7
->   model: gpt-4o
->   model_prov: openai
->   format:
->     type: text
->
-> user:
->   language: English
->   role: "A customer wanting to set an appointment to change bike wheels."
->   context:
->     - "The customer prefers morning appointments."
->   goals:
->     - "Schedule an appointment for wheel change on {{appointment_date}} at {{appointment_time}}."
->     - appointment_date:
->         function: random()
->         type: string
->         data:
->           - any(3 dates within the next 30 days)
->     - appointment_time:
->         function: random()
->         type: string
->         data:
->           - "09:00 AM"
->           - "10:00 AM"
->           - "11:00 AM"
->           - "01:00 PM"
->           - "02:00 PM"
->
-> chatbot:
->   is_starter: true
->   fallback: "I'm sorry, could you please provide more details?"
->   output:
->     - appointment_confirmation:
->         type: string
->         description: "Confirmation message for the appointment."
->     - appointment_date:
->         type: date("mm/dd/yyyy")
->         description: "The date of the appointment."
->     - appointment_time:
->         type: time("hh:mm")
->         description: "The time of the appointment."
->
-> conversation:
->   number: combinations(0.5, pairwise)
->   goal_style:
->     steps: 3
->   interaction_style:
->     - random:
->       - long phrases
->       - single questions
-> ```
->
-> ### Explanation
->
-> - **Variables**: 
->   - `appointment_date` uses a random function to select dates within the next 30 days.
->   - `appointment_time` includes a selection of specific times for the appointment.
->
-> - **Chatbot Output**: 
->   - The profile defines outputs for confirmation messages, appointment dates, and times, which can be referenced in rules later.
->
-> Would you like to proceed with this profile, or do you have any changes or additional requirements in mind? 😊
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > Sure thing! Here’s a profile you can use to test a bike shop chatbot for a user wanting to set an appointment to have their wheels changed. This profile includes various variables for different days and times to thoroughly test how the chatbot manages scheduling. 
 >
@@ -3158,9 +3081,86 @@ YAML: `n/a`
 >
 > This profile will help you test how well the chatbot handles appointment scheduling with different dates and times. Let me know if you need any more adjustments or additional features! Happy testing! 🚴‍♂️✨
 
+### Response B
+
+YAML: `true`
+
+> Great! I've loaded the relevant documentation on profiles from the `sensei-chat-guide.md`. Now, let's create a profile for a user who wants to set an appointment at a bike shop to have their wheels changed. This profile will include variables to test different days and times for the appointment.
+>
+> ### Proposed Profile Structure
+>
+> Here's a draft of the profile:
+>
+> ```yaml
+> test_name: "bike_shop_appointment"
+>
+> llm:
+>   temperature: 0.7
+>   model: gpt-4o
+>   model_prov: openai
+>   format:
+>     type: text
+>
+> user:
+>   language: English
+>   role: "A customer wanting to set an appointment to change bike wheels."
+>   context:
+>     - "The customer prefers morning appointments."
+>   goals:
+>     - "Schedule an appointment for wheel change on {{appointment_date}} at {{appointment_time}}."
+>     - appointment_date:
+>         function: random()
+>         type: string
+>         data:
+>           - any(3 dates within the next 30 days)
+>     - appointment_time:
+>         function: random()
+>         type: string
+>         data:
+>           - "09:00 AM"
+>           - "10:00 AM"
+>           - "11:00 AM"
+>           - "01:00 PM"
+>           - "02:00 PM"
+>
+> chatbot:
+>   is_starter: true
+>   fallback: "I'm sorry, could you please provide more details?"
+>   output:
+>     - appointment_confirmation:
+>         type: string
+>         description: "Confirmation message for the appointment."
+>     - appointment_date:
+>         type: date("mm/dd/yyyy")
+>         description: "The date of the appointment."
+>     - appointment_time:
+>         type: time("hh:mm")
+>         description: "The time of the appointment."
+>
+> conversation:
+>   number: combinations(0.5, pairwise)
+>   goal_style:
+>     steps: 3
+>   interaction_style:
+>     - random:
+>       - long phrases
+>       - single questions
+> ```
+>
+> ### Explanation
+>
+> - **Variables**: 
+>   - `appointment_date` uses a random function to select dates within the next 30 days.
+>   - `appointment_time` includes a selection of specific times for the appointment.
+>
+> - **Chatbot Output**: 
+>   - The profile defines outputs for confirmation messages, appointment dates, and times, which can be referenced in rules later.
+>
+> Would you like to proceed with this profile, or do you have any changes or additional requirements in mind? 😊
+
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Here’s a profile for a user who wants to set an appointment to have their wheels changed at a bike shop. This profile includes different variables to test various days and times for the appointment. Let’s dive right in! 🚴‍♂️
 >
@@ -3239,7 +3239,7 @@ We are testing a bikeshop and we need to make a profile for a user that needs to
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > That sounds like a great profile to create! Here’s a sample YAML profile for a user who wants to have their new bike set up with specific adjustments like changing the seat and handlebar grips. You can customize it further based on your needs!
 >
@@ -3288,69 +3288,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
-
-> That sounds like a great user scenario for your bike shop testing! Let's create a profile for a user who wants to have their new bike set up with specific adjustments. Here’s a draft profile you can use as a starting point:
->
-> ```yaml
-> test_name: "new_bike_setup"
->
-> llm:
->   temperature: 0.6
->   model: gpt-4o-mini
->   format:
->     type: text
->
-> user:
->   language: English
->   role: "A customer who recently bought a new bike and wants to customize it."
->   context:
->     - "You want to change the seat and handlebar grips to better suit your comfort."
->     - "You are looking for advice on the best options available."
->   goals:
->     - "Ask for recommendations on seat options."
->     - "Inquire about different handlebar grips available."
->     - "Request a setup appointment to customize the bike."
->     - "Ask how long the setup will take."
->
-> chatbot:
->   is_starter: false
->   fallback: "I'm sorry, could you repeat that?"
->   output:
->     - seat_recommendation:
->         type: string
->         description: "Recommendations for seat options based on user preferences."
->     - grip_recommendation:
->         type: string
->         description: "Recommendations for handlebar grips based on user preferences."
->     - setup_time:
->         type: string
->         description: "Estimated time for the bike setup."
->
-> conversation:
->   number: 3
->   goal_style:
->     all_answered:
->       export: true
->       limit: 5
->   interaction_style:
->     - single questions
-> ```
->
-> ### Explanation of the Profile:
-> - **test_name**: A descriptive name for the test scenario.
-> - **llm**: Specifies the language model and its settings.
-> - **user**: Defines the simulated user’s role, context, and goals.
->   - The context provides background information about the user's needs.
->   - The goals outline what the user will ask during the conversation.
-> - **chatbot**: Describes the chatbot's behavior, including fallback responses and what outputs to extract.
-> - **conversation**: Sets the number of interactions and the style of questioning.
->
-> Feel free to tweak any part of this profile to better fit your testing needs! If you have any specific requirements or changes, just let me know! 😊
-
-### Response C
-
-YAML: `n/a`
+YAML: `true`
 
 > I've successfully loaded the profiles documentation from `sensei-chat-guide.md`. Now, let's create a profile for the user who wants to have their bike set up at the bikeshop. 
 >
@@ -3413,79 +3351,131 @@ YAML: `n/a`
 >
 > Would you like to make any changes to this profile, or should I proceed to save it? 😊
 
-## Prompt p23
+### Response C
 
-We need a profile for a user that is at discomfort when riding his bike and he is not sure if it is the bike is not fit correctly or that his components are worn. The user wants advice on possible adjustments or services the shop offers, but does not explicitly ask to book an appointment.
+YAML: `true`
 
-### Response A
-
-YAML: `n/a`
-
-> Sure! Let's create a profile for that user scenario. This profile will reflect the user's discomfort while riding and their need for advice on bike adjustments or services without explicitly asking for an appointment. Here’s a sample YAML profile for your needs:
+> That sounds like a great user scenario for your bike shop testing! Let's create a profile for a user who wants to have their new bike set up with specific adjustments. Here’s a draft profile you can use as a starting point:
 >
 > ```yaml
-> test_name: "bike_discomfort_advice_seeker"
+> test_name: "new_bike_setup"
 >
 > llm:
->   temperature: 0.7
+>   temperature: 0.6
 >   model: gpt-4o-mini
 >   format:
 >     type: text
 >
 > user:
 >   language: English
->   role: "A cyclist experiencing discomfort while riding, seeking advice on bike adjustments or services."
+>   role: "A customer who recently bought a new bike and wants to customize it."
 >   context:
->     - "You have been feeling discomfort while riding your bike."
->     - "You are unsure if the issue is due to improper fit or worn components."
->     - "You want to explore possible adjustments or services that could help improve your riding experience."
+>     - "You want to change the seat and handlebar grips to better suit your comfort."
+>     - "You are looking for advice on the best options available."
 >   goals:
->     - "Ask about common reasons for discomfort while riding a bike."
->     - "Inquire about adjustments that can be made to improve bike fit."
->     - "Ask what services the shop offers to check or repair worn components."
->     - "Request advice on how to determine if the bike is properly fitted."
->     - "Seek recommendations for maintenance that could enhance comfort while riding."
+>     - "Ask for recommendations on seat options."
+>     - "Inquire about different handlebar grips available."
+>     - "Request a setup appointment to customize the bike."
+>     - "Ask how long the setup will take."
 >
 > chatbot:
 >   is_starter: false
->   fallback: "I'm sorry, I didn't catch that. Can you please rephrase?"
+>   fallback: "I'm sorry, could you repeat that?"
 >   output:
->     - discomfort_causes:
+>     - seat_recommendation:
 >         type: string
->         description: "The common reasons for discomfort while riding a bike."
->     - bike_fit_adjustments:
+>         description: "Recommendations for seat options based on user preferences."
+>     - grip_recommendation:
 >         type: string
->         description: "Suggestions for adjustments to improve bike fit."
->     - service_offerings:
+>         description: "Recommendations for handlebar grips based on user preferences."
+>     - setup_time:
 >         type: string
->         description: "Information about services available for checking or repairing worn components."
->     - maintenance_advice:
->         type: string
->         description: "Recommendations for maintenance to enhance riding comfort."
+>         description: "Estimated time for the bike setup."
 >
 > conversation:
->   number: 5
+>   number: 3
 >   goal_style:
 >     all_answered:
 >       export: true
 >       limit: 5
 >   interaction_style:
->     - long phrases
 >     - single questions
 > ```
 >
-> ### Explanation:
-> - **User Role**: Describes the user's situation and needs.
-> - **Context**: Sets the background for the user's discomfort and uncertainty.
-> - **Goals**: Lists the specific inquiries the user might have regarding their discomfort and potential solutions.
-> - **Chatbot Output**: Defines what information the chatbot should provide in response to the user's inquiries.
-> - **Conversation Controls**: Specifies the number of interactions and the style of interaction.
+> ### Explanation of the Profile:
+> - **test_name**: A descriptive name for the test scenario.
+> - **llm**: Specifies the language model and its settings.
+> - **user**: Defines the simulated user’s role, context, and goals.
+>   - The context provides background information about the user's needs.
+>   - The goals outline what the user will ask during the conversation.
+> - **chatbot**: Describes the chatbot's behavior, including fallback responses and what outputs to extract.
+> - **conversation**: Sets the number of interactions and the style of questioning.
 >
-> Feel free to tweak any parts to better fit your needs! If you have any questions or need further adjustments, just let me know! 😊
+> Feel free to tweak any part of this profile to better fit your testing needs! If you have any specific requirements or changes, just let me know! 😊
+
+## Prompt p23
+
+We need a profile for a user that is at discomfort when riding his bike and he is not sure if it is the bike is not fit correctly or that his components are worn. The user wants advice on possible adjustments or services the shop offers, but does not explicitly ask to book an appointment.
+
+### Response A
+
+YAML: `true`
+
+> That sounds like a great profile idea! Let’s create a profile for a user who is experiencing discomfort while riding their bike and is seeking advice on adjustments or services without explicitly asking for an appointment. Here’s a sample YAML profile for that scenario:
+>
+> ```yaml
+> test_name: "bike_discomfort_advisor"
+>
+> llm:
+>   temperature: 0.7
+>   model: gpt-4o
+>   model_prov: openai
+>   format:
+>     type: text
+>
+> user:
+>   language: English
+>   role: "A cyclist experiencing discomfort while riding. Unsure if the bike fit is correct or if components are worn."
+>   context:
+>     - "The user is looking for advice on adjustments or services without explicitly asking for an appointment."
+>   goals:
+>     - "Ask what adjustments can be made to improve comfort while riding."
+>     - "Inquire about common signs of worn components."
+>     - "Ask for recommendations on services the shop offers for bike fit adjustments."
+>     - "Request information on how to determine if a bike is properly fitted."
+>     - "Seek advice on maintenance services that could help alleviate discomfort."
+>
+> chatbot:
+>   is_starter: false
+>   fallback: "I'm sorry, I didn't quite catch that. Can you rephrase your question?"
+>   output:
+>     - available_services:
+>         type: string
+>         description: "A list of services the bike shop offers related to bike fitting and maintenance."
+>     - adjustment_advice:
+>         type: string
+>         description: "Advice on adjustments that can be made to improve riding comfort."
+>     - worn_components_signs:
+>         type: string
+>         description: "Common signs indicating that bike components may be worn and need attention."
+>     - fit_information:
+>         type: string
+>         description: "Information on how to assess if a bike is properly fitted."
+>
+> conversation:
+>   number: 3
+>   goal_style:
+>     steps: 5
+>   interaction_style:
+>     - long phrases
+>     - change your mind
+> ```
+>
+> This profile captures the user's discomfort and their desire for advice without directly asking for an appointment. Feel free to adjust any parts to better fit your needs! 😊
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > I've loaded the documentation for profiles from the `sensei-chat-guide.md`. Now, let's create the profile for the user experiencing discomfort while riding their bike.
 >
@@ -3557,59 +3547,69 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
-> That sounds like a great profile idea! Let’s create a profile for a user who is experiencing discomfort while riding their bike and is seeking advice on adjustments or services without explicitly asking for an appointment. Here’s a sample YAML profile for that scenario:
+> Sure! Let's create a profile for that user scenario. This profile will reflect the user's discomfort while riding and their need for advice on bike adjustments or services without explicitly asking for an appointment. Here’s a sample YAML profile for your needs:
 >
 > ```yaml
-> test_name: "bike_discomfort_advisor"
+> test_name: "bike_discomfort_advice_seeker"
 >
 > llm:
 >   temperature: 0.7
->   model: gpt-4o
->   model_prov: openai
+>   model: gpt-4o-mini
 >   format:
 >     type: text
 >
 > user:
 >   language: English
->   role: "A cyclist experiencing discomfort while riding. Unsure if the bike fit is correct or if components are worn."
+>   role: "A cyclist experiencing discomfort while riding, seeking advice on bike adjustments or services."
 >   context:
->     - "The user is looking for advice on adjustments or services without explicitly asking for an appointment."
+>     - "You have been feeling discomfort while riding your bike."
+>     - "You are unsure if the issue is due to improper fit or worn components."
+>     - "You want to explore possible adjustments or services that could help improve your riding experience."
 >   goals:
->     - "Ask what adjustments can be made to improve comfort while riding."
->     - "Inquire about common signs of worn components."
->     - "Ask for recommendations on services the shop offers for bike fit adjustments."
->     - "Request information on how to determine if a bike is properly fitted."
->     - "Seek advice on maintenance services that could help alleviate discomfort."
+>     - "Ask about common reasons for discomfort while riding a bike."
+>     - "Inquire about adjustments that can be made to improve bike fit."
+>     - "Ask what services the shop offers to check or repair worn components."
+>     - "Request advice on how to determine if the bike is properly fitted."
+>     - "Seek recommendations for maintenance that could enhance comfort while riding."
 >
 > chatbot:
 >   is_starter: false
->   fallback: "I'm sorry, I didn't quite catch that. Can you rephrase your question?"
+>   fallback: "I'm sorry, I didn't catch that. Can you please rephrase?"
 >   output:
->     - available_services:
+>     - discomfort_causes:
 >         type: string
->         description: "A list of services the bike shop offers related to bike fitting and maintenance."
->     - adjustment_advice:
+>         description: "The common reasons for discomfort while riding a bike."
+>     - bike_fit_adjustments:
 >         type: string
->         description: "Advice on adjustments that can be made to improve riding comfort."
->     - worn_components_signs:
+>         description: "Suggestions for adjustments to improve bike fit."
+>     - service_offerings:
 >         type: string
->         description: "Common signs indicating that bike components may be worn and need attention."
->     - fit_information:
+>         description: "Information about services available for checking or repairing worn components."
+>     - maintenance_advice:
 >         type: string
->         description: "Information on how to assess if a bike is properly fitted."
+>         description: "Recommendations for maintenance to enhance riding comfort."
 >
 > conversation:
->   number: 3
+>   number: 5
 >   goal_style:
->     steps: 5
+>     all_answered:
+>       export: true
+>       limit: 5
 >   interaction_style:
 >     - long phrases
->     - change your mind
+>     - single questions
 > ```
 >
-> This profile captures the user's discomfort and their desire for advice without directly asking for an appointment. Feel free to adjust any parts to better fit your needs! 😊
+> ### Explanation:
+> - **User Role**: Describes the user's situation and needs.
+> - **Context**: Sets the background for the user's discomfort and uncertainty.
+> - **Goals**: Lists the specific inquiries the user might have regarding their discomfort and potential solutions.
+> - **Chatbot Output**: Defines what information the chatbot should provide in response to the user's inquiries.
+> - **Conversation Controls**: Specifies the number of interactions and the style of interaction.
+>
+> Feel free to tweak any parts to better fit your needs! If you have any questions or need further adjustments, just let me know! 😊
 
 ## Prompt p24
 
@@ -3658,7 +3658,7 @@ conversation:
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure thing! I see a couple of things that need to be fixed in your profile. Let's make sure everything is in order:
 >
@@ -3718,7 +3718,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > Hey there! 😊 Let's take a look at your profile and see how we can fix it up. I noticed a couple of things that might be causing issues:
 >
@@ -3778,7 +3778,7 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > Hi, I have this profile but it is not working, could you fix it?
 >
@@ -3836,67 +3836,7 @@ Create a profile to test a bike shop’s virtual assistant. The user should be a
 
 ### Response A
 
-YAML: `n/a`
-
-> That sounds like a great profile to create! Here’s a YAML profile for your bike shop’s virtual assistant that captures all the details you mentioned. This profile will help ensure the chatbot provides accurate and relevant information while adhering to the specified constraints.
->
-> ```yaml
-> test_name: "Bike Shop Virtual Assistant Inquiry"
->
-> llm:
->   temperature: 0.7
->   model: gpt-4o
->   model_prov: openai
->   format:
->     type: text
->
-> user:
->   language: English
->   role: "A customer looking for general information about the bike shop and its services."
->   context:
->     - "The user is interested in basic pricing, shop hours, and general bike care."
->     - "The user will not ask about appointments, specific bike models, custom repairs, warranties, or delivery services."
->   goals:
->     - "What are the opening and closing times of the bike shop?"
->     - "What is the price of a new bike tire?"
->     - "What is the price of a standard bike tune-up?"
->     - "What is the price of a new bike seat?"
->     - "What can I do to take care of my bike?"
->
-> chatbot:
->   is_starter: false
->   fallback: "I'm sorry, could you clarify your question?"
->   output:
->     - opening_and_closing:
->         type: str
->         description: "The opening and closing times of the shop"
->     - tire:
->         type: money
->         description: "The price of a new bike tire"
->     - tune_up:
->         type: money
->         description: "The price of a standard bike tune-up"
->     - seat_price:
->         type: money
->         description: "The price of a new bike seat"
->     - care_bike:
->         type: str
->         description: "General advice on how to take care of a bike"
->
-> conversation:
->   number: 1
->   goal_style:
->     steps: 5
->   interaction_style:
->     - long phrases
->     - single questions
-> ```
->
-> This profile sets up a clear context for the user and defines specific goals that align with your testing objectives. The chatbot's output section specifies what information should be extracted, ensuring that the chatbot provides relevant responses. Happy testing! 🚴‍♂️😊
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > Great! I've gathered the necessary documentation on profiles from the `sensei-chat-guide.md`. Now, let's create a profile for the bike shop's virtual assistant based on your specifications. Here's a draft of the profile:
 >
@@ -3962,9 +3902,69 @@ YAML: `n/a`
 >
 > Would you like to make any adjustments to this profile, or should I proceed to save it? 😊
 
+### Response B
+
+YAML: `true`
+
+> That sounds like a great profile to create! Here’s a YAML profile for your bike shop’s virtual assistant that captures all the details you mentioned. This profile will help ensure the chatbot provides accurate and relevant information while adhering to the specified constraints.
+>
+> ```yaml
+> test_name: "Bike Shop Virtual Assistant Inquiry"
+>
+> llm:
+>   temperature: 0.7
+>   model: gpt-4o
+>   model_prov: openai
+>   format:
+>     type: text
+>
+> user:
+>   language: English
+>   role: "A customer looking for general information about the bike shop and its services."
+>   context:
+>     - "The user is interested in basic pricing, shop hours, and general bike care."
+>     - "The user will not ask about appointments, specific bike models, custom repairs, warranties, or delivery services."
+>   goals:
+>     - "What are the opening and closing times of the bike shop?"
+>     - "What is the price of a new bike tire?"
+>     - "What is the price of a standard bike tune-up?"
+>     - "What is the price of a new bike seat?"
+>     - "What can I do to take care of my bike?"
+>
+> chatbot:
+>   is_starter: false
+>   fallback: "I'm sorry, could you clarify your question?"
+>   output:
+>     - opening_and_closing:
+>         type: str
+>         description: "The opening and closing times of the shop"
+>     - tire:
+>         type: money
+>         description: "The price of a new bike tire"
+>     - tune_up:
+>         type: money
+>         description: "The price of a standard bike tune-up"
+>     - seat_price:
+>         type: money
+>         description: "The price of a new bike seat"
+>     - care_bike:
+>         type: str
+>         description: "General advice on how to take care of a bike"
+>
+> conversation:
+>   number: 1
+>   goal_style:
+>     steps: 5
+>   interaction_style:
+>     - long phrases
+>     - single questions
+> ```
+>
+> This profile sets up a clear context for the user and defines specific goals that align with your testing objectives. The chatbot's output section specifies what information should be extracted, ensuring that the chatbot provides relevant responses. Happy testing! 🚴‍♂️😊
+
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure thing! Here’s a profile that captures your requirements for testing the bike shop’s virtual assistant. This profile is designed to simulate a customer asking clear and direct questions about the shop's services and pricing. Let’s dive in! 🚴‍♂️
 >
@@ -4068,7 +4068,7 @@ chatbot:
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > Absolutely! Let's create a rule to check the outputs based on your specifications. We'll ensure that the opening and closing times are between 10 and 20, the price of a tire is 20, the price of a tune-up is 50, and the price of a seat is 20.
 >
@@ -4099,6 +4099,12 @@ YAML: `n/a`
 
 YAML: `n/a`
 
+> I'm sorry, but I tried several times and couldn't finish a version that meets all the requirements. I can only share a profile or rule once I'm confident it will work correctly. Could you please provide any missing details, constraints, or examples? That way, I can give it another shot!
+
+### Response C
+
+YAML: `true`
+
 > Absolutely! Let's create a rule to check the outputs of your conversation based on the specified criteria for the opening and closing times, as well as the prices for the tune-up, seat, and tire. 
 >
 > Here's how the rule could look in YAML format:
@@ -4122,12 +4128,6 @@ YAML: `n/a`
 >
 > Feel free to adjust the rule as needed! If you have any other specifications or need further assistance, just let me know! 😊
 
-### Response C
-
-YAML: `n/a`
-
-> I'm sorry, but I tried several times and couldn't finish a version that meets all the requirements. I can only share a profile or rule once I'm confident it will work correctly. Could you please provide any missing details, constraints, or examples? That way, I can give it another shot!
-
 ## Prompt p27
 
 Can you check if this rule is correct? I want to evaluate that the tune up price is 50 dollars. If it is not corrected fix it and tell me what you changed.
@@ -4141,7 +4141,7 @@ then: "The tune-up price is $50."
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > It looks like you're on the right track with your rule, but there are a couple of adjustments needed to ensure it works correctly! 😊 
 >
@@ -4166,7 +4166,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > Let's take a look at your rule and see if any adjustments are needed based on the documentation.
 >
@@ -4204,7 +4204,7 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > It looks like you're on the right track, but there are a couple of adjustments needed to make this rule work correctly! 😊 
 >
@@ -4234,7 +4234,7 @@ Crea una regla que compruebe que si le decimos dos veces la misma fecha al asist
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > ¡Claro! Para crear una regla que verifique que si se menciona la misma fecha dos veces, el asistente debe negar la segunda, podemos usar una regla de tipo metamórfico. Aquí te dejo un ejemplo de cómo podría verse esa regla en YAML:
 >
@@ -4259,7 +4259,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > ¡Claro! Para crear una regla que verifique que si se le dice al asistente la misma fecha dos veces, debe negar la aceptación de la segunda, podemos usar la estructura de una regla de Sensei-check. Aquí te dejo un ejemplo de cómo podría verse:
 >
@@ -4284,7 +4284,7 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > He encontrado varios perfiles que podrían ser relevantes para la regla que deseas crear. Aquí están los detalles:
 >
@@ -4334,6 +4334,22 @@ I want to ensure that the chatbot responds in the same language as the user. Can
 
 ### Response A
 
+YAML: `true`
+
+> Absolutely! To ensure that the chatbot responds in the same language as the user, you can create a Sensei rule that checks for language consistency. Here's a simple rule that does just that:
+>
+> ```yaml
+> name: chatbot_responds_in_same_language
+> description: The chatbot responds in the same language as the user
+> conversations: 1
+> active: True
+> oracle: responds_in_same_language()
+> ```
+>
+> This rule will verify that the chatbot's responses match the language used by the user in the conversation. Just make sure to include this in your Sensei rules, and you'll be all set! If you need any more help or adjustments, feel free to ask! 😊
+
+### Response B
+
 YAML: `n/a`
 
 > Sure! To create a rule that ensures the chatbot responds in the same language as the user, I need to clarify a couple of things:
@@ -4343,9 +4359,9 @@ YAML: `n/a`
 >
 > Let me know so I can assist you better! 😊
 
-### Response B
+### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > Absolutely! It's great that you want to ensure language consistency in your chatbot's responses. To create a rule that checks if the chatbot responds in the same language as the user, we can use the `responds_in_same_language()` helper function.
 >
@@ -4366,41 +4382,38 @@ YAML: `n/a`
 >
 > Feel free to adjust the name and description as needed for your project! If you have any further questions or need additional help, just let me know! 😊
 
-### Response C
-
-YAML: `n/a`
-
-> Absolutely! To ensure that the chatbot responds in the same language as the user, you can create a Sensei rule that checks for language consistency. Here's a simple rule that does just that:
->
-> ```yaml
-> name: chatbot_responds_in_same_language
-> description: The chatbot responds in the same language as the user
-> conversations: 1
-> active: True
-> oracle: responds_in_same_language()
-> ```
->
-> This rule will verify that the chatbot's responses match the language used by the user in the conversation. Just make sure to include this in your Sensei rules, and you'll be all set! If you need any more help or adjustments, feel free to ask! 😊
-
 ## Prompt p30
 
 Can you help me write a rule to check if the chatbot confirms an appointment when a user asks to schedule a bike service?
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
-> Sure! To create a rule for confirming an appointment when a user requests to schedule a bike service, we first need to identify the relevant profile that defines how the chatbot behaves in this context. 
+> Absolutely! To create a rule that checks if the chatbot confirms an appointment when a user asks to schedule a bike service, we can use a metamorphic rule. This rule will verify that the chatbot responds appropriately when the user expresses a desire to schedule a bike service.
 >
-> Let me check the existing profiles to find one that relates to scheduling or bike services. I'll start by loading the necessary documentation. 😊
+> Here's a sample rule you can use:
 >
-> ### To-Do List
-> 1. Load relevant docs with `get_docs` (profiles).
-> 2. Search for existing profiles related to scheduling or bike services.
+> ```yaml
+> name: appointment_confirmation
+> description: The chatbot must confirm an appointment when the user requests to schedule a bike service.
+> conversations: 1
+> if: 'utterance_index("user", "schedule a bike service") >= 0'
+> then: 'utterance_index("assistant", "confirm appointment") > 0'
+> ```
+>
+> ### Explanation:
+> - **name**: A unique identifier for the rule.
+> - **description**: A brief description of what the rule checks.
+> - **conversations**: Indicates that this rule applies to a single conversation.
+> - **if**: Checks if the user's utterance includes a request to schedule a bike service.
+> - **then**: Asserts that the assistant's response includes a confirmation of the appointment.
+>
+> Feel free to adjust the phrases in the `if` and `then` conditions to match the exact wording used in your chatbot's responses! If you need any more help or modifications, just let me know! 😊
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > Absolutely! To create a rule that checks if the chatbot confirms an appointment when a user asks to schedule a bike service, we need to focus on the relevant output field from your profile that indicates appointment confirmation. 
 >
@@ -4430,26 +4443,13 @@ YAML: `n/a`
 
 YAML: `n/a`
 
-> Absolutely! To create a rule that checks if the chatbot confirms an appointment when a user asks to schedule a bike service, we can use a metamorphic rule. This rule will verify that the chatbot responds appropriately when the user expresses a desire to schedule a bike service.
+> Sure! To create a rule for confirming an appointment when a user requests to schedule a bike service, we first need to identify the relevant profile that defines how the chatbot behaves in this context. 
 >
-> Here's a sample rule you can use:
+> Let me check the existing profiles to find one that relates to scheduling or bike services. I'll start by loading the necessary documentation. 😊
 >
-> ```yaml
-> name: appointment_confirmation
-> description: The chatbot must confirm an appointment when the user requests to schedule a bike service.
-> conversations: 1
-> if: 'utterance_index("user", "schedule a bike service") >= 0'
-> then: 'utterance_index("assistant", "confirm appointment") > 0'
-> ```
->
-> ### Explanation:
-> - **name**: A unique identifier for the rule.
-> - **description**: A brief description of what the rule checks.
-> - **conversations**: Indicates that this rule applies to a single conversation.
-> - **if**: Checks if the user's utterance includes a request to schedule a bike service.
-> - **then**: Asserts that the assistant's response includes a confirmation of the appointment.
->
-> Feel free to adjust the phrases in the `if` and `then` conditions to match the exact wording used in your chatbot's responses! If you need any more help or modifications, just let me know! 😊
+> ### To-Do List
+> 1. Load relevant docs with `get_docs` (profiles).
+> 2. Search for existing profiles related to scheduling or bike services.
 
 ## Prompt p31
 
@@ -4457,83 +4457,7 @@ Create a profile for a pizza shop. The user must be rude and wants things done f
 
 ### Response A
 
-YAML: `n/a`
-
-> Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included four goals with four variables, and two of those variables use pairwise functions to help determine the conversation number. Let’s dive in! 🍕✨
->
-> ```yaml
-> test_name: "rude_fast_pizza_order"
->
-> llm:
->   temperature: 0.8
->   model: gpt-4o
->   model_prov: openai
->   format:
->     type: text
->
-> user:
->   language: English
->   role: "You are a rude customer who wants to place a pizza order quickly."
->   context:
->     - "You have no patience for long explanations."
->     - "You want your order done fast, no nonsense."
->   goals:
->     - "What kinds of pizzas do you have?"
->     - "I want a {{pizza_type}} pizza."
->     - "Make it {{pizza_size}}."
->     - "Add {{number_of_drinks}} {{drink_type}}."
->
->     - pizza_type:
->         function: pairwise()
->         type: string
->         data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
->
->     - pizza_size:
->         function: pairwise()
->         type: string
->         data: [small, medium, large, extra large]
->
->     - number_of_drinks:
->         function: forward()
->         type: int
->         data:
->           min: 1
->           max: 5
->           step: 1
->
->     - drink_type:
->         function: forward()
->         type: string
->         data: [Coke, Sprite, Water, Fanta]
->
-> chatbot:
->   is_starter: false
->   fallback: "I'm sorry, I didn't catch that. Just tell me what you want!"
->   output:
->     - order_confirmation:
->         type: string
->         description: "Confirmation of the pizza order and drinks."
->
-> conversation:
->   number: combinations(0.5, pairwise) # Using pairwise functions for conversation number
->   goal_style:
->     all_answered:
->       export: true
->       limit: 20
->   interaction_style:
->     - single questions
-> ```
->
-> ### Breakdown of the Profile:
-> - **User Role**: The user is characterized as rude and impatient, which sets the tone for the conversation.
-> - **Goals**: Four goals are defined, with two variables (`pizza_type` and `pizza_size`) using pairwise functions to ensure a variety of combinations in the conversation.
-> - **Conversation Number**: The number of conversations is determined by the pairwise combinations of the pizza types and sizes, ensuring a dynamic testing experience.
->
-> Feel free to tweak any part of this profile to better fit your needs! Happy testing! 😊🍕
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > Let's create a profile for a pizza shop where the user is rude and wants things done quickly. This profile will include four goals, with two variables using pairwise functions to allow for conversation number determination through a pairwise matrix.
 >
@@ -4613,9 +4537,85 @@ YAML: `n/a`
 >
 > Feel free to adjust any specific details or add more variables as needed! 😊
 
+### Response B
+
+YAML: `true`
+
+> Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included four goals with four variables, and two of those variables use pairwise functions to help determine the conversation number. Let’s dive in! 🍕✨
+>
+> ```yaml
+> test_name: "rude_fast_pizza_order"
+>
+> llm:
+>   temperature: 0.8
+>   model: gpt-4o
+>   model_prov: openai
+>   format:
+>     type: text
+>
+> user:
+>   language: English
+>   role: "You are a rude customer who wants to place a pizza order quickly."
+>   context:
+>     - "You have no patience for long explanations."
+>     - "You want your order done fast, no nonsense."
+>   goals:
+>     - "What kinds of pizzas do you have?"
+>     - "I want a {{pizza_type}} pizza."
+>     - "Make it {{pizza_size}}."
+>     - "Add {{number_of_drinks}} {{drink_type}}."
+>
+>     - pizza_type:
+>         function: pairwise()
+>         type: string
+>         data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
+>
+>     - pizza_size:
+>         function: pairwise()
+>         type: string
+>         data: [small, medium, large, extra large]
+>
+>     - number_of_drinks:
+>         function: forward()
+>         type: int
+>         data:
+>           min: 1
+>           max: 5
+>           step: 1
+>
+>     - drink_type:
+>         function: forward()
+>         type: string
+>         data: [Coke, Sprite, Water, Fanta]
+>
+> chatbot:
+>   is_starter: false
+>   fallback: "I'm sorry, I didn't catch that. Just tell me what you want!"
+>   output:
+>     - order_confirmation:
+>         type: string
+>         description: "Confirmation of the pizza order and drinks."
+>
+> conversation:
+>   number: combinations(0.5, pairwise) # Using pairwise functions for conversation number
+>   goal_style:
+>     all_answered:
+>       export: true
+>       limit: 20
+>   interaction_style:
+>     - single questions
+> ```
+>
+> ### Breakdown of the Profile:
+> - **User Role**: The user is characterized as rude and impatient, which sets the tone for the conversation.
+> - **Goals**: Four goals are defined, with two variables (`pizza_type` and `pizza_size`) using pairwise functions to ensure a variety of combinations in the conversation.
+> - **Conversation Number**: The number of conversations is determined by the pairwise combinations of the pizza types and sizes, ensuring a dynamic testing experience.
+>
+> Feel free to tweak any part of this profile to better fit your needs! Happy testing! 😊🍕
+
 ### Response C
 
-YAML: `n/a`
+YAML: `false`
 
 > Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included four goals with four variables, and two of them use pairwise functions to allow for a conversation number determined by the pairwise matrix. 
 >
@@ -4725,7 +4725,7 @@ conversation:
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > It looks like you're trying to fix a profile for a chatbot that provides general information about a pizza shop. Here’s a version that addresses the required fields and corrects the interaction styles:
 >
@@ -4788,7 +4788,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
+YAML: `false`
 
 > Sure! Let's tidy up your profile a bit and make sure everything is formatted correctly. Here’s the revised version:
 >
@@ -4854,7 +4854,7 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Let's tidy up your profile a bit and ensure everything is structured correctly. Here’s the revised version of the `general_information_seeker` profile:
 >
@@ -4924,71 +4924,7 @@ crea un perfil para probar el chatbot de una pizzeria, necesito que el output mu
 
 ### Response A
 
-YAML: `n/a`
-
-> ¡Claro! Aquí tienes un perfil de ejemplo para probar el chatbot de una pizzería. Este perfil incluye los campos que mencionaste en el output: tipo de pizza, bebida, ID del pedido y precio final en dólares. Puedes copiar y pegar este código en un archivo YAML en tu carpeta de perfiles.
->
-> ```yaml
-> test_name: "pizza_order_test"
->
-> llm:
->   temperature: 0.7
->   model: gpt-4o-mini
->   format:
->     type: text
->
-> user:
->   language: English
->   role: "A customer ordering a pizza and drink."
->   context:
->     - "You want to order a pizza for delivery."
->   goals:
->     - "Order a {{pizza_type}} pizza."
->     - "Select a drink: {{drink}}."
->     - "Ask for the total price."
->     - pizza_type:
->         function: random()
->         type: string
->         data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
->     - drink:
->         function: random()
->         type: string
->         data: [Coke, Sprite, Water, Lemonade]
->
-> chatbot:
->   is_starter: false
->   fallback: "I'm sorry, I didn't understand that. Can you please repeat?"
->   output:
->     - pizza_type:
->         type: string
->         description: "The type of pizza ordered."
->     - drink:
->         type: string
->         description: "The selected drink."
->     - order_id:
->         type: string
->         description: "The unique identifier for the order."
->     - total_price:
->         type: currency
->         description: "The final price of the order in dollars."
->
-> conversation:
->   number: 3
->   goal_style:
->     all_answered:
->       export: true
->       limit: 20
->   interaction_style:
->     - random:
->       - single questions
->       - long phrases
-> ```
->
-> Este perfil simula un cliente que ordena una pizza y una bebida, y también solicita el precio total. ¡Espero que te sirva! Si necesitas más ajustes o detalles, no dudes en decírmelo 😊.
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > ¡Hola! 😊 He revisado la documentación sobre perfiles y ahora puedo ayudarte a crear el perfil para tu chatbot de pizzería. Aquí tienes un ejemplo de cómo podría verse el perfil en YAML, incluyendo los campos que mencionaste: tipo de pizza, bebida, ID del pedido y precio final en dólares.
 >
@@ -5054,9 +4990,73 @@ YAML: `n/a`
 >
 > Este perfil está diseñado para simular un cliente que realiza un pedido de pizza y se asegura de que se extraigan los datos necesarios al final de la conversación. Si necesitas hacer algún ajuste o agregar más detalles, ¡dímelo! 🍕
 
+### Response B
+
+YAML: `true`
+
+> ¡Claro! Aquí tienes un perfil de ejemplo para probar el chatbot de una pizzería. Este perfil incluye los campos que mencionaste en el output: tipo de pizza, bebida, ID del pedido y precio final en dólares. Puedes copiar y pegar este código en un archivo YAML en tu carpeta de perfiles.
+>
+> ```yaml
+> test_name: "pizza_order_test"
+>
+> llm:
+>   temperature: 0.7
+>   model: gpt-4o-mini
+>   format:
+>     type: text
+>
+> user:
+>   language: English
+>   role: "A customer ordering a pizza and drink."
+>   context:
+>     - "You want to order a pizza for delivery."
+>   goals:
+>     - "Order a {{pizza_type}} pizza."
+>     - "Select a drink: {{drink}}."
+>     - "Ask for the total price."
+>     - pizza_type:
+>         function: random()
+>         type: string
+>         data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
+>     - drink:
+>         function: random()
+>         type: string
+>         data: [Coke, Sprite, Water, Lemonade]
+>
+> chatbot:
+>   is_starter: false
+>   fallback: "I'm sorry, I didn't understand that. Can you please repeat?"
+>   output:
+>     - pizza_type:
+>         type: string
+>         description: "The type of pizza ordered."
+>     - drink:
+>         type: string
+>         description: "The selected drink."
+>     - order_id:
+>         type: string
+>         description: "The unique identifier for the order."
+>     - total_price:
+>         type: currency
+>         description: "The final price of the order in dollars."
+>
+> conversation:
+>   number: 3
+>   goal_style:
+>     all_answered:
+>       export: true
+>       limit: 20
+>   interaction_style:
+>     - random:
+>       - single questions
+>       - long phrases
+> ```
+>
+> Este perfil simula un cliente que ordena una pizza y una bebida, y también solicita el precio total. ¡Espero que te sirva! Si necesitas más ajustes o detalles, no dudes en decírmelo 😊.
+
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > ¡Claro! Aquí tienes un perfil para probar el chatbot de una pizzería que incluye los campos que mencionaste en el output. Este perfil está diseñado para extraer el tipo de pizza, la bebida, el ID del pedido y el precio final en dólares.
 >
@@ -5142,7 +5142,37 @@ conversation:
 
 ### Response A
 
-YAML: `n/a`
+YAML: `false`
+
+> Absolutely, I'd love to help you complete the `chatbot` field for your profile! Since your profile is focused on gathering information about pizzas and drinks, we can define some output fields that will capture the necessary information from the chatbot's responses. Here’s a suggestion for your `chatbot` field:
+>
+> ```yaml
+> chatbot:
+>   is_starter: true
+>   fallback: "I'm sorry, I didn't quite catch that. Can you please rephrase your question?"
+>   output:
+>     - pizza_types:
+>         type: string
+>         description: "A list of the pizza types offered by the shop. Look for phrases like 'We offer [pizza types]' or a list of available pizzas."
+>     - margarita_price:
+>         type: money
+>         description: "The price of a Margarita pizza. Extract the price, including currency if present. If multiple sizes are mentioned, extract the price for all sizes mentioned."
+>     - drinks_and_prices:
+>         type: string
+>         description: "A list of available drinks and their corresponding prices. Extract the list, including the name and price of each drink. Look for phrases like 'We have [drink] for [price]' or a list of available drinks and prices."
+>     - operating_hours:
+>         type: string
+>         description: "The shop's operating hours, including opening and closing times. Look for phrases like 'Our hours are [hours]' or 'We are open from [opening time] to [closing time]'."
+>     - delivery_availability:
+>         type: string
+>         description: "Indication of whether the shop delivers or not. Extract the confirmation. Look for phrases like 'We deliver' or 'We do not offer delivery'."
+> ```
+>
+> This structure will help ensure that the chatbot captures all the relevant information you need for your pizza night! If you have any other questions or need further adjustments, just let me know! 🍕😊
+
+### Response B
+
+YAML: `true`
 
 > Absolutely, I'd be happy to help you complete the `chatbot` field for your profile! 😊 
 >
@@ -5198,36 +5228,6 @@ YAML: `n/a`
 >
 > Feel free to tweak any of the descriptions or types to better fit your specific needs! If you have any other questions or need further assistance, just let me know! 🌟
 
-### Response B
-
-YAML: `n/a`
-
-> Absolutely, I'd love to help you complete the `chatbot` field for your profile! Since your profile is focused on gathering information about pizzas and drinks, we can define some output fields that will capture the necessary information from the chatbot's responses. Here’s a suggestion for your `chatbot` field:
->
-> ```yaml
-> chatbot:
->   is_starter: true
->   fallback: "I'm sorry, I didn't quite catch that. Can you please rephrase your question?"
->   output:
->     - pizza_types:
->         type: string
->         description: "A list of the pizza types offered by the shop. Look for phrases like 'We offer [pizza types]' or a list of available pizzas."
->     - margarita_price:
->         type: money
->         description: "The price of a Margarita pizza. Extract the price, including currency if present. If multiple sizes are mentioned, extract the price for all sizes mentioned."
->     - drinks_and_prices:
->         type: string
->         description: "A list of available drinks and their corresponding prices. Extract the list, including the name and price of each drink. Look for phrases like 'We have [drink] for [price]' or a list of available drinks and prices."
->     - operating_hours:
->         type: string
->         description: "The shop's operating hours, including opening and closing times. Look for phrases like 'Our hours are [hours]' or 'We are open from [opening time] to [closing time]'."
->     - delivery_availability:
->         type: string
->         description: "Indication of whether the shop delivers or not. Extract the confirmation. Look for phrases like 'We deliver' or 'We do not offer delivery'."
-> ```
->
-> This structure will help ensure that the chatbot captures all the relevant information you need for your pizza night! If you have any other questions or need further adjustments, just let me know! 🍕😊
-
 ### Response C
 
 YAML: `n/a`
@@ -5240,60 +5240,59 @@ I need a profile where the user asks for a custom pizza but changes opinion half
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
-> That sounds like a fun scenario to create! Here’s a profile that captures a user who starts by asking for a custom pizza but then changes their mind and opts for a predefined pizza instead. 
+> I've put together a profile where the user asks for a custom pizza but changes their mind halfway through the conversation and opts for a predefined pizza instead. Here’s how it looks:
 >
 > ```yaml
-> test_name: "custom_to_predefined_pizza_order"
->
-> llm:
->   temperature: 0.7
->   model: gpt-4o
->   model_prov: openai
->   format:
->     type: text
+> test_name: "custom_or_predefined_pizza_order"
 >
 > user:
 >   language: English
->   role: "You are a customer trying to order a pizza. You initially want a custom pizza but change your mind halfway through the conversation."
+>   role: "A customer who wants to order a pizza."
 >   context:
->     - "You love pizza and are excited to order."
+>     - "The user may start by specifying custom toppings but might switch to a predefined pizza."
 >   goals:
->     - "I would like to order a custom pizza with {{custom_toppings}}."
->     - "Actually, I think I want a {{predefined_pizza}} instead."
+>     - "Order a custom pizza with {{custom_toppings}}"
+>     - "Switch to a predefined pizza: {{predefined_pizza}}"
 >     - custom_toppings:
 >         function: random()
 >         type: string
->         data: [pepperoni, mushrooms, olives, bell peppers, onions]
+>         data: [pepperoni, mushrooms, onions, olives, extra cheese]
 >     - predefined_pizza:
 >         function: random()
 >         type: string
->         data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+>         data: [Margherita, Pepperoni, BBQ Chicken, Veggie]
 >
 > chatbot:
->   is_starter: false
->   fallback: "Sorry, could you repeat that?"
+>   is_starter: true
+>   fallback: "I'm sorry, could you clarify your order?"
 >   output:
->     - order_confirmation:
+>     - order_id:
 >         type: string
->         description: "Confirmation of the pizza order."
+>         description: "The order identifier"
+>     - total_price:
+>         type: currency
+>         description: "Final price including taxes and add-ons"
 >
 > conversation:
->   number: 2
+>   number: 3
 >   goal_style:
->     steps: 4
+>     steps: 5
 >   interaction_style:
->     - random:
->       - long phrases
->       - change your mind
+>     - change your mind
 > ```
 >
-> This profile sets up a scenario where the user can express their initial desire for a custom pizza with specific toppings and then switch to a predefined pizza option. Feel free to modify the toppings or predefined pizza options as needed! 🍕
+> ### Explanation
+> - **Goals**: The user can specify custom toppings or choose from predefined pizza options.
+> - **Interaction Style**: The `change your mind` style allows the user to switch their order mid-conversation.
+> - **Outputs**: The profile captures the order ID and total price.
+>
+> Would you like to make any adjustments to this profile, or should we proceed with saving it? 😊
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > That sounds like a fun scenario to create! 😊 Let's draft a profile that captures this behavior. Here’s a sample YAML profile where the user starts by asking for a custom pizza but then changes their mind and opts for a predefined pizza instead.
 >
@@ -5357,55 +5356,56 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
-> I've put together a profile where the user asks for a custom pizza but changes their mind halfway through the conversation and opts for a predefined pizza instead. Here’s how it looks:
+> That sounds like a fun scenario to create! Here’s a profile that captures a user who starts by asking for a custom pizza but then changes their mind and opts for a predefined pizza instead. 
 >
 > ```yaml
-> test_name: "custom_or_predefined_pizza_order"
+> test_name: "custom_to_predefined_pizza_order"
+>
+> llm:
+>   temperature: 0.7
+>   model: gpt-4o
+>   model_prov: openai
+>   format:
+>     type: text
 >
 > user:
 >   language: English
->   role: "A customer who wants to order a pizza."
+>   role: "You are a customer trying to order a pizza. You initially want a custom pizza but change your mind halfway through the conversation."
 >   context:
->     - "The user may start by specifying custom toppings but might switch to a predefined pizza."
+>     - "You love pizza and are excited to order."
 >   goals:
->     - "Order a custom pizza with {{custom_toppings}}"
->     - "Switch to a predefined pizza: {{predefined_pizza}}"
+>     - "I would like to order a custom pizza with {{custom_toppings}}."
+>     - "Actually, I think I want a {{predefined_pizza}} instead."
 >     - custom_toppings:
 >         function: random()
 >         type: string
->         data: [pepperoni, mushrooms, onions, olives, extra cheese]
+>         data: [pepperoni, mushrooms, olives, bell peppers, onions]
 >     - predefined_pizza:
 >         function: random()
 >         type: string
->         data: [Margherita, Pepperoni, BBQ Chicken, Veggie]
+>         data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
 >
 > chatbot:
->   is_starter: true
->   fallback: "I'm sorry, could you clarify your order?"
+>   is_starter: false
+>   fallback: "Sorry, could you repeat that?"
 >   output:
->     - order_id:
+>     - order_confirmation:
 >         type: string
->         description: "The order identifier"
->     - total_price:
->         type: currency
->         description: "Final price including taxes and add-ons"
+>         description: "Confirmation of the pizza order."
 >
 > conversation:
->   number: 3
+>   number: 2
 >   goal_style:
->     steps: 5
+>     steps: 4
 >   interaction_style:
->     - change your mind
+>     - random:
+>       - long phrases
+>       - change your mind
 > ```
 >
-> ### Explanation
-> - **Goals**: The user can specify custom toppings or choose from predefined pizza options.
-> - **Interaction Style**: The `change your mind` style allows the user to switch their order mid-conversation.
-> - **Outputs**: The profile captures the order ID and total price.
->
-> Would you like to make any adjustments to this profile, or should we proceed with saving it? 😊
+> This profile sets up a scenario where the user can express their initial desire for a custom pizza with specific toppings and then switch to a predefined pizza option. Feel free to modify the toppings or predefined pizza options as needed! 🍕
 
 ## Prompt p36
 
@@ -5413,7 +5413,48 @@ Create a rule that checks the price of a small pizza is $10.
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
+
+> Sure! Here’s a simple Sensei rule that checks if the price of a small pizza is at least $10. This rule assumes that the relevant field for the price is named `price` and that the size of the pizza is indicated by a field named `size`. 
+>
+> ```yaml
+> name: small_pizza_price_check
+> description: Small pizzas should cost at least $10
+> conversations: 1
+> when: size == 'small'
+> oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+> ```
+>
+> Feel free to adjust the field names if they differ in your profile! If you need any more help, just let me know 😊.
+
+### Response B
+
+YAML: `true`
+
+> Sure! To create a rule that checks if the price of a small pizza is at least $10, you can use the following YAML structure. This rule will verify that when the size is "small," the price is greater than or equal to $10.
+>
+> Here's how you can write it:
+>
+> ```yaml
+> name: small_pizza_price_check
+> description: Small pizzas should cost at least $10
+> conversations: 1
+> when: size == 'small'
+> oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+> ```
+>
+> ### Explanation:
+> - **name**: A unique identifier for the rule.
+> - **description**: A brief explanation of what the rule checks.
+> - **conversations**: This rule checks a single conversation.
+> - **when**: The condition that filters conversations to only those where the size is "small."
+> - **oracle**: The condition that checks if the extracted price is at least $10 and that the currency is USD.
+>
+> Feel free to adjust the currency if you're using a different one! If you need any more help or modifications, just let me know! 😊
+
+### Response C
+
+YAML: `true`
 
 > To create a rule that checks if the price of a small pizza is $10, we need to ensure that it aligns with the existing profile's `chatbot.output`. Based on the documentation, we can create a rule that verifies the price for a small pizza.
 >
@@ -5444,47 +5485,6 @@ YAML: `n/a`
 >
 > Would you like me to check for existing profiles to ensure this rule aligns with the correct `chatbot.output` fields? 😊
 
-### Response B
-
-YAML: `n/a`
-
-> Sure! Here’s a simple Sensei rule that checks if the price of a small pizza is at least $10. This rule assumes that the relevant field for the price is named `price` and that the size of the pizza is indicated by a field named `size`. 
->
-> ```yaml
-> name: small_pizza_price_check
-> description: Small pizzas should cost at least $10
-> conversations: 1
-> when: size == 'small'
-> oracle: extract_float(price) >= 10 and currency(price) == 'USD'
-> ```
->
-> Feel free to adjust the field names if they differ in your profile! If you need any more help, just let me know 😊.
-
-### Response C
-
-YAML: `n/a`
-
-> Sure! To create a rule that checks if the price of a small pizza is at least $10, you can use the following YAML structure. This rule will verify that when the size is "small," the price is greater than or equal to $10.
->
-> Here's how you can write it:
->
-> ```yaml
-> name: small_pizza_price_check
-> description: Small pizzas should cost at least $10
-> conversations: 1
-> when: size == 'small'
-> oracle: extract_float(price) >= 10 and currency(price) == 'USD'
-> ```
->
-> ### Explanation:
-> - **name**: A unique identifier for the rule.
-> - **description**: A brief explanation of what the rule checks.
-> - **conversations**: This rule checks a single conversation.
-> - **when**: The condition that filters conversations to only those where the size is "small."
-> - **oracle**: The condition that checks if the extracted price is at least $10 and that the currency is USD.
->
-> Feel free to adjust the currency if you're using a different one! If you need any more help or modifications, just let me know! 😊
-
 ## Prompt p37
 
 Why is this rule not working? fix it:
@@ -5497,7 +5497,7 @@ then: extract_float(conv[0].price) > extract_float(conv[1].price)
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > It looks like there’s a small issue with the structure of your rule! The `if` condition is missing, which is necessary to specify the precondition for the `then` statement. In metamorphic rules, you need to use `if` to define the condition under which the `then` statement should be evaluated.
 >
@@ -5520,30 +5520,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
-
-> It looks like your rule is missing the `if` condition, which is essential for specifying the relationship between the conversations. You need to include an `if` statement to check that the number of toppings in one conversation is greater than in the other. Here's a revised version of your rule:
->
-> ```yaml
-> name: more_toppings_cost_more
-> description: Adding more toppings to a custom pizza costs more
-> active: True
-> conversations: 2
-> when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
-> if:   len(conv[0].toppings) > len(conv[1].toppings)
-> then: extract_float(conv[0].price) > extract_float(conv[1].price)
-> ```
->
-> In this updated rule:
->
-> - The `if` condition checks if the first conversation has more toppings than the second one.
-> - The `then` condition asserts that the price of the first conversation should be greater than the price of the second conversation if the `if` condition is met.
->
-> This should help your rule work as intended! If you have any more questions or need further assistance, feel free to ask! 😊
-
-### Response C
-
-YAML: `n/a`
+YAML: `true`
 
 > I've reviewed the relevant documentation for SENSEI rules, specifically focusing on the structure and requirements for metamorphic rules. Here are a few observations regarding your rule `more_toppings_cost_more`:
 >
@@ -5571,35 +5548,36 @@ YAML: `n/a`
 >
 > This should help your rule work correctly! If you have any further questions or need additional adjustments, feel free to ask! 😊
 
+### Response C
+
+YAML: `true`
+
+> It looks like your rule is missing the `if` condition, which is essential for specifying the relationship between the conversations. You need to include an `if` statement to check that the number of toppings in one conversation is greater than in the other. Here's a revised version of your rule:
+>
+> ```yaml
+> name: more_toppings_cost_more
+> description: Adding more toppings to a custom pizza costs more
+> active: True
+> conversations: 2
+> when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+> if:   len(conv[0].toppings) > len(conv[1].toppings)
+> then: extract_float(conv[0].price) > extract_float(conv[1].price)
+> ```
+>
+> In this updated rule:
+>
+> - The `if` condition checks if the first conversation has more toppings than the second one.
+> - The `then` condition asserts that the price of the first conversation should be greater than the price of the second conversation if the `if` condition is met.
+>
+> This should help your rule work as intended! If you have any more questions or need further assistance, feel free to ask! 😊
+
 ## Prompt p38
 
 Cera una regla que compruebe en la conversación si el asistente confirma que añadió la bebida que el usuario pidió.
 
 ### Response A
 
-YAML: `n/a`
-
-> ¡Claro! Para crear una regla que verifique si el asistente confirma que ha añadido la bebida que el usuario pidió, podemos usar una regla de verificación en YAML. Aquí tienes un ejemplo:
->
-> ```yaml
-> name: confirm_drink_added
-> description: El asistente debe confirmar que ha añadido la bebida solicitada por el usuario.
-> conversations: 1
-> oracle: utterance_index('assistant', 'he añadido la bebida') > 0
-> ```
->
-> En esta regla:
->
-> - **name**: Es el nombre de la regla.
-> - **description**: Describe lo que la regla está verificando.
-> - **conversations**: Indica que se está evaluando una sola conversación.
-> - **oracle**: Verifica que en algún momento el asistente mencione que ha añadido la bebida, utilizando `utterance_index` para buscar la frase específica.
->
-> Asegúrate de adaptar la frase en el `oracle` a lo que realmente dice tu asistente al confirmar la adición de una bebida. ¡Espero que esto te ayude! Si necesitas más ajustes, no dudes en decírmelo 😊.
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > ¡Hola! 😊 Para crear una regla que verifique si el asistente confirma que añadió la bebida que el usuario pidió, necesitaríamos asegurarnos de que la regla esté bien estructurada y que se refiera a los campos correctos en el `chatbot.output`.
 >
@@ -5622,9 +5600,9 @@ YAML: `n/a`
 >
 > Recuerda ajustar los textos de las condiciones según cómo se formulen en tu chatbot. Si necesitas más ayuda o ajustes, ¡aquí estoy! 😊
 
-### Response C
+### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > He encontrado varios perfiles que podrían ser relevantes para la regla que deseas crear. Aquí están los detalles de los perfiles:
 >
@@ -5668,28 +5646,58 @@ YAML: `n/a`
 >
 > ¿Te parece bien esta regla? Si deseas realizar algún ajuste o necesitas más información, ¡házmelo saber! 😊
 
+### Response C
+
+YAML: `true`
+
+> ¡Claro! Para crear una regla que verifique si el asistente confirma que ha añadido la bebida que el usuario pidió, podemos usar una regla de verificación en YAML. Aquí tienes un ejemplo:
+>
+> ```yaml
+> name: confirm_drink_added
+> description: El asistente debe confirmar que ha añadido la bebida solicitada por el usuario.
+> conversations: 1
+> oracle: utterance_index('assistant', 'he añadido la bebida') > 0
+> ```
+>
+> En esta regla:
+>
+> - **name**: Es el nombre de la regla.
+> - **description**: Describe lo que la regla está verificando.
+> - **conversations**: Indica que se está evaluando una sola conversación.
+> - **oracle**: Verifica que en algún momento el asistente mencione que ha añadido la bebida, utilizando `utterance_index` para buscar la frase específica.
+>
+> Asegúrate de adaptar la frase en el `oracle` a lo que realmente dice tu asistente al confirmar la adición de una bebida. ¡Espero que esto te ayude! Si necesitas más ajustes, no dudes en decírmelo 😊.
+
 ## Prompt p39
 
 If you had to create a rule to check the the order ID was provided by the chatbot, how would you do it? show it to me having in mind that the output name would be "order_id"
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
-> Sure! To create a rule that checks whether the order ID was provided by the chatbot, you can use a simple oracle rule. Here’s how it would look:
+> Sure! To create a rule that checks if the order ID was provided by the chatbot, you can use a single-conversation oracle rule. Here’s how you could structure it in YAML format:
 >
 > ```yaml
 > name: order_id_provided
-> description: The chatbot must provide an order ID in the output
+> description: The chatbot must return an order ID in the response.
 > conversations: 1
-> oracle: order_id is not None
+> oracle: |
+>   'order_id' in data_output
 > ```
 >
-> This rule checks that the `order_id` field is not `None`, ensuring that the chatbot has provided an order ID in its response. If you have any other questions or need further assistance, feel free to ask! 😊
+> In this rule:
+>
+> - **name**: This is the identifier for the rule, which I've set to "order_id_provided."
+> - **description**: A brief explanation of what the rule checks.
+> - **conversations**: This indicates that the rule applies to a single conversation.
+> - **oracle**: This checks that the `order_id` is included in the `data_output` of the chatbot's response.
+>
+> Feel free to adjust the description or name as needed! If you have any more questions or need further assistance, just let me know! 😊
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > To create a rule that checks if the order ID was provided by the chatbot, we can define a metamorphic rule that inspects the `order_id` field from the `chatbot.output`. Here's how you can structure this rule:
 >
@@ -5713,26 +5721,18 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
-> Sure! To create a rule that checks if the order ID was provided by the chatbot, you can use a single-conversation oracle rule. Here’s how you could structure it in YAML format:
+> Sure! To create a rule that checks whether the order ID was provided by the chatbot, you can use a simple oracle rule. Here’s how it would look:
 >
 > ```yaml
 > name: order_id_provided
-> description: The chatbot must return an order ID in the response.
+> description: The chatbot must provide an order ID in the output
 > conversations: 1
-> oracle: |
->   'order_id' in data_output
+> oracle: order_id is not None
 > ```
 >
-> In this rule:
->
-> - **name**: This is the identifier for the rule, which I've set to "order_id_provided."
-> - **description**: A brief explanation of what the rule checks.
-> - **conversations**: This indicates that the rule applies to a single conversation.
-> - **oracle**: This checks that the `order_id` is included in the `data_output` of the chatbot's response.
->
-> Feel free to adjust the description or name as needed! If you have any more questions or need further assistance, just let me know! 😊
+> This rule checks that the `order_id` field is not `None`, ensuring that the chatbot has provided an order ID in its response. If you have any other questions or need further assistance, feel free to ask! 😊
 
 ## Prompt p40
 
@@ -5740,7 +5740,32 @@ Make a metamorphic rule which checks that adding a drink costs 2 dollars extra. 
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
+
+> Sure! To create a metamorphic rule that checks if adding a drink costs an additional $2, we can follow the structure of the Sensei-check rules. Here’s how you can define it:
+>
+> ```yaml
+> name: drink
+> description: Adding a drink to the order costs an additional $2
+> conversations: 2
+> when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings and conv[0].number == conv[1].number
+> if:   conv[0].drink != '' and conv[1].drink == ''
+> then: extract_float(conv[0].price) == extract_float(conv[1].price) + 2
+> ```
+>
+> ### Explanation:
+> - **name**: This is the name of the rule, set to "drink".
+> - **description**: A brief description of what the rule checks.
+> - **conversations**: Indicates that this rule compares two conversations.
+> - **when**: Ensures that the size, toppings, and number of pizzas are the same in both conversations.
+> - **if**: Checks that the first conversation has a drink while the second does not.
+> - **then**: Asserts that the price of the first conversation should be $2 more than the second conversation's price.
+>
+> Feel free to adjust any field names based on your actual profile's `chatbot.output` if needed! 😊 If you have any more questions or need further assistance, just let me know!
+
+### Response B
+
+YAML: `true`
 
 > Sure! Here’s a metamorphic rule that checks if adding a drink to the pizza order costs an additional 2 dollars. The output name is set to "drink". 
 >
@@ -5762,9 +5787,9 @@ YAML: `n/a`
 >
 > Feel free to adjust any field names based on your actual profile structure! 😊
 
-### Response B
+### Response C
 
-YAML: `n/a`
+YAML: `true`
 
 > Based on the documentation retrieved, we can create a metamorphic rule that checks if adding a drink costs an extra $2. The output name for this rule will be "drink". 
 >
@@ -5800,31 +5825,6 @@ YAML: `n/a`
 >
 > Let me know if you would like to proceed with this rule or if you need any modifications! 😊
 
-### Response C
-
-YAML: `n/a`
-
-> Sure! To create a metamorphic rule that checks if adding a drink costs an additional $2, we can follow the structure of the Sensei-check rules. Here’s how you can define it:
->
-> ```yaml
-> name: drink
-> description: Adding a drink to the order costs an additional $2
-> conversations: 2
-> when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings and conv[0].number == conv[1].number
-> if:   conv[0].drink != '' and conv[1].drink == ''
-> then: extract_float(conv[0].price) == extract_float(conv[1].price) + 2
-> ```
->
-> ### Explanation:
-> - **name**: This is the name of the rule, set to "drink".
-> - **description**: A brief description of what the rule checks.
-> - **conversations**: Indicates that this rule compares two conversations.
-> - **when**: Ensures that the size, toppings, and number of pizzas are the same in both conversations.
-> - **if**: Checks that the first conversation has a drink while the second does not.
-> - **then**: Asserts that the price of the first conversation should be $2 more than the second conversation's price.
->
-> Feel free to adjust any field names based on your actual profile's `chatbot.output` if needed! 😊 If you have any more questions or need further assistance, just let me know!
-
 ## Prompt p41
 
 Create the YAML connector given this request:
@@ -5858,49 +5858,7 @@ Response:
 
 ### Response A
 
-YAML: `n/a`
-
-> Based on the provided request and the documentation retrieved, here's the YAML connector for your chatbot API:
->
-> ```yaml
-> name: "1 Million Bot Connector"
-> base_url: "https://api.1millionbot.com"
-> send_message:
->   path: "/api/public/messages"
->   method: "POST"
->   headers:
->     Content-Type: "application/json"
->     Authorization: "64e5d1af081211d24e2cfecd"
->   payload_template:
->     conversation: "{conversation_id}"
->     sender_type: "User"
->     sender: "{sender_id}"
->     bot: "{bot_id}"
->     language: "es"
->     url: "https://saic.malaga.eu/"
->     message:
->       text: "{user_msg}"
-> response_path: "response.0.text"
-> ```
->
-> ### Explanation:
-> - **name**: A friendly name for your connector.
-> - **base_url**: The base URL for the API.
-> - **send_message**: 
->   - **path**: The endpoint path for sending messages.
->   - **method**: The HTTP method used for the request (POST).
->   - **headers**: Custom headers including `Content-Type` and `Authorization`.
->   - **payload_template**: The JSON structure for the request body, using placeholders for dynamic values (like `{user_msg}`).
-> - **response_path**: Specifies how to extract the bot's reply from the JSON response.
->
-> ### Placeholders:
-> - `{conversation_id}`, `{sender_id}`, `{bot_id}`, and `{user_msg}` should be replaced with actual values when making requests.
->
-> This structure follows the guidelines from the `custom-connector-guide.md` and `connector-examples.md` documentation. If you need any modifications or additional features, just let me know! 😊
-
-### Response B
-
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Here’s the YAML connector based on your request:
 >
@@ -5941,6 +5899,48 @@ YAML: `n/a`
 >
 > This YAML configuration specifies how to communicate with the MillionBot API, including the headers, request body, and how to extract the response. If you need any adjustments or further assistance, feel free to ask! 😊
 
+### Response B
+
+YAML: `true`
+
+> Based on the provided request and the documentation retrieved, here's the YAML connector for your chatbot API:
+>
+> ```yaml
+> name: "1 Million Bot Connector"
+> base_url: "https://api.1millionbot.com"
+> send_message:
+>   path: "/api/public/messages"
+>   method: "POST"
+>   headers:
+>     Content-Type: "application/json"
+>     Authorization: "64e5d1af081211d24e2cfecd"
+>   payload_template:
+>     conversation: "{conversation_id}"
+>     sender_type: "User"
+>     sender: "{sender_id}"
+>     bot: "{bot_id}"
+>     language: "es"
+>     url: "https://saic.malaga.eu/"
+>     message:
+>       text: "{user_msg}"
+> response_path: "response.0.text"
+> ```
+>
+> ### Explanation:
+> - **name**: A friendly name for your connector.
+> - **base_url**: The base URL for the API.
+> - **send_message**: 
+>   - **path**: The endpoint path for sending messages.
+>   - **method**: The HTTP method used for the request (POST).
+>   - **headers**: Custom headers including `Content-Type` and `Authorization`.
+>   - **payload_template**: The JSON structure for the request body, using placeholders for dynamic values (like `{user_msg}`).
+> - **response_path**: Specifies how to extract the bot's reply from the JSON response.
+>
+> ### Placeholders:
+> - `{conversation_id}`, `{sender_id}`, `{bot_id}`, and `{user_msg}` should be replaced with actual values when making requests.
+>
+> This structure follows the guidelines from the `custom-connector-guide.md` and `connector-examples.md` documentation. If you need any modifications or additional features, just let me know! 😊
+
 ### Response C
 
 YAML: `n/a`
@@ -5980,7 +5980,7 @@ Response:
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > Sure! Here’s a YAML connector configuration based on your request. This will allow you to connect to the Alcampo bot API:
 >
@@ -6030,7 +6030,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > Let's create a YAML connector based on the provided request and response details. Here's how it will look:
 >
@@ -6127,57 +6127,7 @@ Cache-Control: no-cache
 
 ### Response A
 
-YAML: `n/a`
-
-> Let's take a look at your connector configuration and the request/response details you've provided. It seems like there are a few discrepancies that we can address to make sure your connector works properly.
->
-> ### Issues Identified
-> 1. **Base URL**: Your connector is set to `https://api.bot.com`, but the request is being sent to `https://api.1millionbot.com`. You should update the base URL to match the correct API endpoint.
->
-> 2. **Authorization Header**: The request includes an `Authorization` header which is missing in your connector configuration. You need to add this header to authenticate your requests.
->
-> 3. **Payload Structure**: The payload structure in your connector does not match the expected format in the request. The `conversation`, `sender_type`, `sender`, and `bot` fields are required in the payload.
->
-> 4. **Response Path**: The response path you provided (`response_path: "request.text"`) needs to be adjusted to use dot notation correctly. 
->
-> ### Connector Configuration
-> Here’s an updated version of your connector configuration:
->
-> ```yaml
-> name: "Connector"
-> base_url: "https://api.1millionbot.com"
-> send_message:
->   path: "/api/public/messages"
->   method: "POST"
->   headers:
->     Content-Type: "application/json"
->     Authorization: "64e5d1af081211d24e2cfecd"  # Add your actual token here
->   payload_template:
->     conversation: "{conversation_id}"  # You need to provide this dynamically
->     sender_type: "User"
->     sender: "{sender_id}"  # You need to provide this dynamically
->     bot: "64e5d1af081211d24e2cfec8"  # Your bot ID
->     language: "es"
->     message:
->       text: "{user_msg}"
-> response_path: "response.0.text"  # Adjusted to access the response text correctly
-> ```
->
-> ### Key Changes Made
-> - **Base URL**: Updated to `https://api.1millionbot.com`.
-> - **Authorization Header**: Added the `Authorization` header.
-> - **Payload Structure**: Updated the payload to include the required fields.
-> - **Response Path**: Changed to access the response text correctly using dot notation.
->
-> ### Next Steps
-> - Make sure to replace `{conversation_id}` and `{sender_id}` with the actual dynamic values when sending a message.
-> - Test the connector again with these changes and see if it resolves the issues you were facing.
->
-> If you need further adjustments or have any questions, feel free to ask! 😊
-
-### Response B
-
-YAML: `n/a`
+YAML: `false`
 
 > I'm really sorry, but I can't assist with fixing code or connectors directly. However, I can help you understand the structure of your connector and what might be going wrong based on the information you've provided! 😊
 >
@@ -6229,9 +6179,59 @@ YAML: `n/a`
 >
 > I hope this helps you troubleshoot your connector! If you have any more questions or need further clarification, feel free to ask! 😊
 
+### Response B
+
+YAML: `true`
+
+> Let's take a look at your connector configuration and the request/response details you've provided. It seems like there are a few discrepancies that we can address to make sure your connector works properly.
+>
+> ### Issues Identified
+> 1. **Base URL**: Your connector is set to `https://api.bot.com`, but the request is being sent to `https://api.1millionbot.com`. You should update the base URL to match the correct API endpoint.
+>
+> 2. **Authorization Header**: The request includes an `Authorization` header which is missing in your connector configuration. You need to add this header to authenticate your requests.
+>
+> 3. **Payload Structure**: The payload structure in your connector does not match the expected format in the request. The `conversation`, `sender_type`, `sender`, and `bot` fields are required in the payload.
+>
+> 4. **Response Path**: The response path you provided (`response_path: "request.text"`) needs to be adjusted to use dot notation correctly. 
+>
+> ### Connector Configuration
+> Here’s an updated version of your connector configuration:
+>
+> ```yaml
+> name: "Connector"
+> base_url: "https://api.1millionbot.com"
+> send_message:
+>   path: "/api/public/messages"
+>   method: "POST"
+>   headers:
+>     Content-Type: "application/json"
+>     Authorization: "64e5d1af081211d24e2cfecd"  # Add your actual token here
+>   payload_template:
+>     conversation: "{conversation_id}"  # You need to provide this dynamically
+>     sender_type: "User"
+>     sender: "{sender_id}"  # You need to provide this dynamically
+>     bot: "64e5d1af081211d24e2cfec8"  # Your bot ID
+>     language: "es"
+>     message:
+>       text: "{user_msg}"
+> response_path: "response.0.text"  # Adjusted to access the response text correctly
+> ```
+>
+> ### Key Changes Made
+> - **Base URL**: Updated to `https://api.1millionbot.com`.
+> - **Authorization Header**: Added the `Authorization` header.
+> - **Payload Structure**: Updated the payload to include the required fields.
+> - **Response Path**: Changed to access the response text correctly using dot notation.
+>
+> ### Next Steps
+> - Make sure to replace `{conversation_id}` and `{sender_id}` with the actual dynamic values when sending a message.
+> - Test the connector again with these changes and see if it resolves the issues you were facing.
+>
+> If you need further adjustments or have any questions, feel free to ask! 😊
+
 ### Response C
 
-YAML: `n/a`
+YAML: `false`
 
 > It looks like your connector needs a few adjustments to align with the request and response structure you've provided. Let's make sure to include the necessary headers and adjust the payload to match the expected format.
 >
@@ -6301,7 +6301,7 @@ Y este es el response
 
 ### Response A
 
-YAML: `n/a`
+YAML: `false`
 
 > ¡Hola! 😊 Estoy aquí para ayudarte a arreglar tu conector. 
 >
@@ -6323,33 +6323,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
-
-> ¡Claro! Vamos a ajustar tu conector para que funcione correctamente con la estructura de la request y response que has proporcionado. 
->
-> Aquí tienes el conector corregido:
->
-> ```yaml
-> name: "Test Connector 2"
-> base_url: "https://api.anotherexample.com"
-> send_message:
->   path: "/api/chat"
->   method: "POST"
->   headers:
->     Content-Type: "application/json"
->   payload_template:
->     message:
->       text: "{user_msg}"
-> response_path: "response.text"
-> ```
->
-> El conector ya está bien estructurado, pero asegúrate de que el `response_path` esté apuntando correctamente a la ubicación del texto en la respuesta. En tu caso, el `response_path` es correcto y debería funcionar bien, ya que estás accediendo a `response.text`.
->
-> Si tienes algún problema adicional o necesitas más ajustes, ¡házmelo saber! 😊
-
-### Response C
-
-YAML: `n/a`
+YAML: `true`
 
 > ¡Claro! Vamos a revisar y corregir el conector que proporcionaste. 
 >
@@ -6383,6 +6357,32 @@ YAML: `n/a`
 > - **Response Path**: Correcto, ya que apunta a la ubicación correcta del texto en la respuesta.
 >
 > Si necesitas más ajustes o hay algo específico que no está funcionando, házmelo saber y estaré encantado de ayudarte más. 😊
+
+### Response C
+
+YAML: `true`
+
+> ¡Claro! Vamos a ajustar tu conector para que funcione correctamente con la estructura de la request y response que has proporcionado. 
+>
+> Aquí tienes el conector corregido:
+>
+> ```yaml
+> name: "Test Connector 2"
+> base_url: "https://api.anotherexample.com"
+> send_message:
+>   path: "/api/chat"
+>   method: "POST"
+>   headers:
+>     Content-Type: "application/json"
+>   payload_template:
+>     message:
+>       text: "{user_msg}"
+> response_path: "response.text"
+> ```
+>
+> El conector ya está bien estructurado, pero asegúrate de que el `response_path` esté apuntando correctamente a la ubicación del texto en la respuesta. En tu caso, el `response_path` es correcto y debería funcionar bien, ya que estás accediendo a `response.text`.
+>
+> Si tienes algún problema adicional o necesitas más ajustes, ¡házmelo saber! 😊
 
 ## Prompt p45
 
@@ -6436,24 +6436,26 @@ Cache-Control: no-cache
 
 ### Response A
 
-YAML: `n/a`
+YAML: `false`
 
-> ¡Claro! Vamos a adaptar el conector que tienes para el chatbot del Ayuntamiento de Morón de la Frontera. Aquí está el nuevo conector basado en la información que proporcionaste:
+> ¡Claro! 😊 Aquí tienes el conector adaptado para el chatbot del Ayuntamiento de Morón de la Frontera. He ajustado los detalles necesarios, como el `base_url`, `Authorization`, y los valores en el `payload_template` para que se alineen con la nueva API.
 >
 > ```yaml
 > name: "Ayuntamiento Morón de la Frontera"
-> base_url: "https://api.1millionbot.com"
+> description: "Connector for Ayuntamiento Morón de la Frontera"
+> conversations: 1
+> oracle: "response_path is not None"
 > send_message:
 >   path: "/api/public/messages"
 >   method: "POST"
 >   headers:
 >     Content-Type: "application/json"
->     Authorization: "65ca19e7dbbb4e26cbeadf28"
+>     Authorization: "65ca19e7dbbb4e26cbeadf28"  # Cambia esto si es necesario
 >   payload_template:
->     conversation: "67ea76f4e213b2dcbc146e2b"
+>     conversation: "67ea76f4e213b2dcbc146e2b"  # ID de la conversación
 >     sender_type: "User"
->     sender: "67ea76f40643a3dd27e59411"
->     bot: "65ca19e7dbbb4e26cbeadf24"
+>     sender: "67ea76f40643a3dd27e59411"  # ID del usuario
+>     bot: "65ca19e7dbbb4e26cbeadf24"  # ID del bot
 >     language: "es"
 >     url: "https://www.morondelafrontera.es/"
 >     message:
@@ -6461,17 +6463,16 @@ YAML: `n/a`
 > response_path: "response.0.text"
 > ```
 >
-> ### Cambios Realizados:
-> - **name**: Cambié el nombre a "Ayuntamiento Morón de la Frontera".
-> - **Authorization**: Actualicé el token de autorización al que proporcionaste para el nuevo chatbot.
-> - **conversation, sender, bot**: Actualicé estos valores con los que proporcionaste para el Ayuntamiento.
-> - **url**: Cambié la URL a la del Ayuntamiento de Morón de la Frontera.
+> ### Notas:
+> - Asegúrate de que los IDs de `conversation`, `sender`, y `bot` sean correctos y estén actualizados según tu implementación.
+> - Si necesitas cambiar el `Authorization` o cualquier otro detalle, no dudes en hacerlo.
+> - El `response_path` se mantiene igual, ya que parece que la estructura de respuesta es similar.
 >
-> Si necesitas más ajustes o detalles adicionales, ¡házmelo saber! 😊
+> ¡Espero que esto te sea útil! Si necesitas más ajustes o tienes alguna otra pregunta, aquí estoy para ayudarte. 😊
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > ¡Claro! Aquí tienes el nuevo conector adaptado para el chatbot del Ayuntamiento de Morón de la Frontera. He ajustado los detalles según la información que proporcionaste:
 >
@@ -6509,26 +6510,24 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `true`
 
-> ¡Claro! 😊 Aquí tienes el conector adaptado para el chatbot del Ayuntamiento de Morón de la Frontera. He ajustado los detalles necesarios, como el `base_url`, `Authorization`, y los valores en el `payload_template` para que se alineen con la nueva API.
+> ¡Claro! Vamos a adaptar el conector que tienes para el chatbot del Ayuntamiento de Morón de la Frontera. Aquí está el nuevo conector basado en la información que proporcionaste:
 >
 > ```yaml
 > name: "Ayuntamiento Morón de la Frontera"
-> description: "Connector for Ayuntamiento Morón de la Frontera"
-> conversations: 1
-> oracle: "response_path is not None"
+> base_url: "https://api.1millionbot.com"
 > send_message:
 >   path: "/api/public/messages"
 >   method: "POST"
 >   headers:
 >     Content-Type: "application/json"
->     Authorization: "65ca19e7dbbb4e26cbeadf28"  # Cambia esto si es necesario
+>     Authorization: "65ca19e7dbbb4e26cbeadf28"
 >   payload_template:
->     conversation: "67ea76f4e213b2dcbc146e2b"  # ID de la conversación
+>     conversation: "67ea76f4e213b2dcbc146e2b"
 >     sender_type: "User"
->     sender: "67ea76f40643a3dd27e59411"  # ID del usuario
->     bot: "65ca19e7dbbb4e26cbeadf24"  # ID del bot
+>     sender: "67ea76f40643a3dd27e59411"
+>     bot: "65ca19e7dbbb4e26cbeadf24"
 >     language: "es"
 >     url: "https://www.morondelafrontera.es/"
 >     message:
@@ -6536,12 +6535,13 @@ YAML: `n/a`
 > response_path: "response.0.text"
 > ```
 >
-> ### Notas:
-> - Asegúrate de que los IDs de `conversation`, `sender`, y `bot` sean correctos y estén actualizados según tu implementación.
-> - Si necesitas cambiar el `Authorization` o cualquier otro detalle, no dudes en hacerlo.
-> - El `response_path` se mantiene igual, ya que parece que la estructura de respuesta es similar.
+> ### Cambios Realizados:
+> - **name**: Cambié el nombre a "Ayuntamiento Morón de la Frontera".
+> - **Authorization**: Actualicé el token de autorización al que proporcionaste para el nuevo chatbot.
+> - **conversation, sender, bot**: Actualicé estos valores con los que proporcionaste para el Ayuntamiento.
+> - **url**: Cambié la URL a la del Ayuntamiento de Morón de la Frontera.
 >
-> ¡Espero que esto te sea útil! Si necesitas más ajustes o tienes alguna otra pregunta, aquí estoy para ayudarte. 😊
+> Si necesitas más ajustes o detalles adicionales, ¡házmelo saber! 😊
 
 ## Prompt p46
 
@@ -6564,42 +6564,7 @@ Response:
 
 ### Response A
 
-YAML: `n/a`
-
-> Sure! Here’s a YAML connector based on your request and response, with only the minimal required headers and ensuring the assistant response returns plain text with HTML tags removed.
->
-> ```yaml
-> name: "Ada UAM"
-> base_url: "https://api.1millionbot.com"
-> send_message:
->   path: "/api/public/messages"
->   method: "POST"
->   headers:
->     Content-Type: "application/json"
->     Authorization: "64e5d1af081211d24e2cfecd"
->   payload_template:
->     conversation: "6977595c744ccf01954b8797"
->     sender_type: "User"
->     sender: "6977595c3e4824018e496b0c"
->     bot: "64e5d1af081211d24e2cfec8"
->     language: "es"
->     url: "https://saic.malaga.eu/"
->     message:
->       text: "{user_msg}"
-> response_path: "response.0.text"
-> ```
->
-> In this configuration, the response will extract the text directly from the response JSON. If you need any adjustments or further assistance, feel free to ask! 😊
-
-### Response B
-
-YAML: `n/a`
-
-> I can only help with SENSEI rules, SENSEI profiles, or related explanations. Please share one of those requests.
-
-### Response C
-
-YAML: `n/a`
+YAML: `true`
 
 > I've loaded the relevant documentation for connectors, specifically from the files `custom-connector-guide.md` and `connector-examples.md`. Now, let's create the YAML connector based on your request and response details.
 >
@@ -6643,6 +6608,41 @@ YAML: `n/a`
 >
 > - If you need any modifications or additional features in this connector, just let me know! 😊
 
+### Response B
+
+YAML: `n/a`
+
+> I can only help with SENSEI rules, SENSEI profiles, or related explanations. Please share one of those requests.
+
+### Response C
+
+YAML: `true`
+
+> Sure! Here’s a YAML connector based on your request and response, with only the minimal required headers and ensuring the assistant response returns plain text with HTML tags removed.
+>
+> ```yaml
+> name: "Ada UAM"
+> base_url: "https://api.1millionbot.com"
+> send_message:
+>   path: "/api/public/messages"
+>   method: "POST"
+>   headers:
+>     Content-Type: "application/json"
+>     Authorization: "64e5d1af081211d24e2cfecd"
+>   payload_template:
+>     conversation: "6977595c744ccf01954b8797"
+>     sender_type: "User"
+>     sender: "6977595c3e4824018e496b0c"
+>     bot: "64e5d1af081211d24e2cfec8"
+>     language: "es"
+>     url: "https://saic.malaga.eu/"
+>     message:
+>       text: "{user_msg}"
+> response_path: "response.0.text"
+> ```
+>
+> In this configuration, the response will extract the text directly from the response JSON. If you need any adjustments or further assistance, feel free to ask! 😊
+
 ## Prompt p47
 
 I have this connector but it is not working. Fix it using the request and response below. The fixed connector must use base_url, path, headers, payload_template, and the correct response_path to extract the assistant message, not the user request. Keep Authorization exactly as provided (do not change it to Bearer). Return the corrected YAML only.
@@ -6676,7 +6676,7 @@ Response:
 
 ### Response A
 
-YAML: `n/a`
+YAML: `true`
 
 > Here's the corrected YAML for your connector:
 >
@@ -6703,7 +6703,7 @@ YAML: `n/a`
 
 ### Response B
 
-YAML: `n/a`
+YAML: `true`
 
 > Here's the corrected YAML for your connector based on the provided request and response:
 >
@@ -6738,7 +6738,7 @@ YAML: `n/a`
 
 ### Response C
 
-YAML: `n/a`
+YAML: `false`
 
 > Sure! Here’s the corrected YAML for your connector:
 >
@@ -6774,6 +6774,22 @@ In the context of Sensei, what is a metamorphic rule?
 
 YAML: `n/a`
 
+> A metamorphic rule in the context of Sensei is a type of rule that allows you to define relationships between different outputs or states of the chatbot. These rules help ensure that the chatbot behaves consistently and correctly across various scenarios by specifying how changes in one output should affect others.
+>
+> ### Key Features of Metamorphic Rules:
+> - **Conditional Logic**: They often use conditional statements to determine how one output should change based on another.
+> - **Consistency**: They help maintain consistency in responses, ensuring that if one aspect of a conversation changes, related aspects are updated accordingly.
+> - **Validation**: Metamorphic rules can be used to validate the correctness of the chatbot's outputs by checking if they adhere to expected relationships.
+>
+> ### Example:
+> For instance, if a chatbot is designed to order pizza, a metamorphic rule might state that if the user selects a large pizza, the price should automatically adjust to reflect that size, ensuring the output is consistent with the user's choice.
+>
+> If you need more specific details or examples related to metamorphic rules in Sensei, let me know! 😊
+
+### Response B
+
+YAML: `n/a`
+
 > Great question! 😊 In the context of Sensei, a **metamorphic rule** is a condition that you set to check the correctness of conversations generated by the Sensei-chat. Instead of just looking for absolute answers, metamorphic rules compare pairs or tuples of conversations to see how outputs should change (or not) when inputs change. This helps address the oracle problem by focusing on the relationships between conversations rather than just individual responses.
 >
 > Here’s a quick breakdown of how it works:
@@ -6790,22 +6806,6 @@ YAML: `n/a`
 > For example, if you have two pizza orders with the same size and drink, a metamorphic rule might state that if one order has more toppings, it should cost more than the other. 
 >
 > This approach is super helpful for ensuring that your chatbot behaves consistently and correctly across different scenarios! 🌟 If you have more questions or need help with creating rules, feel free to ask!
-
-### Response B
-
-YAML: `n/a`
-
-> A metamorphic rule in the context of Sensei is a type of rule that allows you to define relationships between different outputs or states of the chatbot. These rules help ensure that the chatbot behaves consistently and correctly across various scenarios by specifying how changes in one output should affect others.
->
-> ### Key Features of Metamorphic Rules:
-> - **Conditional Logic**: They often use conditional statements to determine how one output should change based on another.
-> - **Consistency**: They help maintain consistency in responses, ensuring that if one aspect of a conversation changes, related aspects are updated accordingly.
-> - **Validation**: Metamorphic rules can be used to validate the correctness of the chatbot's outputs by checking if they adhere to expected relationships.
->
-> ### Example:
-> For instance, if a chatbot is designed to order pizza, a metamorphic rule might state that if the user selects a large pizza, the price should automatically adjust to reflect that size, ensuring the output is consistent with the user's choice.
->
-> If you need more specific details or examples related to metamorphic rules in Sensei, let me know! 😊
 
 ### Response C
 
@@ -6836,14 +6836,13 @@ YAML: `n/a`
 
 > In a Sensei profile, the following fields are not mandatory:
 >
-> 1. **name**: While it's good practice to have a name for clarity, it's not strictly required.
-> 2. **context**: This field is optional and can be used to provide additional information about the user.
-> 3. **goals**: Although it's essential to define what the user aims to achieve, you can technically have a profile without explicitly stating goals.
-> 4. **fallback**: This is used to specify the bot's fallback message but is not mandatory.
-> 5. **max_cost**: This is optional and can be used to cap the cost for the entire run or per conversation.
-> 6. **interaction_style**: While this can enhance the user simulation, it's not required.
+> 1. **`name`**: While it's good to have a descriptive name for your profile, it's not strictly required.
+> 2. **`fallback`**: This field provides a fallback message for the chatbot but is optional.
+> 3. **`max_cost`**: You can set a maximum cost for the entire run or per conversation, but it's not mandatory.
+> 4. **`interaction_style`**: While defining how the user interacts is helpful, it’s not a required field.
+> 5. **`context`**: This field provides additional context about the user but is optional.
 >
-> It's always a good idea to include as much relevant information as possible to create a more effective profile, but these fields can be omitted if they don't apply to your specific use case. If you have any more questions or need help with your profile, feel free to ask! 😊
+> It's always a good idea to include these fields for better clarity and functionality, but you can create a profile without them! If you have any more questions or need help with your profiles, feel free to ask! 😊
 
 ### Response B
 
@@ -6879,13 +6878,14 @@ YAML: `n/a`
 
 > In a Sensei profile, the following fields are not mandatory:
 >
-> 1. **`name`**: While it's good to have a descriptive name for your profile, it's not strictly required.
-> 2. **`fallback`**: This field provides a fallback message for the chatbot but is optional.
-> 3. **`max_cost`**: You can set a maximum cost for the entire run or per conversation, but it's not mandatory.
-> 4. **`interaction_style`**: While defining how the user interacts is helpful, it’s not a required field.
-> 5. **`context`**: This field provides additional context about the user but is optional.
+> 1. **name**: While it's good practice to have a name for clarity, it's not strictly required.
+> 2. **context**: This field is optional and can be used to provide additional information about the user.
+> 3. **goals**: Although it's essential to define what the user aims to achieve, you can technically have a profile without explicitly stating goals.
+> 4. **fallback**: This is used to specify the bot's fallback message but is not mandatory.
+> 5. **max_cost**: This is optional and can be used to cap the cost for the entire run or per conversation.
+> 6. **interaction_style**: While this can enhance the user simulation, it's not required.
 >
-> It's always a good idea to include these fields for better clarity and functionality, but you can create a profile without them! If you have any more questions or need help with your profiles, feel free to ask! 😊
+> It's always a good idea to include as much relevant information as possible to create a more effective profile, but these fields can be omitted if they don't apply to your specific use case. If you have any more questions or need help with your profile, feel free to ask! 😊
 
 ## Prompt p50
 
@@ -6895,7 +6895,32 @@ How does the pairwise function work?
 
 YAML: `n/a`
 
-> I'm sorry, but I can only assist with SENSEI RULES, SENSEI PROFILES, and SENSEI CONNECTORS. Unfortunately, I don't have information on the "pairwise function" or other unrelated topics. If you have any questions about SENSEI, feel free to ask! 😊
+> The `pairwise` function is a powerful tool used in Sensei profiles to generate combinations of input values efficiently. It ensures that all possible pairs of values from the specified variables are covered in the conversations, which helps in testing various scenarios without needing to create every possible combination manually.
+>
+> ### How It Works:
+>
+> 1. **Combination Generation**: When you declare a variable with the `pairwise` function, Sensei will create a set of combinations that cover all pairs of values across the specified variables. For example, if you have two variables, one for pizza size (`small`, `medium`, `large`) and one for toppings (`cheese`, `pepperoni`), the `pairwise` function will ensure that each size is tested with each topping, but it won't create every possible combination. Instead, it will select a representative subset that covers all pairs.
+>
+> 2. **Efficiency**: This method is particularly useful when you have multiple variables with many possible values. Instead of testing every combination (which can grow exponentially), `pairwise` reduces the number of tests while still providing good coverage of the input space.
+>
+> 3. **Use Case**: You might use `pairwise` when defining inputs in your profile like this:
+>
+>    ```yaml
+>    inputs:
+>      - name: size
+>        type: string
+>        data: ['small', 'medium', 'large']
+>        function: pairwise()
+>      - name: toppings
+>        type: string
+>        data: ['cheese', 'pepperoni', 'mushrooms']
+>        function: pairwise()
+>    ```
+>
+> In this example, Sensei will generate combinations that test different sizes with different toppings, ensuring that all pairs are covered without needing to create a full Cartesian product of all possible combinations.
+>
+> ### Summary:
+> Using `pairwise` helps streamline the testing process, making it more efficient while still ensuring that key interactions between different inputs are thoroughly tested. If you have any more questions or need further clarification, feel free to ask! 😊
 
 ### Response B
 
@@ -6937,38 +6962,32 @@ YAML: `n/a`
 
 YAML: `n/a`
 
-> The `pairwise` function is a powerful tool used in Sensei profiles to generate combinations of input values efficiently. It ensures that all possible pairs of values from the specified variables are covered in the conversations, which helps in testing various scenarios without needing to create every possible combination manually.
->
-> ### How It Works:
->
-> 1. **Combination Generation**: When you declare a variable with the `pairwise` function, Sensei will create a set of combinations that cover all pairs of values across the specified variables. For example, if you have two variables, one for pizza size (`small`, `medium`, `large`) and one for toppings (`cheese`, `pepperoni`), the `pairwise` function will ensure that each size is tested with each topping, but it won't create every possible combination. Instead, it will select a representative subset that covers all pairs.
->
-> 2. **Efficiency**: This method is particularly useful when you have multiple variables with many possible values. Instead of testing every combination (which can grow exponentially), `pairwise` reduces the number of tests while still providing good coverage of the input space.
->
-> 3. **Use Case**: You might use `pairwise` when defining inputs in your profile like this:
->
->    ```yaml
->    inputs:
->      - name: size
->        type: string
->        data: ['small', 'medium', 'large']
->        function: pairwise()
->      - name: toppings
->        type: string
->        data: ['cheese', 'pepperoni', 'mushrooms']
->        function: pairwise()
->    ```
->
-> In this example, Sensei will generate combinations that test different sizes with different toppings, ensuring that all pairs are covered without needing to create a full Cartesian product of all possible combinations.
->
-> ### Summary:
-> Using `pairwise` helps streamline the testing process, making it more efficient while still ensuring that key interactions between different inputs are thoroughly tested. If you have any more questions or need further clarification, feel free to ask! 😊
+> I'm sorry, but I can only assist with SENSEI RULES, SENSEI PROFILES, and SENSEI CONNECTORS. Unfortunately, I don't have information on the "pairwise function" or other unrelated topics. If you have any questions about SENSEI, feel free to ask! 😊
 
 ## Prompt p51
 
 What is an oracle?
 
 ### Response A
+
+YAML: `n/a`
+
+> In the context of SENSEI RULES, an oracle is a special type of rule that provides a way to evaluate conditions or make decisions based on the state of the conversation or the inputs received. Oracles can be used to check specific conditions and return values that can influence the flow of the chatbot's responses.
+>
+> ### Key Points about Oracles:
+> - **Condition Evaluation**: Oracles evaluate specific conditions to determine the next steps in the conversation.
+> - **Return Values**: They can return values that can be used in other rules or actions.
+> - **Decision Making**: Oracles help in making decisions based on the current context or user inputs.
+>
+> If you need more detailed information or examples about how oracles work, I can look up the relevant documentation for you! 😊
+
+### Response B
+
+YAML: `n/a`
+
+> I can only help with SENSEI rules, SENSEI profiles, or related explanations. Please share one of those requests.
+
+### Response C
 
 YAML: `n/a`
 
@@ -6982,72 +7001,11 @@ YAML: `n/a`
 >
 > In summary, oracles are essential for validating the performance and correctness of chatbots by providing a way to check if the responses meet the expected criteria! 😊 If you have more questions about oracles or anything else, feel free to ask!
 
-### Response B
-
-YAML: `n/a`
-
-> In the context of SENSEI RULES, an oracle is a special type of rule that provides a way to evaluate conditions or make decisions based on the state of the conversation or the inputs received. Oracles can be used to check specific conditions and return values that can influence the flow of the chatbot's responses.
->
-> ### Key Points about Oracles:
-> - **Condition Evaluation**: Oracles evaluate specific conditions to determine the next steps in the conversation.
-> - **Return Values**: They can return values that can be used in other rules or actions.
-> - **Decision Making**: Oracles help in making decisions based on the current context or user inputs.
->
-> If you need more detailed information or examples about how oracles work, I can look up the relevant documentation for you! 😊
-
-### Response C
-
-YAML: `n/a`
-
-> I can only help with SENSEI rules, SENSEI profiles, or related explanations. Please share one of those requests.
-
 ## Prompt p52
 
 What are connectors used for and what fields do they have?
 
 ### Response A
-
-YAML: `n/a`
-
-> Connectors in SENSEI are used to facilitate communication between your chatbot and external APIs without the need for coding. You create a YAML configuration file that outlines how to interact with the API, making it easier to integrate various functionalities into your chatbot.
->
-> ### Key Fields in a Connector Configuration
->
-> Here are the main fields you can include in a connector YAML file:
->
-> | Field                        | Description                                                      | Required       |
-> |------------------------------|------------------------------------------------------------------|----------------|
-> | `name`                       | Friendly name for your chatbot                                   | No             |
-> | `base_url`                  | Base URL of the chatbot API                                     | Yes            |
-> | `send_message.path`         | API endpoint path (appended to base_url)                       | Yes            |
-> | `send_message.method`       | HTTP method (POST, GET, PUT, DELETE)                           | No (default: POST) |
-> | `send_message.headers`      | Custom headers (e.g., Authorization)                            | No             |
-> | `send_message.payload_template` | JSON structure with `{user_msg}` placeholder                | Yes            |
-> | `response_path`             | Dot-separated path to extract the bot's reply from JSON response| Yes            |
->
-> ### Example Configuration
->
-> Here’s a simple example of a connector configuration for an echo bot:
->
-> ```yaml
-> name: "Echo Bot"
-> base_url: "https://postman-echo.com"
-> send_message:
->   path: "/post"
->   method: "POST"
->   payload_template:
->     message: "{user_msg}"
-> response_path: "json.message"
-> ```
->
-> ### Additional Notes
->
-> - The `response_path` helps navigate through the JSON responses using dot notation (e.g., `response["data"]["text"]`).
-> - You can include authentication headers if required by the API.
->
-> For more detailed examples and configurations, you can refer to the **Custom YAML Connector Guide** and **Connector Examples** documentation files. If you have any specific use cases or questions about connectors, feel free to ask! 😊
-
-### Response B
 
 YAML: `n/a`
 
@@ -7088,7 +7046,7 @@ YAML: `n/a`
 >
 > If you have any more questions about connectors or anything else, feel free to ask! 😊
 
-### Response C
+### Response B
 
 YAML: `n/a`
 
@@ -7111,3 +7069,45 @@ YAML: `n/a`
 > 4. **response_path**: A dot-separated path that specifies how to extract the chatbot's reply from the JSON response received from the API. This helps in navigating through the response structure to get the relevant information.
 >
 > These fields together enable the connector to handle the communication effectively, allowing your chatbot to function smoothly with external services. If you have any specific questions about implementing connectors or need examples, feel free to ask! 😊
+
+### Response C
+
+YAML: `n/a`
+
+> Connectors in SENSEI are used to facilitate communication between your chatbot and external APIs without the need for coding. You create a YAML configuration file that outlines how to interact with the API, making it easier to integrate various functionalities into your chatbot.
+>
+> ### Key Fields in a Connector Configuration
+>
+> Here are the main fields you can include in a connector YAML file:
+>
+> | Field                        | Description                                                      | Required       |
+> |------------------------------|------------------------------------------------------------------|----------------|
+> | `name`                       | Friendly name for your chatbot                                   | No             |
+> | `base_url`                  | Base URL of the chatbot API                                     | Yes            |
+> | `send_message.path`         | API endpoint path (appended to base_url)                       | Yes            |
+> | `send_message.method`       | HTTP method (POST, GET, PUT, DELETE)                           | No (default: POST) |
+> | `send_message.headers`      | Custom headers (e.g., Authorization)                            | No             |
+> | `send_message.payload_template` | JSON structure with `{user_msg}` placeholder                | Yes            |
+> | `response_path`             | Dot-separated path to extract the bot's reply from JSON response| Yes            |
+>
+> ### Example Configuration
+>
+> Here’s a simple example of a connector configuration for an echo bot:
+>
+> ```yaml
+> name: "Echo Bot"
+> base_url: "https://postman-echo.com"
+> send_message:
+>   path: "/post"
+>   method: "POST"
+>   payload_template:
+>     message: "{user_msg}"
+> response_path: "json.message"
+> ```
+>
+> ### Additional Notes
+>
+> - The `response_path` helps navigate through the JSON responses using dot notation (e.g., `response["data"]["text"]`).
+> - You can include authentication headers if required by the API.
+>
+> For more detailed examples and configurations, you can refer to the **Custom YAML Connector Guide** and **Connector Examples** documentation files. If you have any specific use cases or questions about connectors, feel free to ask! 😊
