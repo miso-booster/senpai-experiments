@@ -261,7 +261,8 @@ def main() -> None:
                 }
             )
 
-    md_path.write_text("\n".join(md_lines), encoding="utf-8")
+    # Write BOM so Windows editors detect UTF-8 instead of local ANSI/GBK.
+    md_path.write_text("\n".join(md_lines), encoding="utf-8-sig")
 
     with key_path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(

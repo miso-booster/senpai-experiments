@@ -111,6 +111,11 @@ def build_env(arch: Architecture, timestamp: str) -> Dict[str, str]:
         env.update(parse_env_file(arch.env_file))
     if arch.env:
         env.update(arch.env)
+    # Force UTF-8 for child Python processes to avoid locale-dependent mojibake.
+    env["PYTHONUTF8"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
+    env.setdefault("LANG", "C.UTF-8")
+    env.setdefault("LC_ALL", "C.UTF-8")
     env["AUTOMATION_RUN_TIMESTAMP"] = timestamp
 
     langsmith_project = env.get("LANGSMITH_PROJECT")
