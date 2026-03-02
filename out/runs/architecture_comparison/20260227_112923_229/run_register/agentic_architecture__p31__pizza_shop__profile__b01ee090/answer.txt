@@ -1,0 +1,78 @@
+Great! Let's create a profile for a pizza shop where the user is rude and wants things done quickly. We'll include four goals, with two of them using pairwise functions to determine the conversation number based on a pairwise matrix.
+
+Here's the profile structure we'll use:
+
+```yaml
+test_name: "pizza_shop_rude_customer"
+
+llm:
+  temperature: 0.7
+  model: "gpt-4o"
+  model_prov: "openai"
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A rude customer who demands fast service."
+  context:
+    - "The customer is impatient and often interrupts."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}}."
+    - "Get the total price in {{currency}}."
+    - "Request a quick delivery time of {{delivery_time}}."
+    - "Ask for a discount because of the wait."
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, onions, olives]
+    - currency:
+        function: random()
+        type: string
+        data: [USD, EUR, GBP]
+    - delivery_time:
+        function: pairwise()
+        type: string
+        data: [15 minutes, 30 minutes, 45 minutes]
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry, could you repeat that?"
+  output:
+    - total_price:
+        type: currency
+        description: "Final price for the pizza order."
+    - delivery_time:
+        type: string
+        description: "Estimated delivery time."
+
+conversation:
+  number: combinations(0.5, pairwise) # Using pairwise functions for conversation number
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### Summary of the Profile:
+- **User Role**: A rude customer who demands fast service.
+- **Goals**: 
+  - Order a pizza with size and toppings.
+  - Get the total price in a specified currency.
+  - Request a quick delivery time.
+  - Ask for a discount.
+- **Variables**: 
+  - `size` (random selection).
+  - `toppings` (pairwise combinations).
+  - `currency` (random selection).
+  - `delivery_time` (pairwise combinations).
+- **Chatbot Output**: Includes total price and estimated delivery time.
+- **Conversation Control**: Uses pairwise functions to determine conversation numbers.
+
+Would you like to make any adjustments or proceed with this profile? 😊

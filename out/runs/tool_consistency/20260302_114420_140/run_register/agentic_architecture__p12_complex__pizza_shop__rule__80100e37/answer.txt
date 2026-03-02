@@ -1,0 +1,41 @@
+Renaming the `price` field to `total_cost` in your pizza order profile will indeed affect any rules that reference the `price` field. Since rules are designed to check the outputs defined in the profile's `chatbot.output`, any rule that previously referred to `price` will need to be updated to refer to `total_cost` instead.
+
+### Steps to Update
+
+1. **Identify Affected Rules**: You need to find all rules that reference the `price` field. This includes any rules that use expressions like `conv[i].price`.
+
+2. **Update the Rules**: For each affected rule, change instances of `conv[i].price` to `conv[i].total_cost`. This ensures that the rules correctly reference the new field name.
+
+3. **Test the Changes**: After updating the rules, run your tests to ensure that everything works as expected and that the rules validate correctly against the new profile output.
+
+### Example Update
+
+If you have a rule like this:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+You would change it to:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+```
+
+### Summary
+
+- **Renaming `price` to `total_cost`** will break any rules referencing `price`.
+- **Update all affected rules** to use `total_cost` instead.
+- **Test** the updated rules to ensure they function correctly.
+
+If you need help identifying specific rules that reference `price`, I can assist with that! Just let me know. 😊

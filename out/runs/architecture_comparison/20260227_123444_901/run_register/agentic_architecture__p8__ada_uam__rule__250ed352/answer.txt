@@ -1,0 +1,39 @@
+Let's review your rule `check_cau_information` to ensure it adheres to the guidelines outlined in the documentation.
+
+### Current Rule Structure
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Issues Identified
+1. **Field Existence**: The fields `contact_email`, `contact_phone`, and `physical_address` must exist in the `chatbot.output` of the relevant SENSEI profile. If they do not exist, the rule will not function correctly.
+2. **Use of `oracle`**: The `oracle` section should ideally express a condition that checks the correctness of the information. It currently mirrors the `when` condition, which is not necessary. The `oracle` should typically be used to validate the expected outcome based on the conditions set in `when`.
+
+### Suggested Fix
+To improve the rule, we should:
+- Ensure that the fields referenced in `when` and `oracle` are part of the `chatbot.output`.
+- Modify the `oracle` to validate the expected outcome rather than repeating the `when` condition.
+
+Here's a revised version of your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Explanation
+- **Field Verification**: Before using this rule, confirm that the fields `contact_email`, `contact_phone`, and `physical_address` exist in the `chatbot.output` of the relevant profile. If they do not exist, you will need to update the profile accordingly.
+- **Oracle Logic**: The `oracle` should ideally check if the information is indeed correct, but in this case, it seems to validate the same conditions as `when`, which is acceptable for a single-conversation rule. However, consider using a more meaningful check if applicable.
+
+### Next Steps
+1. **Confirm Field Existence**: Check the `chatbot.output` of the relevant profile to ensure the fields are included.
+2. **Update the Profile if Necessary**: If the fields do not exist, you will need to add them to the profile.
+
+Would you like me to help you check the profile for these fields? 😊

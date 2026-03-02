@@ -1,0 +1,35 @@
+conversation ID: agentic_architecture__p50__pizza_shop__documentation__be3ee27e
+$$$
+The **pairwise function** in the context of Sensei-check refers to the ability to compare pairs of conversations to validate certain conditions or relationships between their outputs. This is part of the **metamorphic testing** approach used in Sensei-check, which alleviates the oracle problem by checking how outputs should change (or not) when inputs change.
+
+### Key Points about the Pairwise Function:
+
+1. **Purpose**:
+   - The pairwise function allows you to assert relationships between two conversations, such as whether one output should be greater than another based on specific conditions.
+
+2. **Structure**:
+   - A metamorphic rule that uses the pairwise function typically includes:
+     - A **filter** (`when`) to select eligible conversation pairs.
+     - An **if/then** condition to specify the expected relationship between the outputs of the two conversations.
+
+3. **Example**:
+   - For instance, if you want to ensure that adding more toppings to a pizza increases its price, you could write a rule like this:
+     ```yaml
+     name: toppings_monotonicity
+     description: More toppings increases total price
+     conversations: 2
+     when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+     if:   len(conv[0].toppings) > len(conv[1].toppings)
+     then: extract_float(conv[0].price) > extract_float(conv[1].price)
+     ```
+
+### How It Works:
+- **Generate Conversations**: First, conversations are generated with various inputs and the outputs are recorded.
+- **Write Rules**: You write rules in YAML that define how many conversations are needed, any filters for selecting conversations, and the relations to check.
+- **Evaluate Rules**: Sensei-check evaluates these rules against the selected pairs of conversations and reports any failures.
+
+### Benefits:
+- This approach allows for more robust testing by focusing on the relationships between outputs rather than absolute correctness, which can be particularly useful in scenarios where the expected output may vary.
+
+If you have any specific scenarios or examples in mind where you'd like to apply the pairwise function, feel free to ask! 😊
+$$$

@@ -1,0 +1,58 @@
+That sounds like a fun scenario to create! 😊 You can set up a profile that captures the user's initial request for a custom pizza and then incorporates the interaction style of changing their mind. Here's a sample profile you can use as a template:
+
+```yaml
+test_name: "custom_to_predefined_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer who initially wants to order a custom pizza but changes your mind halfway through."
+  context:
+    - "You are planning a pizza night with friends."
+    - "You want to explore options but are indecisive."
+  goals:
+    - "I want to order a custom pizza with {{custom_toppings}}."
+    - "Actually, can I get a {{predefined_pizza}} instead?"
+    - custom_toppings:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, olives, extra cheese, bell peppers]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, BBQ Chicken]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Can you repeat your order?"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the pizza order, whether custom or predefined."
+    - pizza_type:
+        type: string
+        description: "Type of pizza ordered."
+
+conversation:
+  number: 2
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+### Explanation:
+- **Goals**: The user starts by expressing a desire for a custom pizza and then changes their mind to ask for a predefined pizza.
+- **Interaction Style**: The `change your mind` style allows the user to switch their request during the conversation.
+- **Output**: The chatbot will confirm the type of pizza ordered, whether it's custom or predefined.
+
+Feel free to adjust the toppings and pizza types to fit your needs! Happy testing! 🍕✨

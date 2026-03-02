@@ -1,0 +1,62 @@
+conversation ID: agentic_architecture__p39__pizza_shop__rule__4b18ddf7
+$$$
+To create a rule that checks whether the order ID was provided by the chatbot, we can define a profile that includes the `order_id` in its `chatbot.output`. Then, we can write a rule that verifies the presence of this output.
+
+### Rule Definition
+
+Here’s how the rule would look in YAML format:
+
+```yaml
+name: order_id_provided
+description: Checks that the chatbot provides an order ID in the response.
+conversations: 1
+oracle: conv[0].order_id is not None
+```
+
+### Explanation
+
+- **name**: This is the identifier for the rule, which is `order_id_provided`.
+- **description**: A brief explanation of what the rule does.
+- **conversations**: Set to `1`, indicating that this rule checks a single conversation.
+- **oracle**: This condition checks if the `order_id` field from the first conversation (`conv[0].order_id`) is not `None`, meaning it must be provided by the chatbot.
+
+### Profile Definition
+
+For this rule to work, the corresponding profile must define the `order_id` in its `chatbot.output`. Here’s a brief example of how that might look in the profile:
+
+```yaml
+test_name: "order_id_check_profile"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "User requesting an order ID."
+  goals:
+    - "Request an order ID."
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - order_id:
+        type: string
+        description: "The order identifier"
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 1
+```
+
+### Summary
+
+This rule ensures that the chatbot provides an `order_id` in its responses, which is essential for tracking orders. The profile includes this output definition, allowing the rule to function correctly.
+
+If you have any further questions or need additional information, feel free to ask! 😊
+$$$

@@ -1,0 +1,32 @@
+conversation ID: agentic_architecture__p37__pizza_shop__rule__bfbd7458
+$$$
+It looks like your rule `more_toppings_cost_more` has a couple of issues that need to be addressed based on the documentation. Here's a breakdown of the problems and the necessary fixes:
+
+### Issues Identified
+1. **Field References**: The fields used in the rule must match those defined in the `chatbot.output` of the corresponding profile. If `toppings` and `price` are not part of the profile's output, the rule will not work.
+
+2. **Using `if` instead of `when`**: The rule should use `if` to check the condition about the number of toppings, but it should also ensure that the `when` clause captures the necessary conditions for the comparisons.
+
+### Suggested Fix
+Here’s an updated version of your rule that aligns with the examples and best practices from the documentation:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### Key Changes
+- Ensure that the fields `size`, `drink`, `toppings`, and `price` are all defined in the `chatbot.output` of the profile you are using. If any of these fields are missing, you will need to update your profile accordingly.
+
+### Next Steps
+1. **Check the Profile**: Verify that the profile used in this rule has the fields `size`, `drink`, `toppings`, and `price` defined in its `chatbot.output`.
+
+2. **Test the Rule**: After confirming the profile, run the rule to see if it behaves as expected.
+
+If you need help checking the profile or making any adjustments, just let me know! 😊
+$$$

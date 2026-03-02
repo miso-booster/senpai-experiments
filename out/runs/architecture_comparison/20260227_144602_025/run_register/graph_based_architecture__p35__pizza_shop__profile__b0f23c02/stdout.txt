@@ -1,0 +1,63 @@
+[project-context] Loaded 8 profile(s) [general_information_seeker.yaml, pizza_and_drink_order_placement.yaml, pizza_and_drinks_information_seeker.yaml, pizza_order_test_custom.yml, pizzaorder_ivan_test.yml, unrecognized_query_handler.yaml, user_experiencing_input_issues.yaml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\sensei_projects\pizza_shop
+conversation ID: graph_based_architecture__p35__pizza_shop__profile__b0f23c02
+Verbose activated
+[intent-classifier] {'intent': 'create_profile', 'raw': '{"intent": "create_profile", "reason": "user wants a new SENSEI profile for a specific conversation scenario"}'}
+[validation-decision] {'decision': 'TRUE', 'reason': 'user expects a correct profile'}
+$$$
+That sounds like a fun scenario to test! 😊 You can create a profile that captures the user's initial request for a custom pizza, and then incorporates the interaction style of changing their mind. Here’s a template you can use to set up your profile:
+
+```yaml
+test_name: "custom_to_predefined_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer who initially wants to order a custom pizza but changes your mind halfway through."
+  context:
+    - "You are exploring options for a pizza order."
+    - "You want to customize your pizza at first but then decide to go with a predefined option."
+  goals:
+    - "I would like to order a custom pizza with {{custom_toppings}}."
+    - "Actually, can I get a {{predefined_pizza}} instead?"
+    - custom_toppings:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, olives, extra cheese, bell peppers]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, BBQ Chicken]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite get that. Can you please specify your order?"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the pizza order, whether custom or predefined."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+### Explanation of the Profile:
+- **User Role & Context**: The user is set up to explore pizza options, starting with a custom pizza request.
+- **Goals**: The first goal is to request a custom pizza with specific toppings, and the second goal is to change their mind and ask for a predefined pizza instead.
+- **Chatbot Output**: The chatbot will confirm the order based on the user's final choice.
+- **Conversation Control**: The interaction style includes "change your mind," allowing the user to switch their request during the conversation.
+
+Feel free to adjust any parts of the profile to better fit your needs! Happy testing! 🍕✨
+$$$

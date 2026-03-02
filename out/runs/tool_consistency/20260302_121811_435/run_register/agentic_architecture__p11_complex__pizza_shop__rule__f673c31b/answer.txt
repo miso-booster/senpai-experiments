@@ -1,0 +1,41 @@
+Let's analyze the compatibility of the **pizza order test custom** profile with the two rules: **more toppings cost more** and **same number of toppings cost the same**.
+
+### Profile Overview
+The **pizza_order_test_custom** profile has the following relevant outputs:
+- **price**: The final price of the pizza order (currency type).
+- **size**: Options include small, medium, big, and extra large.
+- **toppings**: Options include cheese, mushrooms, and pepperoni.
+- **drink**: Options include sprite, coke, and Orange Fanta.
+
+### Rule 1: More Toppings Cost More
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+- **Compatibility**: This rule checks if two pizzas of the same size and drink have different numbers of toppings, asserting that the one with more toppings should have a higher price. 
+- **Works with Profile**: Yes, this rule is compatible with the profile since it uses the `size`, `drink`, and `price` fields that are defined in the profile's `chatbot.output`.
+
+### Rule 2: Same Number of Toppings Cost the Same
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with same number of toppings cost the same
+conversations: 2
+active: False
+when: conv[0].drink == conv[1].drink
+if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+- **Compatibility**: This rule checks if two pizzas with the same size and number of toppings have the same price.
+- **Works with Profile**: Yes, this rule is also compatible with the profile as it references the `size`, `toppings`, and `price` fields that are present in the profile's `chatbot.output`.
+
+### Conclusion
+Both rules will work with the **pizza order test custom** profile:
+- The **more toppings cost more** rule is active and will validate the expected behavior when comparing pizzas with different numbers of toppings.
+- The **same number of toppings cost the same** rule is currently inactive but can be activated if needed, and it will also function correctly with the profile.
+
+If you need to activate the second rule or make any modifications, just let me know! 😊

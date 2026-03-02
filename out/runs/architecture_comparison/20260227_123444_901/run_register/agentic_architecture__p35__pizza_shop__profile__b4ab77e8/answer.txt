@@ -1,0 +1,70 @@
+Great! I found the relevant documentation on profiles in the `sensei-chat-guide.md`. Now, let's create a profile where the user can ask for a custom pizza but then change their mind and request a predefined pizza instead.
+
+### Profile Structure
+Here's a breakdown of how we can structure this profile:
+
+1. **Test Name**: A descriptive name for the profile.
+2. **User**:
+   - **Language**: The language the user will communicate in.
+   - **Role**: A brief description of the user's persona.
+   - **Goals**: 
+     - The user will initially ask for a custom pizza.
+     - The user will then change their mind and ask for a predefined pizza.
+3. **Chatbot**:
+   - **Is Starter**: Indicates whether the chatbot starts the conversation.
+   - **Fallback**: A fallback message if the chatbot doesn't understand.
+   - **Output**: Fields that will be extracted at the end of the conversation (e.g., pizza type, toppings).
+4. **Conversation Controls**: 
+   - Number of conversations, interaction style, etc.
+
+### Proposed YAML Profile
+Here's a draft of the profile in YAML format:
+
+```yaml
+test_name: "custom_vs_predefined_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer who wants to order pizza."
+  goals:
+    - "I would like a custom pizza with {{custom_toppings}}."
+    - "Actually, I'll just have a {{predefined_pizza}} instead."
+    - custom_toppings:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, onions, olives, extra cheese]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, BBQ Chicken, Veggie]
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry, could you repeat that?"
+  output:
+    - pizza_order:
+        type: string
+        description: "The type of pizza ordered by the user."
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 3
+  interaction_style:
+    - change your mind
+```
+
+### Summary
+- **Test Name**: `custom_vs_predefined_pizza_order`
+- **User Role**: A customer ordering pizza.
+- **Goals**: Includes both custom and predefined pizza requests.
+- **Chatbot Output**: Captures the final pizza order.
+
+Would you like to proceed with this profile, or do you have any modifications in mind? 😊

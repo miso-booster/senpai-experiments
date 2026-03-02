@@ -1,0 +1,45 @@
+Let's break down the compatibility of your **pizza order test custom** profile with the two rules: **more toppings cost more** and **same number of toppings cost the same**.
+
+### 1. Profile Overview
+**Profile: `pizza_order_test_custom.yml`**
+- **Outputs**:
+  - `price`: Final price of the pizza order (currency)
+  - `time`: Opening time (time)
+  - `order_id`: Order ID (string)
+
+### 2. Rules Overview
+**Rule: `more_toppings_cost_more.yaml`**
+- **Description**: Adding more toppings to a custom pizza costs more.
+- **Logic**:
+  - **When**: The sizes and drinks of two orders are the same.
+  - **If**: The first order has more toppings than the second.
+  - **Then**: The price of the first order must be greater than the second.
+  
+```yaml
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+**Rule: `same_number_of_toppings_cost_the_same.yaml`**
+- **Description**: Pizzas with the same number of toppings cost the same.
+- **Logic**:
+  - **When**: The drinks are the same.
+  - **If**: The sizes are the same and both orders have the same number of toppings.
+  - **Then**: The prices must be equal.
+  
+```yaml
+when: conv[0].drink == conv[1].drink
+if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+
+### 3. Compatibility Analysis
+- **Compatibility with `more_toppings_cost_more` Rule**:
+  - This rule will work with your profile since it checks the `size`, `drink`, and `toppings` fields, all of which are defined in your profile's `chatbot.output`.
+
+- **Compatibility with `same_number_of_toppings_cost_the_same` Rule**:
+  - This rule will also work with your profile. It checks the `size`, `drink`, and `toppings`, which are present in your profile. However, note that this rule is currently inactive (`active: False`). You may want to activate it if you intend to use it.
+
+### Conclusion
+Both rules can work with your **pizza order test custom** profile. Just ensure that the **`same_number_of_toppings_cost_the_same`** rule is activated if you want to utilize it in your testing. If you have any further questions or need assistance with modifications, feel free to ask! 🍕

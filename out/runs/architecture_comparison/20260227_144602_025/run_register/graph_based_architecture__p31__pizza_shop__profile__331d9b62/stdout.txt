@@ -1,0 +1,69 @@
+[project-context] Loaded 8 profile(s) [general_information_seeker.yaml, pizza_and_drink_order_placement.yaml, pizza_and_drinks_information_seeker.yaml, pizza_order_test_custom.yml, pizzaorder_ivan_test.yml, unrecognized_query_handler.yaml, user_experiencing_input_issues.yaml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\sensei_projects\pizza_shop
+conversation ID: graph_based_architecture__p31__pizza_shop__profile__331d9b62
+Verbose activated
+[intent-classifier] {'intent': 'create_profile', 'raw': '{"intent": "create_profile", "reason": "user wants a new SENSEI profile for a pizza shop"}'}
+[validation-decision] {'decision': 'TRUE', 'reason': 'user expects a correct profile'}
+$$$
+Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included four goals, two of which use pairwise functions to ensure the conversation number can be determined by the pairwise matrix. Feel free to adjust any details as needed! 🍕😊
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A rude customer who wants their pizza order done quickly."
+  context:
+    - "You are impatient and expect quick responses."
+    - "You don't tolerate delays or unnecessary explanations."
+  goals:
+    - "Get me a {{pizza_type}} pizza!"
+    - "I need a {{pizza_size}} size, and make it fast!"
+    - "Add {{number_of_drinks}} {{drink_type}} drinks to my order."
+    - "What's the total cost? Hurry up!"
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - number_of_drinks:
+        function: random(2)
+        type: int
+        data: {min: 1, max: 5}
+    - drink_type:
+        function: random()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Can you just order already?"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the pizza order and drinks."
+    - total_cost:
+        type: currency
+        description: "Total cost of the order."
+
+conversation:
+  number: combinations(0.5, pairwise) # Two pairwise functions declared
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+This profile sets the stage for a fast-paced, rude interaction, perfect for testing how well the chatbot handles challenging users! If you have any more requests or need adjustments, just let me know! 😊
+$$$

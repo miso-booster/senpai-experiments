@@ -1,0 +1,35 @@
+Hey there! 😊 Let's take a look at your rule for checking the CAU information. 
+
+Here’s your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### What's Good:
+1. **Name and Description**: The name and description are clear and informative! They explain exactly what the rule is checking.
+2. **Conversations**: You’ve set it to 1, which is appropriate since you’re checking a single conversation.
+
+### What's Not Okay:
+The `when` condition and the `oracle` condition are essentially the same. In a typical Sensei-check rule, the `when` condition should define a filter for when the rule applies, while the `oracle` should define the expected outcome or assertion. 
+
+### Suggested Fix:
+You might want to adjust the `when` condition to be more of a filter, and then have the `oracle` check if the information is correct. Here’s a revised version:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email is not None and conv[0].contact_phone is not None and conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Explanation:
+- **`when` Condition**: Now it checks if the contact details are not `None`. This way, the rule will only apply when those fields are provided. It allows for flexibility in case the information isn't available.
+- **`oracle` Condition**: This remains the same, as it correctly asserts that the provided contact details match the expected values.
+
+This structure helps ensure that the rule only runs when there's relevant data to check, and it maintains clarity in what you're validating. If you have any more questions or need further assistance, feel free to ask! 😊

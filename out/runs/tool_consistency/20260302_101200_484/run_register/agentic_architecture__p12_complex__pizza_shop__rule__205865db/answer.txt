@@ -1,0 +1,129 @@
+If you rename the field `price` to `total_cost` in the `pizza_order_test_custom` profile, it will indeed break any rules that reference the `price` field. Specifically, the following rules will be affected:
+
+1. **Rule: same_number_of_toppings_cost_the_same**
+   - **Current Logic**: This rule checks if pizzas with the same number of toppings cost the same, using `conv[i].price`.
+   - **Implication**: It will fail because it will look for a `price` field that no longer exists.
+
+2. **Rule: more_toppings_cost_more**
+   - **Current Logic**: This rule checks that adding more toppings increases the cost, also using `conv[i].price`.
+   - **Implication**: Similar to the first rule, it will fail for the same reason.
+
+### Updating the Profile and Rules
+
+To address the changes needed after renaming `price` to `total_cost`, you should:
+
+1. **Update the Profile**: Change the `price` field in the `chatbot.output` section to `total_cost` and ensure the type for `time` is correctly defined.
+
+   Here's how the updated profile section would look:
+   ```yaml
+   test_name: pizza_order_test_custom
+
+   llm:
+     temperature: 0.8
+     model: gpt-4o-mini
+     model_prov: openai
+
+   user:
+     language: English
+     role: you have to act as a user ordering a pizza to a pizza shop.
+     context:
+       - personality: conversational-user.yml
+       - your name is Jon Doe
+     goals:
+       - "a {{size}} custom pizza with {{toppings}}, {{size}}"
+       - "{{cans}} cans of {{drink}}"
+       - which are opening and closing times
+       - how much will it cost
+
+       - size:
+           function: pairwise()
+           type: string
+           data:
+             - small
+             - medium
+             - big
+             - extra large
+
+       - toppings:
+           function: pairwise()
+           type: string
+           data:
+             - cheese
+             - mushrooms
+             - pepperoni
+
+       - cans:
+           function: forward(drink)
+           type: int
+           data:
+               min: 1
+               max: 7
+               step: 1
+
+       - drink:
+           function: forward()
+           type: string
+           data:
+             - sprite
+             - coke
+             - Orange Fanta
+
+   chatbot:
+     is_starter: False
+     fallback: I'm sorry it's a little loud in my pizza shop, can you say that again?
+     output:
+       - total_cost:
+           type: currency
+           description: The final price of the pizza order
+       - time:
+           type: time("hh:mm:ss")
+           description: just the opening time
+       - order_id:
+           type: string
+           description: my order ID
+
+   conversation:
+     number: 2
+     goal_style:
+       steps: 2
+     interaction_style:
+       - long phrases
+       - random:
+         - make spelling mistakes
+         - change language:
+             - italian
+             - portuguese
+             - chinese
+   ```
+
+2. **Update the Rules**: Modify any rules that reference `price` to use `total_cost` instead.
+
+   For example, the updated rules would look like this:
+
+   **Rule: same_number_of_toppings_cost_the_same**
+   ```yaml
+   name: same_number_of_toppings_cost_the_same
+   description: Pizzas with the same number of toppings cost the same
+   conversations: 2
+   active: False
+   when: conv[0].drink == conv[1].drink
+   if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)
+   ```
+
+   **Rule: more_toppings_cost_more**
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza costs more
+   active: True
+   conversations: 2
+   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+   if: len(conv[0].toppings) > len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+   ```
+
+### Summary
+- Change the profile to reflect the new field name `total_cost`.
+- Update all rules that reference `price` to use `total_cost` instead.
+
+This will help ensure that your rules continue to function correctly after the change! If you need further assistance, feel free to ask! 😊

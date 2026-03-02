@@ -1,0 +1,35 @@
+Hey there! 😊 Let's take a look at your rule `check_cau_information`. 
+
+### Current Rule:
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Issues:
+1. **Redundancy**: The `when` condition and the `oracle` condition are essentially doing the same thing. The `oracle` should assert what you expect to be true based on the conditions set in `when`. 
+
+2. **Structure**: The `oracle` should be used to check the expected outcome based on the input conditions defined in `when`, rather than repeating those conditions.
+
+### Suggested Fix:
+Here’s a revised version of your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: 'True'  # This asserts that the conditions in 'when' are met, meaning the info is correct.
+```
+
+### Explanation:
+- **`when`**: This part checks if the contact details provided in the conversation match the expected values. If they do, it means the information is potentially correct.
+  
+- **`oracle`**: By setting this to `True`, you are indicating that if the `when` condition is satisfied, then the information is indeed correct. This simplifies the rule and avoids redundancy.
+
+This way, you maintain clarity in your rule, ensuring that it checks the correctness of the contact details without repeating the same conditions. If the `when` condition is true, the `oracle` will also be true, confirming that the information is correct! 🌟
+
+Feel free to ask if you have more questions or need further assistance!

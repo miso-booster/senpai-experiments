@@ -1,0 +1,38 @@
+The **pairwise function** in the context of SENSEI-check refers to the ability to compare pairs of conversations to validate certain conditions or relationships between their outputs. This is a key aspect of **metamorphic testing**, which checks how outputs should change (or remain the same) when inputs are varied.
+
+### How Pairwise Function Works
+
+1. **Generate Conversations**: 
+   - Conversations are created using SENSEI Chat, which includes various inputs (e.g., pizza size, toppings) and outputs (e.g., price).
+
+2. **Write Metamorphic Rules**:
+   - In YAML format, you define rules that specify:
+     - How many conversations to compare (at least two for pairwise).
+     - An optional filter (`when`) to select which conversations to compare.
+     - The relationship to check between the outputs of the conversations.
+
+3. **Evaluate Rules**:
+   - SENSEI-check evaluates the defined rules against the generated conversations. It checks the specified conditions and reports any failures.
+
+### Example of a Pairwise Rule
+
+Here’s a simple example of a pairwise rule that checks if adding more toppings to a pizza increases the price, given that the size and drink are the same:
+
+```yaml
+name: toppings_monotonicity
+description: More toppings increase total price (same size/drink)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### Key Points
+
+- **Conversations**: The rule specifies that it will compare two conversations (`conversations: 2`).
+- **Conditions**: The `when` clause ensures that only conversations with the same size and drink are compared.
+- **Assertions**: The `if` and `then` clauses define the expected relationship: if one conversation has more toppings, its price should be higher.
+
+This approach allows for validating complex relationships between outputs based on varying inputs, which is essential for ensuring the correctness and robustness of conversational agents.
+
+If you have any more specific questions or need further examples, feel free to ask! 😊
