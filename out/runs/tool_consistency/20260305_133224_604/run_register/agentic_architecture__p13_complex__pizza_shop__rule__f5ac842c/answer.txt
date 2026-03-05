@@ -1,0 +1,119 @@
+Here's a complete coverage audit of the project based on the profiles and rules retrieved:
+
+### 1. **Profiles Overview**
+Here are the profiles available in the project:
+
+1. **General Information Seeker**
+   - **Outputs**: 
+     - `available_information`
+     - `opening_hours`
+     - `estimated_order_time`
+     - `drink_options_and_prices`
+     - `custom_pizza_pricing`
+
+2. **Pizza and Drink Order Placement**
+   - **Outputs**: 
+     - `pizza_options`
+     - `drink_options`
+     - `order_summary`
+     - `total_cost`
+     - `estimated_readiness_time`
+     - `pickup_location`
+     - `order_id`
+
+3. **Pizza and Drinks Information Seeker**
+   - **Outputs**: 
+     - `pizza_types`
+     - `margarita_price`
+     - `drinks_and_prices`
+     - `operating_hours`
+     - `delivery_availability`
+
+4. **Pizza Order Test Custom**
+   - **Outputs**: 
+     - `price`
+     - `time`
+     - `order_id`
+
+5. **Pizzaorder Ivan Test**
+   - **Outputs**: 
+     - `available_pizza_types`
+     - `selected_pizza_type`
+     - `pizza_size_options`
+     - `selected_pizza_size`
+     - `pizza_order_confirmation`
+     - `drink_options_and_prices`
+     - `drink_quantity_requested`
+     - `selected_drink_type`
+
+6. **Unrecognized Query Handler**
+   - **Outputs**: 
+     - `unrecognized_query_response`
+
+7. **User Experiencing Input Issues**
+   - **Outputs**: 
+     - `pizza_order_response`
+     - `pizza_type_response`
+     - `custom_pizza_response`
+
+### 2. **Rules Overview**
+Here are the rules available in the project:
+
+1. **Conversation Lengths**
+   - **Description**: The number of turns of the user and the chatbot equal the conversation length.
+   - **Active**: No
+   - **Oracle**: `conversation_length() == conversation_length('assistant') + conversation_length('user')`
+
+2. **More Toppings Cost More**
+   - **Description**: Adding more toppings to a custom pizza costs more.
+   - **Active**: Yes
+   - **Oracle**: `if: len(conv[0].toppings) > len(conv[1].toppings) then: extract_float(conv[0].price) > extract_float(conv[1].price)`
+
+3. **Only Talks About Pizzas**
+   - **Description**: The chatbot only talks about pizzas.
+   - **Active**: Yes
+   - **Oracle**: `only_talks_about(...)`
+
+4. **Ordering Conversation Turns**
+   - **Description**: The user always orders a pizza and then drinks.
+   - **Active**: No
+   - **Oracle**: `utterance_index('user', 'ordering a pizza') < utterance_index('user', 'ordering drink')`
+
+5. **Ordering Conversation Turns Assistant**
+   - **Description**: The assistant confirms the pizza order after the user orders a pizza.
+   - **Active**: No
+   - **Oracle**: `utterance_index('user', 'ordering a pizza') < utterance_index('assistant', 'confirms pizza order')`
+
+6. **Same Number of Toppings Cost the Same**
+   - **Description**: Pizzas with the same number of toppings cost the same.
+   - **Active**: No
+   - **Oracle**: `if: len(conv[0].toppings)==len(conv[1].toppings) then: extract_float(conv[0].price) == extract_float(conv[1].price)`
+
+### 3. **Mapping Rules to Profile Outputs**
+Now, let's map which rules validate which profile outputs:
+
+- **More Toppings Cost More**: 
+  - Validates outputs related to pizza pricing, specifically from profiles that deal with pizza orders (e.g., `pizza_order_test_custom`, `pizzaorder_ivan_test`).
+
+- **Only Talks About Pizzas**: 
+  - Validates that the chatbot remains on topic regarding pizza, which is relevant to all profiles focused on pizza orders.
+
+- **Conversation Lengths**, **Ordering Conversation Turns**, and **Ordering Conversation Turns Assistant**: 
+  - These rules do not directly validate any specific profile outputs but are more about the structure of the conversation.
+
+- **Same Number of Toppings Cost the Same**: 
+  - Similar to "More Toppings Cost More," this rule would validate outputs related to pizza pricing.
+
+### 4. **Identifying Gaps**
+After reviewing the profiles and rules, here are some identified gaps:
+
+1. **Pricing Validation**: While there are rules for validating that more toppings cost more, there is no rule validating the base price of pizzas or ensuring that prices are within expected ranges.
+
+2. **Delivery and Availability**: There are no rules validating the delivery options or hours of operation provided by the chatbot, which are critical for customer satisfaction.
+
+3. **User Experience**: There are no rules that validate the chatbot's responses to unrecognized queries or input issues, which can significantly affect user experience.
+
+4. **Confirmation of Orders**: While there are rules for confirming order placements, there should be rules ensuring that the order summary is accurate and matches the user's requests.
+
+### Conclusion
+This audit provides a comprehensive overview of the project's current state regarding profiles and rules. Addressing the identified gaps will enhance the coverage and robustness of the testing framework. If you need further assistance in creating new rules or modifying existing ones, feel free to ask! 😊

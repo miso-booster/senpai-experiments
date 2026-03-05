@@ -1,0 +1,44 @@
+I've loaded the relevant documentation for both **profiles** and **rules**. Here’s what I found regarding the profile and rules you mentioned:
+
+### Profile: `pizza_order_test_custom`
+- The profile should define the `chatbot.output` fields that the rules will reference, such as `size`, `toppings`, `drink`, and `price`. 
+- It's essential to ensure that the profile includes these fields in its `chatbot.output` section.
+
+### Rules:
+1. **More Toppings Cost More**:
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza costs more
+   active: True
+   conversations: 2
+   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+   if:   len(conv[0].toppings) > len(conv[1].toppings)
+   then: extract_float(conv[0].price) > extract_float(conv[1].price)
+   ```
+
+2. **Same Number of Toppings Cost the Same**:
+   ```yaml
+   name: same_number_of_toppings_cost_the_same
+   description: Pizzas with the same number of toppings cost the same
+   conversations: 2
+   active: False
+   when: conv[0].drink == conv[1].drink
+   if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+   then: extract_float(conv[0].price) == extract_float(conv[1].price)
+   ```
+
+### Compatibility Check
+To determine if these rules will work with your profile, you need to ensure that:
+- The profile `pizza_order_test_custom` has the necessary fields in its `chatbot.output`:
+  - `size`
+  - `toppings`
+  - `drink`
+  - `price`
+
+If these fields are present in the profile, both rules should function correctly. If any of these fields are missing, the rules will not work as intended.
+
+### Next Steps
+1. **Confirm Profile Fields**: Please check if the `pizza_order_test_custom` profile includes the required fields in its `chatbot.output`.
+2. **Adjust Rules if Necessary**: If the profile fields differ from what the rules expect, we may need to adjust the rules or the profile accordingly.
+
+Let me know if you need help with anything specific, like inspecting the profile or modifying the rules! 😊

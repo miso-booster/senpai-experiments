@@ -1,0 +1,39 @@
+Renaming the field `price` to `total_cost` in your pizza order profile will indeed affect any rules that reference that field. Specifically, any rules that currently use `conv[i].price` will need to be updated to use `conv[i].total_cost` instead. 
+
+### Steps to Update
+
+1. **Identify Affected Rules**: You'll need to find all rules that reference the `price` field. This includes any rules that use expressions like `extract_float(conv[i].price)`.
+
+2. **Update Rules**: For each affected rule, change all instances of `price` to `total_cost`. This includes:
+   - The `if` and `then` conditions that check or extract the price.
+   - Any documentation or descriptions within the rule that mention `price`.
+
+3. **Verify Consistency**: Ensure that the new field name `total_cost` is consistently used across all relevant rules and that it matches the updated `chatbot.output` in the profile.
+
+### Example Update
+
+If you have a rule that looks like this:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+You would update it to:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+```
+
+### Conclusion
+
+By following these steps, you can ensure that your rules remain functional after the renaming of the field. If you need help identifying the affected rules or making the updates, just let me know! 😊
