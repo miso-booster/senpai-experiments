@@ -53,7 +53,8 @@ def generate_plots(
     - mean/std bar charts for the primary RQ2 metrics
     - boxplots for per-response variability
     - quality rate bars (fallback, YAML validity) when those columns exist
-    - a dedicated code-lines plot when `answer_code_lines` is available
+    - a dedicated code-lines boxplot when `answer_code_lines` is available
+    - an additional code-lines violin plot to better show distribution shape
     """
     try:
         import matplotlib
@@ -193,8 +194,36 @@ def generate_plots(
             for patch, arch in zip(box["boxes"], arch_order):
                 patch.set_facecolor(color_map[arch])
                 patch.set_alpha(0.65)
-            ax.set_title("Answer Code Lines per Response")
+            ax.set_title("Lines of Code per Response")
             ax.set_ylabel("Code lines")
             ax.tick_params(axis="x", rotation=20)
             ax.grid(axis="y", alpha=0.3)
             _save(fig, "RQ2_answer_code_lines_distribution")
+
+            # Figure 5: code-lines distribution as violin plot
+            try:
+                fig, ax = plt.subplots(1, 1, figsize=(7.5, 4.8))
+                positions = list(range(1, len(arch_order) + 1))
+                violin = ax.violinplot(
+                    series_by_arch,
+                    positions=positions,
+                    showmeans=False,
+                    showmedians=True,
+                    showextrema=True,
+                )
+                for body, arch in zip(violin["bodies"], arch_order):
+                    body.set_facecolor(color_map[arch])
+                    body.set_alpha(0.55)
+                    body.set_edgecolor("black")
+                    body.set_linewidth(0.8)
+                if "cmedians" in violin:
+                    violin["cmedians"].set_color("#d62728")
+                    violin["cmedians"].set_linewidth(1.2)
+                ax.set_xticks(positions, arch_order)
+                ax.set_title("Lines of Code per Response")
+                ax.set_ylabel("Code lines")
+                ax.tick_params(axis="x", rotation=20)
+                ax.grid(axis="y", alpha=0.3)
+                _save(fig, "RQ2_answer_code_lines_violin_distribution")
+            except Exception as exc:  # pragma: no cover - defensive plotting fallback
+                print(f"[WARN] Could not generate LOC violin plot: {exc}")
