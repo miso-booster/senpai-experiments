@@ -42,6 +42,7 @@ def save_outputs(
     per_exec_arch: pd.DataFrame,
     exec_summary: pd.DataFrame,
     run_inventory: pd.DataFrame,
+    pairwise_wilcoxon_summary: pd.DataFrame,
     fallback_summary: pd.DataFrame,
     yaml_validity_summary: pd.DataFrame,
     missing_metrics: list[str],
@@ -58,6 +59,8 @@ def save_outputs(
         Raw concatenated rows and the subset used for metrics/plots.
     row_summary, per_exec_arch, exec_summary, run_inventory:
         Precomputed summaries produced by the aggregation pipeline.
+    pairwise_wilcoxon_summary:
+        Pairwise significance results comparing architectures on matched rows.
     fallback_summary, yaml_validity_summary:
         Optional quality/reliability summaries; empty dataframes are skipped.
     missing_metrics:
@@ -76,6 +79,8 @@ def save_outputs(
         per_exec_arch.to_csv(out_dir / "summary_per_execution_architecture.csv", index=False)
         exec_summary.to_csv(out_dir / "summary_across_executions.csv", index=False)
         run_inventory.to_csv(out_dir / "run_inventory.csv", index=False)
+        if not pairwise_wilcoxon_summary.empty:
+            pairwise_wilcoxon_summary.to_csv(out_dir / "summary_pairwise_wilcoxon.csv", index=False)
         if not fallback_summary.empty:
             fallback_summary.to_csv(out_dir / "summary_fallback.csv", index=False)
         if not yaml_validity_summary.empty:
@@ -135,6 +140,8 @@ def save_outputs(
     with pd.ExcelWriter(out_dir / "RQ2_architecture_metrics.xlsx", engine="openpyxl") as writer:
         for sheet_name, df in metric_sheets:
             df.to_excel(writer, index=False, sheet_name=sheet_name)
+        if not pairwise_wilcoxon_summary.empty:
+            pairwise_wilcoxon_summary.to_excel(writer, index=False, sheet_name="pairwise_wilcoxon")
         if not fallback_summary.empty:
             fallback_summary.to_excel(writer, index=False, sheet_name="fallback")
         if not yaml_validity_summary.empty:

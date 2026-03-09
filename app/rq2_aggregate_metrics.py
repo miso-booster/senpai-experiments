@@ -1,8 +1,10 @@
 import argparse
+from itertools import combinations
 from pathlib import Path
 from typing import Iterable, Sequence
 
 import pandas as pd
+from scipy.stats import wilcoxon
 
 try:
     from app.rq2_excel import save_outputs
@@ -27,6 +29,12 @@ NUMERIC_COLUMNS = (
     "is_yaml_valid",
     "returncode",
     "timeout_s",
+)
+
+PAIRWISE_ID_COLUMNS = (
+    "run_group_id",
+    "prompt_id",
+    "prompt",
 )
 
 
@@ -369,6 +377,105 @@ def build_run_inventory(all_rows_df: pd.DataFrame, filtered_df: pd.DataFrame) ->
     return inv.sort_values(["run_group_id", "arch_id"]).reset_index(drop=True)
 
 
+def build_pairwise_wilcoxon_summary(df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.DataFrame:
+    """Run paired Wilcoxon signed-rank tests between architecture pairs."""
+    pair_cols = [col for col in PAIRWISE_ID_COLUMNS if col in df.columns]
+    required_pair_cols = {"run_group_id", "prompt_id"}
+    if not required_pair_cols.issubset(pair_cols):
+        return pd.DataFrame()
+
+    arch_tables: dict[str, pd.DataFrame] = {}
+    for arch, group in df.groupby("arch_id", sort=True):
+        numeric_group = group[pair_cols + list(metric_cols)].copy()
+        for metric in metric_cols:
+            numeric_group[metric] = pd.to_numeric(numeric_group[metric], errors="coerce")
+        arch_tables[str(arch)] = (
+            numeric_group.groupby(pair_cols, dropna=False, as_index=False)[list(metric_cols)]
+            .mean()
+            .reset_index(drop=True)
+        )
+
+    rows: list[dict[str, float | int | str]] = []
+    for arch_a, arch_b in combinations(sorted(arch_tables), 2):
+        merged = arch_tables[arch_a].merge(
+            arch_tables[arch_b],
+            on=pair_cols,
+            how="inner",
+            suffixes=("_a", "_b"),
+        )
+        for metric in metric_cols:
+            values = merged[[f"{metric}_a", f"{metric}_b"]].dropna().reset_index(drop=True)
+            if values.empty:
+                rows.append(
+                    {
+                        "arch_a": arch_a,
+                        "arch_b": arch_b,
+                        "metric": metric,
+                        "n_pairs": 0,
+                        "n_nonzero_pairs": 0,
+                        "arch_a_mean": float("nan"),
+                        "arch_a_median": float("nan"),
+                        "arch_b_mean": float("nan"),
+                        "arch_b_median": float("nan"),
+                        "mean_difference_a_minus_b": float("nan"),
+                        "median_difference_a_minus_b": float("nan"),
+                        "arch_a_lt_arch_b_count": 0,
+                        "arch_a_gt_arch_b_count": 0,
+                        "tie_count": 0,
+                        "wilcoxon_statistic": float("nan"),
+                        "p_value": float("nan"),
+                        "notes": "no matched non-null pairs",
+                    }
+                )
+                continue
+
+            diffs = values[f"{metric}_a"] - values[f"{metric}_b"]
+            note = ""
+            if diffs.eq(0).all():
+                statistic = 0.0
+                p_value = 1.0
+                note = "all paired differences are zero"
+            else:
+                result = wilcoxon(
+                    values[f"{metric}_a"],
+                    values[f"{metric}_b"],
+                    alternative="two-sided",
+                    zero_method="wilcox",
+                    method="auto",
+                )
+                statistic = float(result.statistic)
+                p_value = float(result.pvalue)
+
+            rows.append(
+                {
+                    "arch_a": arch_a,
+                    "arch_b": arch_b,
+                    "metric": metric,
+                    "n_pairs": int(len(values)),
+                    "n_nonzero_pairs": int((diffs != 0).sum()),
+                    "arch_a_mean": float(values[f"{metric}_a"].mean()),
+                    "arch_a_median": float(values[f"{metric}_a"].median()),
+                    "arch_b_mean": float(values[f"{metric}_b"].mean()),
+                    "arch_b_median": float(values[f"{metric}_b"].median()),
+                    "mean_difference_a_minus_b": float(diffs.mean()),
+                    "median_difference_a_minus_b": float(diffs.median()),
+                    "arch_a_lt_arch_b_count": int((diffs < 0).sum()),
+                    "arch_a_gt_arch_b_count": int((diffs > 0).sum()),
+                    "tie_count": int((diffs == 0).sum()),
+                    "wilcoxon_statistic": statistic,
+                    "p_value": p_value,
+                    "notes": note,
+                }
+            )
+
+    out = pd.DataFrame(rows)
+    if out.empty:
+        return out
+
+    out["significant_p_lt_0_05"] = pd.to_numeric(out["p_value"], errors="coerce") < 0.05
+    return out.sort_values(["metric", "arch_a", "arch_b"]).reset_index(drop=True)
+
+
 def main() -> None:
     """Run the full RQ2 aggregation pipeline and write workbook/plots outputs."""
     args = parse_args()
@@ -402,6 +509,7 @@ def main() -> None:
     per_exec_arch = build_per_execution_arch_summary(filtered_rows, available_metric_cols)
     exec_summary = build_execution_level_summary(per_exec_arch, available_metric_cols)
     run_inventory = build_run_inventory(all_rows, filtered_rows)
+    pairwise_wilcoxon_summary = build_pairwise_wilcoxon_summary(filtered_rows, available_metric_cols)
     fallback_summary = build_fallback_summary(filtered_rows)
     yaml_validity_summary = build_yaml_validity_summary(filtered_rows)
 
@@ -413,6 +521,7 @@ def main() -> None:
         per_exec_arch=per_exec_arch,
         exec_summary=exec_summary,
         run_inventory=run_inventory,
+        pairwise_wilcoxon_summary=pairwise_wilcoxon_summary,
         fallback_summary=fallback_summary,
         yaml_validity_summary=yaml_validity_summary,
         missing_metrics=missing_metric_cols,

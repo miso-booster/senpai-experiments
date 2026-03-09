@@ -102,7 +102,9 @@ This also writes metrics CSVs in the same folder:
 RQ2 (architecture metrics aggregation)
 -------------------------------------
 RQ2 aggregates metrics across multiple execution runs and generates a workbook
-plus comparison plots (averages and variability).
+plus comparison plots (averages and variability). The workbook now also includes
+pairwise Wilcoxon signed-rank tests between architectures on matched
+`run_group_id + prompt_id` rows.
 
 ```powershell
 python -m app.rq2
