@@ -4,6 +4,13 @@ from typing import Sequence
 import pandas as pd
 
 
+ARCH_DISPLAY_LABELS = {
+    "agentic_architecture": "Agentic",
+    "graph_based_architecture": "Graph-based",
+    "one_node_architecture": "Monolithic",
+}
+
+
 def _rate_equals_one(series: pd.Series) -> float:
     """Return the share of observed numeric values that equal 1."""
     numeric = pd.to_numeric(series, errors="coerce")
@@ -39,6 +46,11 @@ def _ordered_arches(df: pd.DataFrame, preferred: Sequence[str] | None) -> list[s
     return valid_preferred + extras
 
 
+def _display_arch_labels(architectures: Sequence[str]) -> list[str]:
+    """Return shorter human-readable labels for plots."""
+    return [ARCH_DISPLAY_LABELS.get(arch, arch.replace("_", " ")) for arch in architectures]
+
+
 def generate_plots(
     out_dir: Path,
     filtered_rows: pd.DataFrame,
@@ -72,6 +84,7 @@ def generate_plots(
 
     colors = plt.get_cmap("tab10").colors
     color_map = {arch: colors[i % len(colors)] for i, arch in enumerate(arch_order)}
+    arch_labels = _display_arch_labels(arch_order)
 
     def _save(fig, filename: str) -> None:
         fig.tight_layout()
@@ -100,10 +113,10 @@ def generate_plots(
                 color=[color_map[labels[i]] for i in x_valid],
                 alpha=0.9,
             )
-        ax.set_xticks(x_all, labels)
+        ax.set_xticks(x_all, _display_arch_labels(labels))
         ax.set_title(f"Average per response: {label}")
         ax.set_ylabel(label)
-        ax.tick_params(axis="x", rotation=20)
+        ax.tick_params(axis="x", rotation=15)
         ax.grid(axis="y", alpha=0.3)
     _save(fig, "RQ2_per_response_mean_std")
 
@@ -119,7 +132,7 @@ def generate_plots(
         ]
         box = ax.boxplot(
             data,
-            labels=arch_order,
+            labels=arch_labels,
             patch_artist=True,
             showfliers=True,
             medianprops={"color": "#d62728", "linewidth": 1.1},
@@ -129,9 +142,38 @@ def generate_plots(
             patch.set_alpha(0.65)
         ax.set_title(f"Variability across responses: {label}")
         ax.set_ylabel(label)
-        ax.tick_params(axis="x", rotation=20)
+        ax.tick_params(axis="x", rotation=12)
         ax.grid(axis="y", alpha=0.3)
     _save(fig, "RQ2_per_response_distributions")
+
+    # Figure 2b: per-metric distribution plots with larger readable panels
+    for metric, label in metrics.items():
+        data = [
+            pd.to_numeric(
+                filtered_rows.loc[filtered_rows["arch_id"] == arch, metric], errors="coerce"
+            ).dropna()
+            for arch in arch_order
+        ]
+        if not any(len(series) for series in data):
+            continue
+        fig, ax = plt.subplots(1, 1, figsize=(5.6, 4.9))
+        box = ax.boxplot(
+            data,
+            labels=arch_labels,
+            patch_artist=True,
+            showfliers=True,
+            widths=0.45,
+            medianprops={"color": "#d62728", "linewidth": 1.2},
+        )
+        for patch, arch in zip(box["boxes"], arch_order):
+            patch.set_facecolor(color_map[arch])
+            patch.set_alpha(0.65)
+        ax.set_title(label, fontsize=14)
+        ax.set_ylabel(label, fontsize=12)
+        ax.tick_params(axis="x", rotation=10, labelsize=12)
+        ax.tick_params(axis="y", labelsize=11)
+        ax.grid(axis="y", alpha=0.3)
+        _save(fig, f"RQ2_per_response_distribution_{metric}")
 
     # Figure 3: quality/reliability rates (if available)
     quality_panels: list[tuple[str, pd.Series, str]] = []
@@ -165,7 +207,8 @@ def generate_plots(
             ax.set_ylim(0, 1)
             ax.set_title(title)
             ax.set_ylabel(ylabel)
-            ax.tick_params(axis="x", rotation=20)
+            ax.set_xticks(range(len(series.index)), _display_arch_labels(series.index.tolist()))
+            ax.tick_params(axis="x", rotation=15)
             ax.grid(axis="y", alpha=0.3)
 
             for i, value in enumerate(series):
@@ -186,7 +229,7 @@ def generate_plots(
             fig, ax = plt.subplots(1, 1, figsize=(7.5, 4.8))
             box = ax.boxplot(
                 series_by_arch,
-                labels=arch_order,
+                labels=arch_labels,
                 patch_artist=True,
                 showfliers=True,
                 medianprops={"color": "#d62728", "linewidth": 1.2},
@@ -196,7 +239,7 @@ def generate_plots(
                 patch.set_alpha(0.65)
             ax.set_title("Lines of Code per Response")
             ax.set_ylabel("Code lines")
-            ax.tick_params(axis="x", rotation=20)
+            ax.tick_params(axis="x", rotation=15)
             ax.grid(axis="y", alpha=0.3)
             _save(fig, "RQ2_answer_code_lines_distribution")
 
@@ -219,10 +262,10 @@ def generate_plots(
                 if "cmedians" in violin:
                     violin["cmedians"].set_color("#d62728")
                     violin["cmedians"].set_linewidth(1.2)
-                ax.set_xticks(positions, arch_order)
+                ax.set_xticks(positions, arch_labels)
                 ax.set_title("Lines of Code per Response")
                 ax.set_ylabel("Code lines")
-                ax.tick_params(axis="x", rotation=20)
+                ax.tick_params(axis="x", rotation=15)
                 ax.grid(axis="y", alpha=0.3)
                 _save(fig, "RQ2_answer_code_lines_violin_distribution")
             except Exception as exc:  # pragma: no cover - defensive plotting fallback
