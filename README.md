@@ -110,8 +110,8 @@ pairwise Wilcoxon signed-rank tests between architectures on matched
 python -m app.rq2
 ```
 
-RQ3 (tool and node-usage consistency across repeated runs)
----------------------------------------------------------
+RQ3 Consistency (tool and node-usage consistency across repeated runs)
+----------------------------------------------------------------------
 RQ3 measures:
 - tool-use consistency across repeated runs of the same prompt from LangSmith
   tracing exports (`tracing_*.xlsx`, using `run_type == "tool"`), and
@@ -121,12 +121,18 @@ RQ3 measures:
 Run:
 
 ```powershell
-python -m app.rq3
+python -m app.rq3_consistency
 ```
 
 By default this reads from `out/runs/advanced_prompt_arch_comparison/` and
 generates the RQ3 workbook and plots in
 `out/RQ3_tool_consistency_and_node_usage_consistency/`.
+
+Legacy alias:
+
+```powershell
+python -m app.rq3
+```
 
 Outputs
 - `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_and_node_usage_consistency.xlsx`
@@ -140,6 +146,20 @@ Outputs
 - `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_presence_heatmap.png`
 - `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_variability_summary.png`
 - `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_variability_mean_std.png`
+
+RQ3 Clustering
+--------------
+RQ3 Clustering builds one answer matrix per architecture from repeated
+`results.xlsx` files so the answers can be clustered or compared downstream.
+
+Run:
+
+```powershell
+python -m app.rq3_clustering
+```
+
+By default this reads from `out/runs/advanced_prompt_arch_comparison/` and
+writes the clustering workbooks to `out/RQ3_clustering/`.
 
 Output structure per execution
 ------------------------------
