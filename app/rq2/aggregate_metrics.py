@@ -7,11 +7,11 @@ import pandas as pd
 from scipy.stats import wilcoxon
 
 try:
-    from app.rq2_excel import save_outputs
-    from app.rq2_plots import generate_plots
-except ModuleNotFoundError:  # Supports `python app/rq2_aggregate_metrics.py`
-    from rq2_excel import save_outputs
-    from rq2_plots import generate_plots
+    from .excel import save_outputs
+    from .plots import generate_plots
+except ImportError:  # Supports `python app/rq2/aggregate_metrics.py`
+    from excel import save_outputs
+    from plots import generate_plots
 
 
 METRICS: dict[str, str] = {

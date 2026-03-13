@@ -70,7 +70,7 @@ RQ1 (offline ranking sheets)
 Generate a randomized ranking markdown + key + answers template:
 
 ```powershell
-python -m app.rq1_generate_rankings
+python -m app.rq1.generate_rankings
 ```
 
 By default this uses the first run folder under `out/runs/architecture_comparison/`.
@@ -87,7 +87,7 @@ Each response in `ranking.md` now includes `YAML: true|false|n/a` based on
 Aggregate multiple subjects (expects `answers_*.csv` and `key.csv`):
 
 ```powershell
-python -m app.rq1_aggregate_rankings
+python -m app.rq1.aggregate_rankings
 ```
 
 By default this reads `out/RQ1/<run_id>/` for the

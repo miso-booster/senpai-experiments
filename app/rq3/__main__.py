@@ -2,9 +2,9 @@ import argparse
 from pathlib import Path
 
 try:
-    from app.rq3_excel import save_outputs
-    from app.rq3_plots import generate_plots
-    from app.rq3_tool_consistency import (
+    from .excel import save_outputs
+    from .plots import generate_plots
+    from .tool_consistency import (
         DEFAULT_OUT_DIR,
         DEFAULT_RUNS_DIR,
         build_overall_summary,
@@ -15,10 +15,10 @@ try:
         extract_prompt_run_sequences,
         load_tracing_workbook,
     )
-except ModuleNotFoundError:  # Supports `python app/rq3.py`
-    from rq3_excel import save_outputs
-    from rq3_plots import generate_plots
-    from rq3_tool_consistency import (
+except ImportError:  # Supports `python app/rq3/__main__.py`
+    from excel import save_outputs
+    from plots import generate_plots
+    from tool_consistency import (
         DEFAULT_OUT_DIR,
         DEFAULT_RUNS_DIR,
         build_overall_summary,

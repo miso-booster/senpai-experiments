@@ -12,15 +12,15 @@ import pandas as pd
 
 try:
     from app.setup_configuration import OUT_DIR, RUNS_DIR
-except Exception:  # Supports `python app/rq3_tool_consistency.py` without package imports
-    _ROOT = Path(__file__).resolve().parent.parent
+except Exception:  # Supports `python app/rq3/tool_consistency.py` without package imports
+    _ROOT = Path(__file__).resolve().parents[2]
     OUT_DIR = _ROOT / "out"
     RUNS_DIR = OUT_DIR / "runs"
 
 try:
-    from app.rq3_excel import save_outputs
-except ModuleNotFoundError:  # Supports `python app/rq3_tool_consistency.py`
-    from rq3_excel import save_outputs
+    from .excel import save_outputs
+except ImportError:  # Supports `python app/rq3/tool_consistency.py`
+    from excel import save_outputs
 
 
 DEFAULT_RUNS_DIR = RUNS_DIR / "tool_consistency"

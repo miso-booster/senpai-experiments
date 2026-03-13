@@ -144,7 +144,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--prompts",
-        default=str(pathlib.Path(__file__).parent.parent / "configs" / "prompts.json"),
+        default=str(pathlib.Path(__file__).resolve().parents[2] / "configs" / "prompts.json"),
         help="Path to prompts.json",
     )
     parser.add_argument(

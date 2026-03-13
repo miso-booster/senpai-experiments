@@ -2,7 +2,7 @@ import math
 
 import pandas as pd
 
-from app.rq2_aggregate_metrics import build_pairwise_wilcoxon_summary
+from app.rq2.aggregate_metrics import build_pairwise_wilcoxon_summary
 
 
 def test_build_pairwise_wilcoxon_summary_uses_matched_run_and_prompt_pairs() -> None:
