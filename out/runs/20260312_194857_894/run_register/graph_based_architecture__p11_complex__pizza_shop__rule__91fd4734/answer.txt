@@ -1,0 +1,32 @@
+Sure! Let's break it down to see if the profile `pizza_order_test_custom` is compatible with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile has the following relevant outputs:
+- `price`: The final price of the pizza order.
+- `size`: This is implied in the goals but needs to be checked if it is explicitly defined in the `chatbot.output`.
+- `toppings`: This is also implied in the goals but needs to be checked if it is explicitly defined in the `chatbot.output`.
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+- **Requirements**: It requires `toppings`, `price`, and `size` to be defined in the profile's `chatbot.output`.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+- **Requirements**: It also requires `toppings`, `price`, and `size` to be defined in the profile's `chatbot.output`.
+
+### Conclusion
+To ensure both rules work with the profile:
+1. **Check if `size`, `toppings`, and `price` are explicitly defined in the `chatbot.output` of the profile.** 
+2. If any of these fields are missing, you will need to add them to the profile's `chatbot.output` for the rules to function correctly.
+
+If you find that the profile does not have these fields defined, you can modify the profile to include them. If you need help with that, just let me know! 😊

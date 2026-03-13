@@ -1,0 +1,36 @@
+Sure! Let's take a look at the profile `pizza_order_test_custom` and the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes fields related to pizza orders, such as size, type, and toppings. It also specifies how the chatbot should respond to user queries about ordering pizzas.
+
+### Rule: `more_toppings_cost_more`
+This rule checks that if two conversations have the same size and drink, the one with more toppings must cost more. Here’s the relevant part of the rule:
+
+```yaml
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks that if two pizzas have the same number of toppings and size, they should cost the same. Here’s the relevant part of the rule:
+
+```yaml
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+
+### Compatibility Check
+1. **Field Availability**: Both rules reference `toppings`, `size`, `drink`, and `price`. Ensure that these fields are defined in the `chatbot.output` of the `pizza_order_test_custom` profile.
+
+2. **Field Types**: The `price` field should be of a type that can be extracted as a float (like `currency`), and `toppings` should be a list.
+
+3. **Logic**: The logic in both rules is sound:
+   - The `more_toppings_cost_more` rule checks for a direct relationship where more toppings lead to a higher price.
+   - The `same_number_of_toppings_cost_the_same` rule ensures that pizzas with the same number of toppings have the same price.
+
+### Conclusion
+If the `pizza_order_test_custom` profile includes the necessary fields (`size`, `toppings`, `drink`, `price`) in the correct format, both rules should work correctly with it! 
+
+If you need to validate the profile or check specific field definitions, feel free to share the profile's YAML content, and I can help further! 😊

@@ -1,0 +1,40 @@
+Sure! Let's break it down to see if the `pizza_order_test_custom` profile will work with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes:
+- **Output Fields**: 
+  - `price`: The final price of the pizza order.
+  - `time`: The estimated time for the pizza to be ready.
+  - `order_id`: The order ID.
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+**Requirements**:
+- The rule references `conv[0].size`, `conv[1].size`, `conv[0].drink`, `conv[1].drink`, and `conv[0].toppings`, which should be present in the profile's `chatbot.output`.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with the same number of toppings cost the same
+conversations: 2
+if:   conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+when: conv[0].drink == conv[1].drink
+```
+**Requirements**:
+- The rule references `conv[0].size`, `conv[1].size`, `conv[0].toppings`, `conv[1].toppings`, and `conv[0].drink`, which should also be present in the profile's `chatbot.output`.
+
+### Conclusion
+- The `pizza_order_test_custom` profile does not explicitly mention `toppings` in its `chatbot.output`. Therefore, both rules will not work as they rely on the `toppings` field being available.
+- To make the rules functional, you would need to add a `toppings` field to the `chatbot.output` in the `pizza_order_test_custom` profile.
+
+If you need help modifying the profile or have any other questions, feel free to ask! 😊

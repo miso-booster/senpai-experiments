@@ -1,0 +1,42 @@
+Sure! Let's break it down and see if the **pizza_order_test_custom** profile is compatible with the **more_toppings_cost_more** and **same_number_of_toppings_cost_the_same** rules.
+
+### Profile: pizza_order_test_custom
+This profile has the following relevant fields in its `chatbot.output`:
+- `price`: The final price of the pizza order (type: currency).
+- `size`: This field is used in the goals but not explicitly listed in the `chatbot.output`. However, it is part of the conversation context.
+- `toppings`: This field is used in the goals but is not explicitly listed in the `chatbot.output`. 
+
+### Rule 1: more_toppings_cost_more
+This rule checks if adding more toppings to a custom pizza costs more, and it has the following structure:
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+- **Compatibility**: The rule references `conv[0].size`, `conv[1].size`, `conv[0].drink`, and `conv[1].drink`. The profile needs to ensure that `size` and `drink` are part of the conversation context and outputs. The `price` field is correctly referenced.
+
+### Rule 2: same_number_of_toppings_cost_the_same
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with the same number of toppings cost the same
+conversations: 2
+when: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+if: conv[0].drink == conv[1].drink
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+- **Compatibility**: Similar to the first rule, this one also references `conv[0].size`, `conv[1].size`, and `conv[0].drink`, `conv[1].drink`. Again, the profile needs to ensure that these fields are part of the conversation context and outputs. The `price` field is correctly referenced.
+
+### Conclusion
+1. **Missing Fields**: The profile **pizza_order_test_custom** does not explicitly list `size` and `toppings` in the `chatbot.output`. For the rules to work correctly, these fields should be included in the output section of the profile.
+2. **Price Field**: The `price` field is correctly referenced in both rules.
+
+### Recommendation
+To ensure that both rules work properly with the **pizza_order_test_custom** profile, you should:
+- Add `toppings` to the `chatbot.output` in the profile.
+- Ensure that `size` is also included in the `chatbot.output`.
+
+Once these adjustments are made, the rules should work seamlessly with the profile! If you need help with the exact YAML structure to add those fields, just let me know! 😊

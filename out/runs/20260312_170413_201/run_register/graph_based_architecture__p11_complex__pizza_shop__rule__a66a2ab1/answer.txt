@@ -1,0 +1,38 @@
+Sure! Let's break it down to see if the **pizza_order_test_custom** profile is compatible with the **more_toppings_cost_more** and **same_number_of_toppings_cost_the_same** rules.
+
+### Profile: pizza_order_test_custom
+This profile has the following relevant outputs:
+- **price**: The final price of the pizza order (type: currency)
+- **order_id**: My order ID (type: string)
+- **time**: How long is it going to take the pizza to be ready (type: time)
+
+### Rule: more_toppings_cost_more
+This rule checks if adding more toppings to a pizza costs more:
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+```
+- **Fields used**: `toppings`, `size`, `drink`, and `price`.
+- **Compatibility**: The profile does not explicitly define a `toppings` field in the `chatbot.output`, which is necessary for this rule to function. You would need to add a `toppings` field to the profile.
+
+### Rule: same_number_of_toppings_cost_the_same
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with the same number of toppings cost the same
+conversations: 2
+if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+when: conv[0].drink == conv[1].drink
+```
+- **Fields used**: `toppings`, `size`, `drink`, and `price`.
+- **Compatibility**: Similar to the previous rule, this one also requires a `toppings` field, which is not present in the profile.
+
+### Conclusion
+For both rules to work with the **pizza_order_test_custom** profile, you need to add a `toppings` field in the `chatbot.output`. This field should represent the toppings selected for the pizza order. 
+
+If you have any more questions or need help with the modifications, feel free to ask! 😊

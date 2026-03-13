@@ -1,0 +1,46 @@
+Sure! Let's break it down and see if the profile `pizza_order_test_custom` is compatible with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes outputs related to pizza orders, such as `price`, `time`, and `order_id`. It also has goals that involve selecting pizza sizes and types, as well as drinks.
+
+### Rule 1: `more_toppings_cost_more`
+```yaml
+active: true
+conversations: 2
+description: Adding more toppings to a custom pizza cost more
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+name: more_toppings_cost_more
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+- **Compatibility Check**: This rule checks if the number of toppings in one conversation is greater than in another and expects the price to reflect that. 
+- **Profile Output**: The profile should provide a `toppings` field in `chatbot.output` for this rule to work. However, it seems that the profile does not explicitly mention `toppings` in its output.
+
+### Rule 2: `same_number_of_toppings_cost_the_same`
+```yaml
+active: false
+conversations: 2
+description: Pizzas with same number of toppings cost the same
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+name: same_number_of_toppings_cost_the_same
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+- **Compatibility Check**: This rule checks if two pizzas with the same number of toppings have the same price.
+- **Profile Output**: Similar to the first rule, this one also requires a `toppings` field in `chatbot.output`, which is not explicitly mentioned in the profile.
+
+### Conclusion
+Both rules rely on the `toppings` field being present in the `chatbot.output` of the profile `pizza_order_test_custom`. Since the profile does not seem to include a `toppings` field, the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same` will not work as intended.
+
+### Recommendation
+To make these rules work, you should add a `toppings` field to the `chatbot.output` section of the `pizza_order_test_custom` profile. Here’s an example of how you might define it:
+
+```yaml
+chatbot:
+  output:
+    - toppings:
+        type: list[string]
+        description: "List of toppings selected for the pizza"
+```
+
+Once you add that, the rules should function correctly! If you need help with the exact modifications, just let me know! 😊

@@ -1,0 +1,26 @@
+Great question! 😊 If you rename the field `price` to `total_cost` in the `pizza_order_test_custom` profile, you would indeed need to update any rules that reference the `price` field to ensure everything continues to work smoothly.
+
+### Here's what you need to do:
+
+1. **Identify Affected Rules**: 
+   - Check all the rules that reference `price`. In your case, the rule `more_toppings_cost_more` uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)`.
+
+2. **Update the Rules**:
+   - You will need to change the references in the rule from `price` to `total_cost`. So, the rule would look something like this after the update:
+
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza costs more
+   conversations: 2
+   if:   len(conv[0].toppings) > len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+   ```
+
+3. **Verify Other References**:
+   - Make sure there are no other rules or parts of your project that still reference `price`. Update them to `total_cost` as necessary.
+
+4. **Test Everything**:
+   - After making these changes, run your tests to ensure everything works as expected. This will help catch any missed references or issues.
+
+By keeping your field names consistent across profiles and rules, you’ll maintain a smooth testing process! If you have any more questions or need further assistance, feel free to ask! 😊

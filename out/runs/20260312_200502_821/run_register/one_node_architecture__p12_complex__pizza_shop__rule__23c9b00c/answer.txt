@@ -1,0 +1,31 @@
+Great question! If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed affect any rules that reference the `price` field. Specifically, the rule `more_toppings_cost_more.yaml` and the rule `same_number_of_toppings_cost_the_same.yaml` would break since they refer to `price`.
+
+### Here's how to fix it:
+
+1. **Update the Profile**: Change the field name in your profile from `price` to `total_cost`.
+
+   ```yaml
+   chatbot:
+     output:
+       - total_cost:  # Change from price to total_cost
+           type: currency
+           description: "The final price of the pizza order"
+   ```
+
+2. **Update the Rules**: Modify the rules to reference `total_cost` instead of `price`. Here’s how you would update the relevant parts of the rules:
+
+   For `more_toppings_cost_more.yaml`:
+
+   ```yaml
+   if:   len(conv[0].toppings) > len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)  # Update price to total_cost
+   ```
+
+   For `same_number_of_toppings_cost_the_same.yaml`:
+
+   ```yaml
+   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)  # Update price to total_cost
+   ```
+
+### Summary
+After making these changes, everything should work smoothly! Just remember to keep the field names consistent across your profile and rules to avoid any issues. If you have any more questions or need further assistance, feel free to ask! 😊

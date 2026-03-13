@@ -1,0 +1,208 @@
+2026-03-12 20:22:41,933 [[92mINFO[0m] (root) - [92mVerbose enabled.[0m
+2026-03-12 20:22:41,933 [[92mINFO[0m] (app.utils.tracing) - [92mAll LangSmith environment variables are set. LangSmith tracing enabled for project 'senpai-assistant'.[0m
+2026-03-12 20:22:41,934 [[92mINFO[0m] (app.embeddings.embedding_build) - [92mEmbedding index up to date (profiles, rules): E:\ESCRITORIO\Py_projects\SENPAI\agentic\Senpai-Assistant\app\embedding_files\pizza_shop\pizza_shop.pkl[0m
+2026-03-12 20:22:41,934 [[92mINFO[0m] (app.embeddings.embedding_build) - [92mEmbedding index up to date (connectors): E:\ESCRITORIO\Py_projects\SENPAI\agentic\Senpai-Assistant\app\embedding_files\connectors\connectors.pkl[0m
+2026-03-12 20:22:43,608 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-12 20:22:44,562 [[92mINFO[0m] (app.assistant.scope_guardrail_middleware) - [92m[scope_guardrail] allowed request.[0m
+2026-03-12 20:22:46,442 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-12 20:22:46,769 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[validation_decision] skipped (no YAML blocks or save_* tool calls).[0m
+2026-03-12 20:22:46,770 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[tool_validation] skipped (no save_* tool calls found).[0m
+2026-03-12 20:22:46,771 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] skipped (no YAML code blocks found).[0m
+2026-03-12 20:22:54,092 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-12 20:23:18,751 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-12 20:23:18,871 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[validation_decision] decided requires_validation=True[0m
+2026-03-12 20:23:18,872 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[tool_validation] skipped (no tool calls found).[0m
+2026-03-12 20:23:18,875 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] classifier cache hit (message): True[0m
+2026-03-12 20:23:18,875 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: profile[0m
+2026-03-12 20:23:18,876 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-12 20:23:18,876 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-12 20:23:18,877 [[93mWARNING[0m] (app.assistant.validation_middleware) - [93mvalidator input 1:
+# block 1
+```yaml
+# profiles/pizza_order_summary.yaml
+name: pizza_order_summary
+description: Summarises a pizza order and exposes key fields.
+chatbot:
+  output:
+    - size:
+        type: string           # small / medium / large
+        description: Pizza size
+    - toppings:
+        type: list[string]     # list of chosen toppings
+        description: Selected toppings
+    - drink:
+        type: string
+        description: Chosen drink
+    - number:
+        type: int              # quantity
+        description: Number of pizzas
+    - total_cost:             # Updated field name
+        type: currency
+        description: Final price (e.g. "18.50 EUR")
+```
+
+# block 2
+```yaml
+# rules/toppings_monotonicity.yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+# block 3
+```yaml
+# rules/toppings_monotonicity.yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+```
+validator feedback 1:
+Profile block 1 (yaml)
+Errors:
+- Missing required top-level fields: conversation, test_name, user.
+- Unexpected top-level fields present: description, name.
+- test_name: Field required
+- user: Field required
+- conversation: Field required
+- If you haven't already, use the get_docs tool for profiles to review the schema and examples.
+Warnings:
+- chatbot.fallback is recommended to avoid loops in conversations.
+
+[message_validation] failed (see feedback)[0m
+2026-03-12 20:23:28,146 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-12 20:23:54,917 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: profile[0m
+2026-03-12 20:23:54,918 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-12 20:23:54,918 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-12 20:23:54,919 [[93mWARNING[0m] (app.assistant.validation_middleware) - [93mvalidator input 2:
+# block 1
+```yaml
+# profiles/pizza_order_summary.yaml
+test_name: pizza_order_summary
+chatbot:
+  output:
+    - size:
+        type: string           # small / medium / large
+        description: Pizza size
+    - toppings:
+        type: list[string]     # list of chosen toppings
+        description: Selected toppings
+    - drink:
+        type: string
+        description: Chosen drink
+    - number:
+        type: int              # quantity
+        description: Number of pizzas
+    - total_cost:             # Updated field name
+        type: currency
+        description: Final price (e.g. "18.50 EUR")
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - long phrases
+```
+
+# block 2
+```yaml
+# rules/toppings_monotonicity.yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+# block 3
+```yaml
+# rules/toppings_monotonicity.yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+```
+validator feedback 2:
+Profile block 1 (yaml)
+Errors:
+- Missing required top-level fields: user.
+- user: Field required
+- If you haven't already, use the get_docs tool for profiles to review the schema and examples.
+Warnings:
+- chatbot.fallback is recommended to avoid loops in conversations.
+
+[message_validation] failed (see feedback)[0m
+2026-03-12 20:23:59,254 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-12 20:24:26,069 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: profile[0m
+2026-03-12 20:24:26,070 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-12 20:24:26,070 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-12 20:24:26,071 [[93mWARNING[0m] (app.assistant.validation_middleware) - [93mvalidator input 3:
+# block 1
+```yaml
+# profiles/pizza_order_summary.yaml
+test_name: pizza_order_summary
+chatbot:
+  output:
+    - size:
+        type: string           # small / medium / large
+        description: Pizza size
+    - toppings:
+        type: list[string]     # list of chosen toppings
+        description: Selected toppings
+    - drink:
+        type: string
+        description: Chosen drink
+    - number:
+        type: int              # quantity
+        description: Number of pizzas
+    - total_cost:             # Updated field name
+        type: currency
+        description: Final price (e.g. "18.50 EUR")
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - long phrases
+```
+
+# block 2
+```yaml
+# rules/toppings_monotonicity.yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+# block 3
+```yaml
+# rules/toppings_monotonicity.yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+```
+validator feedback 3:
+Profile block 1 (yaml)
+Errors:
+- Missing required top-level fields: user.
+- user: Field required
+- If you haven't already, use the get_docs tool for profiles to review the schema and examples.
+Warnings:
+- chatbot.fallback is recommended to avoid loops in conversations.
+
+[message_validation] failed (see feedback)[0m
+2026-03-12 20:24:26,516 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m

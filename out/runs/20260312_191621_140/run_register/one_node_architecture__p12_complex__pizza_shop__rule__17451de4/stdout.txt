@@ -1,0 +1,41 @@
+conversation ID: one_node_architecture__p12_complex__pizza_shop__rule__17451de4
+Verbose activated
+$$$
+Great question! If you rename the `price` field to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the `price` field directly. Specifically, this change would affect the following rule:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### To fix this:
+
+1. **Update the Profile**: Change the field name from `price` to `total_cost` in the `pizza_order_test_custom` profile under the `chatbot.output` section.
+
+   For example, it should look like this:
+
+   ```yaml
+   output:
+     - total_cost:
+         type: currency
+         description: "The final price of the pizza order"
+   ```
+
+2. **Update the Rule**: Modify the rule to reference `total_cost` instead of `price`. The updated rule would look like this:
+
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza costs more
+   conversations: 2
+   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+   if:   len(conv[0].toppings) > len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+   ```
+
+### Summary
+By making these two updates — renaming the field in the profile and adjusting the rule to match — everything should work smoothly again! If you have any more questions or need further assistance, feel free to ask! 😊
+$$$

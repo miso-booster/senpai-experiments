@@ -1,0 +1,29 @@
+Great question! If you rename the field `price` to `total_cost` in the profile `pizza_order_test_custom`, it would indeed break any rules that reference the old field name. Specifically, you would need to update any rules that currently use `extract_float(conv[i].price)` to instead use `extract_float(conv[i].total_cost)`.
+
+Here's how you can fix it:
+
+1. **Update the Profile**: Change the field name in the `chatbot.output` section of the `pizza_order_test_custom` profile from `price` to `total_cost`.
+
+   ```yaml
+   chatbot:
+     output:
+       - total_cost:  # Change this from price to total_cost
+           description: The final price of the pizza order
+           type: currency
+   ```
+
+2. **Update the Rules**: Go through your rules and find any instances where `conv[i].price` is referenced. Replace those with `conv[i].total_cost`. For example, if you have a rule like this:
+
+   ```yaml
+   then: extract_float(conv[0].price) > extract_float(conv[1].price)
+   ```
+
+   You would change it to:
+
+   ```yaml
+   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+   ```
+
+3. **Test the Changes**: After making these updates, run your tests again to ensure everything works smoothly and the rules are evaluating correctly.
+
+By keeping the field names consistent across both the profile and the rules, you ensure that your tests will run without any issues! If you have any more questions or need further assistance, feel free to ask! 😊

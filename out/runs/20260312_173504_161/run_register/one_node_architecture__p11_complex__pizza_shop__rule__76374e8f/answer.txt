@@ -1,0 +1,45 @@
+Sure! Let's break it down to see if the profile `pizza_order_test_custom` aligns with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes the following relevant fields in its `chatbot.output`:
+- `price`: The final price of the pizza order.
+- `size`: The size of the pizza.
+- `pizza_type`: The type of pizza being ordered.
+
+### Rule: `more_toppings_cost_more`
+```yaml
+active: true
+conversations: 2
+description: Adding more toppings to a custom pizza cost more
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+name: more_toppings_cost_more
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+- **Fields Used**: This rule checks if the number of toppings in one conversation is greater than in another and asserts that the price should also be higher if the sizes and drinks are the same.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+```yaml
+active: false
+conversations: 2
+description: Pizzas with same number of toppings cost the same
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+name: same_number_of_toppings_cost_the_same
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+- **Fields Used**: This rule checks if two pizzas with the same number of toppings and size should have the same price.
+
+### Compatibility Check
+1. **Field Availability**: Both rules reference the `price`, `size`, and `toppings` fields. The profile `pizza_order_test_custom` must ensure that these fields are correctly defined in its `chatbot.output`.
+
+2. **Rule Logic**: 
+   - The first rule (`more_toppings_cost_more`) requires that the `toppings` field is present and correctly populated in the conversations.
+   - The second rule (`same_number_of_toppings_cost_the_same`) also relies on the `toppings` field and checks for equality in price based on the number of toppings.
+
+### Conclusion
+As long as the `pizza_order_test_custom` profile correctly populates the `toppings` field in the conversations, both rules should work seamlessly with it. 
+
+If the `toppings` field is not defined in the profile's `chatbot.output`, you'll need to add it to ensure the rules can function properly. 
+
+Feel free to ask if you need help with anything else! 😊

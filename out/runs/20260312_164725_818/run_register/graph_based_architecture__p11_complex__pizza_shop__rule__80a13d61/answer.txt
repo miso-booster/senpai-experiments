@@ -1,0 +1,31 @@
+Sure! Let's break it down to see if the profile `pizza_order_test_custom` is compatible with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+The relevant parts of the profile include:
+- **Output Fields**:
+  - `price`: The final price of the pizza order.
+  - `time`: How long it will take for the pizza to be ready.
+  - `order_id`: The order ID.
+
+### Rule 1: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+- **Compatibility**: The rule references `conv[0].toppings`, which needs to be present in the profile's output. However, the profile `pizza_order_test_custom` does not specify a `toppings` field in its output. Therefore, this rule will **not work** with this profile as it lacks the necessary field.
+
+### Rule 2: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+- **Compatibility**: Similar to the first rule, this one also references `conv[0].toppings`. Since the `pizza_order_test_custom` profile does not include a `toppings` field in its output, this rule will also **not work** with this profile.
+
+### Conclusion
+Both rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same` require a `toppings` field in the profile's output, which is missing in `pizza_order_test_custom`. To make these rules work, you would need to add a `toppings` field to the profile's `chatbot.output`.
+
+If you need help adding that field or have any other questions, feel free to ask! 😊
