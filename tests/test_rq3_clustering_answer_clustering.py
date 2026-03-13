@@ -1,6 +1,6 @@
 import pandas as pd
 
-from app.rq3_v2.answer_clustering import build_architecture_tables, build_duplicates_report
+from app.rq3_clustering.answer_clustering import build_architecture_tables, build_duplicates_report
 
 
 def test_build_architecture_tables_pivots_answers_by_prompt_and_run_group() -> None:

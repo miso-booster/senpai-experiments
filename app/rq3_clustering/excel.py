@@ -42,7 +42,7 @@ def save_outputs(
                         encoding="utf-8",
                     )
 
-    manifest_path = out_dir / "RQ3_v2_answer_clustering_manifest.xlsx"
+    manifest_path = out_dir / "RQ3_clustering_manifest.xlsx"
     with pd.ExcelWriter(manifest_path, engine="openpyxl") as writer:
         inventory.to_excel(writer, index=False, sheet_name="inventory")
         if not duplicates.empty:

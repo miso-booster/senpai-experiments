@@ -7,19 +7,19 @@ import pandas as pd
 
 try:
     from app.setup_configuration import OUT_DIR, RUNS_DIR
-except Exception:  # Supports `python app/rq3_v2/answer_clustering.py` without package imports
+except Exception:  # Supports `python app/rq3_clustering/answer_clustering.py` without package imports
     _ROOT = Path(__file__).resolve().parents[2]
     OUT_DIR = _ROOT / "out"
     RUNS_DIR = OUT_DIR / "runs"
 
 try:
     from .excel import save_outputs
-except ImportError:  # Supports `python app/rq3_v2/answer_clustering.py`
+except ImportError:  # Supports `python app/rq3_clustering/answer_clustering.py`
     from excel import save_outputs
 
 
 DEFAULT_RUNS_DIR = RUNS_DIR / "advanced_prompt_arch_comparison"
-DEFAULT_OUT_DIR = OUT_DIR / "RQ3_v2_answer_clustering"
+DEFAULT_OUT_DIR = OUT_DIR / "RQ3_clustering"
 REQUIRED_COLUMNS = ("arch_id", "prompt_id", "run_group_id", "answer")
 
 
