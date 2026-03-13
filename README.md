@@ -149,10 +149,13 @@ Outputs
 
 RQ3 Clustering
 --------------
-RQ3 Clustering builds one answer matrix per architecture from repeated
-`results.xlsx` files so the answers can be clustered or compared downstream.
+RQ3 Clustering loads repeated `results.xlsx` files, splits the answers by
+architecture and prompt, and uses the OpenAI API to semantically cluster the
+repeated answers for each prompt. This is intended for runs such as 20 repeated
+executions of 15 prompts across the three architectures, where the goal is to
+measure response consistency.
 
-Run:
+Phase 1: LLM clustering proposal
 
 ```powershell
 python -m app.rq3_clustering
@@ -160,6 +163,50 @@ python -m app.rq3_clustering
 
 By default this reads from `out/runs/advanced_prompt_arch_comparison/` and
 writes the clustering workbooks to `out/RQ3_clustering/`.
+
+Requirements
+- `OPENAI_API_KEY` must be set.
+- The default model is `gpt-4o-mini`.
+
+Main outputs
+- One workbook per architecture, for example `out/RQ3_clustering/agentic_architecture_answer_clustering.xlsx`
+- Combined manifest workbook: `out/RQ3_clustering/RQ3_clustering_manifest.xlsx`
+- Human review workbook: `out/RQ3_clustering/RQ3_clustering_review_template.xlsx`
+- Optional cache files under `out/RQ3_clustering/_cluster_cache/`
+
+Each architecture workbook includes:
+- `answers_matrix`: prompt x run matrix of raw answers.
+- `prompt_summary`: one row per prompt with the number of clusters and the majority-cluster share.
+- `cluster_summary`: one row per discovered cluster with counts, shares, labels, and representative answers.
+- `cluster_assignments`: one row per answer showing which cluster it belongs to.
+- `review_assignments`: editable rows for human review of the LLM clustering.
+- `inventory`: raw answer inventory with source workbook information.
+
+Useful flags
+- `--model <name>` to override the clustering model.
+- `--force-refresh` to ignore cached OpenAI cluster results.
+- `--max-groups N` to cluster only the first `N` architecture/prompt groups.
+- `--prepare-only` to skip the API call and export only the raw matrices/inventory.
+
+Phase 2: Human-reviewed final metrics
+
+Edit `out/RQ3_clustering/RQ3_clustering_review_template.xlsx`, specifically the
+`review_assignments` sheet. The human reviewer should update:
+- `reviewed_cluster_id`
+- `reviewed_cluster_label`
+- `reviewed_cluster_summary`
+- `review_status`
+- `review_notes`
+
+Then compute the final metrics from the reviewed assignments:
+
+```powershell
+python -m app.rq3_clustering.review_metrics
+```
+
+This writes:
+- `out/RQ3_clustering/RQ3_clustering_reviewed_metrics.xlsx`
+- One reviewed workbook per architecture, for example `out/RQ3_clustering/agentic_architecture_answer_clustering_reviewed.xlsx`
 
 Output structure per execution
 ------------------------------
