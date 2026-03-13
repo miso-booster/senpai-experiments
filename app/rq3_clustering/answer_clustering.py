@@ -484,15 +484,21 @@ def _request_cluster_payload(
     api_timeout_s: int,
 ) -> Mapping[str, Any]:
     def _request(response_format: Mapping[str, Any]) -> Any:
-        return client.chat.completions.create(
-            model=model,
-            messages=[
+        request_kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": [
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message},
             ],
-            response_format=response_format,
-            temperature=0,
-            timeout=api_timeout_s,
+            "response_format": response_format,
+            "timeout": api_timeout_s,
+        }
+        # GPT-5 mini on chat.completions currently only supports the default temperature.
+        if not model.startswith("gpt-5"):
+            request_kwargs["temperature"] = 0
+
+        return client.chat.completions.create(
+            **request_kwargs,
         )
 
     try:
