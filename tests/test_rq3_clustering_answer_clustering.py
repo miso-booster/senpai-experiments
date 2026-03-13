@@ -213,9 +213,10 @@ def test_build_review_assignments_seeds_human_review_columns() -> None:
 
     review = build_review_assignments(assignments)
 
-    assert review.iloc[0]["proposed_cluster"] == "Alpha cluster"
+    assert review.iloc[0]["proposed_cluster_id"] == "C1"
+    assert review.iloc[0]["proposed_cluster_label"] == "Alpha cluster"
     assert review.iloc[0]["proposed_cluster_reason"] == "Alpha answer"
-    assert review.iloc[0]["final_cluster"] == "Alpha cluster"
+    assert review.iloc[0]["final_cluster_id"] == "C1"
     assert review.iloc[0]["review_notes"] == ""
     assert bool(review.iloc[0]["reviewed"]) is False
 
@@ -227,6 +228,7 @@ def test_build_review_cluster_reference_keeps_only_reviewer_needed_context() -> 
                 "arch_id": "arch_a",
                 "prompt_id": "p1_basic",
                 "prompt": "Question?",
+                "cluster_id": "c1",
                 "cluster_label": "Alpha cluster",
                 "cluster_summary": "Alpha answer",
                 "response_count": 2,
@@ -243,14 +245,16 @@ def test_build_review_cluster_reference_keeps_only_reviewer_needed_context() -> 
         "arch_id",
         "prompt_id",
         "prompt",
-        "proposed_cluster",
-        "cluster_summary",
+        "proposed_cluster_id",
+        "proposed_cluster_label",
+        "proposed_cluster_reason",
         "response_count",
         "response_share",
         "response_indexes",
         "representative_answer",
     ]
-    assert reference.iloc[0]["proposed_cluster"] == "Alpha cluster"
+    assert reference.iloc[0]["proposed_cluster_id"] == "C1"
+    assert reference.iloc[0]["proposed_cluster_label"] == "Alpha cluster"
 
 
 def test_build_summaries_from_assignments_uses_reviewed_clusters() -> None:
@@ -262,7 +266,9 @@ def test_build_summaries_from_assignments_uses_reviewed_clusters() -> None:
                 "prompt": "Question?",
                 "response_index": 1,
                 "answer": "Alpha",
-                "final_cluster": "Alpha",
+                "proposed_cluster_label": "Alpha",
+                "proposed_cluster_reason": "Alpha-like answers",
+                "final_cluster_id": "C1",
                 "reviewed": True,
                 "review_notes": "",
             },
@@ -272,7 +278,9 @@ def test_build_summaries_from_assignments_uses_reviewed_clusters() -> None:
                 "prompt": "Question?",
                 "response_index": 2,
                 "answer": "Beta",
-                "final_cluster": "Beta",
+                "proposed_cluster_label": "Beta",
+                "proposed_cluster_reason": "Beta-like answers",
+                "final_cluster_id": "C2",
                 "reviewed": True,
                 "review_notes": "Moved after review",
             },
@@ -281,7 +289,9 @@ def test_build_summaries_from_assignments_uses_reviewed_clusters() -> None:
 
     overall_summary, prompt_summary, cluster_summary = build_summaries_from_assignments(
         review,
-        final_cluster_col="final_cluster",
+        final_cluster_id_col="final_cluster_id",
+        proposed_cluster_label_col="proposed_cluster_label",
+        proposed_cluster_reason_col="proposed_cluster_reason",
         reviewed_flag_col="reviewed",
         review_notes_col="review_notes",
         result_source="human_review",
@@ -290,7 +300,7 @@ def test_build_summaries_from_assignments_uses_reviewed_clusters() -> None:
     assert overall_summary.iloc[0]["prompt_count"] == 1
     assert prompt_summary.iloc[0]["cluster_count"] == 2
     assert cluster_summary["cluster_label"].tolist() == ["Alpha", "Beta"]
-    assert cluster_summary.iloc[0]["cluster_id"] == "c1"
+    assert cluster_summary["cluster_id"].tolist() == ["C1", "C2"]
     assert "Moved after review" in cluster_summary.iloc[1]["review_notes"]
 
 
@@ -303,7 +313,7 @@ def test_validate_review_assignments_rejects_pending_rows() -> None:
                 "prompt": "Question?",
                 "response_index": 1,
                 "answer": "Alpha",
-                "final_cluster": "Alpha",
+                "final_cluster_id": "C1",
                 "reviewed": False,
             }
         ]

@@ -77,7 +77,7 @@ def validate_review_assignments(df: pd.DataFrame, *, allow_pending: bool) -> pd.
         "prompt",
         "response_index",
         "answer",
-        "final_cluster",
+        "final_cluster_id",
         "reviewed",
     }
     missing = sorted(column for column in required if column not in df.columns)
@@ -93,7 +93,9 @@ def validate_review_assignments(df: pd.DataFrame, *, allow_pending: bool) -> pd.
                 f"Found {len(pending)} rows with reviewed=FALSE. Finish the review first, or rerun with --allow-pending."
             )
 
-    review["final_cluster"] = review["final_cluster"].astype("string").fillna("").str.strip()
+    review["final_cluster_id"] = (
+        review["final_cluster_id"].astype("string").fillna("").str.strip().str.upper()
+    )
     if "review_notes" in review.columns:
         review["review_notes"] = review["review_notes"].astype("string").fillna("").str.strip()
     review["response_index"] = review["response_index"].astype(int)
@@ -114,7 +116,9 @@ def main() -> None:
     reviewed_overall_summary, reviewed_prompt_summary, reviewed_cluster_summary = (
         build_summaries_from_assignments(
             reviewed_assignments,
-            final_cluster_col="final_cluster",
+            final_cluster_id_col="final_cluster_id",
+            proposed_cluster_label_col="proposed_cluster_label",
+            proposed_cluster_reason_col="proposed_cluster_reason",
             reviewed_flag_col="reviewed",
             review_notes_col="review_notes",
             result_source="human_review",

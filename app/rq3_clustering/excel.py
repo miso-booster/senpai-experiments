@@ -21,8 +21,8 @@ def _review_instructions() -> pd.DataFrame:
             "step": [1, 2, 3, 4],
             "instruction": [
                 "Review the 'review_assignments' sheet only.",
-                "If the proposed cluster is correct, set reviewed=TRUE.",
-                "If it is wrong, change final_cluster to the correct cluster name and then set reviewed=TRUE.",
+                "If the proposed cluster is correct, leave final_cluster_id unchanged and set reviewed=TRUE.",
+                "If it is wrong, change final_cluster_id to another cluster id such as C2, or create a new one such as C4, then set reviewed=TRUE.",
                 "After review, run: python -m app.rq3_clustering.review_metrics",
             ],
         }

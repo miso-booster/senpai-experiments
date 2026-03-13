@@ -40,9 +40,10 @@ def build_review_assignments(cluster_assignments: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
 
     review = cluster_assignments.copy()
-    review["proposed_cluster"] = review["cluster_label"]
+    review["proposed_cluster_id"] = review["cluster_id"].astype("string").str.upper()
+    review["proposed_cluster_label"] = review["cluster_label"]
     review["proposed_cluster_reason"] = review["cluster_summary"]
-    review["final_cluster"] = review["cluster_label"]
+    review["final_cluster_id"] = review["proposed_cluster_id"]
     review["reviewed"] = False
     review["review_notes"] = ""
 
@@ -52,9 +53,10 @@ def build_review_assignments(cluster_assignments: pd.DataFrame) -> pd.DataFrame:
         "prompt",
         "response_index",
         "answer",
-        "proposed_cluster",
+        "proposed_cluster_id",
+        "proposed_cluster_label",
         "proposed_cluster_reason",
-        "final_cluster",
+        "final_cluster_id",
         "reviewed",
         "review_notes",
     ]
@@ -72,13 +74,16 @@ def build_review_cluster_reference(cluster_summary: pd.DataFrame) -> pd.DataFram
         return pd.DataFrame()
 
     reference = cluster_summary.copy()
-    reference["proposed_cluster"] = reference["cluster_label"]
+    reference["proposed_cluster_id"] = reference["cluster_id"].astype("string").str.upper()
+    reference["proposed_cluster_label"] = reference["cluster_label"]
+    reference["proposed_cluster_reason"] = reference["cluster_summary"]
     preferred_columns = [
         "arch_id",
         "prompt_id",
         "prompt",
-        "proposed_cluster",
-        "cluster_summary",
+        "proposed_cluster_id",
+        "proposed_cluster_label",
+        "proposed_cluster_reason",
         "response_count",
         "response_share",
         "response_indexes",
@@ -97,7 +102,9 @@ def build_review_cluster_reference(cluster_summary: pd.DataFrame) -> pd.DataFram
 def build_summaries_from_assignments(
     assignments: pd.DataFrame,
     *,
-    final_cluster_col: str,
+    final_cluster_id_col: str,
+    proposed_cluster_label_col: str | None,
+    proposed_cluster_reason_col: str | None,
     reviewed_flag_col: str | None,
     review_notes_col: str | None,
     result_source: str,
@@ -112,18 +119,34 @@ def build_summaries_from_assignments(
         "prompt",
         "response_index",
         "answer",
-        final_cluster_col,
+        final_cluster_id_col,
     }
     missing = sorted(column for column in required if column not in assignments.columns)
     if missing:
         raise ValueError(f"Missing required columns for summarization: {', '.join(missing)}")
 
     normalized = assignments.copy()
-    normalized["final_cluster"] = normalized[final_cluster_col].astype("string").fillna("").str.strip()
-    normalized = normalized[normalized["final_cluster"] != ""].copy()
+    normalized["final_cluster_id"] = (
+        normalized[final_cluster_id_col].astype("string").fillna("").str.strip().str.upper()
+    )
+    normalized = normalized[normalized["final_cluster_id"] != ""].copy()
     if normalized.empty:
         empty = pd.DataFrame()
         return empty, empty, empty
+
+    if proposed_cluster_label_col and proposed_cluster_label_col in normalized.columns:
+        normalized["proposed_cluster_label"] = (
+            normalized[proposed_cluster_label_col].astype("string").fillna("").str.strip()
+        )
+    else:
+        normalized["proposed_cluster_label"] = ""
+
+    if proposed_cluster_reason_col and proposed_cluster_reason_col in normalized.columns:
+        normalized["proposed_cluster_reason"] = (
+            normalized[proposed_cluster_reason_col].astype("string").fillna("").str.strip()
+        )
+    else:
+        normalized["proposed_cluster_reason"] = ""
 
     if reviewed_flag_col and reviewed_flag_col in normalized.columns:
         normalized["reviewed"] = normalized[reviewed_flag_col].map(_to_bool)
@@ -145,25 +168,29 @@ def build_summaries_from_assignments(
     prompt_rows: list[dict[str, object]] = []
 
     grouped = sorted(
-        normalized.groupby(["arch_id", "prompt_id", "final_cluster"], dropna=False),
+        normalized.groupby(["arch_id", "prompt_id", "final_cluster_id"], dropna=False),
         key=lambda item: (str(item[0][0]), _prompt_sort_key(item[0][1]), str(item[0][2])),
     )
     cluster_records_by_prompt: dict[tuple[str, str], list[dict[str, object]]] = {}
 
-    for (arch_id, prompt_id, final_cluster), group in grouped:
+    for (arch_id, prompt_id, final_cluster_id), group in grouped:
         prompt_text = _first_non_empty(group["prompt"].tolist())
         total_responses = prompt_totals[(arch_id, prompt_id)]
         ordered = group.sort_values(["response_index"], kind="stable")
         response_indexes = [int(value) for value in ordered["response_index"].tolist()]
         review_notes = " | ".join(note for note in ordered["review_notes"].astype(str).tolist() if note)
+        unique_labels = [label for label in ordered["proposed_cluster_label"].dropna().astype(str).unique().tolist() if label]
+        unique_reasons = [reason for reason in ordered["proposed_cluster_reason"].dropna().astype(str).unique().tolist() if reason]
+        cluster_label = unique_labels[0] if len(unique_labels) == 1 else str(final_cluster_id)
+        cluster_reason = unique_reasons[0] if len(unique_reasons) == 1 else ""
 
         record = {
             "arch_id": arch_id,
             "prompt_id": prompt_id,
             "prompt": prompt_text,
-            "cluster_id": "",
-            "cluster_label": _clean_text(final_cluster),
-            "cluster_summary": "",
+            "cluster_id": _clean_text(final_cluster_id),
+            "cluster_label": cluster_label,
+            "cluster_summary": cluster_reason,
             "response_count": len(ordered),
             "response_share": len(ordered) / total_responses,
             "response_indexes": ", ".join(str(value) for value in response_indexes),
@@ -180,9 +207,7 @@ def build_summaries_from_assignments(
         cluster_records_by_prompt.items(),
         key=lambda item: (str(item[0][0]), _prompt_sort_key(item[0][1])),
     ):
-        records.sort(key=lambda row: (-int(row["response_count"]), str(row["cluster_label"])))
-        for index, row in enumerate(records, start=1):
-            row["cluster_id"] = f"c{index}"
+        records.sort(key=lambda row: (-int(row["response_count"]), str(row["cluster_id"])))
 
         majority = records[0]
         prompt_rows.append(

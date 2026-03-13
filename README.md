@@ -179,7 +179,7 @@ Each architecture workbook includes:
 - `prompt_summary`: one row per prompt with the number of clusters and the majority-cluster share.
 - `cluster_summary`: one row per discovered cluster with counts, shares, labels, and representative answers.
 - `cluster_assignments`: one row per answer showing which cluster it belongs to.
-- `review_assignments`: editable rows for human review of the LLM clustering.
+- `review_assignments`: editable rows for human review of the LLM clustering using cluster IDs.
 - `inventory`: raw answer inventory with source workbook information.
 
 Useful flags
@@ -191,17 +191,30 @@ Useful flags
 Phase 2: Human-reviewed final metrics
 
 Edit `out/RQ3_clustering/RQ3_clustering_review_template.xlsx`, specifically the
-`review_assignments` sheet. The human reviewer should update:
-- `reviewed_cluster_id`
-- `reviewed_cluster_label`
-- `reviewed_cluster_summary`
-- `review_status`
+`review_assignments` sheet. The reviewer works mainly with:
+- `proposed_cluster_id`
+- `proposed_cluster_label`
+- `proposed_cluster_reason`
+- `final_cluster_id`
+- `reviewed`
 - `review_notes`
+
+Recommended review flow:
+- If the proposed cluster is correct, leave `final_cluster_id` unchanged and set `reviewed=TRUE`.
+- If it is wrong, change `final_cluster_id` to another cluster id such as `C2`, or create a new one such as `C4`, and then set `reviewed=TRUE`.
+- Use `review_cluster_reference` as the lookup sheet for cluster labels, reasons, counts, and response indexes.
 
 Then compute the final metrics from the reviewed assignments:
 
 ```powershell
 python -m app.rq3_clustering.review_metrics
+```
+
+By default, phase 2 requires all rows to have `reviewed=TRUE`. For interim
+checks before review is finished, use:
+
+```powershell
+python -m app.rq3_clustering.review_metrics --allow-pending
 ```
 
 This writes:
