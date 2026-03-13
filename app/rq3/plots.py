@@ -11,16 +11,28 @@ def _prompt_id_num(value: object) -> int:
     return int(m.group(1)) if m else 10**9
 
 
-def generate_plots(
+def _generate_sequence_plots(
     out_dir: Path,
     prompt_summary: pd.DataFrame,
-    run_level: pd.DataFrame,
-    tool_presence: pd.DataFrame,
+    presence: pd.DataFrame,
     *,
     plot_format: str,
     dpi: int,
+    item_name_column: str,
+    count_mean_col: str,
+    count_std_col: str,
+    count_axis_label: str,
+    title_prefix: str,
+    prompt_title: str,
+    similarity_title: str,
+    count_title: str,
+    presence_title: str,
+    prompt_filename: str,
+    similarity_filename: str,
+    presence_filename: str,
+    variability_summary_filename: str,
+    variability_mean_std_filename: str,
 ) -> None:
-    """Generate RQ3 plots (safe no-op if matplotlib is unavailable)."""
     try:
         import matplotlib
 
@@ -33,7 +45,7 @@ def generate_plots(
         return
 
     if prompt_summary.empty:
-        print("[WARN] No prompt summary rows available; skipping RQ3 plots.")
+        print(f"[WARN] No prompt summary rows available; skipping plot generation for {prompt_filename}.")
         return
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -52,7 +64,6 @@ def generate_plots(
     prompt_order = ps["prompt_id"].astype(str).tolist()
     x = np.arange(len(prompt_order))
 
-    # Plot 1: per-prompt consistency (exact match metrics)
     fig, ax = plt.subplots(figsize=(max(9, len(ps) * 0.9), 4.8))
     width = 0.25
     bars = [
@@ -66,12 +77,11 @@ def generate_plots(
     ax.set_xticks(x, prompt_order)
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Consistency")
-    ax.set_title("RQ3 Tool Selection Consistency by Prompt")
+    ax.set_title(prompt_title)
     ax.grid(axis="y", alpha=0.3)
     ax.legend()
-    _save(fig, "RQ3_prompt_consistency")
+    _save(fig, prompt_filename)
 
-    # Plot 2: per-prompt pairwise similarity + tool-call variability
     fig, axes = plt.subplots(1, 2, figsize=(max(12, len(ps) * 1.2), 4.8))
     ax1, ax2 = axes
 
@@ -82,25 +92,26 @@ def generate_plots(
     ax1.set_xticks(x, prompt_order)
     ax1.set_ylim(0, 1.05)
     ax1.set_ylabel("Mean pairwise similarity")
-    ax1.set_title("Pairwise Similarity Across Runs")
+    ax1.set_title(similarity_title)
     ax1.grid(axis="y", alpha=0.3)
     ax1.legend()
 
-    means = pd.to_numeric(ps["tool_calls_mean"], errors="coerce").to_numpy()
-    stds = pd.to_numeric(ps["tool_calls_std"], errors="coerce").fillna(0).to_numpy()
+    means = pd.to_numeric(ps[count_mean_col], errors="coerce").to_numpy()
+    stds = pd.to_numeric(ps[count_std_col], errors="coerce").fillna(0).to_numpy()
     ax2.bar(x, means, yerr=stds, capsize=4, color="#17becf", alpha=0.85)
     ax2.set_xticks(x, prompt_order)
-    ax2.set_ylabel("Tool calls per run")
-    ax2.set_title("Tool Call Count Variability by Prompt")
+    ax2.set_ylabel(count_axis_label)
+    ax2.set_title(count_title)
     ax2.grid(axis="y", alpha=0.3)
-    _save(fig, "RQ3_similarity_and_toolcount")
+    _save(fig, similarity_filename)
 
-    # Plot 3: tool presence heatmap (prompt x tool)
-    if not tool_presence.empty:
-        tp = tool_presence.copy()
-        tp["presence_rate_across_runs"] = pd.to_numeric(tp["presence_rate_across_runs"], errors="coerce")
-        heat = tp.pivot_table(
-            index="tool_name",
+    if not presence.empty:
+        presence_df = presence.copy()
+        presence_df["presence_rate_across_runs"] = pd.to_numeric(
+            presence_df["presence_rate_across_runs"], errors="coerce"
+        )
+        heat = presence_df.pivot_table(
+            index=item_name_column,
             columns="prompt_id",
             values="presence_rate_across_runs",
             aggfunc="mean",
@@ -111,7 +122,7 @@ def generate_plots(
             im = ax.imshow(heat.fillna(0).to_numpy(), vmin=0, vmax=1, cmap="YlGnBu", aspect="auto")
             ax.set_xticks(range(len(heat.columns)), labels=[str(c) for c in heat.columns], rotation=0)
             ax.set_yticks(range(len(heat.index)), labels=[str(i) for i in heat.index])
-            ax.set_title("Tool Presence Rate Across Runs (Prompt x Tool)")
+            ax.set_title(presence_title)
             cbar = fig.colorbar(im, ax=ax)
             cbar.set_label("Presence rate")
             for i in range(heat.shape[0]):
@@ -120,9 +131,8 @@ def generate_plots(
                     if pd.notna(val):
                         text_color = "white" if float(val) >= 0.6 else "black"
                         ax.text(j, i, f"{val:.1f}", ha="center", va="center", fontsize=8, color=text_color)
-            _save(fig, "RQ3_tool_presence_heatmap")
+            _save(fig, presence_filename)
 
-    # Plot 4: variability across prompts using boxplots (overall and by difficulty)
     variability_metrics = [
         ("exact_sequence_consistency", "Exact seq"),
         ("exact_set_consistency", "Exact set"),
@@ -132,7 +142,6 @@ def generate_plots(
     ]
     fig, axes = plt.subplots(1, 2, figsize=(13.5, 4.8))
 
-    # Left panel: overall distributions across prompts (one box per metric)
     ax = axes[0]
     metric_labels = [label for _, label in variability_metrics]
     overall_data = [
@@ -153,10 +162,9 @@ def generate_plots(
     ax.set_xticks(np.arange(1, len(metric_labels) + 1), metric_labels, rotation=20, ha="right")
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Score")
-    ax.set_title("Metric Distributions Across Prompts")
+    ax.set_title(f"{title_prefix} Metric Distributions Across Prompts")
     ax.grid(axis="y", alpha=0.3)
 
-    # Right panel: grouped boxplots by difficulty for all metrics
     ax = axes[1]
     difficulty_order = ["basic", "intermediate", "complex"]
     group_centers = np.arange(len(variability_metrics), dtype=float)
@@ -189,16 +197,13 @@ def generate_plots(
     ax.set_xticks(group_centers, metric_labels, rotation=20, ha="right")
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Score")
-    ax.set_title("Metric Distributions by Difficulty")
+    ax.set_title(f"{title_prefix} Metric Distributions by Difficulty")
     ax.grid(axis="y", alpha=0.3)
     ax.legend(handles=legend_handles, fontsize=8)
+    _save(fig, variability_summary_filename)
 
-    _save(fig, "RQ3_consistency_variability_summary")
-
-    # Plot 5: mean +/- std version (kept as an alternative to boxplots)
     fig, axes = plt.subplots(1, 2, figsize=(13.5, 4.8))
 
-    # Left panel: overall mean +/- std across prompts
     ax = axes[0]
     overall_stats = (
         ps[[m for m, _ in variability_metrics]]
@@ -226,12 +231,10 @@ def generate_plots(
     ax.set_xticks(x_all, overall_stats["label"].tolist(), rotation=20, ha="right")
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Mean score across prompts")
-    ax.set_title("Average and Variability (All Prompts)")
+    ax.set_title(f"{title_prefix} Average and Variability (All Prompts)")
     ax.grid(axis="y", alpha=0.3)
 
-    # Right panel: by difficulty mean +/- std for all metrics
     ax = axes[1]
-    difficulty_order = ["basic", "intermediate", "complex"]
     by_diff_stats = (
         ps.groupby("difficulty", dropna=False)[[m for m, _ in variability_metrics]]
         .agg(["mean", "std"])
@@ -257,19 +260,87 @@ def generate_plots(
     ax.set_xticks(x_diff, difficulty_order)
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Mean score")
-    ax.set_title("Average and Variability by Difficulty")
+    ax.set_title(f"{title_prefix} Average and Variability by Difficulty")
     ax.grid(axis="y", alpha=0.3)
     ax.legend(fontsize=8)
+    _save(fig, variability_mean_std_filename)
 
-    _save(fig, "RQ3_consistency_variability_mean_std")
+
+def generate_plots(
+    out_dir: Path,
+    prompt_summary: pd.DataFrame,
+    run_level: pd.DataFrame,
+    tool_presence: pd.DataFrame,
+    *,
+    plot_format: str,
+    dpi: int,
+) -> None:
+    _ = run_level  # kept for backwards-compatible signature
+    _generate_sequence_plots(
+        out_dir,
+        prompt_summary,
+        tool_presence,
+        plot_format=plot_format,
+        dpi=dpi,
+        item_name_column="tool_name",
+        count_mean_col="tool_calls_mean",
+        count_std_col="tool_calls_std",
+        count_axis_label="Tool calls per run",
+        title_prefix="Tool Consistency",
+        prompt_title="RQ3 Tool Selection Consistency by Prompt",
+        similarity_title="Pairwise Similarity Across Runs",
+        count_title="Tool Call Count Variability by Prompt",
+        presence_title="Tool Presence Rate Across Runs (Prompt x Tool)",
+        prompt_filename="RQ3_tool_consistency",
+        similarity_filename="RQ3_tool_consistency_similarity_and_toolcount",
+        presence_filename="RQ3_tool_consistency_presence_heatmap",
+        variability_summary_filename="RQ3_tool_consistency_variability_summary",
+        variability_mean_std_filename="RQ3_tool_consistency_variability_mean_std",
+    )
+
+
+def generate_graph_plots(
+    out_dir: Path,
+    prompt_summary: pd.DataFrame,
+    run_level: pd.DataFrame,
+    graph_presence: pd.DataFrame,
+    *,
+    plot_format: str,
+    dpi: int,
+) -> None:
+    _ = run_level
+    _generate_sequence_plots(
+        out_dir,
+        prompt_summary,
+        graph_presence,
+        plot_format=plot_format,
+        dpi=dpi,
+        item_name_column="graph_node_name",
+        count_mean_col="graph_nodes_mean",
+        count_std_col="graph_nodes_std",
+        count_axis_label="Graph nodes per run",
+        title_prefix="Node Usage Consistency",
+        prompt_title="RQ3 Node Usage Consistency by Prompt",
+        similarity_title="Pairwise Node Usage Similarity Across Runs",
+        count_title="Node Usage Count Variability by Prompt",
+        presence_title="Node Usage Presence Rate Across Runs (Prompt x Node)",
+        prompt_filename="RQ3_node_usage_consistency",
+        similarity_filename="RQ3_node_usage_consistency_similarity_and_nodecount",
+        presence_filename="RQ3_node_usage_consistency_presence_heatmap",
+        variability_summary_filename="RQ3_node_usage_consistency_variability_summary",
+        variability_mean_std_filename="RQ3_node_usage_consistency_variability_mean_std",
+    )
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate RQ3 plots from an RQ3 Excel workbook.")
     parser.add_argument(
         "--workbook",
-        default="out/RQ3_tool_consistency/RQ3_tool_consistency.xlsx",
-        help="Path to RQ3 workbook (default: out/RQ3_tool_consistency/RQ3_tool_consistency.xlsx)",
+        default="out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_and_node_usage_consistency.xlsx",
+        help=(
+            "Path to the RQ3 workbook "
+            "(default: out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_and_node_usage_consistency.xlsx)"
+        ),
     )
     parser.add_argument(
         "--out-dir",
@@ -297,6 +368,7 @@ def main() -> None:
         raise SystemExit(f"Workbook not found: {workbook}")
 
     out_dir = Path(args.out_dir) if args.out_dir else workbook.parent
+
     prompt_summary = pd.read_excel(workbook, sheet_name="prompt_consistency")
     run_level = pd.read_excel(workbook, sheet_name="tool_sequences_per_run")
     tool_presence = pd.read_excel(workbook, sheet_name="tool_presence")
@@ -309,6 +381,22 @@ def main() -> None:
         plot_format=args.plot_format,
         dpi=args.dpi,
     )
+
+    xl = pd.ExcelFile(workbook)
+    graph_sheets = {"node_usage_prompt_consistency", "node_usage_sequences_per_run", "node_usage_presence"}
+    if graph_sheets.issubset(set(xl.sheet_names)):
+        graph_prompt_summary = pd.read_excel(workbook, sheet_name="node_usage_prompt_consistency")
+        graph_run_level = pd.read_excel(workbook, sheet_name="node_usage_sequences_per_run")
+        graph_presence = pd.read_excel(workbook, sheet_name="node_usage_presence")
+        generate_graph_plots(
+            out_dir,
+            graph_prompt_summary,
+            graph_run_level,
+            graph_presence,
+            plot_format=args.plot_format,
+            dpi=args.dpi,
+        )
+
     print(f"Wrote plots to: {out_dir}")
 
 
