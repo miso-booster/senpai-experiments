@@ -128,8 +128,8 @@
   "result": {
     "clusters": [
       {
-        "cluster_label": "Rename price -> total_cost: update profile and rules",
-        "cluster_summary": "These responses all conclude that renaming the profile field price to total_cost will break any rules that reference price (notably more_toppings_cost_more) and advise updating the profile's output field and all rule references (e.g., extract_float(conv[i].total_cost)), then re-running tests/validation.",
+        "cluster_label": "Rename breaks rules — update profile + rules to use total_cost",
+        "cluster_summary": "These responses all conclude renaming price -> total_cost will break any rules that reference conv[].price and recommend updating the profile output field and every rule (e.g., more_toppings_cost_more) to use conv[].total_cost (typically by replacing extract_float(conv[i].price) with extract_float(conv[i].total_cost)), then re-running tests/validation.",
         "response_ids": [
           "r01",
           "r02",
@@ -152,20 +152,14 @@
         ]
       },
       {
-        "cluster_label": "YAML validation failure (generic)",
-        "cluster_summary": "This response reports an inability to produce a YAML response that passed validation after multiple attempts (generic failure message).",
+        "cluster_label": "Validation / YAML generation failed",
+        "cluster_summary": "These responses report failures producing/validating YAML rather than giving the rename guidance. One says it couldn't produce a valid YAML after multiple attempts; the other reports repeated validation failures and points out missing required profile fields (user.language and user.role) with validator feedback.",
         "response_ids": [
-          "r09"
-        ]
-      },
-      {
-        "cluster_label": "Validation failure with specific missing profile fields",
-        "cluster_summary": "This response reports repeated validation failures and cites specific missing required profile fields (user.language, user.role) with validator feedback and suggestions to consult docs.",
-        "response_ids": [
+          "r09",
           "r11"
         ]
       }
     ],
-    "notes": "Merged many near-duplicate answers into one cluster. Borderline distinctions: r06 explicitly mentions checking 'Sensei-check' rules and gives an example of a price-positive rule; r17 includes a fuller JSON/YAML-style profile snippet. Those differences are minor implementation-detail variations and were merged into the main cluster. r09 is a generic validation-failure message; r11 provides specific validator errors and guidance, so it was kept separate."
+    "notes": "Most answers are materially equivalent (same final recommendation). A few responses in the main cluster add extra implementation details (e.g., referencing Sensei-check rules in r06 or showing inline object-style YAML/JSON in r17), but those do not change the substantive conclusion, so they were merged into the same cluster. The validation-failure responses were grouped together since they differ in outcome (failure to produce/validate) rather than offering the rename fix."
   }
 }

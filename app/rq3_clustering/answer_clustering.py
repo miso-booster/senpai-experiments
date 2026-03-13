@@ -422,9 +422,10 @@ def _build_cluster_messages(
     system_message = (
         "You are a rigorous research assistant clustering repeated LLM answers. "
         "The responses all answer the same user prompt under the same architecture. "
-        "Group answers by substantive meaning and final conclusion, not wording. "
-        "Merge answers that are materially equivalent. "
-        "Keep answers separate when they differ on facts, selected files, endpoints, counts, classifications, or any other evaluation-relevant claim. "
+        "Group answers by substantive meaning, final recommendation, and materially different reasoning, not by wording or presentation style. "
+        "Merge answers that are materially equivalent even if one is longer, better formatted, or includes extra metadata. "
+        "Do not create separate clusters just because a response adds conversation-control details, active flags, counts, or other supporting information that does not change the underlying conclusion. "
+        "Keep answers separate when they differ on the best final recommendation, top candidates selected, output-field comparison outcome, validation-rule rationale in a way that changes the reasoning materially, or any other evaluation-relevant factual claim. "
         "Each response_id must appear in exactly one cluster. "
         "Use concise cluster labels that describe the shared conclusion. "
         "Return JSON only."
@@ -456,6 +457,9 @@ def _build_cluster_messages(
         "Rules:",
         "- Every response_id must appear exactly once.",
         "- Do not create singleton clusters unless the response is genuinely distinct.",
+        "- Do not split clusters because of verbosity, formatting, bullet style, or extra supporting metadata.",
+        "- If two responses recommend the same best option and rely on equivalent reasoning, keep them in the same cluster.",
+        "- Only split clusters when the decision or the materially relevant rationale is different.",
         "- cluster_summary should briefly explain why those responses belong together.",
         "- notes should mention any borderline distinctions if relevant, otherwise use an empty string.",
     ]
