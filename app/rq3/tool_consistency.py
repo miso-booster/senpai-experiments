@@ -24,7 +24,7 @@ except ImportError:  # Supports `python app/rq3/tool_consistency.py`
 
 
 DEFAULT_RUNS_DIR = RUNS_DIR / "advanced_prompt_arch_comparison"
-DEFAULT_OUT_DIR = OUT_DIR / "RQ3_tool_consistency_and_graph_consistency"
+DEFAULT_OUT_DIR = OUT_DIR / "RQ3_tool_consistency_and_node_usage_consistency"
 DEFAULT_GRAPH_ARCHITECTURE = "graph_based_architecture"
 
 HEX_SUFFIX_RE = re.compile(r"__(?:[0-9a-f]{8,})$", re.IGNORECASE)

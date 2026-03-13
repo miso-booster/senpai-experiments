@@ -110,12 +110,12 @@ pairwise Wilcoxon signed-rank tests between architectures on matched
 python -m app.rq2
 ```
 
-RQ3 (tool and graph consistency across repeated runs)
-----------------------------------------------------
+RQ3 (tool and node-usage consistency across repeated runs)
+---------------------------------------------------------
 RQ3 measures:
 - tool-use consistency across repeated runs of the same prompt from LangSmith
   tracing exports (`tracing_*.xlsx`, using `run_type == "tool"`), and
-- graph-node path consistency for the graph-based architecture using
+- node-usage consistency for the graph-based architecture using
   `metadata.langgraph_node` from top-level graph node executions.
 
 Run:
@@ -126,20 +126,20 @@ python -m app.rq3
 
 By default this reads from `out/runs/advanced_prompt_arch_comparison/` and
 generates the RQ3 workbook and plots in
-`out/RQ3_tool_consistency_and_graph_consistency/`.
+`out/RQ3_tool_consistency_and_node_usage_consistency/`.
 
 Outputs
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_and_graph_consistency.xlsx`
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency.png`
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_similarity_and_toolcount.png`
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_presence_heatmap.png`
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_variability_summary.png`
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_variability_mean_std.png`
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_graph_consistency.png`
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_graph_consistency_similarity_and_nodecount.png`
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_graph_consistency_presence_heatmap.png`
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_graph_consistency_variability_summary.png`
-- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_graph_consistency_variability_mean_std.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_and_node_usage_consistency.xlsx`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_similarity_and_toolcount.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_presence_heatmap.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_variability_summary.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_variability_mean_std.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_similarity_and_nodecount.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_presence_heatmap.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_variability_summary.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_variability_mean_std.png`
 
 Output structure per execution
 ------------------------------

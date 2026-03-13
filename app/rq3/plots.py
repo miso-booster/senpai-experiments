@@ -22,6 +22,7 @@ def _generate_sequence_plots(
     count_mean_col: str,
     count_std_col: str,
     count_axis_label: str,
+    title_prefix: str,
     prompt_title: str,
     similarity_title: str,
     count_title: str,
@@ -161,7 +162,7 @@ def _generate_sequence_plots(
     ax.set_xticks(np.arange(1, len(metric_labels) + 1), metric_labels, rotation=20, ha="right")
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Score")
-    ax.set_title("Metric Distributions Across Prompts")
+    ax.set_title(f"{title_prefix} Metric Distributions Across Prompts")
     ax.grid(axis="y", alpha=0.3)
 
     ax = axes[1]
@@ -196,7 +197,7 @@ def _generate_sequence_plots(
     ax.set_xticks(group_centers, metric_labels, rotation=20, ha="right")
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Score")
-    ax.set_title("Metric Distributions by Difficulty")
+    ax.set_title(f"{title_prefix} Metric Distributions by Difficulty")
     ax.grid(axis="y", alpha=0.3)
     ax.legend(handles=legend_handles, fontsize=8)
     _save(fig, variability_summary_filename)
@@ -230,7 +231,7 @@ def _generate_sequence_plots(
     ax.set_xticks(x_all, overall_stats["label"].tolist(), rotation=20, ha="right")
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Mean score across prompts")
-    ax.set_title("Average and Variability (All Prompts)")
+    ax.set_title(f"{title_prefix} Average and Variability (All Prompts)")
     ax.grid(axis="y", alpha=0.3)
 
     ax = axes[1]
@@ -259,7 +260,7 @@ def _generate_sequence_plots(
     ax.set_xticks(x_diff, difficulty_order)
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Mean score")
-    ax.set_title("Average and Variability by Difficulty")
+    ax.set_title(f"{title_prefix} Average and Variability by Difficulty")
     ax.grid(axis="y", alpha=0.3)
     ax.legend(fontsize=8)
     _save(fig, variability_mean_std_filename)
@@ -285,6 +286,7 @@ def generate_plots(
         count_mean_col="tool_calls_mean",
         count_std_col="tool_calls_std",
         count_axis_label="Tool calls per run",
+        title_prefix="Tool Consistency",
         prompt_title="RQ3 Tool Selection Consistency by Prompt",
         similarity_title="Pairwise Similarity Across Runs",
         count_title="Tool Call Count Variability by Prompt",
@@ -317,15 +319,16 @@ def generate_graph_plots(
         count_mean_col="graph_nodes_mean",
         count_std_col="graph_nodes_std",
         count_axis_label="Graph nodes per run",
-        prompt_title="RQ3 Graph Node Path Consistency by Prompt",
-        similarity_title="Pairwise Graph-Path Similarity Across Runs",
-        count_title="Graph Node Count Variability by Prompt",
-        presence_title="Graph Node Presence Rate Across Runs (Prompt x Node)",
-        prompt_filename="RQ3_graph_consistency",
-        similarity_filename="RQ3_graph_consistency_similarity_and_nodecount",
-        presence_filename="RQ3_graph_consistency_presence_heatmap",
-        variability_summary_filename="RQ3_graph_consistency_variability_summary",
-        variability_mean_std_filename="RQ3_graph_consistency_variability_mean_std",
+        title_prefix="Node Usage Consistency",
+        prompt_title="RQ3 Node Usage Consistency by Prompt",
+        similarity_title="Pairwise Node Usage Similarity Across Runs",
+        count_title="Node Usage Count Variability by Prompt",
+        presence_title="Node Usage Presence Rate Across Runs (Prompt x Node)",
+        prompt_filename="RQ3_node_usage_consistency",
+        similarity_filename="RQ3_node_usage_consistency_similarity_and_nodecount",
+        presence_filename="RQ3_node_usage_consistency_presence_heatmap",
+        variability_summary_filename="RQ3_node_usage_consistency_variability_summary",
+        variability_mean_std_filename="RQ3_node_usage_consistency_variability_mean_std",
     )
 
 
@@ -333,10 +336,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate RQ3 plots from an RQ3 Excel workbook.")
     parser.add_argument(
         "--workbook",
-        default="out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_and_graph_consistency.xlsx",
+        default="out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_and_node_usage_consistency.xlsx",
         help=(
             "Path to the RQ3 workbook "
-            "(default: out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_and_graph_consistency.xlsx)"
+            "(default: out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_and_node_usage_consistency.xlsx)"
         ),
     )
     parser.add_argument(
@@ -380,11 +383,11 @@ def main() -> None:
     )
 
     xl = pd.ExcelFile(workbook)
-    graph_sheets = {"graph_prompt_consistency", "graph_node_sequences", "graph_node_presence"}
+    graph_sheets = {"node_usage_prompt_consistency", "node_usage_sequences_per_run", "node_usage_presence"}
     if graph_sheets.issubset(set(xl.sheet_names)):
-        graph_prompt_summary = pd.read_excel(workbook, sheet_name="graph_prompt_consistency")
-        graph_run_level = pd.read_excel(workbook, sheet_name="graph_node_sequences")
-        graph_presence = pd.read_excel(workbook, sheet_name="graph_node_presence")
+        graph_prompt_summary = pd.read_excel(workbook, sheet_name="node_usage_prompt_consistency")
+        graph_run_level = pd.read_excel(workbook, sheet_name="node_usage_sequences_per_run")
+        graph_presence = pd.read_excel(workbook, sheet_name="node_usage_presence")
         generate_graph_plots(
             out_dir,
             graph_prompt_summary,
