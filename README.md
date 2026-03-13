@@ -110,10 +110,13 @@ pairwise Wilcoxon signed-rank tests between architectures on matched
 python -m app.rq2
 ```
 
-RQ3 (tool consistency across repeated runs)
-------------------------------------------
-RQ3 measures tool-use consistency across repeated runs of the same prompt
-from LangSmith tracing exports (`tracing_*.xlsx`, using `run_type == "tool"`).
+RQ3 (tool and graph consistency across repeated runs)
+----------------------------------------------------
+RQ3 measures:
+- tool-use consistency across repeated runs of the same prompt from LangSmith
+  tracing exports (`tracing_*.xlsx`, using `run_type == "tool"`), and
+- graph-node path consistency for the graph-based architecture using
+  `metadata.langgraph_node` from top-level graph node executions.
 
 Run:
 
@@ -121,15 +124,22 @@ Run:
 python -m app.rq3
 ```
 
-This generates the RQ3 workbook and plots in `out/RQ3_tool_consistency/`.
+By default this reads from `out/runs/advanced_prompt_arch_comparison/` and
+generates the RQ3 workbook and plots in
+`out/RQ3_tool_consistency_and_graph_consistency/`.
 
 Outputs
-- `out/RQ3_tool_consistency/RQ3_tool_consistency.xlsx`
-- `out/RQ3_tool_consistency/RQ3_prompt_consistency.png`
-- `out/RQ3_tool_consistency/RQ3_similarity_and_toolcount.png`
-- `out/RQ3_tool_consistency/RQ3_tool_presence_heatmap.png`
-- `out/RQ3_tool_consistency/RQ3_consistency_variability_summary.png` (boxplots)
-- `out/RQ3_tool_consistency/RQ3_consistency_variability_mean_std.png` (mean ± std)
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_and_graph_consistency.xlsx`
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency.png`
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_similarity_and_toolcount.png`
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_presence_heatmap.png`
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_variability_summary.png`
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_tool_consistency_variability_mean_std.png`
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_graph_consistency.png`
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_graph_consistency_similarity_and_nodecount.png`
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_graph_consistency_presence_heatmap.png`
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_graph_consistency_variability_summary.png`
+- `out/RQ3_tool_consistency_and_graph_consistency/RQ3_graph_consistency_variability_mean_std.png`
 
 Output structure per execution
 ------------------------------
