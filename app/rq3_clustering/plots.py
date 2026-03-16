@@ -40,6 +40,7 @@ def generate_plots(
         import matplotlib
 
         matplotlib.use("Agg")
+        matplotlib.rcParams["hatch.linewidth"] = 1.4
         import matplotlib.pyplot as plt
         import numpy as np
     except ImportError:
@@ -53,9 +54,9 @@ def generate_plots(
     out_dir.mkdir(parents=True, exist_ok=True)
     written_paths: list[Path] = []
     arch_hatches = {
-        "Agentic": "///",
-        "Graph-based": "\\\\\\",
-        "One-node": "xxx",
+        "Agentic": "/",
+        "Graph-based": "\\",
+        "One-node": "-",
     }
     arch_fills = {
         "Agentic": "#4C78A8",
@@ -90,7 +91,7 @@ def generate_plots(
             values,
             color=[arch_fills.get(label, "#bdbdbd") for label in labels],
             edgecolor="black",
-            linewidth=1.0,
+            linewidth=1.2,
         )
         for bar, label in zip(bars, labels):
             bar.set_hatch(arch_hatches.get(label, "///"))
@@ -158,7 +159,7 @@ def generate_plots(
             label=arch_label,
             color=arch_fills.get(arch_label, "#bdbdbd"),
             edgecolor="black",
-            linewidth=0.9,
+            linewidth=1.1,
         )
         for bar in bars:
             bar.set_hatch(arch_hatches.get(arch_label, "///"))
@@ -181,7 +182,7 @@ def generate_plots(
             label=arch_label,
             color=arch_fills.get(arch_label, "#bdbdbd"),
             edgecolor="black",
-            linewidth=0.9,
+            linewidth=1.1,
         )
         for bar in bars:
             bar.set_hatch(arch_hatches.get(arch_label, "///"))
@@ -241,7 +242,7 @@ def generate_plots(
                 label=arch_label,
                 color=arch_fills.get(arch_label, "#bdbdbd"),
                 edgecolor="black",
-                linewidth=0.9,
+                linewidth=1.1,
             )
             for bar in bars:
                 bar.set_hatch(arch_hatches.get(arch_label, "///"))
