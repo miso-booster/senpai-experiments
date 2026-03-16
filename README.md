@@ -149,10 +149,13 @@ Outputs
 
 RQ3 Clustering
 --------------
-RQ3 Clustering builds one answer matrix per architecture from repeated
-`results.xlsx` files so the answers can be clustered or compared downstream.
+RQ3 Clustering loads repeated `results.xlsx` files, splits the answers by
+architecture and prompt, and uses the OpenAI API to semantically cluster the
+repeated answers for each prompt. This is intended for runs such as 20 repeated
+executions of 15 prompts across the three architectures, where the goal is to
+measure response consistency.
 
-Run:
+Phase 1: LLM clustering proposal
 
 ```powershell
 python -m app.rq3_clustering
@@ -160,6 +163,74 @@ python -m app.rq3_clustering
 
 By default this reads from `out/runs/advanced_prompt_arch_comparison/` and
 writes the clustering workbooks to `out/RQ3_clustering/`.
+
+Requirements
+- `OPENAI_API_KEY` must be set.
+- The default model is `gpt-4o-mini`.
+
+Main outputs
+- One workbook per architecture, for example `out/RQ3_clustering/agentic_architecture_answer_clustering.xlsx`
+- Combined manifest workbook: `out/RQ3_clustering/RQ3_clustering_manifest.xlsx`
+- Human review workbook: `out/RQ3_clustering/RQ3_clustering_review_template.xlsx`
+- Optional cache files under `out/RQ3_clustering/_cluster_cache/`
+
+Each architecture workbook includes:
+- `answers_matrix`: prompt x run matrix of raw answers.
+- `prompt_summary`: one row per prompt with the number of clusters and the majority-cluster share.
+- `cluster_summary`: one row per discovered cluster with counts, shares, labels, and representative answers.
+- `cluster_assignments`: one row per answer showing which cluster it belongs to.
+- `review_assignments`: editable rows for human review of the LLM clustering using cluster IDs.
+- `inventory`: raw answer inventory with source workbook information.
+
+Useful flags
+- `--model <name>` to override the clustering model.
+- `--force-refresh` to ignore cached OpenAI cluster results.
+- `--max-groups N` to cluster only the first `N` architecture/prompt groups.
+- `--prepare-only` to skip the API call and export only the raw matrices/inventory.
+
+Phase 2: Human-reviewed final metrics
+
+Edit `out/RQ3_clustering/RQ3_clustering_review_template.xlsx`, specifically the
+`review_assignments` sheet. The reviewer works mainly with:
+- `proposed_cluster_id`
+- `proposed_cluster_label`
+- `proposed_cluster_reason`
+- `final_cluster_id`
+- `reviewed`
+- `review_notes`
+
+Recommended review flow:
+- If the proposed cluster is correct, leave `final_cluster_id` unchanged and set `reviewed=TRUE`.
+- If it is wrong, change `final_cluster_id` to another cluster id such as `C2`, or create a new one such as `C4`, and then set `reviewed=TRUE`.
+- Use `review_cluster_reference` as the lookup sheet for cluster labels, reasons, counts, and response indexes.
+
+Then compute the final metrics from the reviewed assignments:
+
+```powershell
+python -m app.rq3_clustering.review_metrics
+```
+
+By default, phase 2 requires all rows to have `reviewed=TRUE`. For interim
+checks before review is finished, use:
+
+```powershell
+python -m app.rq3_clustering.review_metrics --allow-pending
+```
+
+This writes:
+- `out/RQ3_clustering/RQ3_clustering_reviewed_metrics.xlsx`
+- One reviewed workbook per architecture, for example `out/RQ3_clustering/agentic_architecture_answer_clustering_reviewed.xlsx`
+- `out/RQ3_clustering/RQ3_clustering_reviewed_overall_summary.png`
+- `out/RQ3_clustering/RQ3_clustering_reviewed_prompt_majority_share.png`
+- `out/RQ3_clustering/RQ3_clustering_reviewed_prompt_cluster_count.png`
+- `out/RQ3_clustering/RQ3_clustering_reviewed_majority_share_heatmap.png`
+- `out/RQ3_clustering/RQ3_clustering_reviewed_difficulty_summary.png`
+
+Useful phase-2 flags
+- `--export-csvs` to also export the reviewed summaries as CSV files.
+- `--allow-pending` to compute interim metrics before every row is marked as reviewed.
+- `--no-plots` to skip figure generation and write only the reviewed workbooks/CSVs.
+- `--plot-format <png|pdf|svg>` to change the reviewed plot format.
 
 Output structure per execution
 ------------------------------
