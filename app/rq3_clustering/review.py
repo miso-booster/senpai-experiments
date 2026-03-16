@@ -1,12 +1,11 @@
-import re
 from typing import Iterable
 
 import pandas as pd
 
 try:
-    from .utils import to_bool
+    from .utils import prompt_sort_key, to_bool
 except ImportError:  # Supports direct execution
-    from utils import to_bool
+    from utils import prompt_sort_key, to_bool
 
 
 def _clean_text(value: object) -> str:
@@ -21,16 +20,6 @@ def _first_non_empty(values: Iterable[object]) -> str:
         if text:
             return text
     return ""
-
-
-def _prompt_sort_key(value: object) -> tuple[int, str]:
-    text = "" if value is None else str(value).strip().lower()
-    match = re.fullmatch(r"p(\d+)(?:_(.+))?", text)
-    if not match:
-        return (10**9, text)
-    return (int(match.group(1)), text)
-
-
 def build_review_assignments(cluster_assignments: pd.DataFrame) -> pd.DataFrame:
     if cluster_assignments.empty:
         return pd.DataFrame()
@@ -59,7 +48,7 @@ def build_review_assignments(cluster_assignments: pd.DataFrame) -> pd.DataFrame:
     review = review[preferred_columns].copy()
     review = review.sort_values(
         ["arch_id", "prompt_id", "response_index"],
-        key=lambda s: s.map(_prompt_sort_key) if s.name == "prompt_id" else s,
+        key=lambda s: s.map(prompt_sort_key) if s.name == "prompt_id" else s,
         kind="stable",
     ).reset_index(drop=True)
     return review
@@ -88,7 +77,7 @@ def build_review_cluster_reference(cluster_summary: pd.DataFrame) -> pd.DataFram
     reference = reference[[column for column in preferred_columns if column in reference.columns]].copy()
     reference = reference.sort_values(
         ["arch_id", "prompt_id", "response_count"],
-        key=lambda s: s.map(_prompt_sort_key) if s.name == "prompt_id" else s,
+        key=lambda s: s.map(prompt_sort_key) if s.name == "prompt_id" else s,
         ascending=[True, True, False],
         kind="stable",
     ).reset_index(drop=True)
@@ -165,7 +154,7 @@ def build_summaries_from_assignments(
 
     grouped = sorted(
         normalized.groupby(["arch_id", "prompt_id", "final_cluster_id"], dropna=False),
-        key=lambda item: (str(item[0][0]), _prompt_sort_key(item[0][1]), str(item[0][2])),
+        key=lambda item: (str(item[0][0]), prompt_sort_key(item[0][1]), str(item[0][2])),
     )
     cluster_records_by_prompt: dict[tuple[str, str], list[dict[str, object]]] = {}
 
@@ -201,7 +190,7 @@ def build_summaries_from_assignments(
 
     for (arch_id, prompt_id), records in sorted(
         cluster_records_by_prompt.items(),
-        key=lambda item: (str(item[0][0]), _prompt_sort_key(item[0][1])),
+        key=lambda item: (str(item[0][0]), prompt_sort_key(item[0][1])),
     ):
         records.sort(key=lambda row: (-int(row["response_count"]), str(row["cluster_id"])))
 

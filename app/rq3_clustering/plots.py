@@ -3,13 +3,10 @@ from pathlib import Path
 
 import pandas as pd
 
-
-def _prompt_sort_key(value: object) -> tuple[int, str]:
-    text = "" if value is None else str(value).strip().lower()
-    match = re.fullmatch(r"p(\d+)(?:_(.+))?", text)
-    if not match:
-        return (10**9, text)
-    return (int(match.group(1)), text)
+try:
+    from .utils import prompt_sort_key
+except ImportError:  # Supports direct execution
+    from utils import prompt_sort_key
 
 
 def _prompt_difficulty(prompt_id: object) -> str:
@@ -107,7 +104,7 @@ def generate_plots(
     prompt = prompt_summary.copy()
     prompt["arch_label"] = prompt["arch_id"].map(_arch_label)
     prompt["difficulty"] = prompt["prompt_id"].map(_prompt_difficulty)
-    prompt["_prompt_order"] = prompt["prompt_id"].map(_prompt_sort_key)
+    prompt["_prompt_order"] = prompt["prompt_id"].map(prompt_sort_key)
     prompt = prompt.sort_values(["_prompt_order", "arch_label"], kind="stable").reset_index(drop=True)
 
     prompt_order = (
