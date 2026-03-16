@@ -10,6 +10,12 @@ ARCH_DISPLAY_LABELS = {
     "one_node_architecture": "Monolithic",
 }
 
+ARCH_FILL_COLORS = {
+    "agentic_architecture": "#4C78A8",
+    "graph_based_architecture": "#F58518",
+    "one_node_architecture": "#54A24B",
+}
+
 
 def _rate_equals_one(series: pd.Series) -> float:
     """Return the share of observed numeric values that equal 1."""
@@ -83,7 +89,10 @@ def generate_plots(
         return
 
     colors = plt.get_cmap("tab10").colors
-    color_map = {arch: colors[i % len(colors)] for i, arch in enumerate(arch_order)}
+    color_map = {
+        arch: ARCH_FILL_COLORS.get(arch, colors[i % len(colors)])
+        for i, arch in enumerate(arch_order)
+    }
     arch_labels = _display_arch_labels(arch_order)
 
     def _save(fig, filename: str) -> None:
@@ -111,7 +120,8 @@ def generate_plots(
                 yerr=stat.loc[valid_mean, "std"].fillna(0),
                 capsize=5,
                 color=[color_map[labels[i]] for i in x_valid],
-                alpha=0.9,
+                edgecolor="black",
+                linewidth=1.1,
             )
         ax.set_xticks(x_all, _display_arch_labels(labels))
         ax.set_title(f"Average per response: {label}")
@@ -140,6 +150,8 @@ def generate_plots(
         for patch, arch in zip(box["boxes"], arch_order):
             patch.set_facecolor(color_map[arch])
             patch.set_alpha(0.65)
+            patch.set_edgecolor("black")
+            patch.set_linewidth(1.0)
         ax.set_title(f"Variability across responses: {label}")
         ax.set_ylabel(label)
         ax.tick_params(axis="x", rotation=12)
@@ -168,6 +180,8 @@ def generate_plots(
         for patch, arch in zip(box["boxes"], arch_order):
             patch.set_facecolor(color_map[arch])
             patch.set_alpha(0.65)
+            patch.set_edgecolor("black")
+            patch.set_linewidth(1.0)
         ax.set_title(label, fontsize=14)
         ax.set_ylabel(label, fontsize=12)
         ax.tick_params(axis="x", rotation=10, labelsize=12)
@@ -199,10 +213,11 @@ def generate_plots(
         axes = [axes] if len(quality_panels) == 1 else axes
         for ax, (title, series, ylabel) in zip(axes, quality_panels):
             ax.bar(
-                series.index,
+                range(len(series.index)),
                 series.fillna(0),
                 color=[color_map[a] for a in series.index],
-                alpha=0.9,
+                edgecolor="black",
+                linewidth=1.1,
             )
             ax.set_ylim(0, 1)
             ax.set_title(title)
@@ -237,6 +252,8 @@ def generate_plots(
             for patch, arch in zip(box["boxes"], arch_order):
                 patch.set_facecolor(color_map[arch])
                 patch.set_alpha(0.65)
+                patch.set_edgecolor("black")
+                patch.set_linewidth(1.0)
             ax.set_title("Lines of Code per Response")
             ax.set_ylabel("Code lines")
             ax.tick_params(axis="x", rotation=15)

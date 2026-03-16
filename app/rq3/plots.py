@@ -5,6 +5,39 @@ import re
 import pandas as pd
 
 
+METRIC_FILL_COLORS = {
+    "Exact seq": "#1f77b4",
+    "Exact sequence": "#1f77b4",
+    "Exact set": "#ff7f0e",
+    "Exact multiset": "#2ca02c",
+    "Set Jaccard": "#9467bd",
+    "Multiset Jaccard": "#8c564b",
+    "Count": "#17becf",
+}
+
+METRIC_HATCHES = {
+    "Exact seq": "////",
+    "Exact sequence": "////",
+    "Exact set": "\\\\\\\\",
+    "Exact multiset": "----",
+    "Set Jaccard": "xxxx",
+    "Multiset Jaccard": "....",
+    "Count": "//////",
+}
+
+DIFFICULTY_FILL_COLORS = {
+    "basic": "#1f77b4",
+    "intermediate": "#ff7f0e",
+    "complex": "#2ca02c",
+}
+
+DIFFICULTY_HATCHES = {
+    "basic": "////",
+    "intermediate": "\\\\\\\\",
+    "complex": "----",
+}
+
+
 def _prompt_id_num(value: object) -> int:
     text = "" if value is None else str(value).strip().lower()
     m = re.fullmatch(r"p(\d+)", text)
@@ -37,6 +70,7 @@ def _generate_sequence_plots(
         import matplotlib
 
         matplotlib.use("Agg")
+        matplotlib.rcParams["hatch.linewidth"] = 1.4
         import matplotlib.pyplot as plt
         import numpy as np
         from matplotlib.patches import Patch
@@ -55,6 +89,13 @@ def _generate_sequence_plots(
         fig.savefig(out_dir / f"{filename}.{plot_format}", dpi=dpi, bbox_inches="tight")
         plt.close(fig)
 
+    legend_kwargs = {
+        "handlelength": 2.6,
+        "handleheight": 1.4,
+        "borderpad": 0.8,
+        "labelspacing": 0.6,
+    }
+
     ps = (
         prompt_summary.assign(_prompt_id_num=prompt_summary["prompt_id"].map(_prompt_id_num))
         .sort_values(["_prompt_id_num", "prompt_id", "prompt_key"], kind="stable")
@@ -67,19 +108,29 @@ def _generate_sequence_plots(
     fig, ax = plt.subplots(figsize=(max(9, len(ps) * 0.9), 4.8))
     width = 0.25
     bars = [
-        ("Exact sequence", "exact_sequence_consistency", -width, "#1f77b4"),
-        ("Exact set", "exact_set_consistency", 0.0, "#ff7f0e"),
-        ("Exact multiset", "exact_multiset_consistency", width, "#2ca02c"),
+        ("Exact sequence", "exact_sequence_consistency", -width),
+        ("Exact set", "exact_set_consistency", 0.0),
+        ("Exact multiset", "exact_multiset_consistency", width),
     ]
-    for label, col, offset, color in bars:
+    for label, col, offset in bars:
         vals = pd.to_numeric(ps[col], errors="coerce").fillna(0).to_numpy()
-        ax.bar(x + offset, vals, width=width, label=label, color=color, alpha=0.9)
+        series_bars = ax.bar(
+            x + offset,
+            vals,
+            width=width,
+            label=label,
+            color=METRIC_FILL_COLORS[label],
+            edgecolor="black",
+            linewidth=1.1,
+        )
+        for bar in series_bars:
+            bar.set_hatch(METRIC_HATCHES[label])
     ax.set_xticks(x, prompt_order)
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Consistency")
     ax.set_title(prompt_title)
     ax.grid(axis="y", alpha=0.3)
-    ax.legend()
+    ax.legend(**legend_kwargs)
     _save(fig, prompt_filename)
 
     fig, axes = plt.subplots(1, 2, figsize=(max(12, len(ps) * 1.2), 4.8))
@@ -87,18 +138,48 @@ def _generate_sequence_plots(
 
     set_j = pd.to_numeric(ps["pairwise_set_jaccard_mean"], errors="coerce").fillna(0).to_numpy()
     bag_j = pd.to_numeric(ps["pairwise_multiset_jaccard_mean"], errors="coerce").fillna(0).to_numpy()
-    ax1.bar(x - width / 2, set_j, width=width, label="Set Jaccard", color="#9467bd")
-    ax1.bar(x + width / 2, bag_j, width=width, label="Multiset Jaccard", color="#8c564b")
+    set_bars = ax1.bar(
+        x - width / 2,
+        set_j,
+        width=width,
+        label="Set Jaccard",
+        color=METRIC_FILL_COLORS["Set Jaccard"],
+        edgecolor="black",
+        linewidth=1.1,
+    )
+    bag_bars = ax1.bar(
+        x + width / 2,
+        bag_j,
+        width=width,
+        label="Multiset Jaccard",
+        color=METRIC_FILL_COLORS["Multiset Jaccard"],
+        edgecolor="black",
+        linewidth=1.1,
+    )
+    for bar in set_bars:
+        bar.set_hatch(METRIC_HATCHES["Set Jaccard"])
+    for bar in bag_bars:
+        bar.set_hatch(METRIC_HATCHES["Multiset Jaccard"])
     ax1.set_xticks(x, prompt_order)
     ax1.set_ylim(0, 1.05)
     ax1.set_ylabel("Mean pairwise similarity")
     ax1.set_title(similarity_title)
     ax1.grid(axis="y", alpha=0.3)
-    ax1.legend()
+    ax1.legend(**legend_kwargs)
 
     means = pd.to_numeric(ps[count_mean_col], errors="coerce").to_numpy()
     stds = pd.to_numeric(ps[count_std_col], errors="coerce").fillna(0).to_numpy()
-    ax2.bar(x, means, yerr=stds, capsize=4, color="#17becf", alpha=0.85)
+    count_bars = ax2.bar(
+        x,
+        means,
+        yerr=stds,
+        capsize=4,
+        color=METRIC_FILL_COLORS["Count"],
+        edgecolor="black",
+        linewidth=1.1,
+    )
+    for bar in count_bars:
+        bar.set_hatch(METRIC_HATCHES["Count"])
     ax2.set_xticks(x, prompt_order)
     ax2.set_ylabel(count_axis_label)
     ax2.set_title(count_title)
@@ -119,18 +200,20 @@ def _generate_sequence_plots(
         heat = heat.reindex(columns=[pid for pid in prompt_order if pid in heat.columns])
         if not heat.empty:
             fig, ax = plt.subplots(figsize=(max(8, heat.shape[1] * 1.1), max(4, heat.shape[0] * 0.6 + 1.5)))
-            im = ax.imshow(heat.fillna(0).to_numpy(), vmin=0, vmax=1, cmap="YlGnBu", aspect="auto")
+            im = ax.imshow(heat.fillna(0).to_numpy(), vmin=0, vmax=1, cmap="Reds", aspect="auto")
             ax.set_xticks(range(len(heat.columns)), labels=[str(c) for c in heat.columns], rotation=0)
             ax.set_yticks(range(len(heat.index)), labels=[str(i) for i in heat.index])
-            ax.set_title(presence_title)
+            ax.tick_params(axis="both", labelsize=11)
+            ax.set_title(presence_title, fontsize=14)
             cbar = fig.colorbar(im, ax=ax)
-            cbar.set_label("Presence rate")
+            cbar.set_label("Presence rate", fontsize=11)
+            cbar.ax.tick_params(labelsize=10)
             for i in range(heat.shape[0]):
                 for j in range(heat.shape[1]):
                     val = heat.iloc[i, j]
                     if pd.notna(val):
                         text_color = "white" if float(val) >= 0.6 else "black"
-                        ax.text(j, i, f"{val:.1f}", ha="center", va="center", fontsize=8, color=text_color)
+                        ax.text(j, i, f"{val:.1f}", ha="center", va="center", fontsize=14, color=text_color)
             _save(fig, presence_filename)
 
     variability_metrics = [
@@ -155,10 +238,12 @@ def _generate_sequence_plots(
         showfliers=True,
         medianprops={"color": "#d62728", "linewidth": 1.1},
     )
-    palette = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#8c564b"]
-    for patch, color in zip(box["boxes"], palette):
-        patch.set_facecolor(color)
+    for patch, label in zip(box["boxes"], metric_labels):
+        patch.set_facecolor(METRIC_FILL_COLORS[label])
         patch.set_alpha(0.65)
+        patch.set_edgecolor("black")
+        patch.set_linewidth(1.0)
+        patch.set_hatch(METRIC_HATCHES[label])
     ax.set_xticks(np.arange(1, len(metric_labels) + 1), metric_labels, rotation=20, ha="right")
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Score")
@@ -169,7 +254,6 @@ def _generate_sequence_plots(
     difficulty_order = ["basic", "intermediate", "complex"]
     group_centers = np.arange(len(variability_metrics), dtype=float)
     width = 0.22
-    diff_colors = {"basic": "#1f77b4", "intermediate": "#ff7f0e", "complex": "#2ca02c"}
     diff_offsets = {"basic": -width, "intermediate": 0.0, "complex": width}
 
     legend_handles = []
@@ -190,16 +274,27 @@ def _generate_sequence_plots(
             manage_ticks=False,
         )
         for patch in b["boxes"]:
-            patch.set_facecolor(diff_colors[diff])
+            patch.set_facecolor(DIFFICULTY_FILL_COLORS[diff])
             patch.set_alpha(0.55)
-        legend_handles.append(Patch(facecolor=diff_colors[diff], edgecolor="black", alpha=0.55, label=diff))
+            patch.set_edgecolor("black")
+            patch.set_linewidth(1.0)
+            patch.set_hatch(DIFFICULTY_HATCHES[diff])
+        legend_handles.append(
+            Patch(
+                facecolor=DIFFICULTY_FILL_COLORS[diff],
+                edgecolor="black",
+                hatch=DIFFICULTY_HATCHES[diff],
+                alpha=0.55,
+                label=diff,
+            )
+        )
 
     ax.set_xticks(group_centers, metric_labels, rotation=20, ha="right")
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Score")
     ax.set_title(f"{title_prefix} Metric Distributions by Difficulty")
     ax.grid(axis="y", alpha=0.3)
-    ax.legend(handles=legend_handles, fontsize=8)
+    ax.legend(handles=legend_handles, fontsize=8, **legend_kwargs)
     _save(fig, variability_summary_filename)
 
     fig, axes = plt.subplots(1, 2, figsize=(13.5, 4.8))
@@ -220,14 +315,17 @@ def _generate_sequence_plots(
     stds = pd.to_numeric(overall_stats["std"], errors="coerce").fillna(0).to_numpy()
     lower = np.minimum(stds, means)
     upper = np.minimum(stds, 1 - means)
-    ax.bar(
+    summary_bars = ax.bar(
         x_all,
         means,
         yerr=np.vstack([lower, upper]),
         capsize=5,
-        color=palette[: len(overall_stats)],
-        alpha=0.9,
+        color=[METRIC_FILL_COLORS[label] for label in overall_stats["label"]],
+        edgecolor="black",
+        linewidth=1.1,
     )
+    for bar, label in zip(summary_bars, overall_stats["label"]):
+        bar.set_hatch(METRIC_HATCHES[label])
     ax.set_xticks(x_all, overall_stats["label"].tolist(), rotation=20, ha="right")
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Mean score across prompts")
@@ -247,22 +345,25 @@ def _generate_sequence_plots(
         std_vals = pd.to_numeric(by_diff_stats[(metric, "std")], errors="coerce").fillna(0).to_numpy()
         lower = np.minimum(std_vals, mean_vals)
         upper = np.minimum(std_vals, 1 - mean_vals)
-        ax.bar(
+        bars = ax.bar(
             x_diff + (i - 2.0) * width,
             mean_vals,
             width=width,
             yerr=np.vstack([lower, upper]),
             capsize=3,
             label=label,
-            color=palette[i],
-            alpha=0.9,
+            color=METRIC_FILL_COLORS[label],
+            edgecolor="black",
+            linewidth=1.0,
         )
+        for bar in bars:
+            bar.set_hatch(METRIC_HATCHES[label])
     ax.set_xticks(x_diff, difficulty_order)
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Mean score")
     ax.set_title(f"{title_prefix} Average and Variability by Difficulty")
     ax.grid(axis="y", alpha=0.3)
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=8, **legend_kwargs)
     _save(fig, variability_mean_std_filename)
 
 
