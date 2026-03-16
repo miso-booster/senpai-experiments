@@ -52,6 +52,16 @@ def generate_plots(
 
     out_dir.mkdir(parents=True, exist_ok=True)
     written_paths: list[Path] = []
+    arch_hatches = {
+        "Agentic": "///",
+        "Graph-based": "\\\\\\",
+        "One-node": "xxx",
+    }
+    arch_fills = {
+        "Agentic": "#4C78A8",
+        "Graph-based": "#F58518",
+        "One-node": "#54A24B",
+    }
 
     def _save(fig, filename: str) -> None:
         fig.tight_layout()
@@ -69,13 +79,21 @@ def generate_plots(
     labels = overall["arch_label"].tolist()
 
     metrics = [
-        ("mean_majority_cluster_share", "Mean Majority Share", (0, 1.05), "#1f77b4"),
-        ("perfect_consensus_rate", "Perfect Consensus Rate", (0, 1.05), "#2ca02c"),
-        ("mean_cluster_count", "Mean Cluster Count", None, "#ff7f0e"),
+        ("mean_majority_cluster_share", "Mean Majority Share", (0, 1.05)),
+        ("perfect_consensus_rate", "Perfect Consensus Rate", (0, 1.05)),
+        ("mean_cluster_count", "Mean Cluster Count", None),
     ]
-    for ax, (column, title, ylim, color) in zip(axes, metrics):
+    for ax, (column, title, ylim) in zip(axes, metrics):
         values = pd.to_numeric(overall[column], errors="coerce").fillna(0).to_numpy()
-        ax.bar(x, values, color=color, alpha=0.9)
+        bars = ax.bar(
+            x,
+            values,
+            color=[arch_fills.get(label, "#bdbdbd") for label in labels],
+            edgecolor="black",
+            linewidth=1.0,
+        )
+        for bar, label in zip(bars, labels):
+            bar.set_hatch(arch_hatches.get(label, "///"))
         ax.set_xticks(x, labels, rotation=15, ha="right")
         ax.set_title(title)
         ax.grid(axis="y", alpha=0.3)
@@ -129,13 +147,21 @@ def generate_plots(
 
     x = np.arange(len(prompt_order))
     width = 0.8 / max(len(arch_order), 1)
-    colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#8c564b"]
-
     fig, ax = plt.subplots(figsize=(max(10, len(prompt_order) * 0.75), 4.8))
     for idx, arch_label in enumerate(arch_order):
         values = pd.to_numeric(majority_pivot[arch_label], errors="coerce").fillna(0).to_numpy()
         offset = (idx - (len(arch_order) - 1) / 2) * width
-        ax.bar(x + offset, values, width=width, label=arch_label, color=colors[idx % len(colors)], alpha=0.9)
+        bars = ax.bar(
+            x + offset,
+            values,
+            width=width,
+            label=arch_label,
+            color=arch_fills.get(arch_label, "#bdbdbd"),
+            edgecolor="black",
+            linewidth=0.9,
+        )
+        for bar in bars:
+            bar.set_hatch(arch_hatches.get(arch_label, "///"))
     ax.set_xticks(x, prompt_order)
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Majority cluster share")
@@ -148,7 +174,17 @@ def generate_plots(
     for idx, arch_label in enumerate(arch_order):
         values = pd.to_numeric(cluster_count_pivot[arch_label], errors="coerce").fillna(0).to_numpy()
         offset = (idx - (len(arch_order) - 1) / 2) * width
-        ax.bar(x + offset, values, width=width, label=arch_label, color=colors[idx % len(colors)], alpha=0.9)
+        bars = ax.bar(
+            x + offset,
+            values,
+            width=width,
+            label=arch_label,
+            color=arch_fills.get(arch_label, "#bdbdbd"),
+            edgecolor="black",
+            linewidth=0.9,
+        )
+        for bar in bars:
+            bar.set_hatch(arch_hatches.get(arch_label, "///"))
     ax.set_xticks(x, prompt_order)
     ax.set_ylabel("Reviewed cluster count")
     ax.set_title("RQ3 Reviewed Cluster Count by Prompt")
@@ -160,7 +196,7 @@ def generate_plots(
         figsize=(max(8, len(prompt_order) * 0.9), max(3.5, len(arch_order) * 0.8 + 1.2))
     )
     heat = majority_pivot.T
-    im = ax.imshow(heat.to_numpy(), vmin=0, vmax=1, cmap="YlGnBu", aspect="auto")
+    im = ax.imshow(heat.to_numpy(), vmin=0, vmax=1, cmap="Greys", aspect="auto")
     ax.set_xticks(range(len(heat.columns)), labels=[str(value) for value in heat.columns], rotation=0)
     ax.set_yticks(range(len(heat.index)), labels=[str(value) for value in heat.index])
     ax.set_title("RQ3 Reviewed Majority Share Heatmap")
@@ -169,7 +205,7 @@ def generate_plots(
     for row_idx in range(heat.shape[0]):
         for col_idx in range(heat.shape[1]):
             value = float(heat.iloc[row_idx, col_idx])
-            text_color = "white" if value >= 0.6 else "black"
+            text_color = "white" if value >= 0.55 else "black"
             ax.text(col_idx, row_idx, f"{value:.2f}", ha="center", va="center", fontsize=8, color=text_color)
     _save(fig, "RQ3_clustering_reviewed_majority_share_heatmap")
 
@@ -198,14 +234,17 @@ def generate_plots(
                 for diff in difficulty_order
             ]
             offset = (idx - (len(arch_order) - 1) / 2) * width
-            ax.bar(
+            bars = ax.bar(
                 x + offset,
                 values,
                 width=width,
                 label=arch_label,
-                color=colors[idx % len(colors)],
-                alpha=0.9,
+                color=arch_fills.get(arch_label, "#bdbdbd"),
+                edgecolor="black",
+                linewidth=0.9,
             )
+            for bar in bars:
+                bar.set_hatch(arch_hatches.get(arch_label, "///"))
         ax.set_xticks(x, difficulty_order)
         ax.set_ylabel(ylabel)
         ax.set_title(title)
