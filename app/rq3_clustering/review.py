@@ -3,6 +3,11 @@ from typing import Iterable
 
 import pandas as pd
 
+try:
+    from .utils import to_bool
+except ImportError:  # Supports direct execution
+    from utils import to_bool
+
 
 def _clean_text(value: object) -> str:
     if value is None or pd.isna(value):
@@ -24,15 +29,6 @@ def _prompt_sort_key(value: object) -> tuple[int, str]:
     if not match:
         return (10**9, text)
     return (int(match.group(1)), text)
-
-
-def _to_bool(value: object) -> bool:
-    if isinstance(value, bool):
-        return value
-    if value is None or pd.isna(value):
-        return False
-    text = str(value).strip().lower()
-    return text in {"true", "1", "yes", "y", "x"}
 
 
 def build_review_assignments(cluster_assignments: pd.DataFrame) -> pd.DataFrame:
@@ -149,7 +145,7 @@ def build_summaries_from_assignments(
         normalized["proposed_cluster_reason"] = ""
 
     if reviewed_flag_col and reviewed_flag_col in normalized.columns:
-        normalized["reviewed"] = normalized[reviewed_flag_col].map(_to_bool)
+        normalized["reviewed"] = normalized[reviewed_flag_col].map(to_bool)
     else:
         normalized["reviewed"] = False
 

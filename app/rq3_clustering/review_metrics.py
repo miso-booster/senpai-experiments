@@ -12,23 +12,16 @@ try:
     from .excel import save_reviewed_outputs
     from .plots import generate_plots
     from .review import build_summaries_from_assignments
+    from .utils import to_bool
 except ImportError:  # Supports `python app/rq3_clustering/review_metrics.py`
     from excel import save_reviewed_outputs
     from plots import generate_plots
     from review import build_summaries_from_assignments
+    from utils import to_bool
 
 
 DEFAULT_OUT_DIR = OUT_DIR / "RQ3_clustering"
 DEFAULT_REVIEW_WORKBOOK = DEFAULT_OUT_DIR / "RQ3_clustering_review_template.xlsx"
-
-
-def _to_bool(value: object) -> bool:
-    if isinstance(value, bool):
-        return value
-    if value is None or pd.isna(value):
-        return False
-    text = str(value).strip().lower()
-    return text in {"true", "1", "yes", "y", "x"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -104,7 +97,7 @@ def validate_review_assignments(df: pd.DataFrame, *, allow_pending: bool) -> pd.
         raise SystemExit(f"Missing required review columns: {', '.join(missing)}")
 
     review = df.copy()
-    review["reviewed"] = review["reviewed"].map(_to_bool)
+    review["reviewed"] = review["reviewed"].map(to_bool)
     if not allow_pending:
         pending = review[~review["reviewed"]]
         if not pending.empty:
