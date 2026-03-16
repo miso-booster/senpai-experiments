@@ -51,9 +51,9 @@ def generate_plots(
     out_dir.mkdir(parents=True, exist_ok=True)
     written_paths: list[Path] = []
     arch_hatches = {
-        "Agentic": "/",
-        "Graph-based": "\\",
-        "One-node": "-",
+        "Agentic": "////",
+        "Graph-based": "\\\\\\\\",
+        "One-node": "----",
     }
     arch_fills = {
         "Agentic": "#4C78A8",
@@ -67,6 +67,13 @@ def generate_plots(
         fig.savefig(path, dpi=dpi, bbox_inches="tight")
         plt.close(fig)
         written_paths.append(path)
+
+    legend_kwargs = {
+        "handlelength": 2.6,
+        "handleheight": 1.4,
+        "borderpad": 0.8,
+        "labelspacing": 0.6,
+    }
 
     overall = overall_summary.copy()
     overall["arch_label"] = overall["arch_id"].map(_arch_label)
@@ -83,15 +90,13 @@ def generate_plots(
     ]
     for ax, (column, title, ylim) in zip(axes, metrics):
         values = pd.to_numeric(overall[column], errors="coerce").fillna(0).to_numpy()
-        bars = ax.bar(
+        ax.bar(
             x,
             values,
             color=[arch_fills.get(label, "#bdbdbd") for label in labels],
             edgecolor="black",
             linewidth=1.2,
         )
-        for bar, label in zip(bars, labels):
-            bar.set_hatch(arch_hatches.get(label, "///"))
         ax.set_xticks(x, labels, rotation=15, ha="right")
         ax.set_title(title)
         ax.grid(axis="y", alpha=0.3)
@@ -165,7 +170,7 @@ def generate_plots(
     ax.set_ylabel("Majority cluster share")
     ax.set_title("RQ3 Reviewed Consistency by Prompt")
     ax.grid(axis="y", alpha=0.3)
-    ax.legend()
+    ax.legend(**legend_kwargs)
     _save(fig, "RQ3_clustering_reviewed_prompt_majority_share")
 
     fig, ax = plt.subplots(figsize=(max(10, len(prompt_order) * 0.75), 4.8))
@@ -187,24 +192,26 @@ def generate_plots(
     ax.set_ylabel("Reviewed cluster count")
     ax.set_title("RQ3 Reviewed Cluster Count by Prompt")
     ax.grid(axis="y", alpha=0.3)
-    ax.legend()
+    ax.legend(**legend_kwargs)
     _save(fig, "RQ3_clustering_reviewed_prompt_cluster_count")
 
     fig, ax = plt.subplots(
         figsize=(max(8, len(prompt_order) * 0.9), max(3.5, len(arch_order) * 0.8 + 1.2))
     )
     heat = majority_pivot.T
-    im = ax.imshow(heat.to_numpy(), vmin=0, vmax=1, cmap="Greys", aspect="auto")
+    im = ax.imshow(heat.to_numpy(), vmin=0, vmax=1, cmap="Reds", aspect="auto")
     ax.set_xticks(range(len(heat.columns)), labels=[str(value) for value in heat.columns], rotation=0)
     ax.set_yticks(range(len(heat.index)), labels=[str(value) for value in heat.index])
-    ax.set_title("RQ3 Reviewed Majority Share Heatmap")
+    ax.tick_params(axis="both", labelsize=11)
+    ax.set_title("RQ3 Reviewed Majority Share Heatmap", fontsize=14)
     cbar = fig.colorbar(im, ax=ax)
-    cbar.set_label("Majority share")
+    cbar.set_label("Majority share", fontsize=11)
+    cbar.ax.tick_params(labelsize=10)
     for row_idx in range(heat.shape[0]):
         for col_idx in range(heat.shape[1]):
             value = float(heat.iloc[row_idx, col_idx])
             text_color = "white" if value >= 0.55 else "black"
-            ax.text(col_idx, row_idx, f"{value:.2f}", ha="center", va="center", fontsize=8, color=text_color)
+            ax.text(col_idx, row_idx, f"{value:.2f}", ha="center", va="center", fontsize=14, color=text_color)
     _save(fig, "RQ3_clustering_reviewed_majority_share_heatmap")
 
     by_difficulty = (
@@ -249,7 +256,7 @@ def generate_plots(
         ax.grid(axis="y", alpha=0.3)
         if ylim is not None:
             ax.set_ylim(*ylim)
-    axes[1].legend()
+    axes[1].legend(**legend_kwargs)
     _save(fig, "RQ3_clustering_reviewed_difficulty_summary")
 
     return written_paths
