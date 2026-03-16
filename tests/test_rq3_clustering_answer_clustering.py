@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from app.rq3_clustering import answer_clustering
 from app.rq3_clustering.answer_clustering import (
@@ -8,6 +9,7 @@ from app.rq3_clustering.answer_clustering import (
     normalize_cluster_payload,
     repair_cluster_payload,
 )
+from app.rq3_clustering.plots import generate_plots
 from app.rq3_clustering.review import (
     build_review_assignments,
     build_review_cluster_reference,
@@ -325,3 +327,80 @@ def test_validate_review_assignments_rejects_pending_rows() -> None:
         assert "reviewed=FALSE" in str(exc)
     else:  # pragma: no cover - defensive
         raise AssertionError("Expected pending review validation to fail")
+
+
+def test_generate_reviewed_plots_writes_expected_files(tmp_path) -> None:
+    pytest.importorskip("matplotlib")
+
+    overall_summary = pd.DataFrame(
+        [
+            {
+                "arch_id": "agentic_architecture",
+                "mean_majority_cluster_share": 0.90,
+                "perfect_consensus_rate": 0.80,
+                "mean_cluster_count": 1.3,
+            },
+            {
+                "arch_id": "graph_based_architecture",
+                "mean_majority_cluster_share": 0.75,
+                "perfect_consensus_rate": 0.40,
+                "mean_cluster_count": 1.9,
+            },
+        ]
+    )
+    prompt_summary = pd.DataFrame(
+        [
+            {
+                "arch_id": "agentic_architecture",
+                "prompt_id": "p1_basic",
+                "majority_cluster_share": 1.0,
+                "cluster_count": 1,
+            },
+            {
+                "arch_id": "graph_based_architecture",
+                "prompt_id": "p1_basic",
+                "majority_cluster_share": 0.8,
+                "cluster_count": 2,
+            },
+            {
+                "arch_id": "agentic_architecture",
+                "prompt_id": "p6_intermediate",
+                "majority_cluster_share": 0.9,
+                "cluster_count": 1,
+            },
+            {
+                "arch_id": "graph_based_architecture",
+                "prompt_id": "p6_intermediate",
+                "majority_cluster_share": 0.6,
+                "cluster_count": 3,
+            },
+            {
+                "arch_id": "agentic_architecture",
+                "prompt_id": "p11_complex",
+                "majority_cluster_share": 0.85,
+                "cluster_count": 2,
+            },
+            {
+                "arch_id": "graph_based_architecture",
+                "prompt_id": "p11_complex",
+                "majority_cluster_share": 0.5,
+                "cluster_count": 4,
+            },
+        ]
+    )
+
+    written_paths = generate_plots(
+        tmp_path,
+        overall_summary,
+        prompt_summary,
+        plot_format="png",
+        dpi=90,
+    )
+
+    assert {path.name for path in written_paths} == {
+        "RQ3_clustering_reviewed_overall_summary.png",
+        "RQ3_clustering_reviewed_prompt_majority_share.png",
+        "RQ3_clustering_reviewed_prompt_cluster_count.png",
+        "RQ3_clustering_reviewed_majority_share_heatmap.png",
+        "RQ3_clustering_reviewed_difficulty_summary.png",
+    }

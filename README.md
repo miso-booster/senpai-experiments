@@ -220,6 +220,17 @@ python -m app.rq3_clustering.review_metrics --allow-pending
 This writes:
 - `out/RQ3_clustering/RQ3_clustering_reviewed_metrics.xlsx`
 - One reviewed workbook per architecture, for example `out/RQ3_clustering/agentic_architecture_answer_clustering_reviewed.xlsx`
+- `out/RQ3_clustering/RQ3_clustering_reviewed_overall_summary.png`
+- `out/RQ3_clustering/RQ3_clustering_reviewed_prompt_majority_share.png`
+- `out/RQ3_clustering/RQ3_clustering_reviewed_prompt_cluster_count.png`
+- `out/RQ3_clustering/RQ3_clustering_reviewed_majority_share_heatmap.png`
+- `out/RQ3_clustering/RQ3_clustering_reviewed_difficulty_summary.png`
+
+Useful phase-2 flags
+- `--export-csvs` to also export the reviewed summaries as CSV files.
+- `--allow-pending` to compute interim metrics before every row is marked as reviewed.
+- `--no-plots` to skip figure generation and write only the reviewed workbooks/CSVs.
+- `--plot-format <png|pdf|svg>` to change the reviewed plot format.
 
 Output structure per execution
 ------------------------------

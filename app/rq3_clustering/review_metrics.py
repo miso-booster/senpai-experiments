@@ -10,9 +10,11 @@ except Exception:  # Supports direct execution
 
 try:
     from .excel import save_reviewed_outputs
+    from .plots import generate_plots
     from .review import build_summaries_from_assignments
 except ImportError:  # Supports `python app/rq3_clustering/review_metrics.py`
     from excel import save_reviewed_outputs
+    from plots import generate_plots
     from review import build_summaries_from_assignments
 
 
@@ -51,12 +53,29 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--allow-pending",
         action="store_true",
-        help="Allow rows with review_status=pending and compute metrics anyway",
+        help="Allow rows with reviewed=FALSE and compute metrics anyway",
     )
     parser.add_argument(
         "--export-csvs",
         action="store_true",
         help="Also export reviewed metrics as CSV files",
+    )
+    parser.add_argument(
+        "--no-plots",
+        action="store_true",
+        help="Generate the reviewed workbooks only and skip plot generation",
+    )
+    parser.add_argument(
+        "--plot-format",
+        default="png",
+        choices=["png", "pdf", "svg"],
+        help="Output format for reviewed plots (default: png)",
+    )
+    parser.add_argument(
+        "--dpi",
+        type=int,
+        default=220,
+        help="DPI for reviewed plots (default: 220)",
     )
     return parser.parse_args()
 
@@ -133,6 +152,17 @@ def main() -> None:
         reviewed_cluster_summary,
         export_csvs=args.export_csvs,
     )
+
+    if not args.no_plots:
+        written_paths.extend(
+            generate_plots(
+                out_dir,
+                reviewed_overall_summary,
+                reviewed_prompt_summary,
+                plot_format=args.plot_format,
+                dpi=args.dpi,
+            )
+        )
 
     print(f"[INFO] Reviewed assignments: {len(reviewed_assignments)}")
     print("[INFO] Files:")
