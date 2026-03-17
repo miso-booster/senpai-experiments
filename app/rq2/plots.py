@@ -16,6 +16,8 @@ ARCH_FILL_COLORS = {
     "one_node_architecture": "#54A24B",
 }
 
+SINGLE_DISTRIBUTION_FIGSIZE = (5.6, 4.9)
+
 
 def _rate_equals_one(series: pd.Series) -> float:
     """Return the share of observed numeric values that equal 1."""
@@ -55,6 +57,41 @@ def _ordered_arches(df: pd.DataFrame, preferred: Sequence[str] | None) -> list[s
 def _display_arch_labels(architectures: Sequence[str]) -> list[str]:
     """Return shorter human-readable labels for plots."""
     return [ARCH_DISPLAY_LABELS.get(arch, arch.replace("_", " ")) for arch in architectures]
+
+
+def _metric_series_by_arch(
+    filtered_rows: pd.DataFrame,
+    arch_order: Sequence[str],
+    metric: str,
+) -> list[pd.Series]:
+    """Return numeric non-null metric values for each architecture."""
+    return [
+        pd.to_numeric(
+            filtered_rows.loc[filtered_rows["arch_id"] == arch, metric], errors="coerce"
+        ).dropna()
+        for arch in arch_order
+    ]
+
+
+def _style_boxplot(box, arch_order: Sequence[str], color_map: dict[str, str]) -> None:
+    """Apply consistent boxplot colors and borders."""
+    for patch, arch in zip(box["boxes"], arch_order):
+        patch.set_facecolor(color_map[arch])
+        patch.set_alpha(0.65)
+        patch.set_edgecolor("black")
+        patch.set_linewidth(1.0)
+
+
+def _style_violin(violin, arch_order: Sequence[str], color_map: dict[str, str]) -> None:
+    """Apply consistent violin colors and median styling."""
+    for body, arch in zip(violin["bodies"], arch_order):
+        body.set_facecolor(color_map[arch])
+        body.set_alpha(0.55)
+        body.set_edgecolor("black")
+        body.set_linewidth(0.8)
+    if "cmedians" in violin:
+        violin["cmedians"].set_color("#d62728")
+        violin["cmedians"].set_linewidth(1.2)
 
 
 def generate_plots(
@@ -97,7 +134,7 @@ def generate_plots(
 
     def _save(fig, filename: str) -> None:
         fig.tight_layout()
-        fig.savefig(out_dir / f"{filename}.{plot_format}", dpi=dpi, bbox_inches="tight")
+        fig.savefig(out_dir / f"{filename}.{plot_format}", dpi=dpi)
         plt.close(fig)
 
     # Figure 1: per-response means with std bars
@@ -134,12 +171,7 @@ def generate_plots(
     fig, axes = plt.subplots(1, len(metrics), figsize=(5 * len(metrics), 4.8))
     axes = [axes] if len(metrics) == 1 else axes
     for ax, (metric, label) in zip(axes, metrics.items()):
-        data = [
-            pd.to_numeric(
-                filtered_rows.loc[filtered_rows["arch_id"] == arch, metric], errors="coerce"
-            ).dropna()
-            for arch in arch_order
-        ]
+        data = _metric_series_by_arch(filtered_rows, arch_order, metric)
         box = ax.boxplot(
             data,
             labels=arch_labels,
@@ -147,11 +179,7 @@ def generate_plots(
             showfliers=True,
             medianprops={"color": "#d62728", "linewidth": 1.1},
         )
-        for patch, arch in zip(box["boxes"], arch_order):
-            patch.set_facecolor(color_map[arch])
-            patch.set_alpha(0.65)
-            patch.set_edgecolor("black")
-            patch.set_linewidth(1.0)
+        _style_boxplot(box, arch_order, color_map)
         ax.set_title(f"Variability across responses: {label}")
         ax.set_ylabel(label)
         ax.tick_params(axis="x", rotation=12)
@@ -160,15 +188,10 @@ def generate_plots(
 
     # Figure 2b: per-metric distribution plots with larger readable panels
     for metric, label in metrics.items():
-        data = [
-            pd.to_numeric(
-                filtered_rows.loc[filtered_rows["arch_id"] == arch, metric], errors="coerce"
-            ).dropna()
-            for arch in arch_order
-        ]
+        data = _metric_series_by_arch(filtered_rows, arch_order, metric)
         if not any(len(series) for series in data):
             continue
-        fig, ax = plt.subplots(1, 1, figsize=(5.6, 4.9))
+        fig, ax = plt.subplots(1, 1, figsize=SINGLE_DISTRIBUTION_FIGSIZE)
         box = ax.boxplot(
             data,
             labels=arch_labels,
@@ -177,17 +200,37 @@ def generate_plots(
             widths=0.45,
             medianprops={"color": "#d62728", "linewidth": 1.2},
         )
-        for patch, arch in zip(box["boxes"], arch_order):
-            patch.set_facecolor(color_map[arch])
-            patch.set_alpha(0.65)
-            patch.set_edgecolor("black")
-            patch.set_linewidth(1.0)
+        _style_boxplot(box, arch_order, color_map)
         ax.set_title(label, fontsize=14)
         ax.set_ylabel(label, fontsize=12)
         ax.tick_params(axis="x", rotation=10, labelsize=12)
         ax.tick_params(axis="y", labelsize=11)
         ax.grid(axis="y", alpha=0.3)
         _save(fig, f"RQ2_per_response_distribution_{metric}")
+
+        if metric == "answer_code_lines":
+            continue
+
+        try:
+            fig, ax = plt.subplots(1, 1, figsize=SINGLE_DISTRIBUTION_FIGSIZE)
+            positions = list(range(1, len(arch_order) + 1))
+            violin = ax.violinplot(
+                data,
+                positions=positions,
+                showmeans=False,
+                showmedians=True,
+                showextrema=True,
+            )
+            _style_violin(violin, arch_order, color_map)
+            ax.set_xticks(positions, arch_labels)
+            ax.set_title(label, fontsize=14)
+            ax.set_ylabel(label, fontsize=12)
+            ax.tick_params(axis="x", rotation=10, labelsize=12)
+            ax.tick_params(axis="y", labelsize=11)
+            ax.grid(axis="y", alpha=0.3)
+            _save(fig, f"RQ2_per_response_violin_distribution_{metric}")
+        except Exception as exc:  # pragma: no cover - defensive plotting fallback
+            print(f"[WARN] Could not generate violin plot for {metric}: {exc}")
 
     # Figure 3: quality/reliability rates (if available)
     quality_panels: list[tuple[str, pd.Series, str]] = []
@@ -233,15 +276,9 @@ def generate_plots(
 
     # Figure 4: dedicated code-lines metric plot (requested auxiliary metric)
     if "answer_code_lines" in filtered_rows.columns:
-        series_by_arch = [
-            pd.to_numeric(
-                filtered_rows.loc[filtered_rows["arch_id"] == arch, "answer_code_lines"],
-                errors="coerce",
-            ).dropna()
-            for arch in arch_order
-        ]
+        series_by_arch = _metric_series_by_arch(filtered_rows, arch_order, "answer_code_lines")
         if any(len(s) for s in series_by_arch):
-            fig, ax = plt.subplots(1, 1, figsize=(7.5, 4.8))
+            fig, ax = plt.subplots(1, 1, figsize=SINGLE_DISTRIBUTION_FIGSIZE)
             box = ax.boxplot(
                 series_by_arch,
                 labels=arch_labels,
@@ -249,11 +286,7 @@ def generate_plots(
                 showfliers=True,
                 medianprops={"color": "#d62728", "linewidth": 1.2},
             )
-            for patch, arch in zip(box["boxes"], arch_order):
-                patch.set_facecolor(color_map[arch])
-                patch.set_alpha(0.65)
-                patch.set_edgecolor("black")
-                patch.set_linewidth(1.0)
+            _style_boxplot(box, arch_order, color_map)
             ax.set_title("Lines of Code per Response")
             ax.set_ylabel("Code lines")
             ax.tick_params(axis="x", rotation=15)
@@ -262,7 +295,7 @@ def generate_plots(
 
             # Figure 5: code-lines distribution as violin plot
             try:
-                fig, ax = plt.subplots(1, 1, figsize=(7.5, 4.8))
+                fig, ax = plt.subplots(1, 1, figsize=SINGLE_DISTRIBUTION_FIGSIZE)
                 positions = list(range(1, len(arch_order) + 1))
                 violin = ax.violinplot(
                     series_by_arch,
@@ -271,14 +304,7 @@ def generate_plots(
                     showmedians=True,
                     showextrema=True,
                 )
-                for body, arch in zip(violin["bodies"], arch_order):
-                    body.set_facecolor(color_map[arch])
-                    body.set_alpha(0.55)
-                    body.set_edgecolor("black")
-                    body.set_linewidth(0.8)
-                if "cmedians" in violin:
-                    violin["cmedians"].set_color("#d62728")
-                    violin["cmedians"].set_linewidth(1.2)
+                _style_violin(violin, arch_order, color_map)
                 ax.set_xticks(positions, arch_labels)
                 ax.set_title("Lines of Code per Response")
                 ax.set_ylabel("Code lines")
