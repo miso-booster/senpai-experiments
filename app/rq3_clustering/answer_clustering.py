@@ -194,6 +194,14 @@ def _clean_text(value: object) -> str:
     return str(value).strip()
 
 
+def _to_bool(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None or pd.isna(value):
+        return False
+    return str(value).strip().lower() in {"true", "1", "yes", "y", "x"}
+
+
 def _first_non_empty(series: pd.Series) -> str:
     for value in series.tolist():
         text = _clean_text(value)
@@ -373,6 +381,10 @@ def _prepare_group_rows(group: pd.DataFrame) -> pd.DataFrame:
     prepared["response_index"] = list(range(1, len(prepared) + 1))
     prepared["response_id"] = [f"r{index:0{width}d}" for index in prepared["response_index"].tolist()]
     prepared["prompt"] = prepared["prompt"] if "prompt" in prepared.columns else ""
+    if "fallback" in prepared.columns:
+        prepared["fallback_detected"] = prepared["fallback"].map(_to_bool)
+    else:
+        prepared["fallback_detected"] = False
     return prepared
 
 
@@ -417,6 +429,7 @@ def _build_cluster_messages(
     prompt_id: str,
     prompt_text: str,
     rows: pd.DataFrame,
+    fallback_response_ids: Sequence[str],
     validation_error: str | None = None,
 ) -> tuple[str, str]:
     system_message = (
@@ -426,6 +439,8 @@ def _build_cluster_messages(
         "Merge answers that are materially equivalent even if one is longer, better formatted, or includes extra metadata. "
         "Do not create separate clusters just because a response adds conversation-control details, active flags, counts, or other supporting information that does not change the underlying conclusion. "
         "Keep answers separate when they differ on the best final recommendation, top candidates selected, output-field comparison outcome, validation-rule rationale in a way that changes the reasoning materially, or any other evaluation-relevant factual claim. "
+        "Treat fallback answers specially: if a response is a fallback, refusal, non-answer, or generic 'I cannot help / please rephrase' failure message, it must be assigned to one dedicated fallback cluster labeled exactly 'FB'. "
+        "All fallback responses must be grouped together in that single 'FB' cluster, and non-fallback answers must never be placed in 'FB'. "
         "Each response_id must appear in exactly one cluster. "
         "Use concise cluster labels that describe the shared conclusion. "
         "Return JSON only."
@@ -439,6 +454,7 @@ def _build_cluster_messages(
                     f"response_id: {row['response_id']}",
                     f"run_group_id: {_clean_text(row.get('run_group_id'))}",
                     f"run_id: {_clean_text(row.get('run_id'))}",
+                    f"fallback_detected: {'true' if _to_bool(row.get('fallback_detected')) else 'false'}",
                     "answer:",
                     _clean_text(row.get("answer")),
                 ]
@@ -456,6 +472,8 @@ def _build_cluster_messages(
         "",
         "Rules:",
         "- Every response_id must appear exactly once.",
+        "- If any response is a fallback, create exactly one cluster with cluster_label equal to FB and put every fallback response_id there.",
+        "- Do not use FB for any non-fallback response.",
         "- Do not create singleton clusters unless the response is genuinely distinct.",
         "- Do not split clusters because of verbosity, formatting, bullet style, or extra supporting metadata.",
         "- If two responses recommend the same best option and rely on equivalent reasoning, keep them in the same cluster.",
@@ -463,6 +481,8 @@ def _build_cluster_messages(
         "- cluster_summary should briefly explain why those responses belong together.",
         "- notes should mention any borderline distinctions if relevant, otherwise use an empty string.",
     ]
+    if fallback_response_ids:
+        user_parts.append(f"- Known fallback response_ids from run metadata: {', '.join(fallback_response_ids)}.")
     if validation_error:
         user_parts.extend(
             [
@@ -516,6 +536,7 @@ def _request_cluster_payload(
 def normalize_cluster_payload(
     payload: Mapping[str, Any],
     expected_response_ids: Sequence[str],
+    fallback_response_ids: Sequence[str] | None = None,
 ) -> list[dict[str, Any]]:
     raw_clusters = payload.get("clusters")
     if not isinstance(raw_clusters, list) or not raw_clusters:
@@ -523,6 +544,7 @@ def normalize_cluster_payload(
 
     expected_order = {response_id: index for index, response_id in enumerate(expected_response_ids)}
     expected_set = set(expected_response_ids)
+    fallback_set = set(fallback_response_ids or [])
     seen_ids: list[str] = []
     normalized: list[dict[str, Any]] = []
 
@@ -553,6 +575,16 @@ def normalize_cluster_payload(
     seen_set = set(seen_ids)
     missing = sorted(expected_set - seen_set)
     extra = sorted(seen_set - expected_set)
+    fallback_cluster_ids = sorted(
+        {
+            response_id
+            for cluster in normalized
+            if cluster["cluster_label"] == "FB"
+            for response_id in cluster["response_ids"]
+        }
+    )
+    missing_fb = sorted(fallback_set - set(fallback_cluster_ids))
+    unexpected_fb = sorted(set(fallback_cluster_ids) - fallback_set)
     if duplicates or missing or extra:
         errors: list[str] = []
         if duplicates:
@@ -562,16 +594,24 @@ def normalize_cluster_payload(
         if extra:
             errors.append(f"unexpected ids: {', '.join(extra)}")
         raise ValueError("; ".join(errors))
+    if fallback_set and (missing_fb or unexpected_fb):
+        errors = []
+        if missing_fb:
+            errors.append(f"fallback ids missing from FB cluster: {', '.join(missing_fb)}")
+        if unexpected_fb:
+            errors.append(f"non-fallback ids incorrectly assigned to FB: {', '.join(unexpected_fb)}")
+        raise ValueError("; ".join(errors))
 
     normalized.sort(
         key=lambda item: (
+            0 if item["cluster_label"] == "FB" else 1,
             -len(item["response_ids"]),
             min(expected_order[response_id] for response_id in item["response_ids"]),
         )
     )
 
     for index, cluster in enumerate(normalized, start=1):
-        cluster["cluster_id"] = f"c{index}"
+        cluster["cluster_id"] = "FB" if cluster["cluster_label"] == "FB" else f"c{index}"
         cluster["response_ids"] = sorted(cluster["response_ids"], key=expected_order.get)
 
     return normalized
@@ -580,15 +620,19 @@ def normalize_cluster_payload(
 def repair_cluster_payload(
     payload: Mapping[str, Any],
     expected_response_ids: Sequence[str],
+    fallback_response_ids: Sequence[str] | None = None,
 ) -> Mapping[str, Any]:
     raw_clusters = payload.get("clusters")
     if not isinstance(raw_clusters, list):
         raw_clusters = []
 
     expected_set = set(expected_response_ids)
+    fallback_set = set(fallback_response_ids or [])
     seen_ids: set[str] = set()
     repaired_clusters: list[dict[str, Any]] = []
     repair_notes: list[str] = []
+    fb_response_ids: list[str] = []
+    fb_summary = ""
 
     for index, raw_cluster in enumerate(raw_clusters, start=1):
         if not isinstance(raw_cluster, Mapping):
@@ -616,8 +660,26 @@ def repair_cluster_payload(
             if response_id in seen_ids:
                 repair_notes.append(f"dropped duplicate id {response_id}")
                 continue
+            if response_id in fallback_set:
+                fb_response_ids.append(response_id)
+                if cluster_label != "FB":
+                    repair_notes.append(
+                        f"moved fallback id {response_id} into FB cluster from '{cluster_label}'"
+                    )
+                seen_ids.add(response_id)
+                continue
+            if cluster_label == "FB":
+                repair_notes.append(f"removed non-fallback id {response_id} from FB cluster")
+                continue
             cleaned_ids.append(response_id)
             seen_ids.add(response_id)
+
+        if cluster_label == "FB":
+            if cleaned_ids:
+                repair_notes.append("removed non-fallback ids from FB cluster")
+            if fb_response_ids and not fb_summary:
+                fb_summary = cluster_summary
+            continue
 
         if cleaned_ids:
             repaired_clusters.append(
@@ -627,6 +689,19 @@ def repair_cluster_payload(
                     "response_ids": cleaned_ids,
                 }
             )
+
+    if fallback_set:
+        missing_fb_ids = [response_id for response_id in expected_response_ids if response_id in fallback_set and response_id not in fb_response_ids]
+        if missing_fb_ids:
+            fb_response_ids.extend(missing_fb_ids)
+            repair_notes.append(f"added fallback ids to FB cluster: {', '.join(missing_fb_ids)}")
+        repaired_clusters.append(
+            {
+                "cluster_label": "FB",
+                "cluster_summary": fb_summary or "Fallback or non-answer responses.",
+                "response_ids": fb_response_ids,
+            }
+        )
 
     missing_ids = [response_id for response_id in expected_response_ids if response_id not in seen_ids]
     for response_id in missing_ids:
@@ -663,7 +738,14 @@ def build_cluster_frames_for_group(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     prepared = _prepare_group_rows(group)
     expected_ids = prepared["response_id"].tolist()
-    normalized_clusters = normalize_cluster_payload(payload, expected_ids)
+    fallback_response_ids = (
+        prepared.loc[prepared["fallback_detected"], "response_id"].astype("string").tolist()
+    )
+    normalized_clusters = normalize_cluster_payload(
+        payload,
+        expected_ids,
+        fallback_response_ids=fallback_response_ids,
+    )
 
     arch_id = str(prepared["arch_id"].iloc[0])
     prompt_id = str(prepared["prompt_id"].iloc[0])
@@ -854,18 +936,26 @@ def _cluster_group_via_api(
 
     last_error: str | None = None
     last_payload: Mapping[str, Any] | None = None
+    fallback_response_ids = (
+        prepared.loc[prepared["fallback_detected"], "response_id"].astype("string").tolist()
+    )
     for _attempt in range(max(1, max_cluster_retries)):
         system_message, user_message = _build_cluster_messages(
             arch_id,
             prompt_id,
             prompt_text,
             prepared,
+            fallback_response_ids,
             validation_error=last_error,
         )
         payload = _request_cluster_payload(client, model, system_message, user_message, api_timeout_s)
         last_payload = payload
         try:
-            normalize_cluster_payload(payload, prepared["response_id"].tolist())
+            normalize_cluster_payload(
+                payload,
+                prepared["response_id"].tolist(),
+                fallback_response_ids=fallback_response_ids,
+            )
         except ValueError as exc:
             last_error = str(exc)
             continue
@@ -892,7 +982,11 @@ def _cluster_group_via_api(
         )
 
     if last_payload is not None:
-        repaired_payload = repair_cluster_payload(last_payload, prepared["response_id"].tolist())
+        repaired_payload = repair_cluster_payload(
+            last_payload,
+            prepared["response_id"].tolist(),
+            fallback_response_ids=fallback_response_ids,
+        )
         cache_dir.mkdir(parents=True, exist_ok=True)
         cache_document = {
             "arch_id": arch_id,

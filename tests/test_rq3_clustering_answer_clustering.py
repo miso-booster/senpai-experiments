@@ -3,6 +3,7 @@ import pytest
 
 from app.rq3_clustering import answer_clustering
 from app.rq3_clustering.answer_clustering import (
+    _build_cluster_messages,
     build_architecture_tables,
     build_cluster_frames_for_group,
     build_duplicates_report,
@@ -172,6 +173,136 @@ def test_repair_cluster_payload_adds_missing_ids_as_singletons() -> None:
     assert [cluster["response_ids"] for cluster in normalized] == [["r01", "r03"], ["r02"], ["r04"]]
     assert "auto_repair=" in repaired["notes"]
     assert "added singleton clusters for missing ids: r02, r04" in repaired["notes"]
+
+
+def test_normalize_cluster_payload_requires_fallback_ids_in_fb_cluster() -> None:
+    payload = {
+        "clusters": [
+            {
+                "cluster_label": "Some other cluster",
+                "cluster_summary": "Wrongly placed fallback.",
+                "response_ids": ["r01"],
+            },
+            {
+                "cluster_label": "Regular answer",
+                "cluster_summary": "Normal answer.",
+                "response_ids": ["r02"],
+            },
+        ],
+        "notes": "",
+    }
+
+    with pytest.raises(ValueError, match="fallback ids missing from FB cluster: r01"):
+        normalize_cluster_payload(payload, ["r01", "r02"], fallback_response_ids=["r01"])
+
+
+def test_build_cluster_frames_for_group_assigns_fb_cluster_to_fallback_answers() -> None:
+    group = pd.DataFrame(
+        [
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "Question?",
+                "run_group_id": "run_a",
+                "run_id": "run_a__1",
+                "answer": "Please rephrase your question.",
+                "fallback": True,
+            },
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "Question?",
+                "run_group_id": "run_b",
+                "run_id": "run_b__1",
+                "answer": "Concrete answer",
+                "fallback": False,
+            },
+        ]
+    )
+    payload = {
+        "clusters": [
+            {
+                "cluster_label": "FB",
+                "cluster_summary": "Fallback or non-answer responses.",
+                "response_ids": ["r01"],
+            },
+            {
+                "cluster_label": "Concrete answer",
+                "cluster_summary": "Provides the requested answer.",
+                "response_ids": ["r02"],
+            },
+        ],
+        "notes": "",
+    }
+
+    prompt_summary, cluster_summary, assignments = build_cluster_frames_for_group(
+        group,
+        payload,
+        model="gpt-4o-mini",
+        result_source="api",
+    )
+
+    assert cluster_summary["cluster_id"].tolist() == ["FB", "c2"]
+    assert cluster_summary["cluster_label"].tolist() == ["FB", "Concrete answer"]
+    assert assignments["cluster_id"].tolist() == ["FB", "c2"]
+    assert prompt_summary.iloc[0]["cluster_breakdown"].startswith("FB=1 (FB)")
+
+
+def test_repair_cluster_payload_builds_fb_cluster_for_known_fallbacks() -> None:
+    payload = {
+        "clusters": [
+            {
+                "cluster_label": "Regular answer",
+                "cluster_summary": "Contains both kinds of responses.",
+                "response_ids": ["r01", "r02"],
+            }
+        ],
+        "notes": "",
+    }
+
+    repaired = repair_cluster_payload(payload, ["r01", "r02"], fallback_response_ids=["r01"])
+    normalized = normalize_cluster_payload(
+        repaired,
+        ["r01", "r02"],
+        fallback_response_ids=["r01"],
+    )
+
+    assert normalized[0]["cluster_id"] == "FB"
+    assert normalized[0]["response_ids"] == ["r01"]
+    assert normalized[1]["response_ids"] == ["r02"]
+
+
+def test_build_cluster_messages_mentions_fb_rule_and_fallback_ids() -> None:
+    rows = pd.DataFrame(
+        [
+            {
+                "response_id": "r01",
+                "run_group_id": "run_a",
+                "run_id": "run_a__1",
+                "answer": "Please rephrase.",
+                "fallback_detected": True,
+            },
+            {
+                "response_id": "r02",
+                "run_group_id": "run_b",
+                "run_id": "run_b__1",
+                "answer": "Actual answer.",
+                "fallback_detected": False,
+            },
+        ]
+    )
+
+    system_message, user_message = _build_cluster_messages(
+        "arch_a",
+        "p1_basic",
+        "Question?",
+        rows,
+        ["r01"],
+    )
+
+    assert "cluster labeled exactly 'FB'" in system_message
+    assert "Known fallback response_ids from run metadata: r01." in user_message
+    assert "fallback_detected: true" in user_message
 
 
 def test_get_openai_client_loads_api_key_from_project_dotenv(tmp_path, monkeypatch) -> None:
