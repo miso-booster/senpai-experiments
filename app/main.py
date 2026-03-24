@@ -184,7 +184,7 @@ def main():
 
     if args.rq3:
         archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
-        prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "ro3_prompts.json"))
+        prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "rq3_prompts.json"))
         logging.info("RQ3 prompts selected.")
 
     timeout_s = 300
