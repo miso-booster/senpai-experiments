@@ -1,0 +1,78 @@
+conversation ID: agentic_architecture__p30__pizza_shop__profile__9e17722a
+$$$
+Let's create a profile for a pizza shop where the user is rude and wants things done quickly. This profile will include four goals with associated variables, two of which will utilize pairwise functions for conversation number determination.
+
+Here's the proposed YAML structure for the profile:
+
+```yaml
+test_name: "pizza_shop_rude_customer"
+
+llm:
+  temperature: 0.5
+  model: gpt-4
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A rude customer who demands quick service."
+  context:
+    - "The user is impatient and often interrupts."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}} quickly."
+    - "I need it ready in {{time}} minutes!"
+    - "Make sure to add {{drink}}."
+    - "What's the total price for my order?"
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, onions, sausage, bacon]
+    - time:
+        function: random()
+        type: int
+        data:
+          min: 10
+          max: 30
+    - drink:
+        function: pairwise()
+        type: string
+        data: [soda, water, juice]
+
+chatbot:
+  is_starter: true
+  fallback: "Sorry, I didn't catch that. Can you repeat?"
+  output:
+    - total_price:
+        type: currency
+        description: "Total price of the order."
+    - order_id:
+        type: string
+        description: "Order confirmation ID."
+
+conversation:
+  number: combinations(0.5, pairwise)  # Using pairwise functions for conversation number
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+### Summary of the Profile:
+- **User Role**: A rude customer who demands fast service.
+- **Goals**: Includes ordering a pizza, specifying toppings, setting a time limit, and asking for a drink.
+- **Variables**: 
+  - `size` (random selection from small, medium, large)
+  - `toppings` (pairwise combinations)
+  - `time` (random integer between 10 and 30)
+  - `drink` (pairwise combinations)
+- **Conversation Control**: Uses a combination of pairwise functions to determine the number of conversations.
+
+This profile is designed to simulate a challenging user interaction for testing the pizza shop chatbot. Let me know if you need any adjustments or additional features! 🍕😊
+$$$

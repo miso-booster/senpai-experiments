@@ -1,0 +1,92 @@
+2026-03-24 17:44:28,304 [[92mINFO[0m] (root) - [92mVerbose enabled.[0m
+2026-03-24 17:44:28,304 [[92mINFO[0m] (app.utils.tracing) - [92mAll LangSmith environment variables are set. LangSmith tracing enabled for project 'senpai-assistant'.[0m
+2026-03-24 17:44:28,306 [[92mINFO[0m] (app.embeddings.embedding_build) - [92mEmbedding index up to date (profiles, rules): E:\ESCRITORIO\Py_projects\SENPAI\agentic\Senpai-Assistant\app\embedding_files\pizza_shop\pizza_shop.pkl[0m
+2026-03-24 17:44:28,306 [[92mINFO[0m] (app.embeddings.embedding_build) - [92mEmbedding index up to date (connectors): E:\ESCRITORIO\Py_projects\SENPAI\agentic\Senpai-Assistant\app\embedding_files\connectors\connectors.pkl[0m
+2026-03-24 17:44:30,377 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 17:44:30,977 [[92mINFO[0m] (app.assistant.scope_guardrail_middleware) - [92m[scope_guardrail] allowed request.[0m
+2026-03-24 17:44:31,635 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 17:44:32,202 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[validation_decision] skipped (no YAML blocks or save_* tool calls).[0m
+2026-03-24 17:44:32,204 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[tool_validation] skipped (no save_* tool calls found).[0m
+2026-03-24 17:44:32,206 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] skipped (no YAML code blocks found).[0m
+2026-03-24 17:44:32,884 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 17:44:33,051 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[validation_decision] skipped (no YAML blocks or save_* tool calls).[0m
+2026-03-24 17:44:33,052 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[tool_validation] skipped (no save_* tool calls found).[0m
+2026-03-24 17:44:33,054 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] skipped (no YAML code blocks found).[0m
+2026-03-24 17:44:33,849 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 17:44:44,657 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 17:44:44,873 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[validation_decision] decided requires_validation=True[0m
+2026-03-24 17:44:44,875 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[tool_validation] skipped (no tool calls found).[0m
+2026-03-24 17:44:44,882 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] classifier cache hit (message): True[0m
+2026-03-24 17:44:44,882 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: profile[0m
+2026-03-24 17:44:44,889 [[93mWARNING[0m] (app.assistant.validation_middleware) - [93mvalidator input 1:
+# block 1
+```yaml
+test_name: "pizza_shop_rude_customer"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A rude customer who demands quick service."
+  context:
+    - "The user is impatient and often interrupts."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}} quickly."
+    - "Ask for the total price in {{currency}}."
+    - "Request delivery time for the {{size}} pizza."
+    - "Demand a discount for the delay."
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, onions, olives]
+    - currency:
+        function: random()
+        type: string
+        data: [USD, EUR, GBP]
+  
+chatbot:
+  is_starter: true
+  fallback: "What do you want? Make it quick!"
+  output:
+    - total_price:
+        type: currency
+        description: "Final price for the pizza order."
+    - delivery_time:
+        type: string
+        description: "Estimated delivery time."
+    - discount:
+        type: float
+        description: "Discount offered for the delay."
+
+conversation:
+  number: combinations(0.5, pairwise) # Two pairwise functions have been declared
+  goal_style:
+    steps: 5
+  interaction_style:
+    - make spelling mistakes
+    - single questions
+```
+validator feedback 1:
+Validation repair summary:
+- invalid blocks: 1
+- valid blocks: none
+
+Block 1 (yaml)
+- issue: invalid function 'pairwise()': A minimum of 2 pairwise() functions must be assigned when used.
+- docs hint: If you haven't already, use the get_docs tool for profiles to review the schema and examples.
+
+All blocks are invalid. Rewrite the full reply, keeping the same number of blocks but changing all of them.
+
+[message_validation] failed (see feedback)[0m
+2026-03-24 17:44:52,893 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 17:45:12,987 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: profile[0m
+2026-03-24 17:45:12,993 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] passed (1 block).[0m
