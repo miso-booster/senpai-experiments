@@ -583,6 +583,7 @@ def normalize_cluster_payload(
             for response_id in cluster["response_ids"]
         }
     )
+    fb_cluster_count = sum(1 for cluster in normalized if cluster["cluster_label"] == "FB")
     missing_fb = sorted(fallback_set - set(fallback_cluster_ids))
     unexpected_fb = sorted(set(fallback_cluster_ids) - fallback_set)
     if duplicates or missing or extra:
@@ -594,13 +595,19 @@ def normalize_cluster_payload(
         if extra:
             errors.append(f"unexpected ids: {', '.join(extra)}")
         raise ValueError("; ".join(errors))
-    if fallback_set and (missing_fb or unexpected_fb):
-        errors = []
-        if missing_fb:
-            errors.append(f"fallback ids missing from FB cluster: {', '.join(missing_fb)}")
-        if unexpected_fb:
-            errors.append(f"non-fallback ids incorrectly assigned to FB: {', '.join(unexpected_fb)}")
-        raise ValueError("; ".join(errors))
+    fb_errors: list[str] = []
+    if unexpected_fb:
+        fb_errors.append(f"non-fallback ids incorrectly assigned to FB: {', '.join(unexpected_fb)}")
+    if not fallback_set and fb_cluster_count:
+        fb_errors.append("FB cluster is not allowed when no fallback ids were detected")
+    if fb_cluster_count > 1:
+        fb_errors.append("multiple FB clusters are not allowed")
+    if fallback_set and fb_cluster_count == 0:
+        fb_errors.append("missing FB cluster for fallback ids")
+    if fallback_set and missing_fb:
+        fb_errors.append(f"fallback ids missing from FB cluster: {', '.join(missing_fb)}")
+    if fb_errors:
+        raise ValueError("; ".join(fb_errors))
 
     normalized.sort(
         key=lambda item: (

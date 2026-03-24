@@ -196,6 +196,48 @@ def test_normalize_cluster_payload_requires_fallback_ids_in_fb_cluster() -> None
         normalize_cluster_payload(payload, ["r01", "r02"], fallback_response_ids=["r01"])
 
 
+def test_normalize_cluster_payload_rejects_fb_cluster_without_fallbacks() -> None:
+    payload = {
+        "clusters": [
+            {
+                "cluster_label": "FB",
+                "cluster_summary": "Should not exist.",
+                "response_ids": ["r01"],
+            },
+            {
+                "cluster_label": "Regular answer",
+                "cluster_summary": "Normal answer.",
+                "response_ids": ["r02"],
+            },
+        ],
+        "notes": "",
+    }
+
+    with pytest.raises(ValueError, match="FB cluster is not allowed when no fallback ids were detected"):
+        normalize_cluster_payload(payload, ["r01", "r02"], fallback_response_ids=[])
+
+
+def test_normalize_cluster_payload_rejects_multiple_fb_clusters() -> None:
+    payload = {
+        "clusters": [
+            {
+                "cluster_label": "FB",
+                "cluster_summary": "Fallback group one.",
+                "response_ids": ["r01"],
+            },
+            {
+                "cluster_label": "FB",
+                "cluster_summary": "Fallback group two.",
+                "response_ids": ["r02"],
+            },
+        ],
+        "notes": "",
+    }
+
+    with pytest.raises(ValueError, match="multiple FB clusters are not allowed"):
+        normalize_cluster_payload(payload, ["r01", "r02"], fallback_response_ids=["r01", "r02"])
+
+
 def test_build_cluster_frames_for_group_assigns_fb_cluster_to_fallback_answers() -> None:
     group = pd.DataFrame(
         [
