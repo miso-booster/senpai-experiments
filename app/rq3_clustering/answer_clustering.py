@@ -844,7 +844,10 @@ def build_cluster_frames_for_group(
         kind="stable",
     ).reset_index(drop=True)
 
-    majority_cluster = cluster_rows[0]
+    majority_cluster = max(
+        cluster_rows,
+        key=lambda row: (row["response_count"], -row["representative_response_index"]),
+    )
     prompt_summary = pd.DataFrame(
         [
             {

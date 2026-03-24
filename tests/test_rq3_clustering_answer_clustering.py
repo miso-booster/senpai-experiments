@@ -290,6 +290,68 @@ def test_build_cluster_frames_for_group_assigns_fb_cluster_to_fallback_answers()
     assert prompt_summary.iloc[0]["cluster_breakdown"].startswith("FB=1 (FB)")
 
 
+def test_build_cluster_frames_for_group_keeps_majority_cluster_size_based_when_fb_exists() -> None:
+    group = pd.DataFrame(
+        [
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "Question?",
+                "run_group_id": "run_a",
+                "run_id": "run_a__1",
+                "answer": "Please rephrase your question.",
+                "fallback": True,
+            },
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "Question?",
+                "run_group_id": "run_b",
+                "run_id": "run_b__1",
+                "answer": "Concrete answer",
+                "fallback": False,
+            },
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "Question?",
+                "run_group_id": "run_c",
+                "run_id": "run_c__1",
+                "answer": "Concrete answer",
+                "fallback": False,
+            },
+        ]
+    )
+    payload = {
+        "clusters": [
+            {
+                "cluster_label": "FB",
+                "cluster_summary": "Fallback or non-answer responses.",
+                "response_ids": ["r01"],
+            },
+            {
+                "cluster_label": "Concrete answer",
+                "cluster_summary": "Same substantive answer.",
+                "response_ids": ["r02", "r03"],
+            },
+        ],
+        "notes": "",
+    }
+
+    prompt_summary, cluster_summary, assignments = build_cluster_frames_for_group(
+        group,
+        payload,
+        model="gpt-4o-mini",
+        result_source="api",
+    )
+
+    assert cluster_summary["cluster_id"].tolist() == ["FB", "c2"]
+    assert assignments["cluster_id"].tolist() == ["FB", "c2", "c2"]
+    assert prompt_summary.iloc[0]["majority_cluster_id"] == "c2"
+    assert prompt_summary.iloc[0]["majority_cluster_label"] == "Concrete answer"
+    assert prompt_summary.iloc[0]["majority_cluster_size"] == 2
+
+
 def test_repair_cluster_payload_builds_fb_cluster_for_known_fallbacks() -> None:
     payload = {
         "clusters": [
