@@ -694,6 +694,7 @@ def repair_cluster_payload(
         missing_fb_ids = [response_id for response_id in expected_response_ids if response_id in fallback_set and response_id not in fb_response_ids]
         if missing_fb_ids:
             fb_response_ids.extend(missing_fb_ids)
+            seen_ids.update(missing_fb_ids)
             repair_notes.append(f"added fallback ids to FB cluster: {', '.join(missing_fb_ids)}")
         repaired_clusters.append(
             {

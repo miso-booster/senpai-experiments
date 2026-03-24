@@ -272,6 +272,28 @@ def test_repair_cluster_payload_builds_fb_cluster_for_known_fallbacks() -> None:
     assert normalized[1]["response_ids"] == ["r02"]
 
 
+def test_repair_cluster_payload_does_not_duplicate_inserted_fallback_ids() -> None:
+    payload = {
+        "clusters": [
+            {
+                "cluster_label": "Regular answer",
+                "cluster_summary": "Contains only the non-fallback response.",
+                "response_ids": ["r02"],
+            }
+        ],
+        "notes": "",
+    }
+
+    repaired = repair_cluster_payload(payload, ["r01", "r02"], fallback_response_ids=["r01"])
+    normalized = normalize_cluster_payload(
+        repaired,
+        ["r01", "r02"],
+        fallback_response_ids=["r01"],
+    )
+
+    assert [cluster["response_ids"] for cluster in normalized] == [["r01"], ["r02"]]
+
+
 def test_build_cluster_messages_mentions_fb_rule_and_fallback_ids() -> None:
     rows = pd.DataFrame(
         [
