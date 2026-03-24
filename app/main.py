@@ -163,14 +163,29 @@ def main():
         default=1,
         help= "Indicates the amount of runs to make."
     )
+    parser.add_argument("-rq2", "--rq2", action="store_true", help="RQ2 prompts .json selected")
+    parser.add_argument("-rq3", "--rq3", action="store_true", help="RQ3 prompts .json selected")
     args = parser.parse_args()
+
+    if args.rq2 and args.rq3:
+        parser.error("Can't process rq2 and rq3 prompts at the same time.")
+    if not args.rq2 and not args.rq3:
+        parser.error("An execution must be selected, please choose -rq2 or -rq3.")
+
     setup_logging(args.verbose)
 
     ensure_dirs()
     logging.info("Loading architectures and prompts")
 
-    archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
-    prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "ro3_prompts.json"))
+    if args.rq2:
+        archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
+        prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "prompts.json"))
+        logging.info("RQ2 prompts selected.")
+
+    if args.rq3:
+        archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
+        prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "rq3_prompts.json"))
+        logging.info("RQ3 prompts selected.")
 
     timeout_s = 300
 
