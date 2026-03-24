@@ -405,6 +405,7 @@ def _build_cache_key(
                 "response_id": row["response_id"],
                 "run_group_id": _clean_text(row.get("run_group_id")),
                 "run_id": _clean_text(row.get("run_id")),
+                "fallback_detected": bool(_to_bool(row.get("fallback_detected"))),
                 "answer": _clean_text(row.get("answer")),
             }
             for _, row in rows.iterrows()
@@ -975,7 +976,7 @@ def _cluster_group_via_api(
             "prompt": prompt_text,
             "model": model,
             "responses": prepared[
-                ["response_id", "run_group_id", "run_id", "answer"]
+                ["response_id", "run_group_id", "run_id", "fallback_detected", "answer"]
             ].to_dict(orient="records"),
             "result": payload,
         }
@@ -1002,7 +1003,7 @@ def _cluster_group_via_api(
             "prompt": prompt_text,
             "model": model,
             "responses": prepared[
-                ["response_id", "run_group_id", "run_id", "answer"]
+                ["response_id", "run_group_id", "run_id", "fallback_detected", "answer"]
             ].to_dict(orient="records"),
             "result": repaired_payload,
         }

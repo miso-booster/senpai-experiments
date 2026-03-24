@@ -369,6 +369,39 @@ def test_build_cluster_messages_mentions_fb_rule_and_fallback_ids() -> None:
     assert "fallback_detected: true" in user_message
 
 
+def test_build_cache_key_changes_when_fallback_detection_changes() -> None:
+    rows_without_fallback = pd.DataFrame(
+        [
+            {
+                "response_id": "r01",
+                "run_group_id": "run_a",
+                "run_id": "run_a__1",
+                "fallback_detected": False,
+                "answer": "Please rephrase.",
+            }
+        ]
+    )
+    rows_with_fallback = rows_without_fallback.copy()
+    rows_with_fallback.loc[0, "fallback_detected"] = True
+
+    key_without_fallback = answer_clustering._build_cache_key(
+        "arch_a",
+        "p1_basic",
+        "Question?",
+        "gpt-4o-mini",
+        rows_without_fallback,
+    )
+    key_with_fallback = answer_clustering._build_cache_key(
+        "arch_a",
+        "p1_basic",
+        "Question?",
+        "gpt-4o-mini",
+        rows_with_fallback,
+    )
+
+    assert key_without_fallback != key_with_fallback
+
+
 def test_get_openai_client_loads_api_key_from_project_dotenv(tmp_path, monkeypatch) -> None:
     env_file = tmp_path / ".env"
     env_file.write_text("OPENAI_API_KEY=test-from-dotenv\n", encoding="utf-8")
