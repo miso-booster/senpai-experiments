@@ -381,7 +381,9 @@ def _prepare_group_rows(group: pd.DataFrame) -> pd.DataFrame:
     prepared["response_index"] = list(range(1, len(prepared) + 1))
     prepared["response_id"] = [f"r{index:0{width}d}" for index in prepared["response_index"].tolist()]
     prepared["prompt"] = prepared["prompt"] if "prompt" in prepared.columns else ""
-    if "fallback" in prepared.columns:
+    if "fallback_detected" in prepared.columns:
+        prepared["fallback_detected"] = prepared["fallback_detected"].map(_to_bool)
+    elif "fallback" in prepared.columns:
         prepared["fallback_detected"] = prepared["fallback"].map(_to_bool)
     else:
         prepared["fallback_detected"] = False

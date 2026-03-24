@@ -40,6 +40,29 @@ def test_build_architecture_tables_pivots_answers_by_prompt_and_run_group() -> N
     assert tables["arch_b"].loc["p1_basic", "run_a"] == "B-1-A"
 
 
+def test_prepare_group_rows_prefers_existing_fallback_detected_column() -> None:
+    group = pd.DataFrame(
+        [
+            {
+                "run_group_id": "run_a",
+                "run_id": "run_a__1",
+                "answer": "Please rephrase.",
+                "fallback_detected": True,
+            },
+            {
+                "run_group_id": "run_b",
+                "run_id": "run_b__1",
+                "answer": "Actual answer.",
+                "fallback_detected": False,
+            },
+        ]
+    )
+
+    prepared = answer_clustering._prepare_group_rows(group)
+
+    assert prepared["fallback_detected"].tolist() == [True, False]
+
+
 def test_build_duplicates_report_detects_multiple_answers_for_same_group() -> None:
     df = pd.DataFrame(
         [
