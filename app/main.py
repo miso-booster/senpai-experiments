@@ -165,12 +165,14 @@ def main():
     )
     parser.add_argument("-rq2", "--rq2", action="store_true", help="RQ2 prompts .json selected")
     parser.add_argument("-rq3", "--rq3", action="store_true", help="RQ3 prompts .json selected")
+    parser.add_argument("-rq4", "--rq4", action="store_true", help="RQ4 prompts .json selected")
     args = parser.parse_args()
 
-    if args.rq2 and args.rq3:
-        parser.error("Can't process rq2 and rq3 prompts at the same time.")
-    if not args.rq2 and not args.rq3:
-        parser.error("An execution must be selected, please choose -rq2 or -rq3.")
+    selected_rq_flags = [args.rq2, args.rq3, args.rq4]
+    if sum(bool(flag) for flag in selected_rq_flags) > 1:
+        parser.error("Can't process rq2, rq3 and rq4 prompts at the same time.")
+    if not any(selected_rq_flags):
+        parser.error("An execution must be selected, please choose -rq2, -rq3 or -rq4.")
 
     setup_logging(args.verbose)
 
@@ -186,6 +188,11 @@ def main():
         archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
         prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "rq3_prompts.json"))
         logging.info("RQ3 prompts selected.")
+
+    if args.rq4:
+        archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
+        prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "rq4_prompts.json"))
+        logging.info("RQ4 prompts selected.")
 
     timeout_s = 300
 

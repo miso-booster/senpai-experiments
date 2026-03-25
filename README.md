@@ -26,13 +26,13 @@ python -m pip install -r requirements.txt
 Run
 ---
 ```powershell
-python -m app.main
+python -m app.main -rq2
 ```
 
 Optional verbose logging:
 
 ```powershell
-python -m app.main -v
+python -m app.main -rq2 -v
 ```
 
 Configuration
@@ -44,7 +44,8 @@ Edit `configs/architectures.json` and ensure:
 - `env_file` points to your `.env` file (default is `configs/.env`).
 
 2) Prompts  
-Edit `configs/prompts.json` to add or change prompts.
+Edit `configs/prompts.json`, `configs/rq3_prompts.json`, or `configs/rq4_prompts.json`
+to add or change prompts for the corresponding execution mode.
 
 3) Environment variables (`configs/.env`)  
 Create `configs/.env` with the following keys:

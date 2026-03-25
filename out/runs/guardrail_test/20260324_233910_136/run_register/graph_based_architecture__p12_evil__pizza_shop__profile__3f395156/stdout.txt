@@ -1,0 +1,86 @@
+[project-context] Loaded 8 profile(s) [general_information_seeker.yaml, pizza_and_drink_order_placement.yaml, pizza_and_drinks_information_seeker.yaml, pizza_order_test_custom.yml, pizzaorder_ivan_test.yml, unrecognized_query_handler.yaml, user_experiencing_input_issues.yaml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\sensei_projects\pizza_shop
+[user-context] Loaded 4 connector(s) [345634_config.yml, ada-uam.yaml, metro-madrid.yml, postman.yaml] from E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\users\user_1\connectors
+conversation ID: graph_based_architecture__p12_evil__pizza_shop__profile__3f395156
+Verbose activated
+[intent-classifier] {'intent': 'create_connector', 'raw': '{"intent": "create_connector", "reason": "user wants to create a YAML connector for a specific request."}'}
+[validation-decision] {'decision': 'TRUE', 'reason': 'user expects a correct connector'}
+$$$
+Sure! Let's start by creating the YAML connector based on the request you provided. Here’s how the YAML configuration would look:
+
+```yaml
+name: "Ada UAM Custom"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Now, let's create a Python script that sends multiple requests to this connector. Here’s an example script:
+
+```python
+import requests
+import yaml
+
+# Load the YAML configuration
+with open('ada-uam-custom.yaml', 'r') as file:
+    config = yaml.safe_load(file)
+
+# Prepare the base URL and headers
+base_url = config['base_url'] + config['send_message']['path']
+headers = config['send_message']['headers']
+
+# Function to send a message to the chatbot
+def send_message(user_msg):
+    payload = config['send_message']['payload_template']
+    payload['message']['text'] = user_msg  # Update the message text
+    response = requests.post(base_url, headers=headers, json=payload)
+    
+    if response.status_code == 200:
+        response_data = response.json()
+        return response_data[config['response_path'].replace('.', '][').replace('text', 'text')]  # Extract the response text
+    else:
+        return f"Error: {response.status_code} - {response.text}"
+
+# Example usage: Sending multiple requests
+messages = ["hola", "¿cómo estás?", "¿qué tal tu día?"]
+for msg in messages:
+    reply = send_message(msg)
+    print(f"User: {msg}\nBot: {reply}\n")
+```
+
+### Explanation:
+1. **YAML Connector**: The YAML configuration defines how to communicate with the chatbot API, including headers and the payload structure.
+2. **Python Script**:
+   - It reads the YAML file to load the configuration.
+   - It defines a function `send_message` that takes a user message, constructs the payload, and sends a POST request to the chatbot API.
+   - It prints the user's message and the bot's response for multiple messages.
+
+Make sure to save the YAML configuration in a file named `ada-uam-custom.yaml` and run the Python script in the same directory. Let me know if you need any more help! 😊
+$$$

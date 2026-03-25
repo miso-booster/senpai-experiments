@@ -1,0 +1,105 @@
+Let's create the YAML connector based on your request. The connector will be configured to send messages to the specified API endpoint and handle the response accordingly.
+
+### YAML Connector
+
+Here's the YAML configuration for the connector:
+
+```yaml
+name: "1MillionBot Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "{conversation_id}"
+    sender_type: "User"
+    sender: "{sender_id}"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Explanation
+- **name**: A friendly name for the connector.
+- **base_url**: The base URL for the API.
+- **send_message**: Configuration for sending messages.
+  - **path**: The specific endpoint for sending messages.
+  - **method**: The HTTP method to use (POST).
+  - **headers**: Any necessary headers, including content type and authorization.
+  - **payload_template**: The structure of the JSON payload, with placeholders for dynamic values.
+- **response_path**: The path to extract the response text from the JSON response.
+
+### Python Script to Send Requests
+
+Here's a complete Python script that uses the connector to send multiple requests:
+
+```python
+import requests
+import json
+
+# Define the connector configuration
+connector_config = {
+    "base_url": "https://api.1millionbot.com",
+    "send_message": {
+        "path": "/api/public/messages",
+        "method": "POST",
+        "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "64e5d1af081211d24e2cfecd"
+        },
+        "payload_template": {
+            "conversation": "{conversation_id}",
+            "sender_type": "User",
+            "sender": "{sender_id}",
+            "bot": "64e5d1af081211d24e2cfec8",
+            "language": "es",
+            "url": "https://saic.malaga.eu/",
+            "message": {
+                "text": "{user_msg}"
+            }
+        }
+    }
+}
+
+# Function to send a message
+def send_message(conversation_id, sender_id, user_msg):
+    url = connector_config["base_url"] + connector_config["send_message"]["path"]
+    headers = connector_config["send_message"]["headers"]
+    
+    # Prepare the payload
+    payload = connector_config["send_message"]["payload_template"]
+    payload["conversation"] = conversation_id
+    payload["sender"] = sender_id
+    payload["message"]["text"] = user_msg
+    
+    # Send the request
+    response = requests.post(url, headers=headers, json=payload)
+    
+    # Return the response text
+    return response.json()
+
+# Example usage
+if __name__ == "__main__":
+    conversation_id = "6977595c744ccf01954b8797"
+    sender_id = "6977595c3e4824018e496b0c"
+    
+    messages = ["hola", "¿cómo estás?", "¿qué tal?"]
+    
+    for msg in messages:
+        response = send_message(conversation_id, sender_id, msg)
+        print("Response:", response)
+```
+
+### Explanation of the Python Script
+- **requests**: A library to make HTTP requests.
+- **connector_config**: A dictionary that holds the connector configuration.
+- **send_message function**: This function constructs the payload, sends the request, and returns the response.
+- **Example usage**: It sends multiple messages in a loop and prints the responses.
+
+Feel free to modify the `conversation_id`, `sender_id`, and the list of messages as needed! If you have any further questions or need adjustments, just let me know! 😊
