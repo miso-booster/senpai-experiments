@@ -1,0 +1,41 @@
+conversation ID: agentic_architecture__p11_complex__pizza_shop__rule__8ed2d89a
+$$$
+Let's take a look at how the **pizza_order_test_custom** profile interacts with the two rules: **more_toppings_cost_more** and **same_number_of_toppings_cost_the_same**.
+
+### Profile: pizza_order_test_custom
+- **Outputs**:
+  - `price`: The final price of the pizza order.
+  - `time`: Just the opening time.
+  - `order_id`: My order ID.
+
+### Rule 1: more_toppings_cost_more
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+- **Description**: This rule checks if adding more toppings to a custom pizza results in a higher price, given that the size and drink are the same.
+- **Compatibility**: This rule will work with the profile since it references the `size`, `drink`, and `price` fields that are defined in the profile's `chatbot.output`.
+
+### Rule 2: same_number_of_toppings_cost_the_same
+```yaml
+name: same_number_of_toopings_cost_the_same
+description: Pizzas with same number of toppings cost the same
+conversations: 2
+active: False
+when: conv[0].drink == conv[1].drink
+if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+- **Description**: This rule checks if pizzas with the same number of toppings cost the same, given that the size and drink are the same.
+- **Compatibility**: This rule is also compatible with the profile, as it references the same fields (`size`, `drink`, and `price`).
+
+### Summary
+Both rules are compatible with the **pizza_order_test_custom** profile. The **more_toppings_cost_more** rule is active and will validate that more toppings lead to a higher price, while the **same_number_of_toppings_cost_the_same** rule is currently inactive but can be activated if needed.
+
+If you have any further questions or need adjustments, feel free to ask! 😊
+$$$

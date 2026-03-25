@@ -1,0 +1,23 @@
+Great question! If you rename the `price` field to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the `price` field directly. 
+
+In your project, the rule that would be affected is `more_toppings_cost_more.yaml`, which currently uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)` to compare prices based on the number of toppings. 
+
+To fix this, you would need to update the rule to reference the new field name. Here’s how you can do that:
+
+1. **Update the Profile**: Change the field name in the `pizza_order_test_custom` profile from `price` to `total_cost`.
+
+2. **Update the Rule**: Modify the `more_toppings_cost_more.yaml` rule to use `total_cost` instead of `price`. Here’s how the updated rule would look:
+
+```yaml
+active: true
+conversations: 2
+description: Adding more toppings to a custom pizza costs more
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+name: more_toppings_cost_more
+then: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+
+By making these changes, you ensure that the rule correctly references the updated field name and maintains its functionality. If you have other rules that reference `price`, you’ll need to update those as well in a similar manner. 
+
+Let me know if you need help with anything else! 😊

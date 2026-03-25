@@ -1,0 +1,81 @@
+Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it could potentially break any rules that reference the `price` field. 
+
+### Here's what you need to consider:
+
+1. **Check Existing Rules**: First, look for any rules in your Sensei-check that reference `price`. If there are rules that use `conv[i].price`, they will need to be updated to `conv[i].total_cost`.
+
+2. **Update the Profile**: In your profile, ensure that the `chatbot.output` section reflects the new field name:
+   ```yaml
+test_name: "pizza_order_profile"
+
+llm:
+  format:
+    type: text
+  model: gpt-4o-mini
+  temperature: 0.7
+
+user:
+  language: English
+  role: "A customer ordering pizza."
+  context: ["You are ordering a pizza for delivery."]
+  goals:
+    - "Order a pizza."
+    - "Ask for the total cost."
+
+chatbot:
+  fallback: "I'm sorry, I didn't understand that. Can you please rephrase?"
+  is_starter: false
+  output:
+    - total_cost:  # Change this from price to total_cost
+        description: "The final price of the pizza order"
+        type: currency
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 2
+```
+
+3. **Adjust Any Related Goals**: If there are any goals in the profile that mention `price`, you'll need to change those to `total_cost` as well. For example:
+   ```yaml
+test_name: "pizza_order_test_custom"
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.8
+  format:
+    type: text
+
+user:
+  context: [{personality: personalities/conversational-user.yml}, you are vegan]
+  goals:
+    - "How much will it cost?"
+  language: English
+  role: you must act as a user ordering a pizza to a pizza shop.
+
+chatbot:
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  is_starter: false
+  output:
+    - price:
+        description: The price of the pizza order
+        type: money
+    - time:
+        description: how long is going to take the pizza to be ready more or less
+        type: time
+    - order_id:
+        description: my order ID
+        type: string
+
+conversation:
+  goal_style:
+    steps: 2
+  interaction_style:
+    - default
+  number: 1
+```
+
+4. **Validate the Profile**: After making these changes, run a validation check on the updated profile to ensure everything is functioning correctly and that there are no errors.
+
+### Summary
+In short, renaming `price` to `total_cost` will require you to update any references in your rules and goals to maintain consistency. Once you've made those adjustments, validate your profile to ensure everything is in order! If you need help with specific rules or further details, feel free to ask! 😊

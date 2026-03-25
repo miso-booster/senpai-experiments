@@ -1,0 +1,72 @@
+[project-context] Loaded 8 profile(s) [general_information_seeker.yaml, pizza_and_drink_order_placement.yaml, pizza_and_drinks_information_seeker.yaml, pizza_order_test_custom.yml, pizzaorder_ivan_test.yml, unrecognized_query_handler.yaml, user_experiencing_input_issues.yaml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from /home/ivan/miso/automatizacion/graph/sensei_projects/pizza_shop
+[user-context] Loaded 4 connector(s) [345634_config.yml, ada-uam.yaml, metro-madrid.yml, postman.yaml] from /home/ivan/miso/automatizacion/graph/users/user_1/connectors
+conversation ID: graph_based_architecture__p14_complex__pizza_shop__profile__750346e7
+Verbose activated
+[intent-classifier] {'intent': 'explain', 'raw': '{"intent": "explain", "reason": "user wants to compare profiles and propose rules for coverage"}'}
+$$$
+Alright! Let's dive into the comparison between the two profiles: **pizza_order_test_custom** and **pizza_and_drinks_information_seeker**. 
+
+### Profile Comparison
+
+1. **pizza_order_test_custom**:
+   - **Fallback**: "I'm sorry it's a little loud in my pizza shop, can you say that again?"
+   - **Goals**: 
+     - Ordering a custom pizza with size and toppings.
+     - Asking about opening and closing times.
+     - Inquiring about the price.
+   - **Output**: 
+     - Final price, opening time, order ID.
+
+2. **pizza_and_drinks_information_seeker**:
+   - **Fallback**: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+   - **Goals**: 
+     - Asking about available pizza types.
+     - Asking about the price of a Margarita pizza.
+     - Asking about available drinks and their prices.
+     - Asking about the shop's operating hours.
+     - Asking if they deliver.
+   - **Output**: 
+     - List of pizza types, price of Margarita pizza, available drinks and prices, operating hours, delivery availability.
+
+### Better Profile
+Given your focus on gathering information about drinks, prices, and opening hours, **pizza_and_drinks_information_seeker** is the better profile. It has specific goals that directly address inquiries about drink options, prices, and operating hours.
+
+### Rule Mapping
+Now, let’s check the rules against the **pizza_and_drinks_information_seeker** profile:
+
+1. **conversation_lengths**: Not applicable as it checks conversation length.
+2. **more_toppings_cost_more**: Not applicable as it focuses on pizza toppings.
+3. **only_talks_about_pizza**: Partially applicable; it could be extended to include drinks.
+4. **ordering_conversation_turns**: Not applicable as it focuses on the order sequence.
+5. **ordering_conversation_turns_assistant**: Not applicable as it focuses on the assistant's confirmation.
+6. **same_number_of_toppings_cost_the_same**: Not applicable as it focuses on pizza toppings.
+
+### Proposed Rules for Increased Coverage
+To enhance the coverage of the **pizza_and_drinks_information_seeker** profile, here are two proposed rules:
+
+1. **Drink Price Consistency**:
+   - **Description**: If the same drink is offered across different inquiries, the price should remain consistent.
+   - **Rule**:
+     ```yaml
+     name: drink_price_consistency
+     description: The price of the same drink should be consistent across inquiries.
+     conversations: 2
+     when: conv[0].drink_type == conv[1].drink_type
+     if: extract_float(conv[0].drink_price) != extract_float(conv[1].drink_price)
+     then: False
+     ```
+
+2. **Operating Hours Consistency**:
+   - **Description**: The operating hours should be consistent across different inquiries.
+   - **Rule**:
+     ```yaml
+     name: operating_hours_consistency
+     description: The operating hours should remain consistent across inquiries.
+     conversations: 2
+     when: conv[0].shop_id == conv[1].shop_id
+     if: conv[0].opening_hours != conv[1].opening_hours
+     then: False
+     ```
+
+These rules would help ensure that the information provided about drinks and operating hours is consistent and reliable, enhancing the overall user experience! 😊 If you have any more questions or need further assistance, feel free to ask!
+$$$

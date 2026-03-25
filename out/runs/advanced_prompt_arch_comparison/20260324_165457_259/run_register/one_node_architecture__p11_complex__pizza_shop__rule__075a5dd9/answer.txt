@@ -1,0 +1,43 @@
+Sure! Let's take a look at the relevant details of the profile `pizza_order_test_custom` and the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes outputs related to pizza orders, such as:
+- `price`: The final price of the pizza order.
+- `time`: How long it will take for the pizza to be ready.
+- `order_id`: The order ID.
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+active: true
+conversations: 2
+description: Adding more toppings to a custom pizza cost more
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+name: more_toppings_cost_more
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+This rule is designed to compare two conversations where the size and drink are the same, and it checks if the price increases with more toppings.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+active: false
+conversations: 2
+description: Pizzas with same number of toppings cost the same
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+name: same_number_of_toppings_cost_the_same
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+This rule compares two conversations to ensure that if the number of toppings is the same, the price should also be the same.
+
+### Compatibility Check
+1. **Outputs**: The `pizza_order_test_custom` profile has the necessary output fields (`price`) that both rules reference.
+2. **Toppings**: The rules reference the `toppings` field, which should be included in the profile's output for the rules to function correctly. However, the profile does not explicitly mention `toppings` in its output schema.
+
+### Conclusion
+For the rules to work correctly with the profile, you need to ensure that:
+- The `toppings` field is included in the `chatbot.output` of the `pizza_order_test_custom` profile.
+
+If you add the `toppings` field to the profile's output, both rules should function as intended! If you need help modifying the profile, just let me know! 😊

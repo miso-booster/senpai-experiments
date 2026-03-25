@@ -1,0 +1,64 @@
+If you rename the field `price` to `total_cost` in the `pizza_order_test_custom` profile, it will indeed break any rules that reference the `price` field. Here's how you can address this issue:
+
+### Impact of Renaming
+1. **Profile Update**: The profile will now have `total_cost` instead of `price`.
+2. **Rule Breakage**: Any rules that reference `price` will fail because they will be looking for a field that no longer exists.
+
+### Rules Affected
+The following rules currently reference the `price` field:
+- **`same_number_of_toppings_cost_the_same.yaml`**
+  - **Condition**: Checks if pizzas with the same number of toppings cost the same.
+  - **Current Rule**:
+    ```yaml
+    name: same_number_of_toppings_cost_the_same
+    description: Pizzas with same number of toppings cost the same
+    conversations: 2
+    active: False
+    when: conv[0].drink == conv[1].drink
+    if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+    then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)
+    ```
+
+- **`more_toppings_cost_more.yaml`**
+  - **Condition**: Checks that adding more toppings increases the cost.
+  - **Current Rule**:
+    ```yaml
+    name: more_toppings_cost_more
+    description: Adding more toppings to a custom pizza costs more
+    conversations: 2
+    active: True
+    when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+    if: len(conv[0].toppings) > len(conv[1].toppings)
+    then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+    ```
+
+### Required Updates
+To ensure the rules function correctly after renaming `price` to `total_cost`, you will need to update the rules to reference the new field name. Here’s how you would modify the rules:
+
+1. **Update `same_number_of_toppings_cost_the_same.yaml`**:
+   ```yaml
+   name: same_number_of_toppings_cost_the_same
+   description: Pizzas with same number of toppings cost the same
+   conversations: 2
+   active: False
+   when: conv[0].drink == conv[1].drink
+   if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)
+   ```
+
+2. **Update `more_toppings_cost_more.yaml`**:
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza costs more
+   conversations: 2
+   active: True
+   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+   if: len(conv[0].toppings) > len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+   ```
+
+### Summary of Changes
+- **Profile**: Change `price` to `total_cost` in `pizza_order_test_custom.yml`.
+- **Rules**: Update all occurrences of `price` to `total_cost` in the affected rules.
+
+By making these updates, you ensure that the rules will correctly reference the new field name and function as intended. If you need help with the YAML formatting or further modifications, feel free to ask! 😊

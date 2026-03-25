@@ -1,0 +1,50 @@
+Great question! If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, you would need to check if there are any rules that reference `price`. 
+
+In the context of Sensei, if there are rules defined that rely on the `price` field, those rules would break because they would be looking for a field that no longer exists. To fix this, you would need to:
+
+1. **Update the `chatbot.output` section**: Change `price` to `total_cost` in the output extraction schema.
+
+   ```yaml
+test_name: "pizza_order_test"
+chatbot:
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - total_cost: 
+        description: The final price of the pizza order
+        type: currency
+conversation:
+  goal_style:
+    steps: 2
+  interaction_style:
+    - default
+  number: 1
+user:
+  context: ["You are ordering a pizza."]
+  goals: ["What is the total cost of my order?"]
+  language: English
+  role: "Customer placing a pizza order."
+```
+
+2. **Update any rules**: If there are rules that reference `price`, you would need to change those references to `total_cost`. For example, if you had a rule like this:
+
+   ```yaml
+name: price_check
+description: Ensure the price is greater than zero
+conversations: 1
+if: conv[0].price is not None
+then: extract_float(conv[0].price) > 0
+```
+
+   You would change it to:
+
+   ```yaml
+name: total_cost_positive
+description: The total cost of the order must be greater than zero.
+conversations: 1
+if: conv[0].total_cost is not None
+then: extract_float(conv[0].total_cost) > 0
+```
+
+3. **Validate the profile**: After making these changes, it’s a good idea to run a validation check on the profile to ensure everything is working as expected.
+
+By keeping the names consistent across your profile and rules, you’ll avoid any potential issues during execution. If you need help with anything specific, just let me know! 😊

@@ -1,0 +1,47 @@
+Sure! Let's take a look at the relevant details from the profile `pizza_order_test_custom` and the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes outputs related to pizza orders, such as:
+- `price`: The final price of the pizza order.
+- `time`: How long it will take for the pizza to be ready.
+- `order_id`: The order ID.
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+active: true
+conversations: 2
+description: Adding more toppings to a custom pizza cost more
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+name: more_toppings_cost_more
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+- This rule requires that both conversations have the same size and drink, and it checks the price based on the number of toppings.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+active: false
+conversations: 2
+description: Pizzas with same number of toppings cost the same
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+name: same_number_of_toppings_cost_the_same
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+- This rule checks if the price is the same when the size and number of toppings are equal.
+
+### Compatibility Check
+1. **For `more_toppings_cost_more`**: 
+   - The profile must ensure that the `toppings` field is available in the output and that it can be counted (i.e., it should be a list).
+   - The `price` field must also be present and correctly formatted to be extracted as a float.
+
+2. **For `same_number_of_toppings_cost_the_same`**:
+   - Similar to the first rule, it needs the `toppings` field to be a list and the `price` field to be extractable.
+
+### Conclusion
+- **If the `pizza_order_test_custom` profile has the `toppings` field defined as a list and the `price` field is correctly set up as a currency type**, both rules should work seamlessly with this profile.
+- If you find that the `toppings` field is missing or not structured correctly, you'll need to adjust the profile accordingly.
+
+Feel free to share any specific details or adjustments you might need! 😊

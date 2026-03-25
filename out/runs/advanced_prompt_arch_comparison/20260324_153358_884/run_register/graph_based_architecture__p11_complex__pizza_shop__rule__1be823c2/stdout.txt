@@ -1,0 +1,39 @@
+[project-context] Loaded 8 profile(s) [general_information_seeker.yaml, pizza_and_drink_order_placement.yaml, pizza_and_drinks_information_seeker.yaml, pizza_order_test_custom.yml, pizzaorder_ivan_test.yml, unrecognized_query_handler.yaml, user_experiencing_input_issues.yaml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from /home/ivan/miso/automatizacion/graph/sensei_projects/pizza_shop
+[user-context] Loaded 4 connector(s) [345634_config.yml, ada-uam.yaml, metro-madrid.yml, postman.yaml] from /home/ivan/miso/automatizacion/graph/users/user_1/connectors
+conversation ID: graph_based_architecture__p11_complex__pizza_shop__rule__1be823c2
+Verbose activated
+[intent-classifier] {'intent': 'explain', 'raw': '{"intent": "explain", "reason": "user wants to check compatibility of a profile with existing rules"}'}
+$$$
+Sure! Let's break it down to see if the **pizza_order_test_custom** profile will work with the **more_toppings_cost_more** and **same_number_of_toppings_cost_the_same** rules.
+
+### Profile: pizza_order_test_custom
+This profile has the following relevant outputs:
+- **price**: The final price of the pizza order (type: currency)
+- **order_id**: My order ID (type: string)
+- **time**: How long it will take for the pizza to be ready (type: time)
+
+### Rule: more_toppings_cost_more
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+- **Inputs needed**: The rule requires `toppings`, `size`, and `drink` fields to be present in the conversations.
+
+### Rule: same_number_of_toppings_cost_the_same
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+- **Inputs needed**: This rule also requires `toppings`, `size`, and `drink` fields.
+
+### Conclusion
+The **pizza_order_test_custom** profile does not explicitly define `toppings` or `drink` in its `chatbot.output`. Therefore, the rules **more_toppings_cost_more** and **same_number_of_toppings_cost_the_same** will not work as intended because they rely on those fields being present.
+
+To make these rules work, you would need to add the `toppings` and `drink` fields to the **pizza_order_test_custom** profile's `chatbot.output`. Once those fields are included, the rules should function correctly! 😊
+
+If you need help with adding those fields or anything else, just let me know!
+$$$

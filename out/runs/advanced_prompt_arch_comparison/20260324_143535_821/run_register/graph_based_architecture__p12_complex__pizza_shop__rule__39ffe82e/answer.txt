@@ -1,0 +1,22 @@
+Great question! If you rename the field `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed affect the rules that reference that field. Specifically, any rule that uses `extract_float(conv[i].price)` would break because it would no longer find the `price` field.
+
+To fix this, you would need to update all the rules that reference `price` to use the new field name `total_cost`. Here’s a step-by-step approach to make those updates:
+
+1. **Identify the Rules**: Check all the rules in your project that currently reference `price`. In your case, it looks like the rule `more_toppings_cost_more` is one of them.
+
+2. **Update the Rules**: Change any instance of `extract_float(conv[i].price)` to `extract_float(conv[i].total_cost)` in those rules.
+
+For example, the updated rule would look like this:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+```
+
+3. **Test the Changes**: After making the updates, run your tests again to ensure everything is functioning correctly and that the rules are passing.
+
+By keeping the field names consistent across your profiles and rules, you'll maintain the integrity of your testing framework. If you have any more questions or need further assistance, feel free to ask! 😊

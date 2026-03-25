@@ -1,0 +1,41 @@
+Let's break down the compatibility of the **pizza order test custom** profile with the two rules: **more toppings cost more** and **same number of toppings cost the same**.
+
+### Profile Overview
+The profile `pizza_order_test_custom.yaml` has the following relevant fields in its `chatbot.output`:
+- **price**: The final price of the pizza order (type: currency).
+- **size**: Options for pizza size (small, medium, big, extra large).
+- **toppings**: Options for pizza toppings (cheese, mushrooms, pepperoni).
+- **drink**: Options for drinks (sprite, coke, Orange Fanta).
+
+### Rule 1: More Toppings Cost More
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+- **Compatibility**: This rule checks if two pizzas of the same size and drink have a different number of toppings, asserting that more toppings should result in a higher price. 
+- **Outcome**: This rule will work with the profile since it uses the `size`, `drink`, and `toppings` fields defined in the profile's `chatbot.output`.
+
+### Rule 2: Same Number of Toppings Cost the Same
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with same number of toppings cost the same
+conversations: 2
+active: False
+when: conv[0].drink == conv[1].drink
+if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+- **Compatibility**: This rule checks if two pizzas with the same size and the same number of toppings have the same price. 
+- **Outcome**: This rule is also compatible with the profile as it references the same fields (`size`, `drink`, `toppings`, and `price`).
+
+### Conclusion
+Both rules are compatible with the **pizza order test custom** profile:
+- The **more toppings cost more** rule is active and will function as intended.
+- The **same number of toppings cost the same** rule is currently inactive but can be activated and will also work correctly with the profile.
+
+If you need any further adjustments or have more questions, feel free to ask! 🍕😊
