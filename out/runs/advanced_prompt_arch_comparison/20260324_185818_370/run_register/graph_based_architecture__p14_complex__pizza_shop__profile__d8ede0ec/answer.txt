@@ -1,0 +1,71 @@
+Sure! Let's take a closer look at the two profiles: **pizza_order_test_custom** and **pizza_and_drinks_information_seeker**. 
+
+### Profile Comparison
+
+1. **pizza_order_test_custom**:
+   - **Fallback**: "I'm sorry it's a little loud in my pizza shop, can you say that again?"
+   - **Outputs**: 
+     - Price of the pizza order
+     - Opening time
+     - Order ID
+   - **Goals**: 
+     - Ordering a custom pizza with size and toppings.
+     - Asking about the opening and closing times.
+     - Asking about the cost.
+
+2. **pizza_and_drinks_information_seeker**:
+   - **Fallback**: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+   - **Outputs**: 
+     - List of pizza types
+     - Price of a Margarita pizza
+     - List of available drinks and their prices
+     - Shop's operating hours
+     - Delivery availability
+   - **Goals**: 
+     - Asking about available pizza types.
+     - Asking about the price of a Margarita pizza.
+     - Asking about available drinks and their prices.
+     - Asking about the shop's operating hours.
+     - Asking if they deliver.
+
+### Better Profile
+Given that the user wants information about drinks, prices, and opening hours, **pizza_and_drinks_information_seeker** is the better profile. It specifically addresses the user's needs by including outputs for drink options and prices, as well as the shop's operating hours.
+
+### Rule Mapping
+Now, let's check the rules that map to **pizza_and_drinks_information_seeker**:
+
+1. **conversation_lengths**: Does not map directly to this profile.
+2. **more_toppings_cost_more**: Does not map directly to this profile.
+3. **only_talks_about_pizzas**: Does not map directly to this profile.
+4. **ordering_conversation_turns**: Does not map directly to this profile.
+5. **ordering_conversation_turns_assistant**: Does not map directly to this profile.
+6. **same_number_of_toppings_cost_the_same**: Does not map directly to this profile.
+
+### Proposed Rules for Increased Coverage
+To enhance the coverage of **pizza_and_drinks_information_seeker**, here are two proposed rules:
+
+1. **Drink Price Consistency**:
+   - **Description**: If a drink is available, the price should be consistent across different queries.
+   - **Rule**:
+     ```yaml
+     name: drink_price_consistency
+     description: The price of a drink should remain consistent across different queries.
+     conversations: 2
+     when: conv[0].drink_type == conv[1].drink_type
+     if: extract_float(conv[0].drink_price) != extract_float(conv[1].drink_price)
+     then: False
+     ```
+
+2. **Opening Hours Consistency**:
+   - **Description**: The opening hours should be consistent across different queries.
+   - **Rule**:
+     ```yaml
+     name: opening_hours_consistency
+     description: The opening hours should remain consistent across different queries.
+     conversations: 2
+     when: conv[0].query_type == 'opening_hours' and conv[1].query_type == 'opening_hours'
+     if: conv[0].opening_hours != conv[1].opening_hours
+     then: False
+     ```
+
+These rules would help ensure that the information provided about drinks and opening hours is reliable and consistent, enhancing the overall user experience! 😊 If you have any more questions or need further assistance, feel free to ask!

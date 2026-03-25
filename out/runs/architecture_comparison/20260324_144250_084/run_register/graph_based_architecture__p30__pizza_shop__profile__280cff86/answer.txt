@@ -1,0 +1,68 @@
+Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included 4 goals with 4 variables, and two of them use pairwise functions to allow for conversation number determination. Let’s dive in! 🍕✨
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a rude customer who wants to place a pizza order quickly. You expect fast responses."
+  context:
+    - "You are impatient and want to get your order done without any delays."
+  goals:
+    - "What pizza types do you have? I need a {{pizza_type}} pizza."
+    - "I want a {{pizza_size}} size for the {{pizza_type}} pizza. Hurry up!"
+    - "Get me {{number_of_drinks}} {{drink_type}} drinks. Make it quick!"
+    - "How much is it going to cost? I don't have all day!"
+
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Can you say it again?"
+  output:
+    - total_cost:
+        type: currency
+        description: "The total cost of the order."
+    - estimated_time:
+        type: time("hh:mm")
+        description: "Estimated time for the order to be ready."
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the order details."
+
+conversation:
+  number: combinations(0.5, pairwise) # Using pairwise functions for conversation number
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - long phrases
+    - change your mind
+```
+
+Feel free to adjust any part of this profile to better fit your needs! Happy testing! 😊

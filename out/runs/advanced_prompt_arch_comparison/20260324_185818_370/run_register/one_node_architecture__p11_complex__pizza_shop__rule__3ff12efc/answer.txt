@@ -1,0 +1,44 @@
+Sure! Let's take a look at the relevant details from the profile `pizza_order_test_custom` and the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes the following outputs related to pizza orders:
+- `price`: The final price of the pizza order (type: money).
+- `time`: How long it will take for the pizza to be ready (type: time).
+- `order_id`: The order ID (type: string).
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+active: true
+conversations: 2
+description: Adding more toppings to a custom pizza cost more
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+name: more_toppings_cost_more
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+- This rule requires that the `toppings` field is available in the profile's `chatbot.output`. However, it seems that the `pizza_order_test_custom` profile does not explicitly list `toppings` in its outputs.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+active: false
+conversations: 2
+description: Pizzas with same number of toppings cost the same
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+name: same_number_of_toppings_cost_the_same
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+- Similar to the previous rule, this one also requires the `toppings` field to be present in the profile's `chatbot.output`.
+
+### Conclusion
+Both rules rely on the `toppings` field, which is not defined in the `pizza_order_test_custom` profile. To ensure these rules work correctly, you should add a `toppings` field to the profile's `chatbot.output`. Here's an example of how you might define it:
+
+```yaml
+- toppings:
+    description: "List of toppings selected for the pizza."
+    type: list[string]
+```
+
+Once you add the `toppings` field to the profile, both rules should work as intended! If you need help with the specific YAML structure or any further adjustments, feel free to ask! 😊

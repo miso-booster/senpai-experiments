@@ -1,0 +1,73 @@
+Great! I've loaded the relevant documentation for profiles from `sensei-chat-guide.md`. Now, let's create a profile for testing a bike shop where a user wants to set an appointment to have their wheels changed. This profile will include variables to test different days and times for the appointment.
+
+### Profile Structure
+
+Here's a breakdown of what we will include in the profile:
+
+- **Test Name**: A descriptive name for the profile.
+- **User Role**: Describes the simulated user (e.g., a customer at a bike shop).
+- **Goals**: The user's goals, including setting an appointment with variables for different dates and times.
+- **Chatbot Output**: Fields to extract after the conversation, such as confirmation of the appointment and the selected date/time.
+
+### Proposed YAML Profile
+
+Here's the YAML structure for the bike shop appointment profile:
+
+```yaml
+test_name: "bike_shop_appointment"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer wanting to set an appointment to have your bike wheels changed."
+  context:
+    - "You have a flexible schedule and want to check for available dates and times."
+  goals:
+    - "Set an appointment on {{appointment_date}} at {{appointment_time}}."
+    - appointment_date:
+        function: random()
+        type: string
+        data: [any(3 dates within the next 30 days)]
+    - appointment_time:
+        function: random()
+        type: string
+        data: [any(3 times within the next week)]
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry, could you please provide that information again?"
+  output:
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the appointment"
+    - selected_date:
+        type: string
+        description: "The date selected for the appointment"
+    - selected_time:
+        type: string
+        description: "The time selected for the appointment"
+
+conversation:
+  number: combinations(0.5, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - single questions
+```
+
+### Summary of the Profile
+
+- **Test Name**: `bike_shop_appointment`
+- **User Role**: A customer at a bike shop.
+- **Goals**: The user aims to set an appointment with variables for different dates and times.
+- **Chatbot Output**: Includes fields for appointment confirmation, selected date, and selected time.
+
+Would you like me to save this profile, or do you need any modifications? 😊

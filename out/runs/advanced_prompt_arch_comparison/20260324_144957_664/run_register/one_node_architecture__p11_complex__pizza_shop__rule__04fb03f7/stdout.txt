@@ -1,0 +1,46 @@
+conversation ID: one_node_architecture__p11_complex__pizza_shop__rule__04fb03f7
+Verbose activated
+$$$
+Sure! Let's break it down to see if the profile `pizza_order_test_custom` is compatible with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes outputs related to pizza orders, such as:
+- `price`: The final price of the pizza order.
+- `time`: How long it will take for the pizza to be ready.
+- `order_id`: The order ID.
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+name: more_toppings_cost_more
+active: true
+conversations: 2
+description: Adding more toppings to a custom pizza costs more
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+- **Fields Used**: `toppings`, `size`, `drink`, and `price`.
+- **Compatibility**: This rule will work if the profile's output includes `price` and if the profile captures `toppings`, `size`, and `drink` in the conversation.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+name: same_number_of_toppings_cost_the_same
+active: false
+conversations: 2
+description: Pizzas with the same number of toppings cost the same
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+- **Fields Used**: `toppings`, `size`, `drink`, and `price`.
+- **Compatibility**: Similar to the first rule, this will also work if the profile captures `price`, `toppings`, `size`, and `drink`.
+
+### Conclusion
+For both rules to work with the `pizza_order_test_custom` profile:
+- The profile must include `toppings` in its output schema.
+- The profile must also ensure that `size` and `drink` are part of the conversation context.
+
+If `pizza_order_test_custom` does not currently include `toppings`, you'll need to add it to the `chatbot.output` section of the profile for both rules to function correctly. If you need help modifying the profile or have any other questions, just let me know! 😊
+$$$

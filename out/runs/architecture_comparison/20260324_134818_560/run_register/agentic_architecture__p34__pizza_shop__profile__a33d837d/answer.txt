@@ -1,0 +1,65 @@
+I found the relevant documentation for profiles in the `sensei-chat-guide.md`. Now, let's create a profile where the user initially asks for a custom pizza but changes their mind halfway through the conversation and opts for a predefined pizza instead.
+
+### Profile Structure
+Here's a proposed structure for the profile:
+
+- **Test Name**: Descriptive name for the profile.
+- **User**: Defines the language, role, context, and goals.
+- **Chatbot**: Specifies if the chatbot starts the conversation, fallback messages, and output fields.
+- **Conversation**: Controls the number of conversations and interaction styles.
+
+### Proposed Profile YAML
+Here's a draft of the profile:
+
+```yaml
+test_name: "custom_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer who wants to order a pizza."
+  context:
+    - "The user is unsure about their pizza choice."
+  goals:
+    - "Start by asking for a custom pizza with {{size}} and {{toppings}}."
+    - "Change mind and ask for a predefined pizza instead."
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, onions, olives]
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry, could you clarify your order?"
+  output:
+    - order_id:
+        type: string
+        description: "The order identifier"
+    - final_choice:
+        type: string
+        description: "The final pizza choice made by the user"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 3
+  interaction_style:
+    - change your mind
+```
+
+### Explanation
+- **User Goals**: The user starts by asking for a custom pizza and then changes their mind to a predefined option.
+- **Interaction Style**: The `change your mind` style allows the user to switch their request during the conversation.
+- **Chatbot Output**: The profile captures the order ID and the final choice of pizza.
+
+Would you like to make any adjustments to this profile, or should I proceed to save it? 😊

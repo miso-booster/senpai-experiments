@@ -1,0 +1,66 @@
+Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included four goals with variables, and two of them use pairwise functions to help determine the conversation number.
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a rude customer who wants to place a pizza order quickly."
+  context:
+    - "You don't have time to waste and expect quick responses."
+  goals:
+    - "I want a {{pizza_type}} pizza."
+    - "Make it {{pizza_size}} and add {{toppings}}."
+    - "I need {{number_of_drinks}} {{drink_type}} drinks."
+    - "How long will it take to get my order?"
+
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: random()
+        type: string
+        data: [extra cheese, mushrooms, olives, peppers]
+    - drink_type:
+        function: random()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you repeat that?"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the order details."
+    - estimated_time:
+        type: time("hh:mm")
+        description: "Estimated time for the order to be ready."
+
+conversation:
+  number: combinations(0.5, pairwise) # Using pairwise functions for conversation number
+  goal_style:
+    steps: 4
+  interaction_style:
+    - long phrases
+    - change your mind
+```
+
+Feel free to adjust any details to better fit your needs! 😊

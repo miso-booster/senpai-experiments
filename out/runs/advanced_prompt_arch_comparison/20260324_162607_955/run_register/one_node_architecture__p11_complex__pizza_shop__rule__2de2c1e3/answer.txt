@@ -1,0 +1,42 @@
+Sure! Let's break it down to see if the profile `pizza_order_test_custom` will work with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes outputs related to pizza orders, such as price, order ID, and time. It also has variables for size and toppings.
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more. It looks like this:
+
+```yaml
+name: more_toppings_cost_more
+active: true
+conversations: 2
+description: Adding more toppings to a custom pizza cost more
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same. It looks like this:
+
+```yaml
+name: same_number_of_toppings_cost_the_same
+active: false
+conversations: 2
+description: Pizzas with same number of toppings cost the same
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+
+### Compatibility Check
+1. **Output Fields**: Both rules reference `price`, `size`, and `toppings`, which should be present in the `chatbot.output` of the profile. Make sure these fields are correctly defined in the profile.
+
+2. **Rule Conditions**: 
+   - The `more_toppings_cost_more` rule requires that the size and drink are the same for both conversations, which is reasonable and should work with the profile.
+   - The `same_number_of_toppings_cost_the_same` rule also checks for the same size and drink, which aligns with the other rule.
+
+### Conclusion
+As long as the `pizza_order_test_custom` profile includes the necessary fields (`price`, `size`, `toppings`, etc.) in its `chatbot.output`, both rules should work correctly with this profile! 
+
+If you need to verify the exact field names in the profile's `chatbot.output`, please share that part, and I can help confirm further! 😊

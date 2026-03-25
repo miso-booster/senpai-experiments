@@ -1,0 +1,37 @@
+Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the `price` field because they would still be looking for `price`, which no longer exists.
+
+To fix this, you would need to update any rules that reference `price` to use the new field name `total_cost`. Here’s how you can do that:
+
+1. **Update the Profile**: Change the `price` field in the `pizza_order_test_custom` profile to `total_cost`.
+
+   ```yaml
+   output:
+     - total_cost: 
+         description: The final price of the pizza order, type: currency
+   ```
+
+2. **Update the Rules**: Look for any rules that currently reference `price` and change them to reference `total_cost` instead.
+
+For example, if you have a rule like this:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+```
+
+You would update it to:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+```
+
+By making these changes, you ensure that your rules are aligned with the updated profile, and everything should work smoothly! If you have any more questions or need further assistance, feel free to ask! 😊

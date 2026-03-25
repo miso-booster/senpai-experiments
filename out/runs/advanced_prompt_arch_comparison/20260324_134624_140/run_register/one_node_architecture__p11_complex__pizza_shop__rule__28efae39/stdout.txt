@@ -1,0 +1,42 @@
+conversation ID: one_node_architecture__p11_complex__pizza_shop__rule__28efae39
+Verbose activated
+$$$
+Sure! Let's take a look at the relevant details for the profile `pizza_order_test_custom` and the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes the following output fields:
+- `price`: The final price of the pizza order.
+- `time`: How long it will take for the pizza to be ready.
+- `order_id`: The order ID.
+
+### Rule: `more_toppings_cost_more`
+This rule checks that adding more toppings to a custom pizza costs more:
+```yaml
+active: true
+conversations: 2
+description: Adding more toppings to a custom pizza cost more
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+name: more_toppings_cost_more
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+- It requires the `toppings` field to be part of the conversation, which is not explicitly listed in the profile's output. 
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks that pizzas with the same number of toppings cost the same:
+```yaml
+active: false
+conversations: 2
+description: Pizzas with same number of toppings cost the same
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+name: same_number_of_toppings_cost_the_same
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+- Similar to the first rule, it also requires the `toppings` field.
+
+### Conclusion
+Both rules depend on the `toppings` field, which is not defined in the output of the `pizza_order_test_custom` profile. To make these rules work, you'll need to ensure that the `toppings` field is included in the profile's `chatbot.output`.
+
+If you add the `toppings` field to the profile, both rules should work correctly! Would you like help with modifying the profile to include the `toppings` field? 😊
+$$$

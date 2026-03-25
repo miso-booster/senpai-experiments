@@ -1,0 +1,23 @@
+It looks like you're trying to create a Sensei rule to check that the CAU (Centro de Atención a Usuarios) provides the correct contact information. However, there are a couple of issues with your rule that need to be addressed:
+
+1. **Use of `oracle`**: The `oracle` field should not repeat the same checks as the `when` condition. Instead, it should define what the expected outcome is based on the conditions set in `when`.
+
+2. **Field Access**: In the `when` clause, you're using `conv[0].contact_email`, `conv[0].contact_phone`, and `conv[0].physical_address`, which is correct if these fields are defined in your `chatbot.output`. Make sure that these fields exist in the profile you are testing against.
+
+Here’s a revised version of your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: True
+```
+
+### Explanation of Changes:
+
+- **Oracle Field**: I changed the `oracle` to simply `True`. This indicates that if the conditions in the `when` clause are met, the rule passes. The `oracle` is generally used to assert a condition that should be true if the `when` conditions are satisfied. Since you are checking for specific values, you can just assert that the rule should pass if those values are correct.
+
+- **Field Verification**: Ensure that the fields `contact_email`, `contact_phone`, and `physical_address` are indeed part of the `chatbot.output` in your profile. If they are not, you will need to add them to your profile's output schema.
+
+This rule now checks if the CAU provided the correct contact information and will pass if the conditions are met. If you have any further questions or need more assistance, feel free to ask! 😊

@@ -1,0 +1,68 @@
+[project-context] Loaded 8 profile(s) [general_information_seeker.yaml, pizza_and_drink_order_placement.yaml, pizza_and_drinks_information_seeker.yaml, pizza_order_test_custom.yml, pizzaorder_ivan_test.yml, unrecognized_query_handler.yaml, user_experiencing_input_issues.yaml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from /home/ivan/miso/automatizacion/graph/sensei_projects/pizza_shop
+[user-context] Loaded 4 connector(s) [345634_config.yml, ada-uam.yaml, metro-madrid.yml, postman.yaml] from /home/ivan/miso/automatizacion/graph/users/user_1/connectors
+conversation ID: graph_based_architecture__p14_complex__pizza_shop__profile__1432e4d2
+Verbose activated
+[intent-classifier] {'intent': 'explain', 'raw': '{"intent": "explain", "reason": "user wants to compare profiles and propose rules for coverage"}'}
+$$$
+Sure! Let's take a closer look at the two profiles: **pizza_order_test_custom** and **pizza_and_drinks_information_seeker**.
+
+### Profile Comparison
+
+1. **pizza_order_test_custom**:
+   - **Fallback**: "I'm sorry it's a little loud in my pizza shop, can you say that again?"
+   - **Outputs**: 
+     - Price of the pizza order
+     - Opening time
+     - Order ID
+   - **Goals**: 
+     - Ordering a custom pizza with specified size and toppings.
+     - Asking how much it will cost and how long it will take.
+
+2. **pizza_and_drinks_information_seeker**:
+   - **Fallback**: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+   - **Outputs**:
+     - List of pizza types
+     - Price of a Margarita pizza
+     - List of drinks and their prices
+     - Shop's operating hours
+     - Delivery availability
+   - **Goals**:
+     - Asking about available pizza types, prices, drinks, and operating hours.
+
+### Better Profile Choice
+For a user who wants information about drinks, prices, and opening hours, **pizza_and_drinks_information_seeker** is the better choice. This profile explicitly includes outputs and goals related to drinks, prices, and operating hours, making it more suitable for the user's needs.
+
+### Rule Mapping and Suggestions
+Now, let's check the rules that map to **pizza_and_drinks_information_seeker** and suggest additional rules to increase its coverage.
+
+#### Existing Rules for pizza_and_drinks_information_seeker
+1. **Rule for drink options and prices**: This rule would check if the chatbot provides the correct drink options and their prices.
+2. **Rule for operating hours**: This rule would ensure that the chatbot correctly states the shop's operating hours.
+
+#### Proposed Rules to Increase Coverage
+1. **Rule for price consistency**: 
+   - **Description**: Ensure that the prices for drinks are consistent across different queries.
+   - **Example Rule**:
+     ```yaml
+     name: drink_price_consistency
+     description: Prices for drinks should remain consistent across queries.
+     conversations: 2
+     when: conv[0].drink_type == conv[1].drink_type
+     if: extract_float(conv[0].drink_price) != extract_float(conv[1].drink_price)
+     then: False
+     ```
+
+2. **Rule for delivery availability**:
+   - **Description**: Check if the chatbot correctly indicates whether delivery is available.
+   - **Example Rule**:
+     ```yaml
+     name: delivery_availability_check
+     description: The chatbot should accurately state delivery availability.
+     conversations: 1
+     oracle: delivery_availability is not None
+     ```
+
+These proposed rules would enhance the profile's coverage by ensuring that the chatbot not only provides information but also maintains consistency in pricing and accurately communicates delivery options. 
+
+If you have any more questions or need further assistance, feel free to ask! 😊
+$$$
