@@ -111,6 +111,19 @@ pairwise Wilcoxon signed-rank tests between architectures on matched
 python -m app.rq2
 ```
 
+Generate the joined fallback/answer spreadsheet with:
+
+```powershell
+python app/rq2/fallback_answer_join.py
+```
+
+This reads all `results.xlsx` files under `out/runs/architecture_comparison`, filters
+and pivots answers/fallback flags by `run_group_id + prompt_id`, keeps prompts
+where at least one architecture fell back, and writes
+`out/RQ2_architecture_metrics/rq2_fallback_answers_joined.xlsx`.
+Change `--runs-dir`, `--out-dir`, `--sheet`, `--architectures`, or add
+`--include-no-fallbacks` for other inputs/filters.
+
 RQ3 Consistency (tool and node-usage consistency across repeated runs)
 ----------------------------------------------------------------------
 RQ3 measures:
