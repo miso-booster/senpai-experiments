@@ -1,0 +1,37 @@
+conversation ID: one_node_architecture__p12_complex__pizza_shop__rule__2b029bd7
+Verbose activated
+$$$
+Great question! If you rename the field `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the `price` field. Specifically, the rule `more_toppings_cost_more.yaml` and possibly others that rely on the `price` field would need to be updated.
+
+### Here’s what you need to do:
+
+1. **Update the Profile:**
+   Change the `price` field to `total_cost` in the `pizza_order_test_custom` profile under the `chatbot.output` section.
+
+   ```yaml
+   chatbot:
+     output:
+       - total_cost:  # Change from price to total_cost
+           type: currency
+           description: "final price for the order"
+   ```
+
+2. **Update the Rules:**
+   In the rules that reference `price`, you will need to change those references to `total_cost`. For example, in the `more_toppings_cost_more.yaml` rule, update the `then` clause to use `total_cost` instead of `price`.
+
+   Here’s how the updated rule would look:
+
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza costs more
+   conversations: 2
+   when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+   if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+   then: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'  # Updated here
+   ```
+
+3. **Review Other Rules:**
+   Check any other rules in your project that might also reference `price` and update them similarly to use `total_cost`.
+
+By making these adjustments, you’ll ensure that everything stays in sync and your rules will continue to function correctly! If you have any more questions or need further assistance, feel free to ask! 😊
+$$$

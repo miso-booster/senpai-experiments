@@ -1,0 +1,48 @@
+I've gathered the necessary documentation to check the compatibility of the profile "pizza order test custom" with the rules "more toppings cost more" and "same number of toppings." Here's what I found:
+
+### Profile and Rule Overview
+
+1. **Profile: pizza order test custom**
+   - This profile should define the `chatbot.output` fields that are relevant for the rules. Key fields typically include:
+     - `size`: The size of the pizza (e.g., small, medium, large).
+     - `toppings`: A list of selected toppings.
+     - `drink`: The chosen drink.
+     - `number`: The quantity of pizzas.
+     - `price`: The final price of the order.
+
+2. **Rules:**
+   - **More Toppings Cost More**
+     ```yaml
+     name: more_toppings_cost_more
+     description: Adding more toppings to a custom pizza cost more
+     active: True
+     conversations: 2
+     when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+     if:   len(conv[0].toppings) > len(conv[1].toppings)
+     then: extract_float(conv[0].price) > extract_float(conv[1].price)
+     ```
+
+   - **Same Number of Toppings Cost the Same**
+     ```yaml
+     name: same_number_of_toppings_cost_the_same
+     description: Pizzas with same number of toppings cost the same
+     conversations: 2
+     when: conv[0].drink == conv[1].drink
+     if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+     then: extract_float(conv[0].price) == extract_float(conv[1].price)
+     ```
+
+### Compatibility Check
+
+- **Field References**: Both rules reference fields such as `size`, `drink`, `toppings`, and `price`. For these rules to work, the profile must expose these fields in its `chatbot.output`.
+- **Logic Alignment**:
+  - The first rule checks that if two pizzas have the same size and drink, the one with more toppings should cost more.
+  - The second rule checks that if two pizzas have the same size and the same number of toppings, they should cost the same.
+
+### Conclusion
+
+To ensure these rules work with the "pizza order test custom" profile:
+- **Verify the `chatbot.output`**: Ensure that the profile includes the fields `size`, `drink`, `toppings`, and `price` as described.
+- **Field Types**: Make sure the types of these fields match the expectations in the rules (e.g., `price` should be a currency type).
+
+If you can confirm that the profile has these fields correctly defined, then both rules should work seamlessly with it! If you need help checking the exact fields in your profile, let me know! 😊

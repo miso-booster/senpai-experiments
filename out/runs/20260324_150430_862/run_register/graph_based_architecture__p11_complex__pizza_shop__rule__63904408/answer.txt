@@ -1,0 +1,33 @@
+Sure! Let's break it down to see if the profile `pizza_order_test_custom` will work with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+- **Outputs**:
+  - `price`: The final price of the pizza order (type: currency)
+  - `time`: Just the opening time (type: time(hh:mm:ss))
+  - `order_id`: The order ID (type: string)
+
+### Rule: `more_toppings_cost_more`
+- **Description**: Adding more toppings to a custom pizza costs more.
+- **Conditions**:
+  - **When**: `conv[0].size == conv[1].size and conv[0].drink == conv[1].drink`
+  - **If**: `len(conv[0].toppings) > len(conv[1].toppings)`
+  - **Then**: `extract_float(conv[0].price) > extract_float(conv[1].price)`
+
+### Rule: `same_number_of_toppings_cost_the_same`
+- **Description**: Pizzas with the same number of toppings cost the same.
+- **Conditions**:
+  - **When**: `conv[0].drink == conv[1].drink`
+  - **If**: `conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)`
+  - **Then**: `extract_float(conv[0].price) == extract_float(conv[1].price)`
+
+### Compatibility Check
+1. **Output Fields**: Both rules reference the `price` field, which is present in the profile. This is great because it means the rules can evaluate the price based on the conditions set.
+
+2. **Toppings Handling**: 
+   - The `more_toppings_cost_more` rule checks if the number of toppings is greater in one conversation compared to another. Ensure that the profile captures the `toppings` field in its output for this rule to work.
+   - The `same_number_of_toppings_cost_the_same` rule also requires access to the `toppings` field to compare their lengths.
+
+### Conclusion
+For both rules to work correctly, the `pizza_order_test_custom` profile needs to include a field for `toppings` in its `chatbot.output`. If it currently does not have this field, you'll need to add it to the profile's output schema. 
+
+If you can ensure that the `toppings` field is included, then both rules should work perfectly with the `pizza_order_test_custom` profile! 😊 If you need help adding that field or have any more questions, feel free to ask!

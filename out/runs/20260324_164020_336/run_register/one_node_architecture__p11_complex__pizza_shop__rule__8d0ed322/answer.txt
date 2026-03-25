@@ -1,0 +1,41 @@
+Sure! Let's break it down to see if the profile `pizza_order_test_custom` is compatible with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes outputs related to pizza orders, such as the size, type, and price of the pizza.
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a pizza increases the price, which is structured as follows:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with the same number of toppings cost the same
+conversations: 2
+when: conv[0].drink == conv[1].drink
+if:   conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+
+### Compatibility Check
+1. **Outputs in the Profile**: 
+   - The profile should expose fields like `size`, `toppings`, and `price` in its `chatbot.output`. 
+   - Ensure that `price` is a currency type that can be extracted as a float.
+
+2. **Field Names**: 
+   - The fields referenced in the rules (`size`, `toppings`, `price`) must match exactly with those defined in the profile's `chatbot.output`.
+
+### Conclusion
+If the `pizza_order_test_custom` profile includes the necessary fields (`size`, `toppings`, and `price`) in its `chatbot.output` and they are correctly named, then both rules should work with this profile! 
+
+If you want to double-check the exact definitions in your profile, feel free to share the relevant parts, and I can help confirm! 😊

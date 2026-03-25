@@ -1,0 +1,37 @@
+Let's examine the compatibility of the **pizza order test custom** profile with the two rules: **more toppings cost more** and **same number of toppings cost the same**.
+
+### Profile: `pizza_order_test_custom`
+- **Outputs**:
+  - `price`: Final price of the pizza order (currency)
+  - `time`: Opening time (time)
+  - `order_id`: Order ID (string)
+
+### Rules
+1. **More Toppings Cost More**
+   - **Description**: Adding more toppings to a custom pizza costs more.
+   - **Active**: True
+   - **Condition**:
+     ```yaml
+     when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+     if:   len(conv[0].toppings) > len(conv[1].toppings)
+     then: extract_float(conv[0].price) > extract_float(conv[1].price)
+     ```
+   - **Compatibility**: This rule is compatible with the profile since it checks the `size`, `drink`, and `toppings`, all of which are defined in the profile's `chatbot.output`.
+
+2. **Same Number of Toppings Cost the Same**
+   - **Description**: Pizzas with the same number of toppings cost the same.
+   - **Active**: False
+   - **Condition**:
+     ```yaml
+     when: conv[0].drink == conv[1].drink
+     if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+     then: extract_float(conv[0].price) == extract_float(conv[1].price)
+     ```
+   - **Compatibility**: This rule is also compatible with the profile. It checks the `drink`, `size`, and `toppings`, which are present in the profile's `chatbot.output`.
+
+### Summary
+Both rules can work with the **pizza order test custom** profile:
+- The **more toppings cost more** rule is active and will validate that adding more toppings increases the price.
+- The **same number of toppings cost the same** rule is currently inactive, but it is compatible if activated.
+
+If you need to activate the second rule or make any modifications, let me know! 😊

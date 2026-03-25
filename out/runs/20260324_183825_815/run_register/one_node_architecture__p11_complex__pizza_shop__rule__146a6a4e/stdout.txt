@@ -1,0 +1,44 @@
+conversation ID: one_node_architecture__p11_complex__pizza_shop__rule__146a6a4e
+Verbose activated
+$$$
+Sure! Let's take a look at the relevant details for the profile `pizza_order_test_custom` and the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+The profile includes the following relevant outputs:
+- `price`: The final price of the pizza order (type: currency).
+- `size`: The size of the pizza (not explicitly listed in the output, but inferred from the context).
+- `toppings`: The toppings selected for the pizza (not explicitly listed, but inferred from the context).
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+- **Check**: This rule requires that the `size` and `drink` fields are present in the profile's `chatbot.output`. The `toppings` field should also be accessible to compare the number of toppings.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with the same number of toppings cost the same
+conversations: 2
+when: conv[0].drink == conv[1].drink
+if:   conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+- **Check**: Similar to the previous rule, this one also requires the `size` and `drink` fields, along with the `toppings` field.
+
+### Conclusion
+For both rules to work correctly with the profile `pizza_order_test_custom`, the following must be ensured:
+1. The `chatbot.output` of the profile should explicitly include `toppings` and `size` fields.
+2. The rules should reference these fields correctly.
+
+If the `size` and `toppings` fields are not explicitly defined in the `chatbot.output` of the profile, you'll need to add them for the rules to function properly. 
+
+Would you like help with modifying the profile to include these fields? 😊
+$$$

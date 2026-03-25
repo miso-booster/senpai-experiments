@@ -1,0 +1,51 @@
+conversation ID: one_node_architecture__p11_complex__pizza_shop__rule__fcc9ce33
+Verbose activated
+$$$
+Sure! Let's break it down and see if the profile `pizza_order_test_custom` is compatible with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes the following relevant outputs:
+- It has a structure that allows for a custom pizza order, including size and toppings.
+
+### Rule: `more_toppings_cost_more`
+Here’s the rule:
+```yaml
+active: true
+conversations: 2
+description: Adding more toppings to a custom pizza cost more
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+name: more_toppings_cost_more
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+This rule checks if the price of a pizza increases when the number of toppings increases, given that the size and drink are the same.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+Here’s the rule:
+```yaml
+active: false
+conversations: 2
+description: Pizzas with same number of toppings cost the same
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)'
+name: same_number_of_toppings_cost_the_same
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+This rule checks if pizzas with the same number of toppings and size have the same price, given that the drinks are the same.
+
+### Compatibility Check
+1. **For `more_toppings_cost_more`**:
+   - The profile must expose `price`, `size`, and `toppings` in its `chatbot.output`, which it does.
+   - The rule is valid as it checks the relationship between the number of toppings and price.
+
+2. **For `same_number_of_toppings_cost_the_same`**:
+   - This rule is currently inactive (`active: false`), so it won't run unless activated.
+   - It also requires the profile to expose `price`, `size`, and `toppings`, which it does.
+
+### Conclusion
+Both rules can work with the `pizza_order_test_custom` profile, provided that the profile's `chatbot.output` includes the necessary fields: `price`, `size`, and `toppings`. 
+
+If you want to activate the `same_number_of_toppings_cost_the_same` rule, just change `active: false` to `active: true` in the rule's YAML. 
+
+If you have any more questions or need further assistance, feel free to ask! 😊
+$$$
