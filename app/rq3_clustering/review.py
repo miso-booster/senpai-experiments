@@ -194,6 +194,7 @@ def build_summaries_from_assignments(
         key=lambda item: (str(item[0][0]), prompt_sort_key(item[0][1])),
     ):
         records.sort(key=lambda row: (-int(row["response_count"]), str(row["cluster_id"])))
+        prompt_text = _first_non_empty(row["prompt"] for row in records)
         non_fallback_records = [row for row in records if not bool(row["is_fallback_cluster"])]
         fallback_response_count = sum(
             int(row["response_count"]) for row in records if bool(row["is_fallback_cluster"])
@@ -205,7 +206,7 @@ def build_summaries_from_assignments(
             {
                 "arch_id": arch_id,
                 "prompt_id": prompt_id,
-                "prompt": records[0]["prompt"],
+                "prompt": prompt_text,
                 "total_responses": total_responses,
                 "fallback_response_count": fallback_response_count,
                 "fallback_rate": (

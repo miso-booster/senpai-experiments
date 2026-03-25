@@ -718,6 +718,61 @@ def test_build_summaries_from_assignments_excludes_fb_from_consistency_metrics()
     )
 
 
+def test_build_summaries_from_assignments_uses_first_non_empty_prompt_across_clusters() -> None:
+    review = pd.DataFrame(
+        [
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "",
+                "response_index": 1,
+                "answer": "Alpha one",
+                "proposed_cluster_label": "Alpha",
+                "proposed_cluster_reason": "Alpha cluster",
+                "final_cluster_id": "C1",
+                "reviewed": True,
+                "review_notes": "",
+            },
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "",
+                "response_index": 2,
+                "answer": "Alpha two",
+                "proposed_cluster_label": "Alpha",
+                "proposed_cluster_reason": "Alpha cluster",
+                "final_cluster_id": "C1",
+                "reviewed": True,
+                "review_notes": "",
+            },
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "Question?",
+                "response_index": 3,
+                "answer": "Beta one",
+                "proposed_cluster_label": "Beta",
+                "proposed_cluster_reason": "Beta cluster",
+                "final_cluster_id": "C2",
+                "reviewed": True,
+                "review_notes": "",
+            },
+        ]
+    )
+
+    _, prompt_summary, _ = build_summaries_from_assignments(
+        review,
+        final_cluster_id_col="final_cluster_id",
+        proposed_cluster_label_col="proposed_cluster_label",
+        proposed_cluster_reason_col="proposed_cluster_reason",
+        reviewed_flag_col="reviewed",
+        review_notes_col="review_notes",
+        result_source="human_review",
+    )
+
+    assert prompt_summary.iloc[0]["prompt"] == "Question?"
+
+
 def test_validate_review_assignments_rejects_pending_rows() -> None:
     review = pd.DataFrame(
         [
