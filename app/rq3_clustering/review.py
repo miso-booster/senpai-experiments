@@ -174,6 +174,7 @@ def build_summaries_from_assignments(
             "prompt_id": prompt_id,
             "prompt": prompt_text,
             "cluster_id": _clean_text(final_cluster_id),
+            "is_fallback_cluster": _clean_text(final_cluster_id).upper() == "FB",
             "cluster_label": cluster_label,
             "cluster_summary": cluster_reason,
             "response_count": len(ordered),
@@ -193,23 +194,45 @@ def build_summaries_from_assignments(
         key=lambda item: (str(item[0][0]), prompt_sort_key(item[0][1])),
     ):
         records.sort(key=lambda row: (-int(row["response_count"]), str(row["cluster_id"])))
-
-        majority = records[0]
+        prompt_text = _first_non_empty(row["prompt"] for row in records)
+        non_fallback_records = [row for row in records if not bool(row["is_fallback_cluster"])]
+        fallback_response_count = sum(
+            int(row["response_count"]) for row in records if bool(row["is_fallback_cluster"])
+        )
+        total_responses = prompt_totals[(arch_id, prompt_id)]
+        substantive_response_count = total_responses - fallback_response_count
+        majority = non_fallback_records[0] if non_fallback_records else None
         prompt_rows.append(
             {
                 "arch_id": arch_id,
                 "prompt_id": prompt_id,
-                "prompt": majority["prompt"],
-                "total_responses": prompt_totals[(arch_id, prompt_id)],
-                "cluster_count": len(records),
-                "majority_cluster_id": majority["cluster_id"],
-                "majority_cluster_label": majority["cluster_label"],
-                "majority_cluster_size": majority["response_count"],
-                "majority_cluster_share": majority["response_share"],
-                "is_perfect_consensus": len(records) == 1,
+                "prompt": prompt_text,
+                "total_responses": total_responses,
+                "fallback_response_count": fallback_response_count,
+                "fallback_rate": (
+                    fallback_response_count / total_responses if total_responses else 0.0
+                ),
+                "substantive_response_count": substantive_response_count,
+                "cluster_count": len(non_fallback_records),
+                "majority_cluster_id": majority["cluster_id"] if majority else "",
+                "majority_cluster_label": majority["cluster_label"] if majority else "",
+                "majority_cluster_size": int(majority["response_count"]) if majority else 0,
+                "majority_cluster_share": (
+                    int(majority["response_count"]) / substantive_response_count
+                    if majority and substantive_response_count > 0
+                    else pd.NA
+                ),
+                "is_perfect_consensus": (
+                    len(non_fallback_records) == 1 and substantive_response_count > 0
+                ),
+                "has_substantive_answers": substantive_response_count > 0,
                 "cluster_breakdown": " | ".join(
                     f"{row['cluster_id']}={row['response_count']} ({row['cluster_label']})"
                     for row in records
+                ),
+                "substantive_cluster_breakdown": " | ".join(
+                    f"{row['cluster_id']}={row['response_count']} ({row['cluster_label']})"
+                    for row in non_fallback_records
                 ),
                 "reviewed_response_count": int(
                     normalized[
@@ -228,6 +251,9 @@ def build_summaries_from_assignments(
         .agg(
             prompt_count=("prompt_id", "nunique"),
             total_responses=("total_responses", "sum"),
+            fallback_response_count=("fallback_response_count", "sum"),
+            substantive_response_count=("substantive_response_count", "sum"),
+            consistency_prompt_count=("has_substantive_answers", "sum"),
             mean_majority_cluster_share=("majority_cluster_share", "mean"),
             median_majority_cluster_share=("majority_cluster_share", "median"),
             mean_cluster_count=("cluster_count", "mean"),
@@ -238,8 +264,15 @@ def build_summaries_from_assignments(
         .sort_values("arch_id", kind="stable")
         .reset_index(drop=True)
     )
+    overall_summary["fallback_rate"] = (
+        overall_summary["fallback_response_count"] / overall_summary["total_responses"]
+    )
     overall_summary["perfect_consensus_rate"] = (
-        overall_summary["perfect_consensus_prompts"] / overall_summary["prompt_count"]
+        overall_summary["perfect_consensus_prompts"]
+        / overall_summary["consistency_prompt_count"].where(
+            overall_summary["consistency_prompt_count"] > 0,
+            pd.NA,
+        )
     )
     overall_summary["result_source"] = result_source
 

@@ -619,6 +619,160 @@ def test_build_summaries_from_assignments_uses_reviewed_clusters() -> None:
     assert "Moved after review" in cluster_summary.iloc[1]["review_notes"]
 
 
+def test_build_summaries_from_assignments_excludes_fb_from_consistency_metrics() -> None:
+    review = pd.DataFrame(
+        [
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "Question?",
+                "response_index": 1,
+                "answer": "Fallback",
+                "proposed_cluster_label": "FB",
+                "proposed_cluster_reason": "Fallback",
+                "final_cluster_id": "FB",
+                "reviewed": True,
+                "review_notes": "",
+            },
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "Question?",
+                "response_index": 2,
+                "answer": "Concrete answer",
+                "proposed_cluster_label": "Concrete",
+                "proposed_cluster_reason": "Concrete",
+                "final_cluster_id": "C1",
+                "reviewed": True,
+                "review_notes": "",
+            },
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "Question?",
+                "response_index": 3,
+                "answer": "Concrete answer",
+                "proposed_cluster_label": "Concrete",
+                "proposed_cluster_reason": "Concrete",
+                "final_cluster_id": "C1",
+                "reviewed": True,
+                "review_notes": "",
+            },
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p2_basic",
+                "prompt": "Question 2?",
+                "response_index": 1,
+                "answer": "Fallback",
+                "proposed_cluster_label": "FB",
+                "proposed_cluster_reason": "Fallback",
+                "final_cluster_id": "FB",
+                "reviewed": True,
+                "review_notes": "",
+            },
+        ]
+    )
+
+    overall_summary, prompt_summary, cluster_summary = build_summaries_from_assignments(
+        review,
+        final_cluster_id_col="final_cluster_id",
+        proposed_cluster_label_col="proposed_cluster_label",
+        proposed_cluster_reason_col="proposed_cluster_reason",
+        reviewed_flag_col="reviewed",
+        review_notes_col="review_notes",
+        result_source="human_review",
+    )
+
+    p1 = prompt_summary[prompt_summary["prompt_id"] == "p1_basic"].iloc[0]
+    assert p1["fallback_response_count"] == 1
+    assert p1["fallback_rate"] == pytest.approx(1 / 3)
+    assert p1["substantive_response_count"] == 2
+    assert p1["cluster_count"] == 1
+    assert p1["majority_cluster_id"] == "C1"
+    assert p1["majority_cluster_share"] == pytest.approx(1.0)
+    assert bool(p1["is_perfect_consensus"]) is True
+
+    p2 = prompt_summary[prompt_summary["prompt_id"] == "p2_basic"].iloc[0]
+    assert p2["fallback_rate"] == pytest.approx(1.0)
+    assert p2["substantive_response_count"] == 0
+    assert p2["cluster_count"] == 0
+    assert p2["majority_cluster_id"] == ""
+    assert pd.isna(p2["majority_cluster_share"])
+    assert bool(p2["is_perfect_consensus"]) is False
+
+    overall = overall_summary.iloc[0]
+    assert overall["fallback_response_count"] == 2
+    assert overall["fallback_rate"] == pytest.approx(0.5)
+    assert overall["consistency_prompt_count"] == 1
+    assert overall["mean_majority_cluster_share"] == pytest.approx(1.0)
+    assert overall["mean_cluster_count"] == pytest.approx(0.5)
+    assert overall["perfect_consensus_rate"] == pytest.approx(1.0)
+
+    assert (
+        cluster_summary[["cluster_id", "is_fallback_cluster"]].to_dict(orient="records")
+        == [
+            {"cluster_id": "C1", "is_fallback_cluster": False},
+            {"cluster_id": "FB", "is_fallback_cluster": True},
+            {"cluster_id": "FB", "is_fallback_cluster": True},
+        ]
+    )
+
+
+def test_build_summaries_from_assignments_uses_first_non_empty_prompt_across_clusters() -> None:
+    review = pd.DataFrame(
+        [
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "",
+                "response_index": 1,
+                "answer": "Alpha one",
+                "proposed_cluster_label": "Alpha",
+                "proposed_cluster_reason": "Alpha cluster",
+                "final_cluster_id": "C1",
+                "reviewed": True,
+                "review_notes": "",
+            },
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "",
+                "response_index": 2,
+                "answer": "Alpha two",
+                "proposed_cluster_label": "Alpha",
+                "proposed_cluster_reason": "Alpha cluster",
+                "final_cluster_id": "C1",
+                "reviewed": True,
+                "review_notes": "",
+            },
+            {
+                "arch_id": "arch_a",
+                "prompt_id": "p1_basic",
+                "prompt": "Question?",
+                "response_index": 3,
+                "answer": "Beta one",
+                "proposed_cluster_label": "Beta",
+                "proposed_cluster_reason": "Beta cluster",
+                "final_cluster_id": "C2",
+                "reviewed": True,
+                "review_notes": "",
+            },
+        ]
+    )
+
+    _, prompt_summary, _ = build_summaries_from_assignments(
+        review,
+        final_cluster_id_col="final_cluster_id",
+        proposed_cluster_label_col="proposed_cluster_label",
+        proposed_cluster_reason_col="proposed_cluster_reason",
+        reviewed_flag_col="reviewed",
+        review_notes_col="review_notes",
+        result_source="human_review",
+    )
+
+    assert prompt_summary.iloc[0]["prompt"] == "Question?"
+
+
 def test_validate_review_assignments_rejects_pending_rows() -> None:
     review = pd.DataFrame(
         [
@@ -652,12 +806,14 @@ def test_generate_reviewed_plots_writes_expected_files(tmp_path) -> None:
                 "mean_majority_cluster_share": 0.90,
                 "perfect_consensus_rate": 0.80,
                 "mean_cluster_count": 1.3,
+                "fallback_rate": 0.10,
             },
             {
                 "arch_id": "graph_based_architecture",
                 "mean_majority_cluster_share": 0.75,
                 "perfect_consensus_rate": 0.40,
                 "mean_cluster_count": 1.9,
+                "fallback_rate": 0.30,
             },
         ]
     )
@@ -668,36 +824,42 @@ def test_generate_reviewed_plots_writes_expected_files(tmp_path) -> None:
                 "prompt_id": "p1_basic",
                 "majority_cluster_share": 1.0,
                 "cluster_count": 1,
+                "fallback_rate": 0.0,
             },
             {
                 "arch_id": "graph_based_architecture",
                 "prompt_id": "p1_basic",
                 "majority_cluster_share": 0.8,
                 "cluster_count": 2,
+                "fallback_rate": 0.2,
             },
             {
                 "arch_id": "agentic_architecture",
                 "prompt_id": "p6_intermediate",
                 "majority_cluster_share": 0.9,
                 "cluster_count": 1,
+                "fallback_rate": 0.1,
             },
             {
                 "arch_id": "graph_based_architecture",
                 "prompt_id": "p6_intermediate",
                 "majority_cluster_share": 0.6,
                 "cluster_count": 3,
+                "fallback_rate": 0.4,
             },
             {
                 "arch_id": "agentic_architecture",
                 "prompt_id": "p11_complex",
                 "majority_cluster_share": 0.85,
                 "cluster_count": 2,
+                "fallback_rate": 0.2,
             },
             {
                 "arch_id": "graph_based_architecture",
                 "prompt_id": "p11_complex",
                 "majority_cluster_share": 0.5,
                 "cluster_count": 4,
+                "fallback_rate": 0.3,
             },
         ]
     )
@@ -714,6 +876,8 @@ def test_generate_reviewed_plots_writes_expected_files(tmp_path) -> None:
         "RQ3_clustering_reviewed_overall_summary.png",
         "RQ3_clustering_reviewed_prompt_majority_share.png",
         "RQ3_clustering_reviewed_prompt_cluster_count.png",
+        "RQ3_clustering_reviewed_prompt_fallback_rate.png",
         "RQ3_clustering_reviewed_majority_share_heatmap.png",
         "RQ3_clustering_reviewed_difficulty_summary.png",
+        "RQ3_clustering_reviewed_difficulty_fallback_rate.png",
     }
