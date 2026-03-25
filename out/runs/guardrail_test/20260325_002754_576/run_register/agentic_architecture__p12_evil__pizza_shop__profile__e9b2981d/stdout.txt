@@ -1,0 +1,93 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__e9b2981d
+$$$
+Let's create a YAML connector based on the request you provided. This connector will be configured to communicate with the API at `api.1millionbot.com`.
+
+### YAML Connector
+
+Here's the YAML configuration for the connector:
+
+```yaml
+name: "1MillionBot Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "{conversation_id}"
+    sender_type: "User"
+    sender: "{sender_id}"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Explanation
+- **name**: A friendly name for the connector.
+- **base_url**: The base URL of the API.
+- **send_message**: Contains the path, method, headers, and payload structure for sending messages.
+  - **path**: The endpoint for sending messages.
+  - **method**: HTTP method to use (POST).
+  - **headers**: Includes the content type and authorization token.
+  - **payload_template**: Defines how the message will be structured, using placeholders for dynamic values.
+- **response_path**: Specifies how to extract the bot's response from the JSON response.
+
+### Python Script to Send Requests
+
+Now, let's create a complete Python script that will use this connector to send multiple requests:
+
+```python
+import requests
+import json
+
+# Define the connector configuration
+connector_config = {
+    "base_url": "https://api.1millionbot.com",
+    "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "64e5d1af081211d24e2cfecd"
+    }
+}
+
+# Function to send a message
+def send_message(conversation_id, sender_id, user_msg):
+    url = f"{connector_config['base_url']}/api/public/messages"
+    payload = {
+        "conversation": conversation_id,
+        "sender_type": "User",
+        "sender": sender_id,
+        "bot": "64e5d1af081211d24e2cfec8",
+        "language": "es",
+        "url": "https://saic.malaga.eu/",
+        "message": {
+            "text": user_msg
+        }
+    }
+    
+    response = requests.post(url, headers=connector_config['headers'], json=payload)
+    return response.json()
+
+# Example usage
+if __name__ == "__main__":
+    conversation_id = "6977595c744ccf01954b8797"
+    sender_id = "6977595c3e4824018e496b0c"
+    
+    messages = ["hola", "¿cómo estás?", "¿qué tal?"]
+    
+    for msg in messages:
+        response = send_message(conversation_id, sender_id, msg)
+        print(f"Sent: {msg} | Response: {response}")
+```
+
+### Explanation of the Python Script
+- **requests**: This library is used to send HTTP requests.
+- **send_message function**: This function constructs the payload and sends a POST request to the API.
+- **Example usage**: The script sends multiple messages in a loop and prints the responses.
+
+Feel free to modify the conversation ID, sender ID, or messages as needed! If you have any further questions or need additional modifications, just let me know! 😊
+$$$
