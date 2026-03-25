@@ -79,7 +79,7 @@ def generate_plots(
     overall["arch_label"] = overall["arch_id"].map(_arch_label)
     overall = overall.sort_values("arch_label", kind="stable").reset_index(drop=True)
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.6))
+    fig, axes = plt.subplots(1, 4, figsize=(17.2, 4.6))
     x = np.arange(len(overall))
     labels = overall["arch_label"].tolist()
 
@@ -87,6 +87,7 @@ def generate_plots(
         ("mean_majority_cluster_share", "Mean Majority Share", (0, 1.05)),
         ("perfect_consensus_rate", "Perfect Consensus Rate", (0, 1.05)),
         ("mean_cluster_count", "Mean Cluster Count", None),
+        ("fallback_rate", "Fallback Rate", (0, 1.05)),
     ]
     for ax, (column, title, ylim) in zip(axes, metrics):
         values = pd.to_numeric(overall[column], errors="coerce").fillna(0).to_numpy()
@@ -195,6 +196,40 @@ def generate_plots(
     ax.legend(**legend_kwargs)
     _save(fig, "RQ3_clustering_reviewed_prompt_cluster_count")
 
+    fallback_pivot = (
+        prompt.pivot_table(
+            index="prompt_id",
+            columns="arch_label",
+            values="fallback_rate",
+            aggfunc="mean",
+        )
+        .reindex(index=prompt_order, columns=arch_order)
+        .fillna(0)
+    )
+
+    fig, ax = plt.subplots(figsize=(max(10, len(prompt_order) * 0.75), 4.8))
+    for idx, arch_label in enumerate(arch_order):
+        values = pd.to_numeric(fallback_pivot[arch_label], errors="coerce").fillna(0).to_numpy()
+        offset = (idx - (len(arch_order) - 1) / 2) * width
+        bars = ax.bar(
+            x + offset,
+            values,
+            width=width,
+            label=arch_label,
+            color=arch_fills.get(arch_label, "#bdbdbd"),
+            edgecolor="black",
+            linewidth=1.1,
+        )
+        for bar in bars:
+            bar.set_hatch(arch_hatches.get(arch_label, "///"))
+    ax.set_xticks(x, prompt_order)
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel("Fallback rate")
+    ax.set_title("RQ3 Reviewed Fallback Rate by Prompt")
+    ax.grid(axis="y", alpha=0.3)
+    ax.legend(**legend_kwargs)
+    _save(fig, "RQ3_clustering_reviewed_prompt_fallback_rate")
+
     fig, ax = plt.subplots(
         figsize=(max(8, len(prompt_order) * 0.9), max(3.5, len(arch_order) * 0.8 + 1.2))
     )
@@ -218,7 +253,7 @@ def generate_plots(
         prompt.groupby(["difficulty", "arch_label"], dropna=False)
         .agg(
             mean_majority_cluster_share=("majority_cluster_share", "mean"),
-            mean_cluster_count=("cluster_count", "mean"),
+            fallback_rate=("fallback_rate", "mean"),
         )
         .reset_index()
     )
@@ -226,7 +261,7 @@ def generate_plots(
     fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.8))
     for ax, value_column, title, ylabel, ylim in [
         (axes[0], "mean_majority_cluster_share", "Mean Majority Share by Difficulty", "Mean majority share", (0, 1.05)),
-        (axes[1], "mean_cluster_count", "Mean Cluster Count by Difficulty", "Mean cluster count", None),
+        (axes[1], "fallback_rate", "Fallback Rate by Difficulty", "Fallback rate", (0, 1.05)),
     ]:
         x = np.arange(len(difficulty_order))
         width = 0.8 / max(len(arch_order), 1)
