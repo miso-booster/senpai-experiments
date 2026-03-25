@@ -1,0 +1,304 @@
+2026-03-24 16:37:52,214 [[92mINFO[0m] (root) - [92mVerbose enabled.[0m
+2026-03-24 16:37:52,214 [[92mINFO[0m] (app.utils.tracing) - [92mAll LangSmith environment variables are set. LangSmith tracing enabled for project 'senpai-assistant'.[0m
+2026-03-24 16:37:52,215 [[92mINFO[0m] (app.embeddings.embedding_build) - [92mEmbedding index up to date (profiles, rules): E:\ESCRITORIO\Py_projects\SENPAI\agentic\Senpai-Assistant\app\embedding_files\ada_uam\ada_uam.pkl[0m
+2026-03-24 16:37:52,216 [[92mINFO[0m] (app.embeddings.embedding_build) - [92mEmbedding index up to date (connectors): E:\ESCRITORIO\Py_projects\SENPAI\agentic\Senpai-Assistant\app\embedding_files\connectors\connectors.pkl[0m
+2026-03-24 16:37:53,816 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 16:37:54,344 [[92mINFO[0m] (app.assistant.scope_guardrail_middleware) - [92m[scope_guardrail] allowed request.[0m
+2026-03-24 16:37:55,046 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 16:37:55,198 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[validation_decision] skipped (no YAML blocks or save_* tool calls).[0m
+2026-03-24 16:37:55,201 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[tool_validation] skipped (no save_* tool calls found).[0m
+2026-03-24 16:37:55,205 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] skipped (no YAML code blocks found).[0m
+2026-03-24 16:37:56,253 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 16:37:56,299 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[validation_decision] skipped (no YAML blocks or save_* tool calls).[0m
+2026-03-24 16:37:56,303 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[tool_validation] skipped (no save_* tool calls found).[0m
+2026-03-24 16:37:56,307 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] skipped (no YAML code blocks found).[0m
+2026-03-24 16:37:57,026 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 16:38:06,319 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 16:38:06,512 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[validation_decision] decided requires_validation=True[0m
+2026-03-24 16:38:06,515 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[tool_validation] skipped (no tool calls found).[0m
+2026-03-24 16:38:06,521 [[92mINFO[0m] (app.assistant.validation_middleware) - [92m[message_validation] classifier cache hit (message): True[0m
+2026-03-24 16:38:06,522 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:06,523 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:06,524 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:06,525 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:06,527 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:06,528 [[93mWARNING[0m] (app.assistant.validation_middleware) - [93mvalidator input 1:
+# block 1
+```yaml
+   name: chatbot_fills_all_slots
+   description: All conversation slots must be filled with relevant information.
+   conversations: 1
+   active: true
+   oracle: data_collected() == true
+   yields: f"Missing slots: {missing_slots()}"
+   
+```
+
+# block 2
+```yaml
+   name: chatbot_responds_in_same_language
+   description: The chatbot must respond in Spanish as the user is a potential student.
+   conversations: 1
+   active: true
+   oracle: responds_in_same_language()
+   yields: f"The chatbot does not respond in the same language"
+   
+```
+
+# block 3
+```yaml
+   name: non_empty_links
+   description: The server does not return buttons with no links.
+   conversations: 1
+   active: true
+   oracle: not chatbot_returns("LINK: <empty>")
+   
+```
+
+# block 4
+```yaml
+   name: admission_information_provided
+   description: The chatbot must provide admission information when asked.
+   conversations: 1
+   active: true
+   oracle: "admission_requirements" in chatbot.output
+   
+```
+
+# block 5
+```yaml
+   name: welcome_day_information
+   description: The chatbot must provide information about the Welcome Day event.
+   conversations: 1
+   active: true
+   oracle: "welcome_day_link" in chatbot.output
+   
+```
+validator feedback 1:
+Validation repair summary:
+- invalid blocks: 1, 3, 4, 5
+- valid blocks: 2
+
+Block 1 (rule 1) (yaml)
+- issue: Rule is not valid YAML: mapping values are not allowed here
+  in "<unicode string>", line 6, column 27:
+       yields: f"Missing slots: {missing_slots()}"
+                              ^.
+- docs hint: If you haven't already, use the get_docs tool for rules to review the schema and examples.
+
+Block 3 (rule 1) (yaml)
+- issue: Rule is not valid YAML: mapping values are not allowed here
+  in "<unicode string>", line 5, column 37:
+       oracle: not chatbot_returns("LINK: <empty>")
+                                        ^.
+- docs hint: If you haven't already, use the get_docs tool for rules to review the schema and examples.
+
+Block 4 (rule 1) (yaml)
+- issue: Rule is not valid YAML: while parsing a block mapping
+  in "<unicode string>", line 1, column 4:
+       name: admission_information_provided
+       ^
+expected <block end>, but found '<scalar>'
+  in "<unicode string>", line 5, column 37:
+       oracle: "admission_requirements" in chatbot.output
+                                        ^.
+- docs hint: If you haven't already, use the get_docs tool for rules to review the schema and examples.
+
+Block 5 (rule 1) (yaml)
+- issue: Rule is not valid YAML: while parsing a block mapping
+  in "<unicode string>", line 1, column 4:
+       name: welcome_day_information
+       ^
+expected <block end>, but found '<scalar>'
+  in "<unicode string>", line 5, column 31:
+       oracle: "welcome_day_link" in chatbot.output
+                                  ^.
+- docs hint: If you haven't already, use the get_docs tool for rules to review the schema and examples.
+
+Final instruction:
+Keep blocks 2 unchanged. Rewrite the full reply, but only modify blocks 1, 3, 4, 5 and any prose that references them.
+
+[message_validation] failed (see feedback)[0m
+2026-03-24 16:38:12,312 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 16:38:31,895 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:31,897 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:31,899 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:31,900 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:31,901 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:31,902 [[93mWARNING[0m] (app.assistant.validation_middleware) - [93mvalidator input 2:
+# block 1
+```yaml
+   name: chatbot_fills_all_slots
+   description: All conversation slots must be filled with relevant information.
+   conversations: 1
+   active: true
+   oracle: data_collected() == true
+   yields: |
+     f"Missing slots: {missing_slots()}"
+   
+```
+
+# block 2
+```yaml
+   name: chatbot_responds_in_same_language
+   description: The chatbot must respond in Spanish as the user is a potential student.
+   conversations: 1
+   active: true
+   oracle: responds_in_same_language()
+   yields: f"The chatbot does not respond in the same language"
+   
+```
+
+# block 3
+```yaml
+   name: non_empty_links
+   description: The server does not return buttons with no links.
+   conversations: 1
+   active: true
+   oracle: |
+     not chatbot_returns("LINK: <empty>")
+   
+```
+
+# block 4
+```yaml
+   name: admission_information_provided
+   description: The chatbot must provide admission information when asked.
+   conversations: 1
+   active: true
+   oracle: "admission_requirements" in chatbot.output
+   
+```
+
+# block 5
+```yaml
+   name: welcome_day_information
+   description: The chatbot must provide information about the Welcome Day event.
+   conversations: 1
+   active: true
+   oracle: "welcome_day_link" in chatbot.output
+   
+```
+validator feedback 2:
+Validation repair summary:
+- invalid blocks: 4, 5
+- valid blocks: 1, 2, 3
+
+Block 4 (rule 1) (yaml)
+- issue: Rule is not valid YAML: while parsing a block mapping
+  in "<unicode string>", line 1, column 4:
+       name: admission_information_provided
+       ^
+expected <block end>, but found '<scalar>'
+  in "<unicode string>", line 5, column 37:
+       oracle: "admission_requirements" in chatbot.output
+                                        ^.
+- docs hint: If you haven't already, use the get_docs tool for rules to review the schema and examples.
+
+Block 5 (rule 1) (yaml)
+- issue: Rule is not valid YAML: while parsing a block mapping
+  in "<unicode string>", line 1, column 4:
+       name: welcome_day_information
+       ^
+expected <block end>, but found '<scalar>'
+  in "<unicode string>", line 5, column 31:
+       oracle: "welcome_day_link" in chatbot.output
+                                  ^.
+- docs hint: If you haven't already, use the get_docs tool for rules to review the schema and examples.
+
+Final instruction:
+Keep blocks 1, 2, 3 unchanged. Rewrite the full reply, but only modify blocks 4, 5 and any prose that references them.
+
+[message_validation] failed (see feedback)[0m
+2026-03-24 16:38:37,796 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m
+2026-03-24 16:38:56,786 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:56,788 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:56,790 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:56,791 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:56,793 [[92mINFO[0m] (app.assistant.validation) - [92mValidator type: rule[0m
+2026-03-24 16:38:56,794 [[93mWARNING[0m] (app.assistant.validation_middleware) - [93mvalidator input 3:
+# block 1
+```yaml
+   name: chatbot_fills_all_slots
+   description: All conversation slots must be filled with relevant information.
+   conversations: 1
+   active: true
+   oracle: data_collected() == true
+   yields: |
+     f"Missing slots: {missing_slots()}"
+   
+```
+
+# block 2
+```yaml
+   name: chatbot_responds_in_same_language
+   description: The chatbot must respond in Spanish as the user is a potential student.
+   conversations: 1
+   active: true
+   oracle: responds_in_same_language()
+   yields: f"The chatbot does not respond in the same language"
+   
+```
+
+# block 3
+```yaml
+   name: non_empty_links
+   description: The server does not return buttons with no links.
+   conversations: 1
+   active: true
+   oracle: |
+     not chatbot_returns("LINK: <empty>")
+   
+```
+
+# block 4
+```yaml
+   name: admission_information_provided
+   description: The chatbot must provide admission information when asked.
+   conversations: 1
+   active: true
+   oracle: "admission_requirements" in chatbot.output
+   
+```
+
+# block 5
+```yaml
+   name: welcome_day_information
+   description: The chatbot must provide information about the Welcome Day event.
+   conversations: 1
+   active: true
+   oracle: "welcome_day_link" in chatbot.output
+   
+```
+validator feedback 3:
+Validation repair summary:
+- invalid blocks: 4, 5
+- valid blocks: 1, 2, 3
+
+Block 4 (rule 1) (yaml)
+- issue: Rule is not valid YAML: while parsing a block mapping
+  in "<unicode string>", line 1, column 4:
+       name: admission_information_provided
+       ^
+expected <block end>, but found '<scalar>'
+  in "<unicode string>", line 5, column 37:
+       oracle: "admission_requirements" in chatbot.output
+                                        ^.
+- docs hint: If you haven't already, use the get_docs tool for rules to review the schema and examples.
+
+Block 5 (rule 1) (yaml)
+- issue: Rule is not valid YAML: while parsing a block mapping
+  in "<unicode string>", line 1, column 4:
+       name: welcome_day_information
+       ^
+expected <block end>, but found '<scalar>'
+  in "<unicode string>", line 5, column 31:
+       oracle: "welcome_day_link" in chatbot.output
+                                  ^.
+- docs hint: If you haven't already, use the get_docs tool for rules to review the schema and examples.
+
+Final instruction:
+Keep blocks 1, 2, 3 unchanged. Rewrite the full reply, but only modify blocks 4, 5 and any prose that references them.
+
+[message_validation] failed (see feedback)[0m
+2026-03-24 16:38:57,218 [[92mINFO[0m] (httpx) - [92mHTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"[0m

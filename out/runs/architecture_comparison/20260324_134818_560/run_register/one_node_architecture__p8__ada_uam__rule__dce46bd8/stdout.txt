@@ -1,0 +1,35 @@
+conversation ID: one_node_architecture__p8__ada_uam__rule__dce46bd8
+Verbose activated
+$$$
+It looks like you're trying to create a Sensei rule to check that the CAU (Centro de Atención a Usuarios) provides the correct contact details. Let's take a closer look at your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Issues:
+1. **Redundancy**: The `when` and `oracle` conditions are identical, which is not necessary. The `oracle` should typically define the expected outcome based on the conditions set in `when`.
+2. **Logic**: The `when` clause should specify a condition that allows the rule to evaluate whether the contact details are correct. The `oracle` should then assert what the expected result should be.
+
+### Suggested Fix:
+Here’s a revised version of your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email is not None and conv[0].contact_phone is not None and conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Explanation:
+- **`when` Clause**: This now checks if the contact details are not `None` before asserting their values. This prevents the rule from failing due to missing information.
+- **`oracle` Clause**: This remains the same, asserting that the contact details must match the expected values.
+
+### Summary:
+The revised rule first checks that the contact details exist before verifying their correctness. This way, your rule is more robust and won't fail due to missing information. If you have any more questions or need further assistance, feel free to ask! 😊
+$$$

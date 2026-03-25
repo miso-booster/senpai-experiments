@@ -1,0 +1,79 @@
+conversation ID: agentic_architecture__p14__alcampo__profile__a8349307
+$$$
+He revisado la documentación sobre perfiles en Sensei, que se encuentra en el archivo `sensei-chat-guide.md`. A continuación, te propongo un perfil que puede probar la capacidad del chatbot de Alcampo para recomendar recetas y planificar menús.
+
+### Propuesta de Perfil
+
+Aquí tienes un ejemplo de perfil que puedes utilizar:
+
+```yaml
+test_name: "recetas_y_planificacion_menu"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres un usuario que busca recomendaciones de recetas y planificación de menús."
+  context:
+    - "Te gusta cocinar y quieres ideas para tus comidas."
+    - "Prefieres recetas saludables y variadas."
+  goals:
+    - "Recomiéndame una receta para {{comida}} que incluya {{ingredientes}}."
+    - "Sugiere un menú para {{dias}} días que incluya {{tipo_comida}}."
+    - comida:
+        function: random()
+        type: string
+        data: [desayuno, almuerzo, cena]
+    - ingredientes:
+        function: random(2)
+        type: string
+        data: [pollo, pescado, verduras, pasta, arroz, legumbres]
+    - dias:
+        function: random(3)
+        type: int
+        data:
+          min: 1
+          max: 7
+    - tipo_comida:
+        function: random()
+        type: string
+        data: [vegetariana, mediterránea, rápida, gourmet]
+
+chatbot:
+  is_starter: true
+  fallback: "Lo siento, no tengo esa información. ¿Puedes preguntar de otra manera?"
+  output:
+    - receta:
+        type: string
+        description: "La receta recomendada."
+    - menu:
+        type: list[string]
+        description: "El menú sugerido para los días solicitados."
+
+conversation:
+  number: combinations(0.5, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - single questions
+```
+
+### Descripción del Perfil
+
+- **test_name**: Nombre del perfil para identificar la prueba.
+- **llm**: Configuración del modelo de lenguaje, incluyendo temperatura y tipo de formato.
+- **user**: Define el lenguaje, el rol del usuario y sus objetivos, incluyendo variables aleatorias para las comidas, ingredientes y tipos de comida.
+- **chatbot**: Indica que el chatbot es el iniciador de la conversación y define los campos de salida que se desean extraer.
+- **conversation**: Controla el número de conversaciones y el estilo de interacción.
+
+### Siguientes Pasos
+
+- ¿Te gustaría que haga alguna modificación a este perfil o que lo guarde en un archivo específico? 😊
+$$$

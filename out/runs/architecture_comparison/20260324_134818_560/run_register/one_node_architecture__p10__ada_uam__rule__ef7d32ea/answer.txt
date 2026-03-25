@@ -1,0 +1,61 @@
+That sounds like a great profile! To effectively test it, you can create some rules that validate the outputs based on the goals and expected interactions. Here are a few suggestions for rules that you might find useful:
+
+### 1. Check for Required Outputs
+This rule ensures that all necessary outputs are provided after the conversation.
+
+```yaml
+name: check_required_outputs
+description: Ensure all required outputs are present after the conversation
+conversations: 1
+oracle: all(output_field in chatbot.output for output_field in [
+  'admission_to_grados_link', 'waitlist_info_link', 'future_students_link',
+  'welcome_day_link', 'grados_available', 'cursos_available',
+  'waitlist_procedures', 'welcome_day_date', 'welcome_day_time',
+  'admission_deadline', 'future_students_info', 'admission_requirements',
+  'event_location', 'enrollment_process', 'contact_admissions', 'application_fee'
+])
+```
+
+### 2. Validate Admission Process Information
+This rule checks if the admission process information is provided when the user asks about it.
+
+```yaml
+name: validate_admission_process_info
+description: Validate that the admission process information is provided
+conversations: 1
+when: 'admission_requirements' in chatbot.output
+oracle: extract(admission_requirements) is not None
+```
+
+### 3. Ensure Welcome Day Details Are Provided
+This rule checks if the details about the Welcome Day are included when the user inquires about it.
+
+```yaml
+name: validate_welcome_day_info
+description: Ensure Welcome Day details are provided
+conversations: 1
+when: 'welcome_day_link' in chatbot.output
+oracle: extract(welcome_day_link) is not None and extract(welcome_day_date) is not None and extract(welcome_day_time) is not None
+```
+
+### 4. Check for Course and Degree Availability
+This rule ensures that the courses and degrees are listed when the user requests them.
+
+```yaml
+name: validate_courses_and_degrees
+description: Check that courses and degrees are available in the response
+conversations: 1
+oracle: extract(cursos_available) is not None and extract(grados_available) is not None
+```
+
+### 5. Validate Interaction Style
+This rule checks that the interaction style is being followed, ensuring that the user is receiving single questions.
+
+```yaml
+name: validate_interaction_style
+description: Ensure the chatbot responds to single questions
+conversations: 1
+oracle: conversation_length('user') == 1
+```
+
+Feel free to modify these rules to better fit your specific needs! Just copy and paste them into your rules directory, and they should help you validate the profile effectively. Happy testing! 😊

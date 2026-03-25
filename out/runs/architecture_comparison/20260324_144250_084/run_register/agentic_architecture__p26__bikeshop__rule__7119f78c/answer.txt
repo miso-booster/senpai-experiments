@@ -1,0 +1,34 @@
+Let's review your rule and make necessary adjustments based on the documentation.
+
+### Original Rule
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 2
+when: conv[0].tune_up_price == 50
+if: conv[0].tune_up_price is not None
+then: "The tune-up price is $50."
+```
+
+### Issues Identified
+1. **Conversations Count**: The rule specifies `conversations: 2`, but it seems to be checking a single price. If you're only checking one price, it should be `conversations: 1`.
+2. **Use of `when`**: The `when` clause is not typically used for direct comparisons like this. Instead, you should use `if` to check the condition.
+3. **Output Message**: The `then` clause should ideally return a boolean or a condition rather than a string. If you want to assert that the price is $50, you should use an oracle condition.
+
+### Revised Rule
+Based on these observations, here’s the corrected version of your rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+if: conv[0].tune_up_price is not None
+then: extract_float(conv[0].tune_up_price) == 50
+```
+
+### Changes Made
+- **Conversations Count**: Changed from `2` to `1` since we are only checking one price.
+- **Condition Structure**: Moved the price check to the `then` clause and used `extract_float` to ensure the price is evaluated correctly.
+- **Removed `when`**: The condition is now properly structured under `if` and `then`.
+
+This new structure aligns with the guidelines from the `sensei-check-doc.md`, ensuring that the rule is valid and functional. If you have any further questions or need additional modifications, feel free to ask! 😊
