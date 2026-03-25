@@ -1,0 +1,185 @@
+{
+  "arch_id": "agentic_architecture",
+  "prompt_id": "p12_complex",
+  "prompt": "What would happen if we renamed price to total_cost in the profile pizza order test custom, would it break any rule? and if so, how would we need to update things to fix it?",
+  "model": "gpt-5-mini",
+  "responses": [
+    {
+      "response_id": "r01",
+      "run_group_id": "20260324_134624_140",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__17303d3f",
+      "fallback_detected": false,
+      "answer": "Renaming the field `price` to `total_cost` in the `pizza_order_test_custom` profile will break any rules that reference the `price` field. The following rules will need to be updated:\n\n1. **`same_number_of_toppings_cost_the_same.yaml`**\n   ```yaml\n   name: same_number_of_toppings_cost_the_same\n   description: Pizzas with same number of toppings cost the same\n   conversations: 2\n   active: False\n   when: conv[0].drink == conv[1].drink\n   if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n   ```\n\n2. **`more_toppings_cost_more.yaml`**\n   ```yaml\n   name: more_toppings_cost_more\n   description: Adding more toppings to a custom pizza costs more\n   conversations: 2\n   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n   if: len(conv[0].toppings) > len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n   ```\n\n### Summary of Changes\n- **Field Renaming**: Change `price` to `total_cost` in the profile's `chatbot.output`.\n- **Rule Updates**: Modify any rules that reference `price` to use `total_cost` instead.\n\nThese updates will ensure that the rules remain valid and functional after the field renaming. If you have any further questions or need assistance with these changes, feel free to ask! 😊\n\n### Valid Rules\n#### 3. `same_number_of_toppings_cost_the_same.yaml`\n```yaml\nname: same_number_of_toppings_cost_the_same\ndescription: Pizzas with same number of toppings cost the same\nconversations: 2\nactive: False\nwhen: conv[0].drink == conv[1].drink\nif: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)\nthen: extract_float(conv[0].price) == extract_float(conv[1].price)\n```\n\n#### 4. `more_toppings_cost_more.yaml`\n```yaml\nname: more_toppings_cost_more\ndescription: Adding more toppings to a custom pizza costs more\nconversations: 2\nwhen: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\nif: len(conv[0].toppings) > len(conv[1].toppings)\nthen: extract_float(conv[0].price) > extract_float(conv[1].price)\n```"
+    },
+    {
+      "response_id": "r02",
+      "run_group_id": "20260324_140206_258",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__3a970df4",
+      "fallback_detected": false,
+      "answer": "Renaming the field `price` to `total_cost` in the `pizza_order_test_custom` profile will indeed break any rules that reference `price`. Here’s a breakdown of what needs to be updated:\n\n### Affected Rules\n1. **`same_number_of_toppings_cost_the_same.yaml`**\n   - **Current Rule Logic:**\n     ```yaml\n     name: same_number_of_toppings_cost_the_same\n     description: Pizzas with same number of toppings cost the same\n     conversations: 2\n     active: False\n     when: conv[0].drink == conv[1].drink\n     if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)\n     then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n     ```\n\n2. **`more_toppings_cost_more.yaml`**\n   - **Current Rule Logic:**\n     ```yaml\n     name: more_toppings_cost_more\n     description: Adding more toppings to a custom pizza costs more\n     conversations: 2\n     active: True\n     when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n     if: len(conv[0].toppings) > len(conv[1].toppings)\n     then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n     ```\n\n3. **`ordering_conversation_turns.yaml`**\n   - This rule does not reference `price`, so no changes are necessary for this rule.\n\n### Summary\n- **Rename `price` to `total_cost`** in the profile's `chatbot.output`.\n- **Update all rules** that reference `price` to use `total_cost` instead.\n- Ensure that the changes are consistent across all relevant rules to maintain the integrity of the testing framework.\n\nIf you need assistance with any specific updates or have further questions, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r03",
+      "run_group_id": "20260324_142044_769",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__731f031c",
+      "fallback_detected": true,
+      "answer": "I'm sorry, but I tried several times and couldn't finish a version that meets all requirements. The main issue is that the updated rules are missing some important details like their names and descriptions. If you can provide those, I’d be happy to help you finalize everything! 😊"
+    },
+    {
+      "response_id": "r04",
+      "run_group_id": "20260324_143535_821",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__bd0e13c2",
+      "fallback_detected": false,
+      "answer": "Renaming the field `price` to `total_cost` in the `pizza_order_test_custom` profile will indeed affect the rules that reference this field. Specifically, the following rules will be impacted:\n\n1. **`same_number_of_toppings_cost_the_same.yaml`**\n   - This rule checks if pizzas with the same number of toppings cost the same.\n   - Current condition: `then: extract_float(conv[0].price) == extract_float(conv[1].price)`\n\n2. **`more_toppings_cost_more.yaml`**\n   - This rule checks if adding more toppings increases the cost.\n   - Current condition: `then: extract_float(conv[0].price) > extract_float(conv[1].price)`\n\n### Necessary Updates\n\nTo accommodate the change from `price` to `total_cost`, you will need to:\n\n1. **Update the Profile:**\n   - Modify the `chatbot.output` section of the `pizza_order_test_custom` profile to replace `price` with `total_cost`.\n\n   Here’s how the updated section would look:\n   ```yaml\n   test_name: pizza_order_test_custom\n\n   llm:\n     temperature: 0.8\n     model: gpt-4o-mini\n     model_prov: openai\n   #  format:\n   #    type: speech\n   #    config: asr_configuration/default_asr_config.yml\n\n   user:\n     language: English\n     role: you have to act as a user ordering a pizza to a pizza shop.\n     context:\n       - personality: conversational-user.yml\n       - your name is Jon Doe\n     goals:\n       - \"a {{size}} custom pizza with {{toppings}}, {{size}}\"\n       - \"{{cans}} cans of {{drink}}\"\n       - which are opening and closing times\n       - how much will it cost\n\n       - size:\n           function: pairwise()\n           type: string\n           data:\n             - small\n             - medium\n             - big\n             - extra large\n\n       - toppings:\n           function: pairwise()\n           type: string\n           data:\n             - cheese\n             - mushrooms\n             - pepperoni\n\n       - cans:\n           function: forward(drink)\n           type: int\n           data:\n               min: 1\n               max: 7\n               step: 1\n\n       - drink:\n           function: forward()\n           type: string\n           data:\n             - sprite\n             - coke\n             - Orange Fanta\n   #          - any(3 free sugar drinks)\n\n   chatbot:\n     is_starter: False\n     fallback: I'm sorry it's a little loud in my pizza shop, can you say that again?\n     output:\n       - total_cost:\n           type: currency\n           description: The final price of the pizza order\n       - time:\n           type: time(\"hh:mm\")\n           description: just the opening time\n       - order_id:\n           type: string\n           description: my order ID\n\n   conversation:\n     number: 2\n     goal_style:\n       steps: 2\n     interaction_style:\n       - long phrases\n       - random:\n         - make spelling mistakes\n   #      - all questions\n   #      - long phrases\n         - change language:\n             - italian\n             - portuguese\n             - chinese\n   ```\n\n2. **Update the Rules:**\n   - Change the rules that reference `price` to now reference `total_cost`.\n\n   Here are the modified rules:\n\n   **For `same_number_of_toppings_cost_the_same.yaml`:**\n   ```yaml\n   name: same_number_of_toppings_cost_the_same\n   description: Pizzas with same number of toppings cost the same\n   conversations: 2\n   active: False\n   when: conv[0].drink == conv[1].drink\n   if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n   ```\n\n   **For `more_toppings_cost_more.yaml`:**\n   ```yaml\n   name: more_toppings_cost_more\n   description: Adding more toppings to a custom pizza costs more\n   active: True\n   conversations: 2\n   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n   if:   len(conv[0].toppings) > len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n   ```\n\n### Summary\n- Change the profile to rename `price` to `total_cost`.\n- Update the affected rules to reference `total_cost` instead of `price`.\n\nThis ensures that your rules will continue to function correctly after the field name change! If you need further assistance with these changes in YAML, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r05",
+      "run_group_id": "20260324_144957_664",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__03f47522",
+      "fallback_detected": true,
+      "answer": "I’m sorry, but I tried a few times and couldn’t finish a version that meets all the requirements. The main issue is that the rules need some required fields like name, description, and conversations. If you can provide those details, I’d be happy to help you update everything! 😊"
+    },
+    {
+      "response_id": "r06",
+      "run_group_id": "20260324_150430_862",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__1abce80a",
+      "fallback_detected": true,
+      "answer": "I'm sorry, but I tried several times and couldn't finish a version that meets all requirements. The main issue is that the profile is missing some required top-level fields. If you can provide those details, I’d be happy to help you get it sorted! 😊"
+    },
+    {
+      "response_id": "r07",
+      "run_group_id": "20260324_151939_470",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__60c13976",
+      "fallback_detected": false,
+      "answer": "If you rename the field `price` to `total_cost` in the `pizza_order_test_custom` profile, it will indeed break any rules that reference the `price` field. Here's how you can address this issue:\n\n### Impact of Renaming\n1. **Profile Update**: The profile will now have `total_cost` instead of `price`.\n2. **Rule Breakage**: Any rules that reference `price` will fail because they will be looking for a field that no longer exists.\n\n### Rules Affected\nThe following rules currently reference the `price` field:\n- **`same_number_of_toppings_cost_the_same.yaml`**\n  - **Condition**: Checks if pizzas with the same number of toppings cost the same.\n  - **Current Rule**:\n    ```yaml\n    name: same_number_of_toppings_cost_the_same\n    description: Pizzas with same number of toppings cost the same\n    conversations: 2\n    active: False\n    when: conv[0].drink == conv[1].drink\n    if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\n    then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n    ```\n\n- **`more_toppings_cost_more.yaml`**\n  - **Condition**: Checks that adding more toppings increases the cost.\n  - **Current Rule**:\n    ```yaml\n    name: more_toppings_cost_more\n    description: Adding more toppings to a custom pizza costs more\n    conversations: 2\n    active: True\n    when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n    if: len(conv[0].toppings) > len(conv[1].toppings)\n    then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n    ```\n\n### Required Updates\nTo ensure the rules function correctly after renaming `price` to `total_cost`, you will need to update the rules to reference the new field name. Here’s how you would modify the rules:\n\n1. **Update `same_number_of_toppings_cost_the_same.yaml`**:\n   ```yaml\n   name: same_number_of_toppings_cost_the_same\n   description: Pizzas with same number of toppings cost the same\n   conversations: 2\n   active: False\n   when: conv[0].drink == conv[1].drink\n   if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n   ```\n\n2. **Update `more_toppings_cost_more.yaml`**:\n   ```yaml\n   name: more_toppings_cost_more\n   description: Adding more toppings to a custom pizza costs more\n   conversations: 2\n   active: True\n   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n   if: len(conv[0].toppings) > len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n   ```\n\n### Summary of Changes\n- **Profile**: Change `price` to `total_cost` in `pizza_order_test_custom.yml`.\n- **Rules**: Update all occurrences of `price` to `total_cost` in the affected rules.\n\nBy making these updates, you ensure that the rules will correctly reference the new field name and function as intended. If you need help with the YAML formatting or further modifications, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r08",
+      "run_group_id": "20260324_153358_884",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__a691b6d5",
+      "fallback_detected": false,
+      "answer": "Renaming the `price` field to `total_cost` in the `pizza_order_test_custom` profile will indeed break the rules that reference the `price` field. Specifically, the following rules would be affected:\n\n1. **`same_number_of_toppings_cost_the_same.yaml`**\n   - This rule checks if pizzas with the same number of toppings cost the same:\n   ```yaml\n   name: same_number_of_toppings_cost_the_same\n   description: Pizzas with same number of toppings cost the same\n   conversations: 2\n   active: False\n   when: conv[0].drink == conv[1].drink\n   if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n   ```\n\n2. **`more_toppings_cost_more.yaml`**\n   - This rule checks if adding more toppings increases the cost:\n   ```yaml\n   name: more_toppings_cost_more\n   description: Adding more toppings to a custom pizza costs more\n   active: True\n   conversations: 2\n   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n   if: len(conv[0].toppings) > len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n   ```\n\n### Summary of Changes\n- **Field Renaming**: All instances of `price` need to be changed to `total_cost` in the rules to reflect the new field name.\n\nWould you like assistance in drafting any additional rules or modifications? 😊"
+    },
+    {
+      "response_id": "r09",
+      "run_group_id": "20260324_154817_117",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__1cd6e1db",
+      "fallback_detected": true,
+      "answer": "I'm sorry, but I tried several times and couldn't finish a version that meets all the requirements. The main issue is that the rules need some required fields like name, description, and conversations. If you can provide those details, I’d be happy to help you further! 😊"
+    },
+    {
+      "response_id": "r10",
+      "run_group_id": "20260324_161028_916",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__b687db6d",
+      "fallback_detected": false,
+      "answer": "Renaming the `price` field to `total_cost` in the `pizza_order_test_custom` profile will indeed break any rules that reference the `price` field. Here’s how to address this change:\n\n### Impact of Renaming\n1. **Profile Change**: The profile currently defines the output field as `price`. If you change it to `total_cost`, the profile's `chatbot.output` will no longer match the references in the rules.\n2. **Rules Affected**: The following rules reference the `price` field:\n   - **`same_number_of_toppings_cost_the_same.yaml`**\n   - **`more_toppings_cost_more.yaml`**\n\n### Required Updates\nTo address the issues caused by renaming `price` to `total_cost`, you need to:\n1. **Update the Profile**: Change the field name in the profile's `chatbot.output`.\n2. **Update the Rules**: Modify any rules that reference `price` to use `total_cost` instead.\n\n### Steps to Update\n\n#### 1. Update the Profile\nChange the `price` field in `pizza_order_test_custom.yml` to `total_cost`, and adjust the `time` field to use the correct type:\n\n```yaml\ntest_name: pizza_order_test_custom\n\nllm:\n  temperature: 0.8\n  model: gpt-4o-mini\n  model_prov: openai\n\nuser:\n  language: English\n  role: you have to act as a user ordering a pizza to a pizza shop.\n  context:\n    - personality: conversational-user.yml\n    - your name is Jon Doe\n  goals:\n    - \"a {{size}} custom pizza with {{toppings}}, {{size}}\"\n    - \"{{cans}} cans of {{drink}}\"\n    - which are opening and closing times\n    - how much will it cost\n\n    - size:\n        function: pairwise()\n        type: string\n        data:\n          - small\n          - medium\n          - big\n          - extra large\n\n    - toppings:\n        function: pairwise()\n        type: string\n        data:\n          - cheese\n          - mushrooms\n          - pepperoni\n\n    - cans:\n        function: forward(drink)\n        type: int\n        data:\n            min: 1\n            max: 7\n            step: 1\n\n    - drink:\n        function: forward()\n        type: string\n        data:\n          - sprite\n          - coke\n          - Orange Fanta\n\nchatbot:\n  is_starter: False\n  fallback: I'm sorry it's a little loud in my pizza shop, can you say that again?\n  output:\n    - total_cost:  # Changed from price to total_cost\n        type: currency\n        description: The final price of the pizza order\n    - time:\n        type: time(\"hh:mm\")  # Updated to use the correct type\n        description: just the opening time\n    - order_id:\n        type: string\n        description: my order ID\n\nconversation:\n  number: 2\n  goal_style:\n    steps: 2\n  interaction_style:\n    - long phrases\n    - random:\n      - make spelling mistakes\n      - change language:\n          - italian\n          - portuguese\n          - chinese\n```\n\n#### 2. Update the Rules\nFor each affected rule, replace `extract_float(conv[i].price)` with `extract_float(conv[i].total_cost)`.\n\n**Example Updates:**\n\n- **`same_number_of_toppings_cost_the_same.yaml`**:\n  ```yaml\n  name: same_number_of_toppings_cost_the_same\n  description: Pizzas with same number of toppings cost the same\n  conversations: 2\n  active: False\n  when: conv[0].drink == conv[1].drink\n  if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)\n  then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n  ```\n\n- **`more_toppings_cost_more.yaml`**:\n  ```yaml\n  name: more_toppings_cost_more\n  description: Adding more toppings to a custom pizza cost more\n  conversations: 2\n  active: True\n  when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n  if: len(conv[0].toppings) > len(conv[1].toppings)\n  then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n  ```\n\n### Summary\n- **Renaming the field** will break existing rules referencing `price`.\n- **Update the profile** and all relevant rules to ensure consistency.\n- After making these changes, your rules should function correctly with the updated profile.\n\nIf you need further assistance or help with the exact YAML for the updated rules, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r11",
+      "run_group_id": "20260324_162607_955",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__dc9ec2e7",
+      "fallback_detected": false,
+      "answer": "Renaming the field `price` to `total_cost` in the `pizza_order_test_custom` profile will break any rules that reference the `price` field. Below are the affected rules and how they need to be updated:\n\n### Affected Rules\n\n1. **`same_number_of_toppings_cost_the_same.yaml`**\n   - **Description**: Pizzas with the same number of toppings cost the same.\n   - **Current Rule**:\n     ```yaml\n     name: same_number_of_toppings_cost_the_same\n     description: Pizzas with same number of toppings cost the same\n     conversations: 2\n     active: False\n     when: conv[0].drink == conv[1].drink\n     if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\n     then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n     ```\n\n2. **`more_toppings_cost_more.yaml`**\n   - **Description**: Adding more toppings to a custom pizza costs more.\n   - **Current Rule**:\n     ```yaml\n     name: more_toppings_cost_more\n     description: Adding more toppings to a custom pizza costs more\n     conversations: 2\n     active: True\n     when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n     if: len(conv[0].toppings) > len(conv[1].toppings)\n     then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n     ```\n\n3. **`ordering_conversation_turns.yaml`**\n   - This rule does not reference `price`, so it remains unaffected.\n\n### Required Updates\n\nTo reflect the change from `price` to `total_cost`, the affected rules should be updated as follows:\n\n1. **For `same_number_of_toppings_cost_the_same.yaml`**:\n   ```yaml\n   name: same_number_of_toppings_cost_the_same\n   description: Pizzas with same number of toppings cost the same\n   conversations: 2\n   active: False\n   when: conv[0].drink == conv[1].drink\n   if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n   ```\n\n2. **For `more_toppings_cost_more.yaml`**:\n   ```yaml\n   name: more_toppings_cost_more\n   description: Adding more toppings to a custom pizza costs more\n   conversations: 2\n   active: True\n   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n   if: len(conv[0].toppings) > len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n   ```\n\n### Summary of Changes\n- **Profile Change**: Rename `price` to `total_cost` in `pizza_order_test_custom.yml`.\n- **Rule Updates**: Modify the rules to reference `total_cost` instead of `price`.\n\nIf you need further assistance or additional changes, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r12",
+      "run_group_id": "20260324_164020_336",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__1119efce",
+      "fallback_detected": false,
+      "answer": "Renaming the field `price` to `total_cost` in the `pizza_order_test_custom` profile will indeed break any rules that reference the `price` field. The following rules would be affected:\n\n1. **same_number_of_toppings_cost_the_same.yaml**\n   - **Current Rule Logic**:\n     ```yaml\n     name: same_number_of_toppings_cost_the_same\n     description: Pizzas with same number of toppings cost the same\n     conversations: 2\n     active: False\n     when: conv[0].drink == conv[1].drink\n     if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\n     then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n     ```\n\n2. **more_toppings_cost_more.yaml**\n   - **Current Rule Logic**:\n     ```yaml\n     name: more_toppings_cost_more\n     description: Adding more toppings to a custom pizza costs more\n     conversations: 2\n     active: True\n     when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n     if: len(conv[0].toppings) > len(conv[1].toppings)\n     then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n     ```\n\n### Summary of Changes\n\n- **Renaming**: Change `price` to `total_cost` in the profile.\n- **Rule Updates**: Modify any rules that reference `price` to use `total_cost` instead.\n\nThis ensures that the rules remain valid and continue to function correctly with the updated profile. If you need assistance with anything else, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r13",
+      "run_group_id": "20260324_165457_259",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__0ecd7b3b",
+      "fallback_detected": true,
+      "answer": "I'm sorry, but I tried several times and couldn't finish a version that meets all the requirements. The main issue is that the profile and rules are missing some required fields, like conversation and name. If you can provide those details, I’d be happy to help you get it sorted! 😊"
+    },
+    {
+      "response_id": "r14",
+      "run_group_id": "20260324_171123_440",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__dcdd20ad",
+      "fallback_detected": false,
+      "answer": "Renaming the field `price` to `total_cost` in the `pizza_order_test_custom` profile will indeed disrupt any rules that reference the `price` field. The following rules would be affected:\n\n1. **`same_number_of_toppings_cost_the_same.yaml`**\n   - **Condition**: This rule checks if pizzas with the same number of toppings cost the same.\n   - **Current Logic**:\n     ```yaml\n     name: same_number_of_toppings_cost_the_same\n     description: Pizzas with same number of toppings cost the same\n     conversations: 2\n     active: False\n     when: conv[0].drink == conv[1].drink\n     if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\n     then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n     ```\n\n2. **`more_toppings_cost_more.yaml`**\n   - **Condition**: This rule checks that adding more toppings to a pizza increases the cost.\n   - **Current Logic**:\n     ```yaml\n     name: more_toppings_cost_more\n     description: Adding more toppings to a custom pizza cost more\n     active: True\n     conversations: 2\n     when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n     if: len(conv[0].toppings) > len(conv[1].toppings)\n     then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n     ```\n\n### How to Update the Rules\n\nAfter renaming the field, you will need to update all occurrences of `price` to `total_cost` in the rules. Here’s how the updated rules would look:\n\n1. **Updated `same_number_of_toppings_cost_the_same.yaml`**:\n   ```yaml\n   name: same_number_of_toppings_cost_the_same\n   description: Pizzas with same number of toppings cost the same\n   conversations: 2\n   active: False\n   when: conv[0].drink == conv[1].drink\n   if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n   ```\n\n2. **Updated `more_toppings_cost_more.yaml`**:\n   ```yaml\n   name: more_toppings_cost_more\n   description: Adding more toppings to a custom pizza cost more\n   active: True\n   conversations: 2\n   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n   if: len(conv[0].toppings) > len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n   ```\n\n### Summary of Changes\n- Change the field name in the profile from `price` to `total_cost`.\n- Update all rules that reference `price` to use `total_cost` instead.\n\nThis will ensure that the rules remain valid and can accurately validate the conversations generated by the updated profile. If you have any further questions or need assistance with these changes, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r15",
+      "run_group_id": "20260324_172653_662",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__3d797d63",
+      "fallback_detected": true,
+      "answer": "I'm sorry, but I tried several times and couldn't finish a version that meets all the requirements. The main issue is that the profile is missing some required fields like conversation, test_name, and user. If you can provide those details, I’d be happy to help!"
+    },
+    {
+      "response_id": "r16",
+      "run_group_id": "20260324_174442_353",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__40559acb",
+      "fallback_detected": true,
+      "answer": "I'm sorry, but I tried several times and couldn't finish a version that meets all the requirements. The main issue is that some top-level fields are missing in the profile and rules. If you can provide those details, I’d be happy to help you get it sorted out!"
+    },
+    {
+      "response_id": "r17",
+      "run_group_id": "20260324_180000_524",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__62e9d1fb",
+      "fallback_detected": true,
+      "answer": "I'm sorry, but I tried several times and couldn't get everything right. The main issue is that the rules need to be formatted correctly to work with the new field name. If you have any specific examples or details about the rules, please share them, and I'll be happy to help! 😊"
+    },
+    {
+      "response_id": "r18",
+      "run_group_id": "20260324_181816_047",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__73d2b68a",
+      "fallback_detected": false,
+      "answer": "Renaming the field `price` to `total_cost` in the `pizza_order_test_custom` profile will break any rules that reference the `price` field. The following rules will be affected:\n\n1. **`same_number_of_toppings_cost_the_same.yaml`**:\n   ```yaml\n   name: same_number_of_toppings_cost_the_same\n   description: Pizzas with same number of toppings cost the same\n   conversations: 2\n   active: False\n   when: conv[0].drink == conv[1].drink\n   if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n   ```\n\n2. **`more_toppings_cost_more.yaml`**:\n   ```yaml\n   name: more_toppings_cost_more\n   description: Adding more toppings to a custom pizza costs more\n   conversations: 2\n   active: True\n   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n   if: len(conv[0].toppings) > len(conv[1].toppings)\n   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n   ```\n\n### Summary\n\n- **Rename the field** in the profile from `price` to `total_cost`.\n- **Update the rules** to reference `total_cost` instead of `price` to ensure they function correctly.\n\nIf you need assistance with anything else, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r19",
+      "run_group_id": "20260324_183825_815",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__46d8770a",
+      "fallback_detected": false,
+      "answer": "Renaming the field `price` to `total_cost` in the `pizza_order_test_custom` profile will indeed affect any rules that reference the `price` field. Specifically, the following rules will need to be updated:\n\n1. **Rule: `more_toppings_cost_more`**\n   - **Description:** This rule checks that adding more toppings to a custom pizza costs more.\n   - **Current Logic:**\n     ```yaml\n     name: more_toppings_cost_more\n     description: Adding more toppings to a custom pizza costs more\n     conversations: 2\n     when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n     if:   len(conv[0].toppings) > len(conv[1].toppings)\n     then: extract_float(conv[0].price) > extract_float(conv[1].price)\n     ```\n   - **Update Needed:** Change `extract_float(conv[0].price)` to `extract_float(conv[0].total_cost)` and similarly for `conv[1]`.\n\n2. **Rule: `same_number_of_toppings_cost_the_same`**\n   - **Description:** This rule checks that pizzas with the same number of toppings cost the same.\n   - **Current Logic:**\n     ```yaml\n     name: same_number_of_toppings_cost_the_same\n     description: Pizzas with the same number of toppings cost the same\n     conversations: 2\n     active: False\n     when: conv[0].drink == conv[1].drink\n     if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\n     then: extract_float(conv[0].price) == extract_float(conv[1].price)\n     ```\n   - **Update Needed:** Change `extract_float(conv[0].price)` to `extract_float(conv[0].total_cost)` and similarly for `conv[1]`.\n\n### Updated YAML for Rules\n\nHere’s how the updated rules would look:\n\n**For `more_toppings_cost_more` rule:**\n```yaml\nname: more_toppings_cost_more\ndescription: Adding more toppings to a custom pizza costs more\nconversations: 2\nwhen: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\nif:   len(conv[0].toppings) > len(conv[1].toppings)\nthen: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n```\n\n**For `same_number_of_toppings_cost_the_same` rule:**\n```yaml\nname: same_number_of_toppings_cost_the_same\ndescription: Pizzas with the same number of toppings cost the same\nconversations: 2\nactive: False\nwhen: conv[0].drink == conv[1].drink\nif: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)\nthen: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)\n```\n\n### Summary of Changes\n- **Renamed Field:** `price` to `total_cost` in the profile.\n- **Updated Rules:** Adjusted references in the rules to use `total_cost` instead of `price`.\n\nMake sure to update both rules to ensure they function correctly with the new field name! If you have any further questions or need assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r20",
+      "run_group_id": "20260324_185818_370",
+      "run_id": "agentic_architecture__p12_complex__pizza_shop__rule__30e82a9a",
+      "fallback_detected": true,
+      "answer": "I'm sorry, but I tried a few times and couldn't get everything to work as needed. The main issue is that the rules need to be structured correctly. If you can provide more details about the rules, I’d be happy to help you fix them! 😊"
+    }
+  ],
+  "result": {
+    "clusters": [
+      {
+        "cluster_label": "Update_rules_and_profile_to_use_total_cost",
+        "cluster_summary": "All these responses state that renaming price -> total_cost will break rules that reference price and recommend updating the profile (chatbot.output) and all affected rules to use total_cost (showing updated YAML for same_number_of_toppings_cost_the_same and more_toppings_cost_more).",
+        "response_ids": [
+          "r01",
+          "r02",
+          "r04",
+          "r07",
+          "r08",
+          "r10",
+          "r11",
+          "r12",
+          "r14",
+          "r18",
+          "r19"
+        ]
+      },
+      {
+        "cluster_label": "FB",
+        "cluster_summary": "Fallback responses / partial failures: these messages indicate the assistant could not finish the requested change (missing required fields or formatting issues) and request more info.",
+        "response_ids": [
+          "r03",
+          "r05",
+          "r06",
+          "r09",
+          "r13",
+          "r15",
+          "r16",
+          "r17",
+          "r20"
+        ]
+      }
+    ],
+    "notes": "The non-fallback cluster groups responses that share the same substantive recommendation (rename field in profile and update rules to reference total_cost). Minor differences across them (some include a full updated profile YAML, one mentions ordering_conversation_turns is unaffected, a few note tweaks like time type) are formatting/details only and not treated as separate clusters."
+  }
+}

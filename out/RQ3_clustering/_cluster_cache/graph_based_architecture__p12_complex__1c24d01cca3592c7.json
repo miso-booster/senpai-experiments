@@ -1,0 +1,185 @@
+{
+  "arch_id": "graph_based_architecture",
+  "prompt_id": "p12_complex",
+  "prompt": "What would happen if we renamed price to total_cost in the profile pizza order test custom, would it break any rule? and if so, how would we need to update things to fix it?",
+  "model": "gpt-5-mini",
+  "responses": [
+    {
+      "response_id": "r01",
+      "run_group_id": "20260324_134624_140",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__5f4f5e19",
+      "fallback_detected": false,
+      "answer": "Great question! If you rename the field `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the old field name `price`. Specifically, you would need to update any Sensei rules that use `extract_float(conv[i].price)` to reference the new field name.\n\nHere's how you can fix it:\n\n1. **Update the Profile**: Change the `price` field to `total_cost` in your profile YAML file. It should look something like this:\n\n   ```yaml\n   {chatbot: {output: [{total_cost: {description: The final price of the pizza order, type: currency}}]}}\n   ```\n\n2. **Update the Rules**: Find any rules that reference `price` and change them to `total_cost`. For example, if you have a rule like this:\n\n   ```yaml\n   then: extract_float(conv[0].price) > extract_float(conv[1].price)\n   ```\n\n   You would update it to:\n\n   ```yaml\n   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n   ```\n\n3. **Check All References**: Make sure to check all rules that might reference `price` and update them accordingly to avoid any errors during testing.\n\nBy ensuring that all references to the field are consistent across both the profile and the rules, you'll keep everything running smoothly! If you have any more questions or need further help, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r02",
+      "run_group_id": "20260324_140206_258",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__2f4de2ed",
+      "fallback_detected": false,
+      "answer": "Great question! If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, you would need to check if there are any rules that reference `price`. \n\nIn the context of Sensei, if there are rules defined that rely on the `price` field, those rules would break because they would be looking for a field that no longer exists. To fix this, you would need to:\n\n1. **Update the `chatbot.output` section**: Change `price` to `total_cost` in the output extraction schema.\n\n   ```yaml\ntest_name: \"pizza_order_test\"\nchatbot:\n  fallback: \"I'm sorry, I did not get what you said. Can you rephrase?\"\n  output:\n    - total_cost: \n        description: The final price of the pizza order\n        type: currency\nconversation:\n  goal_style:\n    steps: 2\n  interaction_style:\n    - default\n  number: 1\nuser:\n  context: [\"You are ordering a pizza.\"]\n  goals: [\"What is the total cost of my order?\"]\n  language: English\n  role: \"Customer placing a pizza order.\"\n```\n\n2. **Update any rules**: If there are rules that reference `price`, you would need to change those references to `total_cost`. For example, if you had a rule like this:\n\n   ```yaml\nname: price_check\ndescription: Ensure the price is greater than zero\nconversations: 1\nif: conv[0].price is not None\nthen: extract_float(conv[0].price) > 0\n```\n\n   You would change it to:\n\n   ```yaml\nname: total_cost_positive\ndescription: The total cost of the order must be greater than zero.\nconversations: 1\nif: conv[0].total_cost is not None\nthen: extract_float(conv[0].total_cost) > 0\n```\n\n3. **Validate the profile**: After making these changes, it’s a good idea to run a validation check on the profile to ensure everything is working as expected.\n\nBy keeping the names consistent across your profile and rules, you’ll avoid any potential issues during execution. If you need help with anything specific, just let me know! 😊"
+    },
+    {
+      "response_id": "r03",
+      "run_group_id": "20260324_142044_769",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__99366527",
+      "fallback_detected": false,
+      "answer": "Great question! If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the `price` field. Specifically, the rule `more_toppings_cost_more.yaml` would be affected because it currently uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)`.\n\nTo fix this, you would need to update the rule to reference the new field name. Here’s how you can do it:\n\n1. **Update the Rule**: Change the references from `price` to `total_cost` in the `more_toppings_cost_more.yaml` rule.\n\nHere's what the updated rule would look like:\n\n```yaml\nactive: true\nconversations: 2\ndescription: Adding more toppings to a custom pizza costs more\nif: 'len(conv[0].toppings) > len(conv[1].toppings)'\nname: more_toppings_cost_more\nthen: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'\nwhen: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'\n```\n\n2. **Check Other Rules**: If there are any other rules that also reference `price`, you would need to update those as well.\n\n3. **Test the Changes**: After making these updates, run your tests again to ensure everything works smoothly with the new field name.\n\nBy keeping the field names consistent across your profile and rules, you’ll avoid any issues and ensure that your testing remains effective! If you have any more questions or need further assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r04",
+      "run_group_id": "20260324_143535_821",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__39ffe82e",
+      "fallback_detected": false,
+      "answer": "Great question! If you rename the field `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed affect the rules that reference that field. Specifically, any rule that uses `extract_float(conv[i].price)` would break because it would no longer find the `price` field.\n\nTo fix this, you would need to update all the rules that reference `price` to use the new field name `total_cost`. Here’s a step-by-step approach to make those updates:\n\n1. **Identify the Rules**: Check all the rules in your project that currently reference `price`. In your case, it looks like the rule `more_toppings_cost_more` is one of them.\n\n2. **Update the Rules**: Change any instance of `extract_float(conv[i].price)` to `extract_float(conv[i].total_cost)` in those rules.\n\nFor example, the updated rule would look like this:\n\n```yaml\nname: more_toppings_cost_more\ndescription: Adding more toppings to a custom pizza costs more\nconversations: 2\nwhen: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\nif:   len(conv[0].toppings) > len(conv[1].toppings)\nthen: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n```\n\n3. **Test the Changes**: After making the updates, run your tests again to ensure everything is functioning correctly and that the rules are passing.\n\nBy keeping the field names consistent across your profiles and rules, you'll maintain the integrity of your testing framework. If you have any more questions or need further assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r05",
+      "run_group_id": "20260324_144957_664",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__7507a7bc",
+      "fallback_detected": false,
+      "answer": "Great question! If you rename the field `price` to `total_cost` in the profile `pizza_order_test_custom`, it would indeed break any rules that reference the old field name `price`. Specifically, the rule `more_toppings_cost_more.yaml` would be affected because it uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)`.\n\nTo fix this, you would need to update the rule to reflect the new field name. Here’s how you can do it:\n\n1. **Update the Rule**: Open the `more_toppings_cost_more.yaml` rule file and change the references from `price` to `total_cost`. It would look like this:\n\n```yaml\nactive: true\nconversations: 2\ndescription: Adding more toppings to a custom pizza costs more\nif: 'len(conv[0].toppings) > len(conv[1].toppings)'\nname: more_toppings_cost_more\nthen: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'  # Updated field name\nwhen: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'\n```\n\n2. **Check Other Rules**: If there are any other rules that reference `price`, you’ll want to update those as well to ensure everything is consistent.\n\n3. **Test the Changes**: After making these updates, run your tests again to ensure everything works smoothly with the new field name.\n\nBy keeping the field names consistent across your profiles and rules, you’ll avoid any potential issues. If you have any more questions or need further assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r06",
+      "run_group_id": "20260324_150430_862",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__0ae1ea6a",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it could potentially break any rules that reference the `price` field. \n\nTo ensure everything continues to work smoothly, you would need to follow these steps:\n\n1. **Identify Rules Using `price`:** Check if there are any Sensei-check rules that reference `price`. Look for expressions like `conv[i].price` in your rules. \n\n2. **Update the Rules:** If you find any rules that reference `price`, you'll need to update them to use `total_cost` instead. For example, if you had a rule like this:\n   ```yaml\nname: price_positive_check\ndescription: Ensure the price is greater than zero\nconversations: 1\nwhen: conv[0].price is not None\nif: extract_float(conv[0].price) > 0\nthen: \"True\"\n```\n   You would change it to:\n   ```yaml\nname: total_cost_positive\ndescription: The total cost of the order must be greater than zero.\nconversations: 1\nif: conv[0].total_cost is not None\nthen: extract_float(conv[0].total_cost) > 0\n```\n\n3. **Update the `chatbot.output`:** Ensure that the `chatbot.output` section in your profile reflects this change as well. It should look like this:\n   ```yaml\ntest_name: \"pizza_order_test\"\nllm:\n  model: gpt-4o-mini\n  temperature: 0.7\nuser:\n  language: English\n  role: \"Customer ordering pizza\"\n  goals:\n    - \"Order a pizza\"\nconversation:\n  number: 1\n  goal_style:\n    steps: 2\n  interaction_style:\n    - default\nchatbot:\n  fallback: \"I'm sorry, I did not get what you said. Can you rephrase?\"\n  output:\n    - total_cost:\n        description: \"The final price of the pizza order\"\n        type: currency\n```\n\n4. **Validate the Profile:** After making these changes, it's a good idea to validate your profile to catch any potential issues. You can run the validation check to ensure everything is in order.\n\nBy following these steps, you can smoothly transition from `price` to `total_cost` without breaking any rules! If you have any more questions or need further assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r07",
+      "run_group_id": "20260324_151939_470",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__38bdca07",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the `price` field directly. Specifically, the `more_toppings_cost_more` rule would be affected since it uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)`.\n\n### Here’s how to fix it:\n\n1. **Update the Profile**: Change the field name in the `chatbot.output` section of the `pizza_order_test_custom` profile from `price` to `total_cost`.\n\n   ```yaml\n   chatbot:\n     output:\n       - total_cost:  # Change this from 'price' to 'total_cost'\n           description: The final price of the pizza order\n           type: currency\n   ```\n\n2. **Update the Rule**: Modify the `more_toppings_cost_more` rule to reference `total_cost` instead of `price`. \n\n   Here’s how the updated rule would look:\n\n   ```yaml\n   name: more_toppings_cost_more\n   description: Adding more toppings to a custom pizza costs more\n   conversations: 2\n   if: 'len(conv[0].toppings) > len(conv[1].toppings)'\n   then: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'  # Update this line\n   when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'\n   ```\n\nBy making these updates, you'll ensure that the rule continues to function correctly with the new field name. Always remember to keep field names consistent between your profiles and rules to avoid any issues! If you have any more questions, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r08",
+      "run_group_id": "20260324_153358_884",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__c77d24dc",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the `price` field. Specifically, you would need to update any rules that currently use `extract_float(conv[i].price)` to instead use `extract_float(conv[i].total_cost)`.\n\nHere’s how you can fix it:\n\n1. **Update the Profile**: Change the field name in the `chatbot.output` section of the `pizza_order_test_custom` profile from `price` to `total_cost`.\n\n   ```yaml\n   chatbot:\n     output:\n       - total_cost:\n           description: The final price of the pizza order\n           type: currency\n   ```\n\n2. **Update the Rules**: Go through any rules that reference `price` and change them to reference `total_cost`. For example, if you have a rule that checks the price, it would look like this:\n\n   Before:\n   ```yaml\n   then: extract_float(conv[0].price) > extract_float(conv[1].price)\n   ```\n\n   After:\n   ```yaml\n   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n   ```\n\n3. **Test the Changes**: After making these updates, run your tests again to ensure everything works smoothly with the new field name.\n\nBy keeping the field names consistent across your profile and rules, you’ll avoid any potential issues! If you have any more questions or need further assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r09",
+      "run_group_id": "20260324_154817_117",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__5c8b2bb9",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename `price` to `total_cost` in the profile `pizza_order_test_custom`, it would indeed break any rules that reference the `price` field. Specifically, the rule `more_toppings_cost_more` would be affected because it uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)`.\n\nTo fix this, you would need to update the rule to reference the new field name. Here’s how you can do it:\n\n1. **Update the Rule**: Change all occurrences of `price` to `total_cost` in the `more_toppings_cost_more.yaml` rule. It would look like this:\n\n```yaml\nactive: true\nconversations: 2\ndescription: Adding more toppings to a custom pizza costs more\nif: 'len(conv[0].toppings) > len(conv[1].toppings)'\nname: more_toppings_cost_more\nthen: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'\nwhen: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'\n```\n\n2. **Check Other Rules**: If there are any other rules that reference `price`, make sure to update those as well.\n\n3. **Test the Changes**: After making these updates, run your tests again to ensure everything is working smoothly and that the rules are validating correctly with the new field name.\n\nBy keeping the field names consistent across your profile and rules, you’ll avoid any issues and ensure everything functions as expected! If you have any more questions or need further assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r10",
+      "run_group_id": "20260324_161028_916",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__e145db16",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the `price` field. \n\nHere's how you can identify and fix the issues:\n\n1. **Identify Affected Rules**: \n   - In your project, check for any rules that reference `price`. In this case, the rule `more_toppings_cost_more.yaml` uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)`.\n\n2. **Update the Rules**: \n   - You would need to update the references in the affected rule(s) to use `total_cost` instead of `price`. For example, you would change:\n     ```yaml\n     then: extract_float(conv[0].price) > extract_float(conv[1].price)\n     ```\n     to:\n     ```yaml\n     then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n     ```\n\n3. **Check Other Rules**: \n   - Make sure to review all rules in your project to ensure that none of them are referencing the `price` field. If they do, repeat the update process for each one.\n\n4. **Test Your Changes**: \n   - After making these updates, run your tests again to ensure everything works smoothly and that the rules are validating correctly with the new field name.\n\nBy keeping the field names consistent across your profile and rules, you'll maintain the integrity of your testing setup! If you need help with any specific rule updates, just let me know! 😊"
+    },
+    {
+      "response_id": "r11",
+      "run_group_id": "20260324_162607_955",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__e56f8e4e",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename the field `price` to `total_cost` in the profile `pizza_order_test_custom`, it would indeed break any rules that reference the old field name `price`. \n\nTo fix this, you would need to update all the rules that currently refer to `price` so that they now refer to `total_cost` instead. Here's how you can do it:\n\n1. **Identify the Rules**: Look for any rules that use `extract_float(conv[i].price)` or any other references to `price`.\n\n2. **Update the Rules**: Change those references to `total_cost`. For example, if you have a rule like this:\n\n   ```yaml\n   then: extract_float(conv[0].price) > extract_float(conv[1].price)\n   ```\n\n   You would update it to:\n\n   ```yaml\n   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\n   ```\n\n3. **Check for Consistency**: Make sure that all instances where `price` was used are updated to `total_cost` to maintain consistency across your rules.\n\n4. **Test the Changes**: After making the updates, run your tests again to ensure everything works smoothly!\n\nBy following these steps, you can ensure that your rules remain functional and correctly reference the updated field in your profile. If you need help with specific rules, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r12",
+      "run_group_id": "20260324_164020_336",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__7a4b5b3d",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it could potentially break any rules that reference the `price` field. \n\nTo check if it would break any rules, you would need to look for any rules that use `conv[i].price`. If such rules exist, they would need to be updated to reference `conv[i].total_cost` instead.\n\nHere’s how you can update things to fix it:\n\n1. **Identify the Rules**: Look through your Sensei rules to find any that reference `price`. \n\n2. **Update the Rules**: Change all occurrences of `conv[i].price` to `conv[i].total_cost`.\n\n3. **Update the Profile**: Make sure that the `chatbot.output` section in your profile reflects this change. It should look like this:\n\n   ```yaml\ntest_name: \"pizza_order_profile\"\nllm:\n  model: gpt-4o-mini\n  temperature: 0.7\n  format:\n    type: text\nuser:\n  language: English\n  role: \"Customer ordering a pizza.\"\n  context: []\n  goals:\n    - \"Order a pizza.\"\n    - \"Ask about available toppings.\"\nchatbot:\n  fallback: \"I'm sorry, I did not get what you said. Can you rephrase?\"\n  output:\n    - total_cost:\n        description: \"The final price of the pizza order\"\n        type: currency\nconversation:\n  number: 1\n  goal_style:\n    steps: 2\n  interaction_style:\n    - default\n```\n\n4. **Validate the Profile**: After making these changes, run the validation check to ensure everything is working correctly and that there are no errors.\n\nBy following these steps, you can smoothly transition from using `price` to `total_cost` without breaking any rules! If you need help with any specific rules or further details, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r13",
+      "run_group_id": "20260324_165457_259",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__191f393b",
+      "fallback_detected": false,
+      "answer": "Great question! If you rename `price` to `total_cost` in the profile `pizza_order_test_custom`, it would indeed break any rules that reference the `price` field. Specifically, the rule `more_toppings_cost_more.yaml` would be affected, as it currently uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)`.\n\nTo fix this, you would need to update the rule to reference the new field name. Here’s how you can do that:\n\n1. **Update the Rule**: Change the references from `price` to `total_cost` in the `more_toppings_cost_more.yaml` rule.\n\nHere’s how the updated rule would look:\n\n```yaml\nactive: true\nconversations: 2\ndescription: Adding more toppings to a custom pizza costs more\nif: 'len(conv[0].toppings) > len(conv[1].toppings)'\nname: more_toppings_cost_more\nthen: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'\nwhen: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'\n```\n\n2. **Check Other Rules**: If there are any other rules that reference `price`, you would need to update those as well. In your provided context, it looks like `more_toppings_cost_more.yaml` is the only one that does.\n\nBy making these changes, you’ll ensure that your rules continue to function correctly after the renaming! If you have any more questions or need further assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r14",
+      "run_group_id": "20260324_171123_440",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__f5ad38d4",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the `price` field because they would still be looking for `price`, which no longer exists.\n\nTo fix this, you would need to update any rules that reference `price` to use the new field name `total_cost`. Here’s how you can do that:\n\n1. **Update the Profile**: Change the `price` field in the `pizza_order_test_custom` profile to `total_cost`.\n\n   ```yaml\n   output:\n     - total_cost: \n         description: The final price of the pizza order, type: currency\n   ```\n\n2. **Update the Rules**: Look for any rules that currently reference `price` and change them to reference `total_cost` instead.\n\nFor example, if you have a rule like this:\n\n```yaml\nname: more_toppings_cost_more\ndescription: Adding more toppings to a custom pizza costs more\nconversations: 2\nif: len(conv[0].toppings) > len(conv[1].toppings)\nthen: extract_float(conv[0].price) > extract_float(conv[1].price)\nwhen: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n```\n\nYou would update it to:\n\n```yaml\nname: more_toppings_cost_more\ndescription: Adding more toppings to a custom pizza costs more\nconversations: 2\nif: len(conv[0].toppings) > len(conv[1].toppings)\nthen: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\nwhen: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n```\n\nBy making these changes, you ensure that your rules are aligned with the updated profile, and everything should work smoothly! If you have any more questions or need further assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r15",
+      "run_group_id": "20260324_172653_662",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__05e5dc64",
+      "fallback_detected": false,
+      "answer": "Great question! If you rename the `price` field to `total_cost` in the `pizza_order_test_custom` profile, it would indeed break any rules that reference the `price` field. Specifically, the rule `more_toppings_cost_more.yaml` checks for the price of the pizzas using the `price` field. \n\nTo fix this, you would need to update the rule to reference the new field name. Here’s how you can do that:\n\n1. **Update the Profile**: Change the `price` field in the `pizza_order_test_custom` profile to `total_cost`.\n\n   ```yaml\n   output:\n     - total_cost:\n         description: The final price of the pizza order\n         type: currency\n   ```\n\n2. **Update the Rule**: Modify the `more_toppings_cost_more.yaml` rule to use `total_cost` instead of `price`. Here’s how the updated rule would look:\n\n   ```yaml\n   name: more_toppings_cost_more\n   description: Adding more toppings to a custom pizza costs more\n   conversations: 2\n   if: 'len(conv[0].toppings) > len(conv[1].toppings)'\n   then: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'\n   when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'\n   ```\n\nBy making these changes, you ensure that the rule still functions correctly with the updated field name. Always remember to keep the field names consistent across your profiles and rules to avoid any issues! 😊 If you have any more questions or need further assistance, feel free to ask!"
+    },
+    {
+      "response_id": "r16",
+      "run_group_id": "20260324_174442_353",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__443629f8",
+      "fallback_detected": true,
+      "answer": "I'm sorry, but I couldn't produce a YAML response that passed validation after multiple attempts. Please adjust your instructions and try again."
+    },
+    {
+      "response_id": "r17",
+      "run_group_id": "20260324_180000_524",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__c463e9e6",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it could potentially break any rules that reference the `price` field. \n\n### Here's what you need to consider:\n\n1. **Check Existing Rules**: First, look for any rules in your Sensei-check that reference `price`. If there are rules that use `conv[i].price`, they will need to be updated to `conv[i].total_cost`.\n\n2. **Update the Profile**: In your profile, ensure that the `chatbot.output` section reflects the new field name:\n   ```yaml\ntest_name: \"pizza_order_profile\"\n\nllm:\n  format:\n    type: text\n  model: gpt-4o-mini\n  temperature: 0.7\n\nuser:\n  language: English\n  role: \"A customer ordering pizza.\"\n  context: [\"You are ordering a pizza for delivery.\"]\n  goals:\n    - \"Order a pizza.\"\n    - \"Ask for the total cost.\"\n\nchatbot:\n  fallback: \"I'm sorry, I didn't understand that. Can you please rephrase?\"\n  is_starter: false\n  output:\n    - total_cost:  # Change this from price to total_cost\n        description: \"The final price of the pizza order\"\n        type: currency\n\nconversation:\n  number: 1\n  goal_style:\n    steps: 2\n```\n\n3. **Adjust Any Related Goals**: If there are any goals in the profile that mention `price`, you'll need to change those to `total_cost` as well. For example:\n   ```yaml\ntest_name: \"pizza_order_test_custom\"\n\nllm:\n  model: gpt-4o-mini\n  temperature: 0.8\n  format:\n    type: text\n\nuser:\n  context: [{personality: personalities/conversational-user.yml}, you are vegan]\n  goals:\n    - \"How much will it cost?\"\n  language: English\n  role: you must act as a user ordering a pizza to a pizza shop.\n\nchatbot:\n  fallback: \"I'm sorry, I did not get what you said. Can you rephrase?\"\n  is_starter: false\n  output:\n    - price:\n        description: The price of the pizza order\n        type: money\n    - time:\n        description: how long is going to take the pizza to be ready more or less\n        type: time\n    - order_id:\n        description: my order ID\n        type: string\n\nconversation:\n  goal_style:\n    steps: 2\n  interaction_style:\n    - default\n  number: 1\n```\n\n4. **Validate the Profile**: After making these changes, run a validation check on the updated profile to ensure everything is functioning correctly and that there are no errors.\n\n### Summary\nIn short, renaming `price` to `total_cost` will require you to update any references in your rules and goals to maintain consistency. Once you've made those adjustments, validate your profile to ensure everything is in order! If you need help with specific rules or further details, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r18",
+      "run_group_id": "20260324_181816_047",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__e3b8eb34",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename the field `price` to `total_cost` in the profile `pizza_order_test_custom`, it would indeed break any rules that reference the old field name `price`. Specifically, the rule `more_toppings_cost_more.yaml` would be affected, as it currently uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)`.\n\nTo fix this, you would need to update the rule to reference the new field name. Here’s how you can do it:\n\n1. **Update the Rule**: Open the `more_toppings_cost_more.yaml` file and change the references from `price` to `total_cost`. It would look like this:\n\n```yaml\nactive: true\nconversations: 2\ndescription: Adding more toppings to a custom pizza costs more\nif: 'len(conv[0].toppings) > len(conv[1].toppings)'\nname: more_toppings_cost_more\nthen: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'\nwhen: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'\n```\n\n2. **Check Other Rules**: If there are any other rules that reference `price`, you would need to update those as well to ensure everything stays consistent.\n\n3. **Test the Changes**: After making these updates, run your tests again to ensure that everything works smoothly with the new field name.\n\nBy keeping your field names consistent across your profiles and rules, you’ll help ensure that everything functions as expected! If you have any more questions or need further assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r19",
+      "run_group_id": "20260324_183825_815",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__0426d8b7",
+      "fallback_detected": false,
+      "answer": "Great question! 😊 If you rename the field `price` to `total_cost` in the profile `pizza_order_test_custom`, it would indeed break any rules that reference the old field name `price`. \n\nHere’s how you can update things to fix it:\n\n1. **Update the Profile**: Change the field name in the `chatbot.output` section of the `pizza_order_test_custom.yml` profile from `price` to `total_cost`. It should look like this:\n\n   ```yaml\n   output:\n     - total_cost:\n         description: The final price of the pizza order\n         type: currency\n   ```\n\n2. **Update the Rules**: Next, you need to go through any rules that reference `price` and update them to use `total_cost` instead. For example, in the `more_toppings_cost_more.yaml` rule, you would change:\n\n   ```yaml\n   then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'\n   ```\n\n   to:\n\n   ```yaml\n   then: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'\n   ```\n\n3. **Check Other Rules**: Make sure to check any other rules in your project that might also reference `price` and update them accordingly.\n\nBy making these updates, you’ll ensure that everything stays in sync and your rules will function correctly with the new field name! If you have any more questions or need further assistance, feel free to ask! 😊"
+    },
+    {
+      "response_id": "r20",
+      "run_group_id": "20260324_185818_370",
+      "run_id": "graph_based_architecture__p12_complex__pizza_shop__rule__8d292928",
+      "fallback_detected": false,
+      "answer": "Great question! If you rename the field `price` to `total_cost` in the profile `pizza_order_test_custom`, it would indeed break any rules that reference the `price` field without updating them accordingly. \n\nHere's how to address this:\n\n1. **Identify Affected Rules**: Check all the rules that reference `price`. In your case, the rule `more_toppings_cost_more.yaml` uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)`.\n\n2. **Update the Rules**: You would need to update the rule to reference the new field name `total_cost` instead of `price`. Here’s how the updated rule would look:\n\n```yaml\nname: more_toppings_cost_more\ndescription: Adding more toppings to a custom pizza costs more\nconversations: 2\nif:   len(conv[0].toppings) > len(conv[1].toppings)\nthen: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)\nwhen: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink\n```\n\n3. **Check Other Rules**: If there are any other rules in your project that also reference `price`, make sure to update those as well.\n\n4. **Test the Changes**: After making the updates, run your tests again to ensure everything works as expected with the new field name.\n\nBy following these steps, you can smoothly transition to the new field name without breaking any functionality! If you have any more questions or need further assistance, feel free to ask! 😊"
+    }
+  ],
+  "result": {
+    "clusters": [
+      {
+        "cluster_label": "Rename_price_to_total_cost: update_profile_and_rules",
+        "cluster_summary": "All these responses say renaming price to total_cost will break any rules that reference conv[i].price (notably the more_toppings_cost_more rule) and recommend updating the profile (chatbot.output) and all rule references to use total_cost, then re-run validation/tests.",
+        "response_ids": [
+          "r01",
+          "r02",
+          "r03",
+          "r04",
+          "r05",
+          "r06",
+          "r07",
+          "r08",
+          "r09",
+          "r10",
+          "r11",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "r17",
+          "r18",
+          "r19",
+          "r20"
+        ]
+      },
+      {
+        "cluster_label": "FB",
+        "cluster_summary": "Fallback: could not produce a valid YAML response / refusal to produce a valid YAML.",
+        "response_ids": [
+          "r16"
+        ]
+      }
+    ],
+    "notes": "Nearly all non-fallback replies give the same substantive recommendation; some include extra examples (YAML snippets), mention specific rules (more_toppings_cost_more), or call out validating/updating goals, but these are not material differences so they are grouped together."
+  }
+}
