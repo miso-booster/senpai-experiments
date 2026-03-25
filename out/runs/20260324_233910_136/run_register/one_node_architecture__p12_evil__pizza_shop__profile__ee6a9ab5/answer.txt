@@ -1,0 +1,106 @@
+Sure! Let's start by creating the YAML connector based on the request you provided. Here's how the YAML configuration would look:
+
+```yaml
+name: "Custom Bot Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Now, let's create a complete Python script to send multiple requests to that connector. This script will use the `requests` library to send POST requests to the API.
+
+```python
+import requests
+import json
+
+# Define the connector configuration
+connector_config = {
+    "base_url": "https://api.1millionbot.com",
+    "path": "/api/public/messages",
+    "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "64e5d1af081211d24e2cfecd",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Referer": "https://saic.malaga.eu/",
+        "Origin": "https://saic.malaga.eu",
+        "Sec-GPC": "1",
+        "Connection": "keep-alive",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "cross-site",
+        "Priority": "u=4",
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache"
+    }
+}
+
+# Function to send a message
+def send_message(user_msg):
+    url = connector_config["base_url"] + connector_config["path"]
+    payload = {
+        "conversation": "6977595c744ccf01954b8797",
+        "sender_type": "User",
+        "sender": "6977595c3e4824018e496b0c",
+        "bot": "64e5d1af081211d24e2cfec8",
+        "language": "es",
+        "url": "https://saic.malaga.eu/",
+        "message": {
+            "text": user_msg
+        }
+    }
+
+    response = requests.post(url, headers=connector_config["headers"], json=payload)
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": response.status_code, "message": response.text}
+
+# Sending multiple requests
+messages = ["hola", "¿cómo estás?", "¿qué puedes hacer?", "gracias"]
+for msg in messages:
+    response = send_message(msg)
+    print(f"Sent: {msg} | Response: {response}")
+```
+
+### Explanation:
+1. **YAML Connector**: This configuration defines how to connect to the API, including the URL, headers, and the payload structure.
+2. **Python Script**: The script defines a function `send_message` that sends a POST request to the API with the specified message. It iterates over a list of messages, sending each one and printing the response.
+
+Make sure to install the `requests` library if you haven't already by running:
+```bash
+pip install requests
+```
+
+Feel free to modify the messages in the list or any other part of the script to fit your needs! 😊
