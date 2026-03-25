@@ -879,4 +879,5 @@ def test_generate_reviewed_plots_writes_expected_files(tmp_path) -> None:
         "RQ3_clustering_reviewed_prompt_fallback_rate.png",
         "RQ3_clustering_reviewed_majority_share_heatmap.png",
         "RQ3_clustering_reviewed_difficulty_summary.png",
+        "RQ3_clustering_reviewed_difficulty_fallback_rate.png",
     }

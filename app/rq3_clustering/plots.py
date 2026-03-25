@@ -253,6 +253,7 @@ def generate_plots(
         prompt.groupby(["difficulty", "arch_label"], dropna=False)
         .agg(
             mean_majority_cluster_share=("majority_cluster_share", "mean"),
+            mean_cluster_count=("cluster_count", "mean"),
             fallback_rate=("fallback_rate", "mean"),
         )
         .reset_index()
@@ -261,7 +262,7 @@ def generate_plots(
     fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.8))
     for ax, value_column, title, ylabel, ylim in [
         (axes[0], "mean_majority_cluster_share", "Mean Majority Share by Difficulty", "Mean majority share", (0, 1.05)),
-        (axes[1], "fallback_rate", "Fallback Rate by Difficulty", "Fallback rate", (0, 1.05)),
+        (axes[1], "mean_cluster_count", "Mean Cluster Count by Difficulty", "Mean cluster count", None),
     ]:
         x = np.arange(len(difficulty_order))
         width = 0.8 / max(len(arch_order), 1)
@@ -293,5 +294,36 @@ def generate_plots(
             ax.set_ylim(*ylim)
     axes[1].legend(**legend_kwargs)
     _save(fig, "RQ3_clustering_reviewed_difficulty_summary")
+
+    fig, ax = plt.subplots(figsize=(7.0, 4.8))
+    x = np.arange(len(difficulty_order))
+    width = 0.8 / max(len(arch_order), 1)
+    for idx, arch_label in enumerate(arch_order):
+        subset = by_difficulty[by_difficulty["arch_label"] == arch_label].set_index("difficulty")
+        values = [
+            float(pd.to_numeric(subset.loc[diff, "fallback_rate"], errors="coerce"))
+            if diff in subset.index
+            else 0.0
+            for diff in difficulty_order
+        ]
+        offset = (idx - (len(arch_order) - 1) / 2) * width
+        bars = ax.bar(
+            x + offset,
+            values,
+            width=width,
+            label=arch_label,
+            color=arch_fills.get(arch_label, "#bdbdbd"),
+            edgecolor="black",
+            linewidth=1.1,
+        )
+        for bar in bars:
+            bar.set_hatch(arch_hatches.get(arch_label, "///"))
+    ax.set_xticks(x, difficulty_order)
+    ax.set_ylabel("Fallback rate")
+    ax.set_title("Fallback Rate by Difficulty")
+    ax.set_ylim(0, 1.05)
+    ax.grid(axis="y", alpha=0.3)
+    ax.legend(**legend_kwargs)
+    _save(fig, "RQ3_clustering_reviewed_difficulty_fallback_rate")
 
     return written_paths
