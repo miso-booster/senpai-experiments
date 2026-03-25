@@ -1,0 +1,62 @@
+[project-context] Loaded 8 profile(s) [general_information_seeker.yaml, pizza_and_drink_order_placement.yaml, pizza_and_drinks_information_seeker.yaml, pizza_order_test_custom.yml, pizzaorder_ivan_test.yml, unrecognized_query_handler.yaml, user_experiencing_input_issues.yaml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from /home/ivan/miso/automatizacion/graph/sensei_projects/pizza_shop
+[user-context] Loaded 4 connector(s) [345634_config.yml, ada-uam.yaml, metro-madrid.yml, postman.yaml] from /home/ivan/miso/automatizacion/graph/users/user_1/connectors
+conversation ID: graph_based_architecture__p14_complex__pizza_shop__profile__d40f3eac
+Verbose activated
+[intent-classifier] {'intent': 'explain', 'raw': '{"intent": "explain", "reason": "user wants to compare profiles and suggest rules for coverage"}'}
+$$$
+Let's dive into comparing the two profiles: **pizza_order_test_custom** and **pizza_and_drinks_information_seeker** for a user seeking information about drinks, prices, and opening hours.
+
+### Profile Comparison
+
+1. **pizza_order_test_custom**
+   - **Goals**: Focuses on ordering a pizza with specific attributes like size, toppings, and drinks.
+   - **Outputs**: Includes price and order ID but does not emphasize drink options or opening hours.
+   - **User Role**: Primarily a user ordering a pizza.
+
+2. **pizza_and_drinks_information_seeker**
+   - **Goals**: Specifically designed to gather information about pizza types, prices, drink options, and operating hours.
+   - **Outputs**: Clearly includes drink options and prices, as well as the shop's operating hours.
+   - **User Role**: A customer seeking information before placing an order.
+
+### Conclusion
+The **pizza_and_drinks_information_seeker** profile is the better choice for a user who wants information about drinks, prices, and opening hours, as it directly addresses these needs in its goals and outputs.
+
+### Rule Mapping
+Now, let's check the existing rules against the **pizza_and_drinks_information_seeker** profile:
+
+1. **conversation_lengths**: Not applicable, as it focuses on conversation structure rather than information gathering.
+2. **more_toppings_cost_more**: Not applicable, as it relates to ordering rather than information.
+3. **only_talks_about_pizza**: Partially applicable, as it ensures the bot stays on topic, but it could be more inclusive of drinks and other information.
+4. **ordering_conversation_turns**: Not applicable, as it focuses on the order process.
+5. **ordering_conversation_turns_assistant**: Not applicable, as it focuses on the order confirmation process.
+6. **same_number_of_toppings_cost_the_same**: Not applicable, as it relates to pricing based on toppings rather than general information.
+
+### Proposed Rules for Increased Coverage
+To enhance the **pizza_and_drinks_information_seeker** profile, here are two proposed rules:
+
+1. **Drink Price Consistency Rule**
+   - **Description**: Ensures that the prices of drinks are consistent across different queries.
+   - **Rule**:
+   ```yaml
+   name: drink_price_consistency
+   description: Prices of drinks should remain consistent across different queries.
+   conversations: 2
+   when: conv[0].drink_options == conv[1].drink_options
+   if:   extract_float(conv[0].drink_price) != extract_float(conv[1].drink_price)
+   then: False
+   ```
+
+2. **Opening Hours Consistency Rule**
+   - **Description**: Verifies that the operating hours provided by the chatbot are consistent across different queries.
+   - **Rule**:
+   ```yaml
+   name: opening_hours_consistency
+   description: Opening hours should be consistent across different queries.
+   conversations: 2
+   when: conv[0].opening_hours == conv[1].opening_hours
+   if:   conv[0].opening_hours != conv[1].opening_hours
+   then: False
+   ```
+
+These proposed rules would ensure that the profile not only provides accurate information but also maintains consistency in the responses regarding drink prices and opening hours. This would greatly enhance the user experience for someone looking for reliable information! 😊
+$$$

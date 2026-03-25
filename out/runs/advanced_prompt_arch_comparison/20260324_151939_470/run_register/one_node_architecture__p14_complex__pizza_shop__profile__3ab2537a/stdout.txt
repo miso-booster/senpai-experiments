@@ -1,0 +1,57 @@
+conversation ID: one_node_architecture__p14_complex__pizza_shop__profile__3ab2537a
+Verbose activated
+$$$
+Let's dive into comparing the two profiles: **pizza_order_test_custom** and **pizza_and_drinks_information_seeker**. 
+
+### Profile Comparison
+
+1. **pizza_order_test_custom**:
+   - **Context**: The user is trying to order a pizza but is having trouble with their phone's microphone.
+   - **Goals**: Includes ordering a pizza, asking about opening times, and pricing.
+   - **Output Fields**: Includes price, time, and order ID.
+
+2. **pizza_and_drinks_information_seeker**:
+   - **Context**: The user is planning a casual pizza night and wants to gather information about pizza types, prices, available drinks, and shop hours.
+   - **Goals**: Specifically asks about available pizza types, Margarita pizza pricing, drink prices, and shop operating hours.
+   - **Output Fields**: Includes pizza types, Margarita price, drinks and prices, operating hours, and delivery availability.
+
+### Better Profile
+The **pizza_and_drinks_information_seeker** profile is better suited for a user who wants information about drinks, prices, and opening hours. It directly addresses these needs through its goals and outputs.
+
+### Rule Mapping
+Now, let's check the rules against the **pizza_and_drinks_information_seeker** profile:
+
+1. **conversation_lengths**: Not applicable.
+2. **more_toppings_cost_more**: Not applicable.
+3. **only_talks_about_pizza**: Relevant but could be broadened to include drinks.
+4. **ordering_conversation_turns**: Not applicable.
+5. **ordering_conversation_turns_assistant**: Not applicable.
+6. **same_number_of_toppings_cost_the_same**: Not applicable.
+
+### Proposed Rules for Increased Coverage
+To enhance the coverage of the **pizza_and_drinks_information_seeker** profile, here are two proposed rules:
+
+1. **Drink Price Consistency**:
+   - **Description**: If the user asks about drink prices, the chatbot should provide consistent pricing for the same drink across different queries.
+   - **Rule**:
+   ```yaml
+   name: drink_price_consistency
+   description: Drink prices should remain consistent across queries.
+   conversations: 2
+   when: conv[0].drink_type == conv[1].drink_type
+   if: extract_float(conv[0].drink_price) > 0 and extract_float(conv[1].drink_price) > 0
+   then: extract_float(conv[0].drink_price) == extract_float(conv[1].drink_price)
+   ```
+
+2. **Operating Hours Availability**:
+   - **Description**: The chatbot should provide the correct operating hours when asked.
+   - **Rule**:
+   ```yaml
+   name: operating_hours_availability
+   description: The chatbot must provide accurate operating hours when asked.
+   conversations: 1
+   oracle: 'operating_hours' in data_output
+   ```
+
+These rules would help ensure that the profile effectively covers the user's needs for drink information and operational details. If you have any questions or need further assistance, feel free to ask! 😊
+$$$

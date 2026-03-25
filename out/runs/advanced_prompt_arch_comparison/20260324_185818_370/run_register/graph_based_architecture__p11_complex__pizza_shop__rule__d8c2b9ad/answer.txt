@@ -1,0 +1,37 @@
+Sure! Let's break it down and see if the profile `pizza_order_test_custom` aligns with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile has the following relevant outputs:
+- **price**: The final price of the pizza order.
+- **order_id**: My order ID.
+- **time**: How long it will take for the pizza to be ready.
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) > extract_float(conv[1].price)'
+when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+```
+- **Fields Used**: It checks the number of toppings and compares prices based on the size and drink type.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+if: 'conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)'
+then: 'extract_float(conv[0].price) == extract_float(conv[1].price)'
+when: 'conv[0].drink == conv[1].drink'
+```
+- **Fields Used**: It checks the size and drink type, and compares prices for pizzas with the same number of toppings.
+
+### Compatibility Check
+1. **For `more_toppings_cost_more`**:
+   - The profile must have a `toppings` field in its `chatbot.output` to work with the rule. However, the `pizza_order_test_custom` profile does not specify a `toppings` field. So, this rule **will not work** with this profile.
+
+2. **For `same_number_of_toppings_cost_the_same`**:
+   - Similar to the first rule, this rule also requires a `toppings` field to compare the number of toppings. Since the `pizza_order_test_custom` profile does not include this field, this rule **will also not work** with this profile.
+
+### Conclusion
+Both rules require a `toppings` field in the `chatbot.output`, which is missing in the `pizza_order_test_custom` profile. Therefore, neither rule will work with this profile as it currently stands. 
+
+If you want to use these rules, consider adding a `toppings` field to the profile's `chatbot.output`. If you need help with that, just let me know! 😊

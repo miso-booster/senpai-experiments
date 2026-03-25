@@ -1,0 +1,45 @@
+Sure! Let's break it down and see if the profile `pizza_order_test_custom` aligns with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes:
+- **Output Fields**: 
+  - `price`: The final price of the pizza order (type: currency)
+  - `time`: The opening time (type: time(hh:mm:ss))
+  - `order_id`: The order ID (type: string)
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+- **Requirements**: 
+  - It requires the profile to have the fields `size`, `drink`, and `toppings` in the output.
+  - The rule references `conv[0].size`, `conv[0].drink`, and `conv[0].toppings`, which must be defined in the profile.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with same number of toppings cost the same
+conversations: 2
+when: conv[0].drink == conv[1].drink
+if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+- **Requirements**: 
+  - Similar to the first rule, it requires the fields `size`, `drink`, and `toppings` in the output.
+
+### Conclusion
+The `pizza_order_test_custom` profile does not currently define `size`, `drink`, or `toppings` in its output. Therefore, both rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same` will **not work** with this profile as it stands.
+
+### Recommendations
+To make the rules work:
+1. **Update the Profile**: Add `size`, `drink`, and `toppings` to the `chatbot.output` section of the `pizza_order_test_custom` profile.
+2. **Ensure Consistency**: Make sure that the names and types of these fields match what the rules expect.
+
+If you need help updating the profile or have any other questions, feel free to ask! 😊

@@ -1,0 +1,37 @@
+Sure! Let's break it down to see if the **pizza_order_test_custom** profile will work with the **more_toppings_cost_more** and **same_number_of_toppings_cost_the_same** rules.
+
+### Profile: pizza_order_test_custom
+This profile has the following relevant fields in its `chatbot.output`:
+- `price`: The final price of the pizza order, type: currency
+- `order_id`: My order ID, type: string
+
+### Rule: more_toppings_cost_more
+This rule checks if adding more toppings to a custom pizza costs more:
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+- **Requirements**: The rule references `conv[0].size`, `conv[1].size`, `conv[0].drink`, `conv[1].drink`, `conv[0].toppings`, and `conv[1].toppings`.
+- **Check**: The profile does not explicitly mention `drink` or `toppings` in its `chatbot.output`. You need to ensure that the profile captures these fields in the conversation.
+
+### Rule: same_number_of_toppings_cost_the_same
+This rule checks if pizzas with the same number of toppings cost the same:
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with same number of toppings cost the same
+conversations: 2
+when: conv[0].drink == conv[1].drink
+if: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+- **Requirements**: The rule references `conv[0].drink`, `conv[1].drink`, `conv[0].size`, `conv[1].size`, `conv[0].toppings`, and `conv[1].toppings`.
+- **Check**: Similar to the previous rule, this one also requires `drink` and `toppings` fields to be present in the profile's `chatbot.output`.
+
+### Conclusion
+For both rules to work correctly, the **pizza_order_test_custom** profile needs to include the `toppings` and `drink` fields in its `chatbot.output`. If these fields are not present, the rules will not function as intended.
+
+You may need to update the profile to ensure it captures these fields. If you have any more questions or need help with the updates, feel free to ask! 😊

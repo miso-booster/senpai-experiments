@@ -1,0 +1,32 @@
+conversation ID: one_node_architecture__p12_complex__pizza_shop__rule__08e9dd0d
+Verbose activated
+$$$
+Great question! If you rename the `price` field to `total_cost` in the `pizza_order_test_custom` profile, it would indeed affect any rules that reference the `price` field. Specifically, the rule `more_toppings_cost_more.yaml` checks the price of pizzas based on the number of toppings, and it currently uses `extract_float(conv[0].price)` and `extract_float(conv[1].price)`.
+
+To fix this, you would need to update the rule to reflect the new field name. Here’s what you would do:
+
+1. **Rename the field in the profile**:
+   Update the `chatbot.output` section in the `pizza_order_test_custom` profile to change `price` to `total_cost`.
+
+   ```yaml
+   chatbot:
+     output:
+       - total_cost:
+           type: currency
+           description: "final price for the order"
+   ```
+
+2. **Update the rule**:
+   Modify the `more_toppings_cost_more.yaml` rule to reference `total_cost` instead of `price`. Here’s how the updated rule would look:
+
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza costs more
+   conversations: 2
+   if: 'len(conv[0].toppings) > len(conv[1].toppings)'
+   then: 'extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)'
+   when: 'conv[0].size == conv[1].size and conv[0].drink == conv[1].drink'
+   ```
+
+By making these changes, you ensure that the rule correctly references the new field name and continues to function as intended. If you have any more questions or need further assistance, feel free to ask! 😊
+$$$

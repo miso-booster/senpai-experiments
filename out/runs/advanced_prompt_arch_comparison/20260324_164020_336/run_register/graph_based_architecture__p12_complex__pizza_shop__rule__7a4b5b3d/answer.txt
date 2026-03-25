@@ -1,0 +1,43 @@
+Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it could potentially break any rules that reference the `price` field. 
+
+To check if it would break any rules, you would need to look for any rules that use `conv[i].price`. If such rules exist, they would need to be updated to reference `conv[i].total_cost` instead.
+
+Here’s how you can update things to fix it:
+
+1. **Identify the Rules**: Look through your Sensei rules to find any that reference `price`. 
+
+2. **Update the Rules**: Change all occurrences of `conv[i].price` to `conv[i].total_cost`.
+
+3. **Update the Profile**: Make sure that the `chatbot.output` section in your profile reflects this change. It should look like this:
+
+   ```yaml
+test_name: "pizza_order_profile"
+llm:
+  model: gpt-4o-mini
+  temperature: 0.7
+  format:
+    type: text
+user:
+  language: English
+  role: "Customer ordering a pizza."
+  context: []
+  goals:
+    - "Order a pizza."
+    - "Ask about available toppings."
+chatbot:
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - total_cost:
+        description: "The final price of the pizza order"
+        type: currency
+conversation:
+  number: 1
+  goal_style:
+    steps: 2
+  interaction_style:
+    - default
+```
+
+4. **Validate the Profile**: After making these changes, run the validation check to ensure everything is working correctly and that there are no errors.
+
+By following these steps, you can smoothly transition from using `price` to `total_cost` without breaking any rules! If you need help with any specific rules or further details, feel free to ask! 😊

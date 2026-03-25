@@ -1,0 +1,40 @@
+Sure! Let's break it down and see if the profile `pizza_order_test_custom` aligns with the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+The profile has the following relevant outputs:
+- **price**: The final price of the pizza order (type: currency).
+- **toppings**: The number of toppings is indirectly referenced in the goals but not explicitly listed in the output schema.
+
+### Rule: `more_toppings_cost_more`
+This rule checks:
+- **When**: `conv[0].size == conv[1].size and conv[0].drink == conv[1].drink`
+- **If**: `len(conv[0].toppings) > len(conv[1].toppings)`
+- **Then**: `extract_float(conv[0].price) > extract_float(conv[1].price)`
+
+This rule requires access to the `toppings` field, which should be part of the `chatbot.output` in the profile. However, the profile does not explicitly define `toppings` in its output schema.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks:
+- **When**: `conv[0].drink == conv[1].drink and conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)`
+- **Then**: `extract_float(conv[0].price) == extract_float(conv[1].price)`
+
+Similar to the previous rule, this one also requires the `toppings` field to be defined in the profile's output.
+
+### Conclusion
+Both rules depend on the `toppings` field being part of the `chatbot.output` in the `pizza_order_test_custom` profile. Since the profile does not currently include `toppings` in its output schema, these rules will not work as intended.
+
+### Recommendation
+To make these rules functional, you should update the `pizza_order_test_custom` profile to include `toppings` in the `chatbot.output` section. Here’s a suggestion on how to add it:
+
+```yaml
+chatbot:
+  output:
+    - price:
+        description: The final price of the pizza order
+        type: currency
+    - toppings:
+        description: The list of toppings chosen for the pizza
+        type: list[string]  # Assuming toppings are a list of strings
+```
+
+Once you add the `toppings` field, the rules should work perfectly! If you need help with anything else, just let me know! 😊

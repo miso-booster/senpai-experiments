@@ -1,0 +1,61 @@
+conversation ID: agentic_architecture__p11_complex__pizza_shop__rule__49b194ae
+$$$
+Let's take a look at the profile and the rules to see if they align properly.
+
+### Profile: `pizza_order_test_custom.yml`
+- **Outputs**:
+  - `price`: The final price of the pizza order (currency type).
+  - `time`: Just the opening time (time type).
+  - `order_id`: My order ID (string type).
+
+### Rules
+1. **Rule: `more_toppings_cost_more`**
+   - **Description**: Adding more toppings to a custom pizza costs more.
+   - **Active**: True
+   - **Conversations**: 2
+   - **Condition**:
+     - `when`: The sizes and drinks of the two conversations must be the same.
+     - `if`: The number of toppings in the first conversation is greater than in the second.
+     - `then`: The price of the first conversation must be greater than the price of the second.
+   - **YAML**:
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza cost more
+   active: True
+   conversations: 2
+   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+   if:   len(conv[0].toppings) > len(conv[1].toppings)
+   then: extract_float(conv[0].price) > extract_float(conv[1].price)
+   ```
+
+2. **Rule: `same_number_of_toppings_cost_the_same`**
+   - **Description**: Pizzas with the same number of toppings cost the same.
+   - **Active**: False
+   - **Conversations**: 2
+   - **Condition**:
+     - `when`: The drinks must be the same.
+     - `if`: The sizes must be the same, and the number of toppings must be equal.
+     - `then`: The prices must be equal.
+   - **YAML**:
+   ```yaml
+   name: same_number_of_toopings_cost_the_same
+   description: Pizzas with same number of toppings cost the same
+   conversations: 2
+   when: conv[0].drink == conv[1].drink
+   if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)
+   then: extract_float(conv[0].price) == extract_float(conv[1].price)
+   ```
+
+### Compatibility Check
+- **`more_toppings_cost_more` Rule**:
+  - This rule is **active** and checks if adding more toppings results in a higher price, which is directly relevant to the profile's output of `price`. It uses the `size` and `drink` fields from the profile, which are correctly referenced.
+
+- **`same_number_of_toppings_cost_the_same` Rule**:
+  - This rule is **inactive**. It checks if pizzas with the same number of toppings cost the same, which could also be relevant, but since it's inactive, it won't be evaluated during testing.
+
+### Conclusion
+- The **`more_toppings_cost_more`** rule will work with the **`pizza_order_test_custom`** profile since it references the correct outputs and conditions.
+- The **`same_number_of_toppings_cost_the_same`** rule will not be evaluated because it is currently inactive.
+
+If you need to activate the second rule or make any adjustments, let me know! 😊
+$$$

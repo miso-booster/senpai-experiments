@@ -1,0 +1,50 @@
+Renaming the field `price` to `total_cost` in the `pizza_order_test_custom` profile will break any rules that reference the `price` field. The following rules will need to be updated:
+
+1. **`same_number_of_toppings_cost_the_same.yaml`**
+   ```yaml
+   name: same_number_of_toppings_cost_the_same
+   description: Pizzas with same number of toppings cost the same
+   conversations: 2
+   active: False
+   when: conv[0].drink == conv[1].drink
+   if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) == extract_float(conv[1].total_cost)
+   ```
+
+2. **`more_toppings_cost_more.yaml`**
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza costs more
+   conversations: 2
+   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+   if: len(conv[0].toppings) > len(conv[1].toppings)
+   then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+   ```
+
+### Summary of Changes
+- **Field Renaming**: Change `price` to `total_cost` in the profile's `chatbot.output`.
+- **Rule Updates**: Modify any rules that reference `price` to use `total_cost` instead.
+
+These updates will ensure that the rules remain valid and functional after the field renaming. If you have any further questions or need assistance with these changes, feel free to ask! 😊
+
+### Valid Rules
+#### 3. `same_number_of_toppings_cost_the_same.yaml`
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with same number of toppings cost the same
+conversations: 2
+active: False
+when: conv[0].drink == conv[1].drink
+if: conv[0].size == conv[1].size and len(conv[0].toppings)==len(conv[1].toppings)
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+
+#### 4. `more_toppings_cost_more.yaml`
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```

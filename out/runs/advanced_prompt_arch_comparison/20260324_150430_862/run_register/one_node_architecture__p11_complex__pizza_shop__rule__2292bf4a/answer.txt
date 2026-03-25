@@ -1,0 +1,36 @@
+Sure! Let's break down the compatibility between the profile `pizza_order_test_custom` and the rules `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`.
+
+### Profile: `pizza_order_test_custom`
+This profile includes the following relevant outputs:
+- `price`: The final price of the pizza order.
+- `size`: The size of the pizza (used for comparisons).
+- `toppings`: The toppings selected for the pizza.
+
+### Rule: `more_toppings_cost_more`
+This rule checks if adding more toppings to a custom pizza costs more, given that the size and drink are the same. The rule is structured as follows:
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+- This rule will work with the profile since it references `size`, `toppings`, and `price`, which are all defined in the profile's `chatbot.output`.
+
+### Rule: `same_number_of_toppings_cost_the_same`
+This rule checks if pizzas with the same number of toppings cost the same, structured as follows:
+```yaml
+name: same_number_of_toppings_cost_the_same
+description: Pizzas with the same number of toppings cost the same
+conversations: 2
+when: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+if:   conv[0].drink == conv[1].drink
+then: extract_float(conv[0].price) == extract_float(conv[1].price)
+```
+- This rule will also work with the profile as it references `size`, `toppings`, and `price`, which are present in the profile's `chatbot.output`.
+
+### Conclusion
+Both rules, `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same`, are compatible with the `pizza_order_test_custom` profile. They correctly reference the fields defined in the profile's `chatbot.output`, so they should function as intended during testing! 🎉
+
+If you have any more questions or need further assistance, feel free to ask! 😊

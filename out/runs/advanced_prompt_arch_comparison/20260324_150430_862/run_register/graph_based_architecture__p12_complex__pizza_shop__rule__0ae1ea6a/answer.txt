@@ -1,0 +1,52 @@
+Great question! 😊 If you rename `price` to `total_cost` in the `pizza_order_test_custom` profile, it could potentially break any rules that reference the `price` field. 
+
+To ensure everything continues to work smoothly, you would need to follow these steps:
+
+1. **Identify Rules Using `price`:** Check if there are any Sensei-check rules that reference `price`. Look for expressions like `conv[i].price` in your rules. 
+
+2. **Update the Rules:** If you find any rules that reference `price`, you'll need to update them to use `total_cost` instead. For example, if you had a rule like this:
+   ```yaml
+name: price_positive_check
+description: Ensure the price is greater than zero
+conversations: 1
+when: conv[0].price is not None
+if: extract_float(conv[0].price) > 0
+then: "True"
+```
+   You would change it to:
+   ```yaml
+name: total_cost_positive
+description: The total cost of the order must be greater than zero.
+conversations: 1
+if: conv[0].total_cost is not None
+then: extract_float(conv[0].total_cost) > 0
+```
+
+3. **Update the `chatbot.output`:** Ensure that the `chatbot.output` section in your profile reflects this change as well. It should look like this:
+   ```yaml
+test_name: "pizza_order_test"
+llm:
+  model: gpt-4o-mini
+  temperature: 0.7
+user:
+  language: English
+  role: "Customer ordering pizza"
+  goals:
+    - "Order a pizza"
+conversation:
+  number: 1
+  goal_style:
+    steps: 2
+  interaction_style:
+    - default
+chatbot:
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - total_cost:
+        description: "The final price of the pizza order"
+        type: currency
+```
+
+4. **Validate the Profile:** After making these changes, it's a good idea to validate your profile to catch any potential issues. You can run the validation check to ensure everything is in order.
+
+By following these steps, you can smoothly transition from `price` to `total_cost` without breaking any rules! If you have any more questions or need further assistance, feel free to ask! 😊
