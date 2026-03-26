@@ -285,6 +285,34 @@ python -m app.rq3_clustering.review_metrics --allow-pending
 Main outputs:
 
 - `out/RQ3_clustering/RQ3_clustering_reviewed_metrics.xlsx`
+
+RQ4: Guardrail Test Metrics
+---------------------------
+
+Run the RQ4 guardrail analysis pipeline:
+
+```bash
+python -m app.rq4
+```
+
+Default input:
+
+- `out/runs/guardrail_test/`
+
+Default output directory:
+
+- `out/RQ4_guardrail_metrics/`
+
+This workflow reads repeated `guardrail_test` execution workbooks, merges them
+with the `configs/rq4_prompts.json` prompt catalog, classifies each final answer
+as an effective allow/block decision, and compares the observed behavior against
+the expected guardrail outcome for each prompt.
+
+Main outputs:
+
+- `RQ4_guardrail_metrics.xlsx`
+- architecture and prompt-level CSV summaries
+- guardrail performance plots
 - one reviewed workbook per architecture
 - reviewed overall plots
 - reviewed prompt-level plots
