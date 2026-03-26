@@ -1,54 +1,60 @@
 Automated Prompt Interface
 ==========================
 
-Small runner that loads architectures and prompts from `configs/` and executes
-each prompt against each architecture, saving results to `out/`.
+Run a shared prompt set against multiple architectures, store the raw results in
+`out/`, and generate the analysis artifacts used for RQ1, RQ2, and RQ3.
+
+This README is organized around the actual execution flow:
+
+1. Install dependencies
+2. Configure architectures, prompts, and environment variables
+3. Run executions
+4. Run the analysis pipelines you need
+
+Quick Start
+-----------
 
 Requirements
-------------
+
 - Python 3.12+
-- `uv` (recommended) or `pip`
+- `uv` recommended, or `pip`
 
-Install dependencies
---------------------
-Recommended:
+Install dependencies with `uv`:
 
-```powershell
+```bash
 uv sync
 ```
 
-If you do not use `uv`, install from `requirements.txt`:
+Or with `pip`:
 
-```powershell
+```bash
 python -m pip install -r requirements.txt
-```
-
-Run
----
-```powershell
-python -m app.main -rq2
-```
-
-Optional verbose logging:
-
-```powershell
-python -m app.main -rq2 -v
 ```
 
 Configuration
 -------------
-1) Architectures and paths  
-Edit `configs/architectures.json` and ensure:
-- `cmd` points to the correct Python executable for each architecture.
-- `cwd` points to the root of each Sensei project.
-- `env_file` points to your `.env` file (default is `configs/.env`).
 
-2) Prompts  
-Edit `configs/prompts.json`, `configs/rq3_prompts.json`, or `configs/rq4_prompts.json`
-to add or change prompts for the corresponding execution mode.
+### 1. Architectures
 
-3) Environment variables (`configs/.env`)  
-Create `configs/.env` with the following keys:
+Edit `configs/architectures.json`.
+
+For each architecture, make sure:
+
+- `cmd` points to the correct Python executable
+- `cwd` points to the root of the target project
+- `env_file` points to the `.env` file to load
+
+### 2. Prompt sets
+
+The main runner selects prompts from one of these files:
+
+- `configs/prompts.json` for `-rq2`
+- `configs/rq3_prompts.json` for `-rq3`
+- `configs/rq4_prompts.json` for `-rq4`
+
+### 3. Environment variables
+
+Create `configs/.env` if you use the default env path:
 
 ```ini
 LANGSMITH_API_KEY=your_langsmith_key
@@ -58,154 +64,199 @@ LANGSMITH_TRACING=true
 OPENAI_API_KEY=your_openai_key
 ```
 
-Outputs
--------
-- Per-run JSONL results: `out/results.jsonl`
-- Per-group Excel: `out/runs/<run_group_id>/results.xlsx`
+`OPENAI_API_KEY` is required for `app.rq3_clustering`.
 
-Research Questions
+Main Execution
+--------------
+
+The main runner is:
+
+```bash
+python -m app.main
+```
+
+You must choose exactly one prompt set:
+
+- `-rq2`
+- `-rq3`
+- `-rq4`
+
+Examples:
+
+```bash
+python -m app.main -rq2
+python -m app.main -rq3
+python -m app.main -rq4
+python -m app.main -rq2 -r 20
+python -m app.main -rq2 -r 20 -v
+```
+
+Important flags:
+
+- `-r, --runs`: number of repeated executions
+- `-v, --verbose`: verbose logging
+
+Execution Outputs
+-----------------
+
+Every run writes:
+
+- `out/results.jsonl`: append-only raw run log
+- `out/runs/<run_group_id>/results.xlsx`: one workbook for that execution batch
+
+`<run_group_id>` is timestamp-based, so each execution batch gets its own folder.
+
+The generated results also include `is_yaml_valid` for prompt types that expect YAML.
+
+Analysis Workflows
 ------------------
 
-RQ1 (offline ranking sheets)
-----------------------------
-Generate a randomized ranking markdown + key + answers template:
+RQ1: Ranking Sheets
+-------------------
 
-```powershell
+Generate the randomized ranking package:
+
+```bash
 python -m app.rq1.generate_rankings
 ```
 
-By default this uses the first run folder under `out/runs/architecture_comparison/`.
-You can select a specific run with `--run-id <run_id>`.
+This reads the first run folder under `out/runs/architecture_comparison/` by
+default. You can override that with `--run-id`.
 
-This writes to `out/RQ1/<run_id>/` (CSV delimiter is `;`):
-- `ranking.md` (responses randomized per prompt)
-- `key.csv` (label -> arch/run mapping)
-- `answers.csv` (template to fill in ranks)
+Main outputs in `out/RQ1/<run_id>/`:
 
-Each response in `ranking.md` now includes `YAML: true|false|n/a` based on
-`is_yaml_valid` from `results.xlsx`.
+- `ranking.md`
+- `key.csv`
+- `answers.csv`
 
-Aggregate multiple subjects (expects `answers_*.csv` and `key.csv`):
+Aggregate completed subject answers:
 
-```powershell
+```bash
 python -m app.rq1.aggregate_rankings
 ```
 
-By default this reads `out/RQ1/<run_id>/` for the
-first run folder. You can select a specific run with `--run-id <run_id>` or pass
-`--answers-dir` directly.
+Useful flags:
 
-This also writes metrics CSVs in the same folder:
-- `metrics_overall.csv` (per-architecture avg rank, Borda, win rate)
-- `metrics_per_prompt.csv` (per-prompt avg rank + win rate)
-- `metrics_pairwise.csv` (pairwise win rates)
+- `--run-id <run_id>`
+- `--answers-dir <path>`
 
-RQ2 (architecture metrics aggregation)
+Main aggregate outputs:
+
+- `metrics_overall.csv`
+- `metrics_per_prompt.csv`
+- `metrics_pairwise.csv`
+
+RQ2: Architecture Metrics Aggregation
 -------------------------------------
-RQ2 aggregates metrics across multiple execution runs and generates a workbook
-plus comparison plots (averages and variability). The workbook now also includes
-pairwise Wilcoxon signed-rank tests between architectures on matched
-`run_group_id + prompt_id` rows.
 
-```powershell
+Aggregate metrics across execution runs:
+
+```bash
 python -m app.rq2
 ```
 
-Generate the joined fallback/answer spreadsheet with:
+This produces the main RQ2 workbook and plots from the execution results.
 
-```powershell
+The RQ2 workbook includes:
+
+- aggregated per-architecture metrics
+- pairwise Wilcoxon signed-rank tests on matched `run_group_id + prompt_id` rows
+
+Supplementary fallback/answer join:
+
+```bash
 python app/rq2/fallback_answer_join.py
 ```
 
-This reads all `results.xlsx` files under `out/runs/architecture_comparison`, filters
-and pivots answers/fallback flags by `run_group_id + prompt_id`, keeps prompts
-where at least one architecture fell back, and writes
-`out/RQ2_architecture_metrics/rq2_fallback_answers_joined.xlsx`.
-Change `--runs-dir`, `--out-dir`, `--sheet`, `--architectures`, or add
-`--include-no-fallbacks` for other inputs/filters.
+This writes:
 
-RQ3 Consistency (tool and node-usage consistency across repeated runs)
-----------------------------------------------------------------------
-RQ3 measures:
-- tool-use consistency across repeated runs of the same prompt from LangSmith
-  tracing exports (`tracing_*.xlsx`, using `run_type == "tool"`), and
-- node-usage consistency for the graph-based architecture using
-  `metadata.langgraph_node` from top-level graph node executions.
+- `out/RQ2_architecture_metrics/rq2_fallback_answers_joined.xlsx`
 
-Run:
+Useful flags for the join script:
 
-```powershell
+- `--runs-dir`
+- `--out-dir`
+- `--sheet`
+- `--architectures`
+- `--include-no-fallbacks`
+
+RQ3: Tool and Node Consistency
+------------------------------
+
+Run the RQ3 consistency pipeline:
+
+```bash
 python -m app.rq3_consistency
 ```
 
-By default this reads from `out/runs/advanced_prompt_arch_comparison/` and
-generates the RQ3 workbook and plots in
-`out/RQ3_tool_consistency_and_node_usage_consistency/`.
+Default input:
 
-Legacy alias:
+- `out/runs/advanced_prompt_arch_comparison/`
 
-```powershell
-python -m app.rq3
-```
+Default output directory:
 
-Outputs
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_and_node_usage_consistency.xlsx`
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency.png`
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_similarity_and_toolcount.png`
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_presence_heatmap.png`
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_variability_summary.png`
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_variability_mean_std.png`
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency.png`
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_similarity_and_nodecount.png`
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_presence_heatmap.png`
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_variability_summary.png`
-- `out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_variability_mean_std.png`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/`
 
-RQ3 Clustering
---------------
-RQ3 Clustering loads repeated `results.xlsx` files, splits the answers by
-architecture and prompt, and uses the OpenAI API to semantically cluster the
-repeated answers for each prompt. This is intended for runs such as 20 repeated
-executions of 15 prompts across the three architectures, where the goal is to
-measure response consistency.
+This workflow reads repeated LangSmith tracing exports (`tracing_*.xlsx`) and
+measures whether the architectures behave consistently from run to run.
 
-Phase 1: LLM clustering proposal
+It computes:
 
-```powershell
+- tool-use consistency across repeated runs of the same prompt
+- graph-node usage consistency for the graph-based architecture
+
+This is the tracing-based RQ3 analysis. It is separate from `app.rq3_clustering`,
+which clusters final answers instead of comparing tool or node traces.
+
+Main outputs:
+
+- `RQ3_tool_consistency_and_node_usage_consistency.xlsx`
+- tool consistency plots
+- node usage consistency plots
+
+RQ3: Answer Clustering
+----------------------
+
+This is a separate RQ3 workflow. It clusters repeated answers per
+architecture/prompt and supports a human review pass before computing final
+metrics.
+
+### Phase 1: Generate clustering proposals
+
+```bash
 python -m app.rq3_clustering
 ```
 
-By default this reads from `out/runs/advanced_prompt_arch_comparison/` and
-writes the clustering workbooks to `out/RQ3_clustering/`.
+Default input:
 
-Requirements
-- `OPENAI_API_KEY` must be set.
-- The default model is `gpt-4o-mini`.
+- `out/runs/advanced_prompt_arch_comparison/`
 
-Main outputs
-- One workbook per architecture, for example `out/RQ3_clustering/agentic_architecture_answer_clustering.xlsx`
-- Combined manifest workbook: `out/RQ3_clustering/RQ3_clustering_manifest.xlsx`
-- Human review workbook: `out/RQ3_clustering/RQ3_clustering_review_template.xlsx`
-- Optional cache files under `out/RQ3_clustering/_cluster_cache/`
+Default output directory:
 
-Each architecture workbook includes:
-- `answers_matrix`: prompt x run matrix of raw answers.
-- `prompt_summary`: one row per prompt with the number of clusters and the majority-cluster share.
-- `cluster_summary`: one row per discovered cluster with counts, shares, labels, and representative answers.
-- `cluster_assignments`: one row per answer showing which cluster it belongs to.
-- `review_assignments`: editable rows for human review of the LLM clustering using cluster IDs.
-- `inventory`: raw answer inventory with source workbook information.
+- `out/RQ3_clustering/`
 
-Useful flags
-- `--model <name>` to override the clustering model.
-- `--force-refresh` to ignore cached OpenAI cluster results.
-- `--max-groups N` to cluster only the first `N` architecture/prompt groups.
-- `--prepare-only` to skip the API call and export only the raw matrices/inventory.
+Main outputs:
 
-Phase 2: Human-reviewed final metrics
+- one workbook per architecture, such as `agentic_architecture_answer_clustering.xlsx`
+- `RQ3_clustering_manifest.xlsx`
+- `RQ3_clustering_review_template.xlsx`
+- optional cache files under `out/RQ3_clustering/_cluster_cache/`
 
-Edit `out/RQ3_clustering/RQ3_clustering_review_template.xlsx`, specifically the
-`review_assignments` sheet. The reviewer works mainly with:
+Useful flags:
+
+- `--model <name>`
+- `--force-refresh`
+- `--max-groups N`
+- `--prepare-only`
+
+### Phase 2: Human review and final metrics
+
+Edit:
+
+- `out/RQ3_clustering/RQ3_clustering_review_template.xlsx`
+
+Work mainly in the `review_assignments` sheet. The important columns are:
+
 - `proposed_cluster_id`
 - `proposed_cluster_label`
 - `proposed_cluster_reason`
@@ -214,69 +265,34 @@ Edit `out/RQ3_clustering/RQ3_clustering_review_template.xlsx`, specifically the
 - `review_notes`
 
 Recommended review flow:
-- If the proposed cluster is correct, leave `final_cluster_id` unchanged and set `reviewed=TRUE`.
-- If it is wrong, change `final_cluster_id` to another cluster id such as `C2`, or create a new one such as `C4`, and then set `reviewed=TRUE`.
-- Use `review_cluster_reference` as the lookup sheet for cluster labels, reasons, counts, and response indexes.
 
-Then compute the final metrics from the reviewed assignments:
+- if the proposed cluster is correct, keep `final_cluster_id` and set `reviewed=TRUE`
+- if it is wrong, change `final_cluster_id` to another cluster id such as `C2` or a new one such as `C4`, then set `reviewed=TRUE`
+- use `review_cluster_reference` as the lookup sheet
 
-```powershell
+Compute final reviewed metrics:
+
+```bash
 python -m app.rq3_clustering.review_metrics
 ```
 
-By default, phase 2 requires all rows to have `reviewed=TRUE`. For interim
-checks before review is finished, use:
+If the review is still incomplete:
 
-```powershell
+```bash
 python -m app.rq3_clustering.review_metrics --allow-pending
 ```
 
-This writes:
+Main outputs:
+
 - `out/RQ3_clustering/RQ3_clustering_reviewed_metrics.xlsx`
-- One reviewed workbook per architecture, for example `out/RQ3_clustering/agentic_architecture_answer_clustering_reviewed.xlsx`
-- `out/RQ3_clustering/RQ3_clustering_reviewed_overall_summary.png`
-- `out/RQ3_clustering/RQ3_clustering_reviewed_prompt_majority_share.png`
-- `out/RQ3_clustering/RQ3_clustering_reviewed_prompt_cluster_count.png`
-- `out/RQ3_clustering/RQ3_clustering_reviewed_majority_share_heatmap.png`
-- `out/RQ3_clustering/RQ3_clustering_reviewed_difficulty_summary.png`
+- one reviewed workbook per architecture
+- reviewed overall plots
+- reviewed prompt-level plots
 
-Useful phase-2 flags
-- `--export-csvs` to also export the reviewed summaries as CSV files.
-- `--allow-pending` to compute interim metrics before every row is marked as reviewed.
-- `--no-plots` to skip figure generation and write only the reviewed workbooks/CSVs.
-- `--plot-format <png|pdf|svg>` to change the reviewed plot format.
+Useful flags:
 
-Output structure per execution
-------------------------------
-Each execution writes to:
-
-- `out/results.jsonl` (append-only): one JSON line per architecture/prompt run.
-- `out/runs/<run_group_id>/results.xlsx`: a snapshot for that execution only.
-
-`<run_group_id>` is a timestamp with milliseconds, so each execution gets its own
-folder under `out/runs/`.
-
-`results.jsonl` / `results.xlsx` include `is_yaml_valid`:
-- `true` when YAML is valid for `profile`, `rule`, or `connector` prompts.
-- `false` when YAML is found but invalid for those prompt types.
-- `null` in `results.jsonl` (`None` in Python) and empty in `results.xlsx` when no YAML is found, or for non-YAML prompt types (for example `documentation`).
-
-`results.jsonl` / `results.xlsx` also include `answer_code_lines`:
-- Number of lines found inside Markdown fenced code blocks (triple backticks) in the assistant answer.
-- Fence marker lines themselves are not counted.
-
-`results.jsonl` / `results.csv` also include `answer_word_count`:
-- Number of words in the assistant answer (split by whitespace).
-
-Individual run folders
-----------------------
-Inside each run group, every architecture/prompt pair gets its own folder:
-
-`out/runs/<run_group_id>/<run_id>/`
-
-Files in each run folder:
-- `answer.txt`: extracted assistant answer (from `$$$ ... $$$` blocks if present; otherwise full stdout).
-- `cmd.json`: the exact command executed (array of args).
-- `stdin.txt`: the prompt sent to the process plus the exit command.
-- `stdout.txt`: raw stdout captured from the process.
-- `stderr.txt`: raw stderr captured from the process.
+- `--allow-pending`
+- `--export-csvs`
+- `--no-plots`
+- `--plot-format <png|pdf|svg>`
+- `--dpi <int>`
