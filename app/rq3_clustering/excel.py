@@ -197,6 +197,7 @@ def save_reviewed_outputs(
     reviewed_overall_summary: pd.DataFrame,
     reviewed_prompt_summary: pd.DataFrame,
     reviewed_cluster_summary: pd.DataFrame,
+    reviewed_pairwise_wilcoxon: pd.DataFrame,
     *,
     export_csvs: bool,
 ) -> list[Path]:
@@ -227,6 +228,8 @@ def save_reviewed_outputs(
         reviewed_prompt_summary.to_excel(writer, index=False, sheet_name="prompt_summary")
         reviewed_cluster_summary.to_excel(writer, index=False, sheet_name="cluster_summary")
         reviewed_assignments.to_excel(writer, index=False, sheet_name="reviewed_assignments")
+        if not reviewed_pairwise_wilcoxon.empty:
+            reviewed_pairwise_wilcoxon.to_excel(writer, index=False, sheet_name="pairwise_wilcoxon")
     written_paths.append(manifest_path)
 
     if export_csvs:
@@ -250,5 +253,11 @@ def save_reviewed_outputs(
             index=False,
             encoding="utf-8",
         )
+        if not reviewed_pairwise_wilcoxon.empty:
+            reviewed_pairwise_wilcoxon.to_csv(
+                out_dir / "rq3_clustering_reviewed_pairwise_wilcoxon.csv",
+                index=False,
+                encoding="utf-8",
+            )
 
     return written_paths

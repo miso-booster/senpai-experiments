@@ -1,6 +1,8 @@
+from itertools import combinations
 from typing import Iterable
 
 import pandas as pd
+from scipy.stats import wilcoxon
 
 try:
     from .utils import prompt_sort_key, to_bool
@@ -220,7 +222,7 @@ def build_summaries_from_assignments(
                 "majority_cluster_share": (
                     int(majority["response_count"]) / substantive_response_count
                     if majority and substantive_response_count > 0
-                    else pd.NA
+                    else 0.0
                 ),
                 "is_perfect_consensus": (
                     len(non_fallback_records) == 1 and substantive_response_count > 0
@@ -277,3 +279,113 @@ def build_summaries_from_assignments(
     overall_summary["result_source"] = result_source
 
     return overall_summary, prompt_summary, cluster_summary
+
+
+def build_pairwise_wilcoxon_summary(prompt_summary: pd.DataFrame) -> pd.DataFrame:
+    """Run paired Wilcoxon signed-rank tests on prompt-level reviewed metrics."""
+    if prompt_summary.empty:
+        return pd.DataFrame()
+
+    required = {"arch_id", "prompt_id"}
+    if not required.issubset(prompt_summary.columns):
+        return pd.DataFrame()
+
+    metric_map = {
+        "mean_majority_cluster_share": "majority_cluster_share",
+        "perfect_consensus_rate": "is_perfect_consensus",
+        "mean_cluster_count": "cluster_count",
+        "fallback_rate": "fallback_rate",
+    }
+
+    arch_tables: dict[str, pd.DataFrame] = {}
+    for arch_id, group in prompt_summary.groupby("arch_id", sort=True):
+        numeric_group = group[["prompt_id"] + list(metric_map.values())].copy()
+        for column in metric_map.values():
+            numeric_group[column] = pd.to_numeric(numeric_group[column], errors="coerce")
+        arch_tables[str(arch_id)] = (
+            numeric_group.groupby("prompt_id", dropna=False, as_index=False)[list(metric_map.values())]
+            .mean()
+            .reset_index(drop=True)
+        )
+
+    rows: list[dict[str, float | int | str]] = []
+    for arch_a, arch_b in combinations(sorted(arch_tables), 2):
+        merged = arch_tables[arch_a].merge(
+            arch_tables[arch_b],
+            on="prompt_id",
+            how="inner",
+            suffixes=("_a", "_b"),
+        )
+        for overall_metric, prompt_metric in metric_map.items():
+            values = merged[[f"{prompt_metric}_a", f"{prompt_metric}_b"]].dropna().reset_index(drop=True)
+            if values.empty:
+                rows.append(
+                    {
+                        "arch_a": arch_a,
+                        "arch_b": arch_b,
+                        "overall_metric": overall_metric,
+                        "prompt_metric": prompt_metric,
+                        "n_pairs": 0,
+                        "n_nonzero_pairs": 0,
+                        "arch_a_mean": float("nan"),
+                        "arch_a_median": float("nan"),
+                        "arch_b_mean": float("nan"),
+                        "arch_b_median": float("nan"),
+                        "mean_difference_a_minus_b": float("nan"),
+                        "median_difference_a_minus_b": float("nan"),
+                        "arch_a_lt_arch_b_count": 0,
+                        "arch_a_gt_arch_b_count": 0,
+                        "tie_count": 0,
+                        "wilcoxon_statistic": float("nan"),
+                        "p_value": float("nan"),
+                        "notes": "no matched non-null prompt pairs",
+                    }
+                )
+                continue
+
+            diffs = values[f"{prompt_metric}_a"] - values[f"{prompt_metric}_b"]
+            note = ""
+            if diffs.eq(0).all():
+                statistic = 0.0
+                p_value = 1.0
+                note = "all paired differences are zero"
+            else:
+                result = wilcoxon(
+                    values[f"{prompt_metric}_a"],
+                    values[f"{prompt_metric}_b"],
+                    alternative="two-sided",
+                    zero_method="wilcox",
+                    method="auto",
+                )
+                statistic = float(result.statistic)
+                p_value = float(result.pvalue)
+
+            rows.append(
+                {
+                    "arch_a": arch_a,
+                    "arch_b": arch_b,
+                    "overall_metric": overall_metric,
+                    "prompt_metric": prompt_metric,
+                    "n_pairs": int(len(values)),
+                    "n_nonzero_pairs": int((diffs != 0).sum()),
+                    "arch_a_mean": float(values[f"{prompt_metric}_a"].mean()),
+                    "arch_a_median": float(values[f"{prompt_metric}_a"].median()),
+                    "arch_b_mean": float(values[f"{prompt_metric}_b"].mean()),
+                    "arch_b_median": float(values[f"{prompt_metric}_b"].median()),
+                    "mean_difference_a_minus_b": float(diffs.mean()),
+                    "median_difference_a_minus_b": float(diffs.median()),
+                    "arch_a_lt_arch_b_count": int((diffs < 0).sum()),
+                    "arch_a_gt_arch_b_count": int((diffs > 0).sum()),
+                    "tie_count": int((diffs == 0).sum()),
+                    "wilcoxon_statistic": statistic,
+                    "p_value": p_value,
+                    "notes": note,
+                }
+            )
+
+    out = pd.DataFrame(rows)
+    if out.empty:
+        return out
+
+    out["significant_p_lt_0_05"] = pd.to_numeric(out["p_value"], errors="coerce") < 0.05
+    return out.sort_values(["overall_metric", "arch_a", "arch_b"]).reset_index(drop=True)

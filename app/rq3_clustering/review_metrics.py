@@ -11,12 +11,12 @@ except Exception:  # Supports direct execution
 try:
     from .excel import save_reviewed_outputs
     from .plots import generate_plots
-    from .review import build_summaries_from_assignments
+    from .review import build_pairwise_wilcoxon_summary, build_summaries_from_assignments
     from .utils import to_bool
 except ImportError:  # Supports `python app/rq3_clustering/review_metrics.py`
     from excel import save_reviewed_outputs
     from plots import generate_plots
-    from review import build_summaries_from_assignments
+    from review import build_pairwise_wilcoxon_summary, build_summaries_from_assignments
     from utils import to_bool
 
 
@@ -136,6 +136,7 @@ def main() -> None:
             result_source="human_review",
         )
     )
+    reviewed_pairwise_wilcoxon = build_pairwise_wilcoxon_summary(reviewed_prompt_summary)
 
     written_paths = save_reviewed_outputs(
         out_dir,
@@ -143,6 +144,7 @@ def main() -> None:
         reviewed_overall_summary,
         reviewed_prompt_summary,
         reviewed_cluster_summary,
+        reviewed_pairwise_wilcoxon,
         export_csvs=args.export_csvs,
     )
 
