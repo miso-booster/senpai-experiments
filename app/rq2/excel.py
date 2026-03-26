@@ -34,6 +34,25 @@ def _build_metric_sheet(
     return pd.DataFrame(rows)
 
 
+def _split_pairwise_effect_exports(pairwise_summary: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split the combined pairwise table into Wilcoxon-only and A12-only exports."""
+    if pairwise_summary.empty:
+        return pd.DataFrame(), pd.DataFrame()
+
+    a12_columns = [
+        "a12_arch_a_over_arch_b",
+        "a12_arch_b_over_arch_a",
+        "a12_magnitude",
+    ]
+    base_columns = [col for col in pairwise_summary.columns if col not in a12_columns]
+    id_columns = [col for col in ("arch_a", "arch_b", "metric") if col in pairwise_summary.columns]
+    a12_export_columns = id_columns + [col for col in a12_columns if col in pairwise_summary.columns]
+
+    wilcoxon_df = pairwise_summary[base_columns].copy()
+    a12_df = pairwise_summary[a12_export_columns].copy() if a12_export_columns else pd.DataFrame()
+    return wilcoxon_df, a12_df
+
+
 def save_outputs(
     out_dir: Path,
     all_rows: pd.DataFrame,
@@ -71,6 +90,7 @@ def save_outputs(
         When True, include additional detailed sheets beyond the compact defaults.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
+    pairwise_wilcoxon_export, pairwise_a12_export = _split_pairwise_effect_exports(pairwise_wilcoxon_summary)
 
     if export_csvs:
         all_rows.to_csv(out_dir / "combined_rows_all.csv", index=False)
@@ -79,8 +99,10 @@ def save_outputs(
         per_exec_arch.to_csv(out_dir / "summary_per_execution_architecture.csv", index=False)
         exec_summary.to_csv(out_dir / "summary_across_executions.csv", index=False)
         run_inventory.to_csv(out_dir / "run_inventory.csv", index=False)
-        if not pairwise_wilcoxon_summary.empty:
-            pairwise_wilcoxon_summary.to_csv(out_dir / "summary_pairwise_wilcoxon.csv", index=False)
+        if not pairwise_wilcoxon_export.empty:
+            pairwise_wilcoxon_export.to_csv(out_dir / "summary_pairwise_wilcoxon.csv", index=False)
+        if not pairwise_a12_export.empty:
+            pairwise_a12_export.to_csv(out_dir / "summary_pairwise_a12.csv", index=False)
         if not fallback_summary.empty:
             fallback_summary.to_csv(out_dir / "summary_fallback.csv", index=False)
         if not yaml_validity_summary.empty:
@@ -140,8 +162,10 @@ def save_outputs(
     with pd.ExcelWriter(out_dir / "RQ2_architecture_metrics.xlsx", engine="openpyxl") as writer:
         for sheet_name, df in metric_sheets:
             df.to_excel(writer, index=False, sheet_name=sheet_name)
-        if not pairwise_wilcoxon_summary.empty:
-            pairwise_wilcoxon_summary.to_excel(writer, index=False, sheet_name="pairwise_wilcoxon")
+        if not pairwise_wilcoxon_export.empty:
+            pairwise_wilcoxon_export.to_excel(writer, index=False, sheet_name="pairwise_wilcoxon")
+        if not pairwise_a12_export.empty:
+            pairwise_a12_export.to_excel(writer, index=False, sheet_name="pairwise_a12")
         if not fallback_summary.empty:
             fallback_summary.to_excel(writer, index=False, sheet_name="fallback")
         if not yaml_validity_summary.empty:

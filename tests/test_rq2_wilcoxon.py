@@ -34,6 +34,9 @@ def test_build_pairwise_wilcoxon_summary_uses_matched_run_and_prompt_pairs() -> 
     assert row["arch_a_lt_arch_b_count"] == 3
     assert row["arch_a_gt_arch_b_count"] == 0
     assert row["tie_count"] == 0
+    assert math.isclose(row["a12_arch_a_over_arch_b"], 1.0 / 6.0)
+    assert math.isclose(row["a12_arch_b_over_arch_a"], 5.0 / 6.0)
+    assert row["a12_magnitude"] == "large"
     assert not math.isnan(row["p_value"])
 
 
@@ -54,5 +57,8 @@ def test_build_pairwise_wilcoxon_summary_handles_all_zero_differences() -> None:
     assert row["n_nonzero_pairs"] == 0
     assert row["wilcoxon_statistic"] == 0.0
     assert row["p_value"] == 1.0
+    assert row["a12_arch_a_over_arch_b"] == 0.5
+    assert row["a12_arch_b_over_arch_a"] == 0.5
+    assert row["a12_magnitude"] == "negligible"
     assert row["notes"] == "all paired differences are zero"
     assert bool(row["significant_p_lt_0_05"]) is False

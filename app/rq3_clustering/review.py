@@ -1,6 +1,7 @@
 from itertools import combinations
 from typing import Iterable
 
+import numpy as np
 import pandas as pd
 from scipy.stats import wilcoxon
 
@@ -22,6 +23,33 @@ def _first_non_empty(values: Iterable[object]) -> str:
         if text:
             return text
     return ""
+
+
+def compute_a12(x: pd.Series, y: pd.Series) -> float:
+    """Compute Vargha-Delaney A12 for two numeric samples."""
+    x_vals = pd.to_numeric(x, errors="coerce").dropna().to_numpy(dtype=float)
+    y_vals = pd.to_numeric(y, errors="coerce").dropna().to_numpy(dtype=float)
+    if len(x_vals) == 0 or len(y_vals) == 0:
+        return float("nan")
+
+    diff = x_vals[:, None] - y_vals[None, :]
+    wins = float((diff > 0).sum())
+    ties = float((diff == 0).sum())
+    return (wins + 0.5 * ties) / (len(x_vals) * len(y_vals))
+
+
+def classify_a12_magnitude(a12: float) -> str:
+    """Return an effect-size label for A12."""
+    if pd.isna(a12):
+        return "n/a"
+    dominance = max(float(a12), 1.0 - float(a12))
+    if dominance < 0.56:
+        return "negligible"
+    if dominance < 0.64:
+        return "small"
+    if dominance < 0.71:
+        return "medium"
+    return "large"
 def build_review_assignments(cluster_assignments: pd.DataFrame) -> pd.DataFrame:
     if cluster_assignments.empty:
         return pd.DataFrame()
@@ -338,12 +366,16 @@ def build_pairwise_wilcoxon_summary(prompt_summary: pd.DataFrame) -> pd.DataFram
                         "tie_count": 0,
                         "wilcoxon_statistic": float("nan"),
                         "p_value": float("nan"),
+                        "a12_arch_a_over_arch_b": float("nan"),
+                        "a12_arch_b_over_arch_a": float("nan"),
+                        "a12_magnitude": "n/a",
                         "notes": "no matched non-null prompt pairs",
                     }
                 )
                 continue
 
             diffs = values[f"{prompt_metric}_a"] - values[f"{prompt_metric}_b"]
+            a12 = compute_a12(values[f"{prompt_metric}_a"], values[f"{prompt_metric}_b"])
             note = ""
             if diffs.eq(0).all():
                 statistic = 0.0
@@ -379,6 +411,9 @@ def build_pairwise_wilcoxon_summary(prompt_summary: pd.DataFrame) -> pd.DataFram
                     "tie_count": int((diffs == 0).sum()),
                     "wilcoxon_statistic": statistic,
                     "p_value": p_value,
+                    "a12_arch_a_over_arch_b": float(a12),
+                    "a12_arch_b_over_arch_a": float(1.0 - a12) if not pd.isna(a12) else float("nan"),
+                    "a12_magnitude": classify_a12_magnitude(a12),
                     "notes": note,
                 }
             )
