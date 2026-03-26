@@ -110,6 +110,8 @@ def generate_plots(
     prompt = prompt_summary.copy()
     prompt["arch_label"] = prompt["arch_id"].map(_arch_label)
     prompt["difficulty"] = prompt["prompt_id"].map(_prompt_difficulty)
+    for column in ["majority_cluster_share", "cluster_count", "fallback_rate"]:
+        prompt[column] = pd.to_numeric(prompt[column], errors="coerce")
     prompt["_prompt_order"] = prompt["prompt_id"].map(prompt_sort_key)
     prompt = prompt.sort_values(["_prompt_order", "arch_label"], kind="stable").reset_index(drop=True)
 
@@ -233,8 +235,8 @@ def generate_plots(
     fig, ax = plt.subplots(
         figsize=(max(8, len(prompt_order) * 0.9), max(3.5, len(arch_order) * 0.8 + 1.2))
     )
-    heat = majority_pivot.T
-    im = ax.imshow(heat.to_numpy(), vmin=0, vmax=1, cmap="Reds", aspect="auto")
+    heat = majority_pivot.T.apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    im = ax.imshow(heat.to_numpy(dtype=float), vmin=0, vmax=1, cmap="Reds", aspect="auto")
     ax.set_xticks(range(len(heat.columns)), labels=[str(value) for value in heat.columns], rotation=0)
     ax.set_yticks(range(len(heat.index)), labels=[str(value) for value in heat.index])
     ax.tick_params(axis="both", labelsize=11)
