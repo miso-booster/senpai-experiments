@@ -79,17 +79,41 @@ def generate_plots(
     overall["arch_label"] = overall["arch_id"].map(_arch_label)
     overall = overall.sort_values("arch_label", kind="stable").reset_index(drop=True)
 
-    fig, axes = plt.subplots(1, 4, figsize=(17.2, 4.6))
     x = np.arange(len(overall))
     labels = overall["arch_label"].tolist()
 
     metrics = [
-        ("mean_majority_cluster_share", "Mean Majority Share", (0, 1.05)),
-        ("perfect_consensus_rate", "Perfect Consensus Rate", (0, 1.05)),
-        ("mean_cluster_count", "Mean Cluster Count", None),
-        ("fallback_rate", "Fallback Rate", (0, 1.05)),
+        (
+            "mean_majority_cluster_share",
+            "Mean Majority Share",
+            "Mean majority share",
+            (0, 1.05),
+            "RQ3_clustering_reviewed_overall_mean_majority_share",
+        ),
+        (
+            "perfect_consensus_rate",
+            "Perfect Consensus Rate",
+            "Perfect consensus rate",
+            (0, 1.05),
+            "RQ3_clustering_reviewed_overall_perfect_consensus_rate",
+        ),
+        (
+            "mean_cluster_count",
+            "Mean Cluster Count",
+            "Mean cluster count",
+            None,
+            "RQ3_clustering_reviewed_overall_mean_cluster_count",
+        ),
+        (
+            "fallback_rate",
+            "Fallback Rate",
+            "Fallback rate",
+            (0, 1.05),
+            "RQ3_clustering_reviewed_overall_fallback_rate",
+        ),
     ]
-    for ax, (column, title, ylim) in zip(axes, metrics):
+    for column, title, ylabel, ylim, filename in metrics:
+        fig, ax = plt.subplots(figsize=(5.2, 4.6))
         values = pd.to_numeric(overall[column], errors="coerce").fillna(0).to_numpy()
         ax.bar(
             x,
@@ -100,12 +124,13 @@ def generate_plots(
         )
         ax.set_xticks(x, labels, rotation=15, ha="right")
         ax.set_title(title)
+        ax.set_ylabel(ylabel)
         ax.grid(axis="y", alpha=0.3)
         if ylim is not None:
             ax.set_ylim(*ylim)
         for idx, value in enumerate(values):
             ax.text(idx, value + 0.02 if ylim else value + 0.03, f"{value:.2f}", ha="center", va="bottom", fontsize=8)
-    _save(fig, "RQ3_clustering_reviewed_overall_summary")
+        _save(fig, filename)
 
     prompt = prompt_summary.copy()
     prompt["arch_label"] = prompt["arch_id"].map(_arch_label)
