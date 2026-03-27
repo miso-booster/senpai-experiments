@@ -1,7 +1,7 @@
 import os
 import tempfile
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Sequence
 
 import pandas as pd
 
@@ -52,7 +52,7 @@ def _heatmap_matrix(
     arch_order: Sequence[str],
     prompt_order: Sequence[str],
     value_col: str,
-) -> list[list[float]]:
+) -> Any:
     pivot = (
         prompt_summary.pivot(index="arch_id", columns="prompt_id", values=value_col)
         .reindex(index=arch_order, columns=prompt_order)
@@ -113,8 +113,6 @@ def generate_plots(
         fig.tight_layout()
         fig.savefig(out_dir / f"{filename}.{plot_format}", dpi=dpi)
         plt.close(fig)
-
-    summary_indexed = architecture_summary.set_index("arch_id").reindex(arch_order)
 
     # Figure 1: prompt-level block-rate heatmap
     fig, ax = plt.subplots(

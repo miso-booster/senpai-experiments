@@ -312,15 +312,7 @@ Main outputs:
 
 - `RQ4_guardrail_metrics.xlsx`
 - architecture and prompt-level CSV summaries
-- guardrail performance plots
-- one reviewed workbook per architecture
-- reviewed overall plots
-- reviewed prompt-level plots
+- `RQ4_guardrail_prompt_block_rate_heatmap.png`
+- `RQ4_guardrail_blocked_counts.png`
 
-Useful flags:
-
-- `--allow-pending`
-- `--export-csvs`
-- `--no-plots`
-- `--plot-format <png|pdf|svg>`
-- `--dpi <int>`
+`app.rq4` currently runs with fixed defaults and does not expose extra CLI flags.
