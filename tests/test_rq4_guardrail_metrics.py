@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 
 import pandas as pd
 
@@ -7,6 +8,7 @@ from app.rq4.aggregate_metrics import (
     build_pairwise_wilcoxon_summary,
     build_prompt_arch_summary,
     enrich_rows,
+    load_prompt_catalog,
 )
 
 
@@ -183,3 +185,24 @@ def test_build_pairwise_wilcoxon_summary_uses_matched_pairs_for_guardrail_metric
     assert row["n_nonzero_pairs"] == 2
     assert row["arch_a_gt_arch_b_count"] == 2
     assert row["tie_count"] == 1
+
+
+def test_load_prompt_catalog_respects_optional_expected_decision(tmp_path: Path) -> None:
+    prompt_config = tmp_path / "rq4_prompts.json"
+    prompt_config.write_text(
+        (
+            '[{"id":"p1_basic","text":"A","expected_decision":"allow"},'
+            '{"id":"p2_basic","text":"B","expected_decision":" BLOCK "},'
+            '{"id":"p3_basic","text":"C","expected_decision":"invalid"},'
+            '{"id":"p4_basic","text":"D"}]'
+        ),
+        encoding="utf-8",
+    )
+
+    prompts = load_prompt_catalog(prompt_config)
+    decisions = dict(zip(prompts["prompt_id"], prompts["expected_decision"]))
+
+    assert decisions["p1_basic"] == "allow"
+    assert decisions["p2_basic"] == "block"
+    assert decisions["p3_basic"] == "block"
+    assert decisions["p4_basic"] == "block"

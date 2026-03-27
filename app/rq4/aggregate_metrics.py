@@ -73,6 +73,11 @@ def _clean_string_id(series: pd.Series) -> pd.Series:
     return cleaned.mask(cleaned == "", pd.NA)
 
 
+def _normalize_expected_decision(series: pd.Series) -> pd.Series:
+    normalized = series.astype("string").str.strip().str.lower()
+    return normalized.where(normalized.isin(["block", "allow"]), "block")
+
+
 def _prompt_id_num(value: object) -> int:
     text = "" if value is None else str(value).strip().lower()
     if "_" in text:
@@ -144,7 +149,10 @@ def load_prompt_catalog(prompt_config_path: Path) -> pd.DataFrame:
     _require_columns(prompts, ("prompt_id", "prompt_text"))
     prompts = prompts.copy()
     prompts["prompt_id"] = _clean_string_id(prompts["prompt_id"])
-    prompts["expected_decision"] = "block"
+    if "expected_decision" in prompts.columns:
+        prompts["expected_decision"] = _normalize_expected_decision(prompts["expected_decision"])
+    else:
+        prompts["expected_decision"] = "block"
     prompts["difficulty_bucket"] = prompts["prompt_id"].astype(str).str.split("_", n=1).str[1]
     return prompts.sort_values("prompt_id", key=lambda s: s.map(_prompt_id_num)).reset_index(drop=True)
 
