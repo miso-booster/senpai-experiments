@@ -15,6 +15,25 @@ def _filter_arch(df: pd.DataFrame, arch_id: str) -> pd.DataFrame:
     return df[df["arch_id"] == arch_id].copy()
 
 
+def _split_pairwise_effect_exports(pairwise_summary: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split the combined pairwise table into Wilcoxon-only and A12-only exports."""
+    if pairwise_summary.empty:
+        return pd.DataFrame(), pd.DataFrame()
+
+    a12_columns = [
+        "a12_arch_a_over_arch_b",
+        "a12_arch_b_over_arch_a",
+        "a12_magnitude",
+    ]
+    base_columns = [col for col in pairwise_summary.columns if col not in a12_columns]
+    id_columns = [col for col in ("arch_a", "arch_b", "overall_metric", "prompt_metric") if col in pairwise_summary.columns]
+    a12_export_columns = id_columns + [col for col in a12_columns if col in pairwise_summary.columns]
+
+    wilcoxon_df = pairwise_summary[base_columns].copy()
+    a12_df = pairwise_summary[a12_export_columns].copy() if a12_export_columns else pd.DataFrame()
+    return wilcoxon_df, a12_df
+
+
 def _review_instructions() -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -203,6 +222,9 @@ def save_reviewed_outputs(
 ) -> list[Path]:
     """Write the phase-2 reviewed clustering metrics."""
     out_dir.mkdir(parents=True, exist_ok=True)
+    reviewed_pairwise_wilcoxon_export, reviewed_pairwise_a12_export = _split_pairwise_effect_exports(
+        reviewed_pairwise_wilcoxon
+    )
 
     written_paths: list[Path] = []
     for arch_id in sorted(reviewed_assignments["arch_id"].astype(str).unique().tolist()):
@@ -228,8 +250,10 @@ def save_reviewed_outputs(
         reviewed_prompt_summary.to_excel(writer, index=False, sheet_name="prompt_summary")
         reviewed_cluster_summary.to_excel(writer, index=False, sheet_name="cluster_summary")
         reviewed_assignments.to_excel(writer, index=False, sheet_name="reviewed_assignments")
-        if not reviewed_pairwise_wilcoxon.empty:
-            reviewed_pairwise_wilcoxon.to_excel(writer, index=False, sheet_name="pairwise_wilcoxon")
+        if not reviewed_pairwise_wilcoxon_export.empty:
+            reviewed_pairwise_wilcoxon_export.to_excel(writer, index=False, sheet_name="pairwise_wilcoxon")
+        if not reviewed_pairwise_a12_export.empty:
+            reviewed_pairwise_a12_export.to_excel(writer, index=False, sheet_name="pairwise_a12")
     written_paths.append(manifest_path)
 
     if export_csvs:
@@ -253,9 +277,15 @@ def save_reviewed_outputs(
             index=False,
             encoding="utf-8",
         )
-        if not reviewed_pairwise_wilcoxon.empty:
-            reviewed_pairwise_wilcoxon.to_csv(
+        if not reviewed_pairwise_wilcoxon_export.empty:
+            reviewed_pairwise_wilcoxon_export.to_csv(
                 out_dir / "rq3_clustering_reviewed_pairwise_wilcoxon.csv",
+                index=False,
+                encoding="utf-8",
+            )
+        if not reviewed_pairwise_a12_export.empty:
+            reviewed_pairwise_a12_export.to_csv(
+                out_dir / "rq3_clustering_reviewed_pairwise_a12.csv",
                 index=False,
                 encoding="utf-8",
             )
