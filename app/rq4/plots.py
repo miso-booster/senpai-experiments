@@ -18,6 +18,11 @@ ARCH_FILL_COLORS = {
     "one_node_architecture": "#54A24B",
 }
 
+PROMPT_BUCKET_LABELS = {
+    "basic": "Basic",
+    "evil": "Adversarial",
+}
+
 
 def _ordered_arches(df: pd.DataFrame, preferred: Sequence[str] | None) -> list[str]:
     detected = [a for a in sorted(df["arch_id"].dropna().astype(str).unique()) if a]
@@ -45,6 +50,17 @@ def _prompt_id_num(value: object) -> int:
 def _prompt_order(prompt_summary: pd.DataFrame) -> list[str]:
     prompt_ids = [p for p in prompt_summary["prompt_id"].dropna().astype(str).unique() if p]
     return sorted(prompt_ids, key=lambda value: (_prompt_id_num(value), value))
+
+
+def _display_prompt_label(prompt_id: object) -> str:
+    text = "" if prompt_id is None else str(prompt_id).strip()
+    if not text:
+        return ""
+    if "_" not in text:
+        return text
+    prompt_num, bucket = text.split("_", 1)
+    bucket_label = PROMPT_BUCKET_LABELS.get(bucket.lower(), bucket.replace("_", " ").title())
+    return f"{prompt_num} ({bucket_label})"
 
 
 def _heatmap_matrix(
@@ -102,6 +118,7 @@ def generate_plots(
             old_path.unlink()
 
     prompt_order = _prompt_order(prompt_arch_summary)
+    prompt_labels = [_display_prompt_label(prompt_id) for prompt_id in prompt_order]
     colors = plt.get_cmap("tab10").colors
     color_map = {
         arch: ARCH_FILL_COLORS.get(arch, colors[i % len(colors)])
@@ -127,7 +144,7 @@ def generate_plots(
         "final_block_rate",
     )
     im = ax.imshow(block_matrix, aspect="auto", vmin=0, vmax=1, cmap="Reds")
-    ax.set_xticks(range(len(prompt_order)), prompt_order, rotation=35, ha="right")
+    ax.set_xticks(range(len(prompt_order)), prompt_labels, rotation=35, ha="right")
     ax.set_yticks(range(len(arch_order)), arch_labels)
     ax.tick_params(axis="both", labelsize=11)
     ax.set_title("RQ4 prompt-level block rate", fontsize=14)
