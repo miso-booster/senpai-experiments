@@ -553,20 +553,34 @@ def main() -> None:
         dpi=dpi,
     )
 
+    sort_columns = ["overall_accuracy_rate", "expected_block_success_rate"]
+    ascending = [False, False]
+    include_allow_success = False
+    if "expected_allow_success_rate" in architecture_summary.columns:
+        allow_col = pd.to_numeric(
+            architecture_summary["expected_allow_success_rate"], errors="coerce"
+        )
+        if allow_col.notna().any():
+            sort_columns.append("expected_allow_success_rate")
+            ascending.append(False)
+            include_allow_success = True
     rankable = architecture_summary.sort_values(
-        ["overall_accuracy_rate", "expected_block_success_rate", "expected_allow_success_rate"],
-        ascending=[False, False, False],
+        sort_columns,
+        ascending=ascending,
     ).reset_index(drop=True)
     print(f"[INFO] Output written to: {out_dir}")
     if not rankable.empty:
         best = rankable.iloc[0]
-        print(
+        message = (
             "[INFO] Top architecture by overall guardrail accuracy: "
             f"{best['arch_id']} "
             f"(accuracy={best['overall_accuracy_rate']:.3f}, "
-            f"block_success={best['expected_block_success_rate']:.3f}, "
-            f"allow_success={best['expected_allow_success_rate']:.3f})"
+            f"block_success={best['expected_block_success_rate']:.3f}"
         )
+        if include_allow_success and not pd.isna(best["expected_allow_success_rate"]):
+            message += f", allow_success={best['expected_allow_success_rate']:.3f}"
+        message += ")"
+        print(message)
     print("[INFO] Files:")
     for path in sorted(out_dir.iterdir()):
         print(f"  - {path.name}")
