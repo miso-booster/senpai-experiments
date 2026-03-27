@@ -10,7 +10,6 @@ import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-SOURCE_REPO = Path("/home/ivan/miso/Senpai-Assistant")
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_CSV = PROJECT_ROOT / "out" / "RQ2_architecture_metrics" / "architecture_footprint.csv"
 BRANCHES = [
@@ -27,6 +26,19 @@ class BranchMetrics:
     app_py_loc: int
     app_classes: int
     app_functions: int
+
+
+def resolve_source_repo() -> Path:
+    source_repo = PROJECT_ROOT.parent / "Senpai-Assistant"
+    if source_repo.exists():
+        return source_repo
+    raise SystemExit(
+        f"Source repo not found: {source_repo}. "
+        "Check out Senpai-Assistant next to this project."
+    )
+
+
+SOURCE_REPO = resolve_source_repo()
 
 
 def git_text(*args: str) -> str:
