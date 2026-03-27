@@ -168,7 +168,7 @@ Architecture footprint snapshot:
 python app/rq2/architecture_footprint.py
 ```
 
-This writes `out/RQ2_architecture_metrics/architecture_footprint.csv` and also prints the CSV rows to stdout.
+This writes `out/RQ2_architecture_metrics/architecture_footprint.csv` with `SLOC`-based Python source counts and also prints the CSV rows to stdout.
 The script expects a sibling checkout at `../Senpai-Assistant` relative to this repository.
 
 Supplementary fallback/answer join:

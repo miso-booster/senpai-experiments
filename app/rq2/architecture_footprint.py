@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import ast
 import csv
+import io
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
+
+from pygount import SourceAnalysis
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_CSV = PROJECT_ROOT / "out" / "RQ2_architecture_metrics" / "architecture_footprint.csv"
@@ -23,7 +26,7 @@ BRANCHES = [
 class BranchMetrics:
     branch: str
     app_py_files: int
-    app_py_loc: int
+    app_py_sloc: int
     app_classes: int
     app_functions: int
 
@@ -56,21 +59,26 @@ def read_branch_file(branch: str, path: str) -> str:
     return git_text("show", f"{branch}:{path}")
 
 
-def count_non_empty_lines(text: str) -> int:
-    return sum(1 for line in text.splitlines() if line.strip())
+def count_source_lines(text: str, source_path: str) -> int:
+    analysis = SourceAnalysis.from_file(
+        source_path,
+        "python",
+        file_handle=io.StringIO(text),
+    )
+    return analysis.source_count
 
 
 def collect_branch_metrics(branch: str) -> BranchMetrics:
     files = git_text("ls-tree", "-r", "--name-only", branch).splitlines()
     app_files = [path for path in files if path.startswith("app/") and path.endswith(".py")]
 
-    app_py_loc = 0
+    app_py_sloc = 0
     app_classes = 0
     app_functions = 0
 
     for path in app_files:
         text = read_branch_file(branch, path)
-        app_py_loc += count_non_empty_lines(text)
+        app_py_sloc += count_source_lines(text, path)
         try:
             tree = ast.parse(text)
         except SyntaxError:
@@ -82,7 +90,7 @@ def collect_branch_metrics(branch: str) -> BranchMetrics:
     return BranchMetrics(
         branch=branch,
         app_py_files=len(app_files),
-        app_py_loc=app_py_loc,
+        app_py_sloc=app_py_sloc,
         app_classes=app_classes,
         app_functions=app_functions,
     )
