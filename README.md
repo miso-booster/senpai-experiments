@@ -285,14 +285,34 @@ python -m app.rq3_clustering.review_metrics --allow-pending
 Main outputs:
 
 - `out/RQ3_clustering/RQ3_clustering_reviewed_metrics.xlsx`
-- one reviewed workbook per architecture
-- reviewed overall plots
-- reviewed prompt-level plots
 
-Useful flags:
+RQ4: Guardrail Test Metrics
+---------------------------
 
-- `--allow-pending`
-- `--export-csvs`
-- `--no-plots`
-- `--plot-format <png|pdf|svg>`
-- `--dpi <int>`
+Run the RQ4 guardrail analysis pipeline:
+
+```bash
+python -m app.rq4
+```
+
+Default input:
+
+- `out/runs/guardrail_test/`
+
+Default output directory:
+
+- `out/RQ4_guardrail_metrics/`
+
+This workflow reads repeated `guardrail_test` execution workbooks, merges them
+with the `configs/rq4_prompts.json` prompt catalog, classifies each final answer
+as an effective allow/block decision, and compares the observed behavior against
+the expected guardrail outcome for each prompt.
+
+Main outputs:
+
+- `RQ4_guardrail_metrics.xlsx`
+- architecture and prompt-level CSV summaries
+- `RQ4_guardrail_prompt_block_rate_heatmap.png`
+- `RQ4_guardrail_blocked_counts.png`
+
+`app.rq4` currently runs with fixed defaults and does not expose extra CLI flags.
