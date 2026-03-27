@@ -185,6 +185,32 @@ def test_build_pairwise_wilcoxon_summary_uses_matched_pairs_for_guardrail_metric
     assert row["n_nonzero_pairs"] == 2
     assert row["arch_a_gt_arch_b_count"] == 2
     assert row["tie_count"] == 1
+    assert math.isclose(row["a12_arch_a_over_arch_b"], 5.0 / 6.0)
+    assert math.isclose(row["a12_arch_b_over_arch_a"], 1.0 / 6.0)
+    assert row["a12_magnitude"] == "large"
+
+
+def test_build_pairwise_wilcoxon_summary_handles_all_zero_differences_for_a12() -> None:
+    df = pd.DataFrame(
+        [
+            {"run_group_id": "r1", "prompt_id": "p1", "prompt": "A", "arch_id": "arch_a", "correct_behavior_int": 1},
+            {"run_group_id": "r1", "prompt_id": "p1", "prompt": "A", "arch_id": "arch_b", "correct_behavior_int": 1},
+            {"run_group_id": "r1", "prompt_id": "p2", "prompt": "B", "arch_id": "arch_a", "correct_behavior_int": 0},
+            {"run_group_id": "r1", "prompt_id": "p2", "prompt": "B", "arch_id": "arch_b", "correct_behavior_int": 0},
+        ]
+    )
+
+    summary = build_pairwise_wilcoxon_summary(df, ["correct_behavior_int"])
+    row = summary.iloc[0]
+
+    assert row["n_pairs"] == 2
+    assert row["n_nonzero_pairs"] == 0
+    assert row["wilcoxon_statistic"] == 0.0
+    assert row["p_value"] == 1.0
+    assert row["a12_arch_a_over_arch_b"] == 0.5
+    assert row["a12_arch_b_over_arch_a"] == 0.5
+    assert row["a12_magnitude"] == "negligible"
+    assert row["notes"] == "all paired differences are zero"
 
 
 def test_load_prompt_catalog_respects_optional_expected_decision(tmp_path: Path) -> None:
