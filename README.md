@@ -162,6 +162,14 @@ The RQ2 workbook includes:
 - aggregated per-architecture metrics
 - pairwise Wilcoxon signed-rank tests on matched `run_group_id + prompt_id` rows
 
+Architecture footprint snapshot:
+
+```bash
+python app/rq2/architecture_footprint.py
+```
+
+This writes `out/RQ2_architecture_metrics/architecture_footprint.csv` and also prints the CSV rows to stdout.
+
 Supplementary fallback/answer join:
 
 ```bash
