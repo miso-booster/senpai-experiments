@@ -20,7 +20,7 @@ def _arch_label(arch_id: object) -> str:
     mapping = {
         "agentic_architecture": "Agentic",
         "graph_based_architecture": "Graph-based",
-        "one_node_architecture": "One-node",
+        "one_node_architecture": "Monolothic",
     }
     return mapping.get(text, text.replace("_", " ").title())
 
@@ -53,12 +53,12 @@ def generate_plots(
     arch_hatches = {
         "Agentic": "////",
         "Graph-based": "\\\\\\\\",
-        "One-node": "----",
+        "Monolothic": "----",
     }
     arch_fills = {
         "Agentic": "#4C78A8",
         "Graph-based": "#F58518",
-        "One-node": "#54A24B",
+        "Monolothic": "#54A24B",
     }
 
     def _save(fig, filename: str) -> None:
