@@ -4,6 +4,7 @@ import math
 import os
 import pathlib
 import random
+import tempfile
 from dataclasses import dataclass
 from itertools import combinations
 from types import MappingProxyType
@@ -395,7 +396,7 @@ def _generate_plots(
     dpi: int,
 ) -> None:
     try:
-        mpl_config_dir = pathlib.Path("/tmp") / "matplotlib"
+        mpl_config_dir = pathlib.Path(tempfile.gettempdir()) / "automated-prompt-interface-matplotlib"
         mpl_config_dir.mkdir(parents=True, exist_ok=True)
         os.environ.setdefault("MPLCONFIGDIR", str(mpl_config_dir))
         import matplotlib
