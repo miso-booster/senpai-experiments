@@ -460,72 +460,62 @@ def _generate_plots(
     with pairwise_metrics_path.open("r", encoding="utf-8", newline="") as f:
         pair_rows = list(csv.DictReader(f, delimiter=";"))
 
-    pairwise_summary: List[Tuple[str, float, int, int, int]] = []
-    for arch in arch_list:
-        win_rates: List[float] = []
-        wins_total = 0
-        losses_total = 0
-        ties_total = 0
-        for row in pair_rows:
-            arch_a = row["arch_a"]
-            arch_b = row["arch_b"]
-            wins_a = int(row["wins_a_over_b"])
-            wins_b = int(row["wins_b_over_a"])
-            ties = int(row["ties"])
-            win_rate_text = row.get("win_rate_a_over_b", "")
-            if arch == arch_a:
-                wins_total += wins_a
-                losses_total += wins_b
-                ties_total += ties
-                if win_rate_text:
-                    win_rates.append(float(win_rate_text))
-            elif arch == arch_b:
-                wins_total += wins_b
-                losses_total += wins_a
-                ties_total += ties
-                if win_rate_text:
-                    win_rates.append(1.0 - float(win_rate_text))
-        pairwise_summary.append((arch, _mean(win_rates), wins_total, losses_total, ties_total))
+    pairwise_plot_rows: List[Dict[str, object]] = []
+    for row in pair_rows:
+        win_rate_text = row.get("win_rate_a_over_b", "")
+        ci_lower_text = row.get("ci_lower_95", "")
+        ci_upper_text = row.get("ci_upper_95", "")
+        if not win_rate_text or not ci_lower_text or not ci_upper_text:
+            continue
+        arch_a = row["arch_a"]
+        arch_b = row["arch_b"]
+        win_rate = float(win_rate_text)
+        ci_lower = float(ci_lower_text)
+        ci_upper = float(ci_upper_text)
+        pairwise_plot_rows.append(
+            {
+                "label": (
+                    f"{ARCH_DISPLAY_LABELS.get(arch_a, arch_a)} vs "
+                    f"{ARCH_DISPLAY_LABELS.get(arch_b, arch_b)}"
+                ),
+                "win_rate": win_rate,
+                "lower_error": max(win_rate - ci_lower, 0.0),
+                "upper_error": max(ci_upper - win_rate, 0.0),
+            }
+        )
 
-    pairwise_summary.sort(key=lambda item: item[1], reverse=True)
-    if pairwise_summary:
-        fig, ax = plt.subplots(figsize=(8.2, 4.8))
-        positions = list(range(len(pairwise_summary)))
-        values = [item[1] for item in pairwise_summary]
-        labels = _display_arch_labels([item[0] for item in pairwise_summary])
-        colors_for_bars = [color_map[item[0]] for item in pairwise_summary]
+    if pairwise_plot_rows:
+        fig, ax = plt.subplots(figsize=(max(8.2, len(pairwise_plot_rows) * 2.2), 4.8))
+        positions = list(range(len(pairwise_plot_rows)))
+        values = [row["win_rate"] for row in pairwise_plot_rows]
+        lower_errors = [row["lower_error"] for row in pairwise_plot_rows]
+        upper_errors = [row["upper_error"] for row in pairwise_plot_rows]
+        labels = [str(row["label"]) for row in pairwise_plot_rows]
         ax.bar(
             positions,
             values,
-            color=colors_for_bars,
+            yerr=[lower_errors, upper_errors],
+            capsize=5,
+            color="#7A7A7A",
             edgecolor="black",
             linewidth=1.0,
             alpha=0.75,
         )
         ax.axhline(0.5, color="#444444", linestyle="--", linewidth=1.1)
-        for position, (_, value, wins_total, losses_total, ties_total) in zip(
-            positions, pairwise_summary
-        ):
+        for position, value, upper_error in zip(positions, values, upper_errors):
             ax.text(
                 position,
-                0.02,
+                min(value + upper_error + 0.03, 0.98),
                 f"{value:.2f}",
                 va="bottom",
                 ha="center",
                 fontsize=10,
             )
-            ax.text(
-                position,
-                value + 0.02,
-                f"{wins_total}-{losses_total} (T:{ties_total})",
-                va="bottom",
-                ha="center",
-                fontsize=9,
-            )
         ax.set_xticks(positions, labels)
+        ax.tick_params(axis="x", rotation=15)
         ax.set_ylim(0.0, 1.0)
-        ax.set_ylabel("Mean head-to-head prompt win rate")
-        ax.set_title("RQ1: Pairwise Summary (higher is better)")
+        ax.set_ylabel("Confidence-weighted win rate of first architecture in pair")
+        ax.set_title("RQ1: Pairwise Win Rates with 95% CI")
         ax.grid(axis="y", alpha=0.3)
         _save(fig, "RQ1_pairwise_summary")
 
