@@ -11,6 +11,7 @@ from types import MappingProxyType
 from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
 from app.setup_configuration import OUT_DIR, RUNS_DIR
+from app.rq1.utils import sanitize_run_dir
 
 DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
 DEFAULT_RQ1_OUT_ROOT = OUT_DIR / "RQ1"
@@ -110,19 +111,6 @@ def _resolve_answers_dir(args: argparse.Namespace) -> pathlib.Path:
         return pathlib.Path(args.answers_dir)
     run_dir = _resolve_run_dir(pathlib.Path(args.runs_dir), args.run_id)
     return DEFAULT_RQ1_OUT_ROOT / run_dir.name
-
-
-def _sanitize_run_dir(raw_run_dir: str) -> str:
-    normalized = (raw_run_dir or "").strip().replace("\\", "/")
-    if not normalized:
-        return ""
-    marker = "/out/"
-    marker_index = normalized.lower().find(marker)
-    if marker_index >= 0:
-        return normalized[marker_index + 1 :]
-    if normalized.startswith("out/"):
-        return normalized
-    return ""
 
 
 def _confidence_to_weight(
@@ -742,7 +730,7 @@ def main() -> None:
                             "confidence_weight": _format_float(confidence_weight),
                             "run_id": key_row.get("run_id", ""),
                             "run_group_id": key_row.get("run_group_id", ""),
-                            "run_dir": _sanitize_run_dir(key_row.get("run_dir", "")),
+                            "run_dir": sanitize_run_dir(key_row.get("run_dir", "")),
                         }
                     )
 

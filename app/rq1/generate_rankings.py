@@ -7,24 +7,12 @@ from typing import Dict, List, Tuple
 
 import pandas as pd
 
+from app.rq1.utils import sanitize_run_dir
 from app.setup_configuration import OUT_DIR, RUNS_DIR, load_prompts_json
 from app.yaml_validation import validate_answer_yaml_status
 
 DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
 DEFAULT_RQ1_OUT_ROOT = OUT_DIR / "RQ1"
-
-
-def _sanitize_run_dir(raw_run_dir: str) -> str:
-    normalized = (raw_run_dir or "").strip().replace("\\", "/")
-    if not normalized:
-        return ""
-    marker = "/out/"
-    marker_index = normalized.lower().find(marker)
-    if marker_index >= 0:
-        return normalized[marker_index + 1 :]
-    if normalized.startswith("out/"):
-        return normalized
-    return ""
 
 
 def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
@@ -270,7 +258,7 @@ def main() -> None:
                     "arch_id": row.get("arch_id", ""),
                     "run_id": row.get("run_id", ""),
                     "run_group_id": row.get("run_group_id", ""),
-                    "run_dir": _sanitize_run_dir(row.get("run_dir", "")),
+                    "run_dir": sanitize_run_dir(row.get("run_dir", "")),
                     "is_yaml_valid": row.get("is_yaml_valid", ""),
                 }
             )
