@@ -10,6 +10,7 @@ from itertools import combinations
 from types import MappingProxyType
 from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
+from app.architecture_styles import ARCH_DISPLAY_LABELS, ARCH_FILL_COLORS
 from app.setup_configuration import OUT_DIR, RUNS_DIR
 from app.rq1.utils import sanitize_run_dir
 
@@ -23,19 +24,6 @@ CONFIDENCE_WEIGHTS = {
     "M": 2.0 / 3.0,
     "L": 1.0 / 3.0,
 }
-
-ARCH_DISPLAY_LABELS = {
-    "agentic_architecture": "Agentic",
-    "graph_based_architecture": "Graph-based",
-    "one_node_architecture": "Monolithic",
-}
-
-ARCH_FILL_COLORS = {
-    "agentic_architecture": "#4C78A8",
-    "graph_based_architecture": "#F58518",
-    "one_node_architecture": "#54A24B",
-}
-
 
 @dataclass(frozen=True)
 class PromptRating:
