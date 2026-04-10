@@ -129,6 +129,12 @@ Main outputs in `out/RQ1/<run_id>/`:
 - `key.csv`
 - `answers.csv`
 
+The generated `answers.csv` template includes:
+
+- `rank1`, `rank2`, `rank3`, ...
+- `confidence`, which must be filled with `H`, `M`, or `L`
+- when completed, save it as `answers_<rater>.csv` so aggregation picks it up
+
 Aggregate completed subject answers:
 
 ```bash
@@ -142,9 +148,11 @@ Useful flags:
 
 Main aggregate outputs:
 
-- `metrics_overall.csv`
-- `metrics_per_prompt.csv`
+- `combined_rankings.csv`
+- `metrics_avg_prompt_rank.csv`
 - `metrics_pairwise.csv`
+- `RQ1_weighted_avg_prompt_rank.png`
+- `RQ1_pairwise_summary.png`
 
 RQ2: Architecture Metrics Aggregation
 -------------------------------------
