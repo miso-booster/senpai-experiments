@@ -14,6 +14,19 @@ DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
 DEFAULT_RQ1_OUT_ROOT = OUT_DIR / "RQ1"
 
 
+def _sanitize_run_dir(raw_run_dir: str) -> str:
+    normalized = (raw_run_dir or "").strip().replace("\\", "/")
+    if not normalized:
+        return ""
+    marker = "/out/"
+    marker_index = normalized.lower().find(marker)
+    if marker_index >= 0:
+        return normalized[marker_index + 1 :]
+    if normalized.startswith("out/"):
+        return normalized
+    return ""
+
+
 def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
     df = pd.read_excel(results_path)
     df = df.fillna("")
@@ -206,11 +219,12 @@ def main() -> None:
         "- In the CSV, put the best label in rank1, the second-best in rank2, and the worst in rank3."
     )
     md_lines.append("- Use each label only once per prompt (no repeats).")
+    md_lines.append("- Fill confidence with `H`, `M`, or `L` for each prompt ranking.")
     md_lines.append(f"- Fill and return {answers_path.name} (delimiter is ';').")
     md_lines.append("")
     md_lines.append("Example row:")
-    md_lines.append("prompt_id;rank1;rank2;rank3")
-    md_lines.append("p1;B;C;A")
+    md_lines.append("prompt_id;rank1;rank2;rank3;confidence")
+    md_lines.append("p1;B;C;A;H")
     md_lines.append("")
     md_lines.append(
         "Important: only send back the filled answers CSV (you may rename it like answers_manolito.csv)."
@@ -256,7 +270,7 @@ def main() -> None:
                     "arch_id": row.get("arch_id", ""),
                     "run_id": row.get("run_id", ""),
                     "run_group_id": row.get("run_group_id", ""),
-                    "run_dir": row.get("run_dir", ""),
+                    "run_dir": _sanitize_run_dir(row.get("run_dir", "")),
                     "is_yaml_valid": row.get("is_yaml_valid", ""),
                 }
             )
@@ -287,7 +301,7 @@ def main() -> None:
     rank_columns = [f"rank{i}" for i in range(1, max_responses + 1)]
     with answers_path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(
-            f, fieldnames=["prompt_id"] + rank_columns, delimiter=";"
+            f, fieldnames=["prompt_id"] + rank_columns + ["confidence"], delimiter=";"
         )
         writer.writeheader()
         for pid in prompt_order:

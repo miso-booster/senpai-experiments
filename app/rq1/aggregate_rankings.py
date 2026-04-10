@@ -6,7 +6,8 @@ import pathlib
 import random
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Dict, Iterable, List, Sequence, Tuple
+from types import MappingProxyType
+from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
 from app.setup_configuration import OUT_DIR, RUNS_DIR
 
@@ -39,7 +40,14 @@ class PromptRating:
     subject_id: str
     confidence: str
     confidence_weight: float
-    ranks_by_arch: Dict[str, int]
+    ranks_by_arch: Mapping[str, int]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "ranks_by_arch",
+            MappingProxyType(dict(self.ranks_by_arch)),
+        )
 
 
 def _load_key(path: pathlib.Path) -> Dict[Tuple[str, str], Dict[str, str]]:
@@ -101,6 +109,19 @@ def _resolve_answers_dir(args: argparse.Namespace) -> pathlib.Path:
         return pathlib.Path(args.answers_dir)
     run_dir = _resolve_run_dir(pathlib.Path(args.runs_dir), args.run_id)
     return DEFAULT_RQ1_OUT_ROOT / run_dir.name
+
+
+def _sanitize_run_dir(raw_run_dir: str) -> str:
+    normalized = (raw_run_dir or "").strip().replace("\\", "/")
+    if not normalized:
+        return ""
+    marker = "/out/"
+    marker_index = normalized.lower().find(marker)
+    if marker_index >= 0:
+        return normalized[marker_index + 1 :]
+    if normalized.startswith("out/"):
+        return normalized
+    return ""
 
 
 def _confidence_to_weight(
@@ -367,7 +388,6 @@ def _write_pairwise_metrics(
 def _generate_plots(
     answers_dir: pathlib.Path,
     arch_list: Sequence[str],
-    prompt_weighted_ranks: Dict[str, Dict[str, float]],
     avg_prompt_rank_metrics_path: pathlib.Path,
     pairwise_metrics_path: pathlib.Path,
     *,
@@ -721,7 +741,7 @@ def main() -> None:
                             "confidence_weight": _format_float(confidence_weight),
                             "run_id": key_row.get("run_id", ""),
                             "run_group_id": key_row.get("run_group_id", ""),
-                            "run_dir": key_row.get("run_dir", ""),
+                            "run_dir": _sanitize_run_dir(key_row.get("run_dir", "")),
                         }
                     )
 
@@ -784,7 +804,6 @@ def main() -> None:
     _generate_plots(
         answers_dir,
         arch_list,
-        prompt_weighted_ranks,
         avg_prompt_rank_metrics_path,
         pairwise_metrics_path,
         plot_format=args.plot_format,
