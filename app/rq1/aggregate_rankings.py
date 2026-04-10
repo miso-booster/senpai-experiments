@@ -1,12 +1,45 @@
 import argparse
 import csv
+import math
+import os
 import pathlib
-from typing import Dict, List, Tuple
+import random
+from dataclasses import dataclass
+from itertools import combinations
+from typing import Dict, Iterable, List, Sequence, Tuple
 
 from app.setup_configuration import OUT_DIR, RUNS_DIR
 
 DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
 DEFAULT_RQ1_OUT_ROOT = OUT_DIR / "RQ1"
+DEFAULT_BOOTSTRAP_ITERATIONS = 10_000
+DEFAULT_BOOTSTRAP_SEED = 20260409
+
+CONFIDENCE_WEIGHTS = {
+    "H": 1.0,
+    "M": 2.0 / 3.0,
+    "L": 1.0 / 3.0,
+}
+
+ARCH_DISPLAY_LABELS = {
+    "agentic_architecture": "Agentic",
+    "graph_based_architecture": "Graph-based",
+    "one_node_architecture": "Monolithic",
+}
+
+ARCH_FILL_COLORS = {
+    "agentic_architecture": "#4C78A8",
+    "graph_based_architecture": "#F58518",
+    "one_node_architecture": "#54A24B",
+}
+
+
+@dataclass(frozen=True)
+class PromptRating:
+    subject_id: str
+    confidence: str
+    confidence_weight: float
+    ranks_by_arch: Dict[str, int]
 
 
 def _load_key(path: pathlib.Path) -> Dict[Tuple[str, str], Dict[str, str]]:
@@ -22,12 +55,18 @@ def _load_key(path: pathlib.Path) -> Dict[Tuple[str, str], Dict[str, str]]:
     return key_map
 
 
-def _rank_columns(fieldnames: List[str]) -> List[str]:
-    cols = []
-    for name in fieldnames:
-        if name.lower().startswith("rank"):
-            cols.append(name)
-    # sort by numeric suffix if possible
+def _build_prompt_label_map(
+    key_map: Dict[Tuple[str, str], Dict[str, str]],
+) -> Dict[str, Dict[str, Dict[str, str]]]:
+    prompt_label_map: Dict[str, Dict[str, Dict[str, str]]] = {}
+    for (prompt_id, label), row in key_map.items():
+        prompt_label_map.setdefault(prompt_id, {})[label] = row
+    return prompt_label_map
+
+
+def _rank_columns(fieldnames: Sequence[str]) -> List[str]:
+    cols = [name for name in fieldnames if name.lower().startswith("rank")]
+
     def _rank_key(name: str) -> int:
         suffix = "".join(ch for ch in name if ch.isdigit())
         return int(suffix) if suffix else 0
@@ -64,8 +103,486 @@ def _resolve_answers_dir(args: argparse.Namespace) -> pathlib.Path:
     return DEFAULT_RQ1_OUT_ROOT / run_dir.name
 
 
+def _confidence_to_weight(
+    confidence: str,
+    *,
+    answers_path: pathlib.Path,
+    prompt_id: str,
+) -> float:
+    normalized = (confidence or "").strip().upper()
+    if normalized not in CONFIDENCE_WEIGHTS:
+        valid = ", ".join(sorted(CONFIDENCE_WEIGHTS))
+        raise SystemExit(
+            f"Unexpected confidence '{confidence}' for prompt '{prompt_id}' in "
+            f"{answers_path.name}. Expected one of: {valid}"
+        )
+    return CONFIDENCE_WEIGHTS[normalized]
+
+
+def _extract_ranked_labels(
+    row: Dict[str, str],
+    rank_cols: Sequence[str],
+    *,
+    answers_path: pathlib.Path,
+    prompt_id: str,
+    prompt_key_rows: Dict[str, Dict[str, str]],
+) -> List[str]:
+    ordered_labels: List[str] = []
+    for col in rank_cols:
+        label = (row.get(col) or "").strip().upper()
+        if label:
+            ordered_labels.append(label)
+
+    expected_labels = sorted(prompt_key_rows)
+    if len(ordered_labels) != len(expected_labels):
+        raise SystemExit(
+            f"Prompt '{prompt_id}' in {answers_path.name} has {len(ordered_labels)} ranked "
+            f"labels, expected {len(expected_labels)}."
+        )
+    if len(set(ordered_labels)) != len(ordered_labels):
+        raise SystemExit(
+            f"Prompt '{prompt_id}' in {answers_path.name} repeats one or more labels."
+        )
+    unknown = sorted(set(ordered_labels) - set(expected_labels))
+    if unknown:
+        raise SystemExit(
+            f"Prompt '{prompt_id}' in {answers_path.name} contains unknown labels: "
+            f"{', '.join(unknown)}"
+        )
+    missing = sorted(set(expected_labels) - set(ordered_labels))
+    if missing:
+        raise SystemExit(
+            f"Prompt '{prompt_id}' in {answers_path.name} is missing labels: "
+            f"{', '.join(missing)}"
+        )
+    return ordered_labels
+
+
+def _weighted_prompt_rank(prompt_ratings: Sequence[PromptRating]) -> Dict[str, float]:
+    weighted_sum_by_arch: Dict[str, float] = {}
+    weight_total_by_arch: Dict[str, float] = {}
+
+    for rating in prompt_ratings:
+        weight = rating.confidence_weight
+        for arch_id, rank_value in rating.ranks_by_arch.items():
+            weighted_sum_by_arch[arch_id] = weighted_sum_by_arch.get(arch_id, 0.0) + (
+                weight * rank_value
+            )
+            weight_total_by_arch[arch_id] = weight_total_by_arch.get(arch_id, 0.0) + weight
+
+    weighted_ranks: Dict[str, float] = {}
+    for arch_id, weighted_sum in weighted_sum_by_arch.items():
+        total_weight = weight_total_by_arch.get(arch_id, 0.0)
+        if total_weight <= 0:
+            raise SystemExit(
+                f"Prompt-level weighted rank for architecture '{arch_id}' has zero total weight."
+            )
+        weighted_ranks[arch_id] = weighted_sum / total_weight
+    return weighted_ranks
+
+
+def _weighted_pairwise_prompt_winner(
+    prompt_ratings: Sequence[PromptRating],
+    arch_a: str,
+    arch_b: str,
+) -> int | None:
+    weight_a = 0.0
+    weight_b = 0.0
+    observed = False
+
+    for rating in prompt_ratings:
+        rank_a = rating.ranks_by_arch.get(arch_a)
+        rank_b = rating.ranks_by_arch.get(arch_b)
+        if rank_a is None or rank_b is None:
+            continue
+        observed = True
+        if rank_a < rank_b:
+            weight_a += rating.confidence_weight
+        elif rank_b < rank_a:
+            weight_b += rating.confidence_weight
+
+    if not observed:
+        return None
+    if weight_a > weight_b:
+        return 1
+    if weight_b > weight_a:
+        return -1
+    return 0
+
+
+def _mean(values: Sequence[float]) -> float:
+    if not values:
+        return float("nan")
+    return sum(values) / len(values)
+
+
+def _percentile(values: Sequence[float], q: float) -> float:
+    if not values:
+        return float("nan")
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+
+    index = (len(ordered) - 1) * q
+    lower = math.floor(index)
+    upper = math.ceil(index)
+    if lower == upper:
+        return ordered[lower]
+
+    lower_value = ordered[lower]
+    upper_value = ordered[upper]
+    fraction = index - lower
+    return lower_value + (upper_value - lower_value) * fraction
+
+
+def _bootstrap_ci(values: Sequence[float]) -> Tuple[float, float]:
+    filtered = [value for value in values if not math.isnan(value)]
+    if not filtered:
+        return float("nan"), float("nan")
+    return _percentile(filtered, 0.025), _percentile(filtered, 0.975)
+
+
+def _format_float(value: float) -> str:
+    if math.isnan(value):
+        return ""
+    return f"{value:.6f}"
+
+
+def _ordered_arches(arch_ids: Iterable[str]) -> List[str]:
+    return sorted({arch_id for arch_id in arch_ids if arch_id})
+
+
+def _display_arch_labels(architectures: Sequence[str]) -> List[str]:
+    return [ARCH_DISPLAY_LABELS.get(arch, arch.replace("_", " ")) for arch in architectures]
+
+
+def _write_combined_rankings(
+    out_path: pathlib.Path,
+    all_rows: Sequence[Dict[str, str]],
+) -> None:
+    with out_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "subject_id",
+                "prompt_id",
+                "rank_position",
+                "label",
+                "arch_id",
+                "confidence",
+                "confidence_weight",
+                "run_id",
+                "run_group_id",
+                "run_dir",
+            ],
+            delimiter=";",
+        )
+        writer.writeheader()
+        writer.writerows(all_rows)
+
+
+def _write_avg_prompt_rank_metrics(
+    out_path: pathlib.Path,
+    arch_list: Sequence[str],
+    prompt_weighted_ranks: Dict[str, Dict[str, float]],
+    bootstrap_arch_metrics: Dict[str, List[float]],
+) -> None:
+    with out_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "arch_id",
+                "avg_prompt_rank",
+                "ci_lower_95",
+                "ci_upper_95",
+            ],
+            delimiter=";",
+        )
+        writer.writeheader()
+        for arch_id in arch_list:
+            values = [
+                prompt_weighted_ranks[prompt_id][arch_id]
+                for prompt_id in sorted(prompt_weighted_ranks)
+                if arch_id in prompt_weighted_ranks[prompt_id]
+            ]
+            ci_lower, ci_upper = _bootstrap_ci(bootstrap_arch_metrics.get(arch_id, []))
+            writer.writerow(
+                {
+                    "arch_id": arch_id,
+                    "avg_prompt_rank": _format_float(_mean(values)),
+                    "ci_lower_95": _format_float(ci_lower),
+                    "ci_upper_95": _format_float(ci_upper),
+                }
+            )
+
+
+def _write_pairwise_metrics(
+    out_path: pathlib.Path,
+    arch_list: Sequence[str],
+    prompt_pairwise_winners: Dict[Tuple[str, str], Dict[str, int]],
+    bootstrap_pair_metrics: Dict[Tuple[str, str], List[float]],
+) -> None:
+    with out_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "arch_a",
+                "arch_b",
+                "wins_a_over_b",
+                "wins_b_over_a",
+                "ties",
+                "non_tied_total",
+                "win_rate_a_over_b",
+                "ci_lower_95",
+                "ci_upper_95",
+            ],
+            delimiter=";",
+        )
+        writer.writeheader()
+        for arch_a, arch_b in combinations(arch_list, 2):
+            outcomes = prompt_pairwise_winners.get((arch_a, arch_b), {})
+            wins_a = sum(1 for result in outcomes.values() if result == 1)
+            wins_b = sum(1 for result in outcomes.values() if result == -1)
+            ties = sum(1 for result in outcomes.values() if result == 0)
+            non_tied_total = wins_a + wins_b
+            win_rate = (wins_a / non_tied_total) if non_tied_total else float("nan")
+            ci_lower, ci_upper = _bootstrap_ci(
+                bootstrap_pair_metrics.get((arch_a, arch_b), [])
+            )
+            writer.writerow(
+                {
+                    "arch_a": arch_a,
+                    "arch_b": arch_b,
+                    "wins_a_over_b": wins_a,
+                    "wins_b_over_a": wins_b,
+                    "ties": ties,
+                    "non_tied_total": non_tied_total,
+                    "win_rate_a_over_b": _format_float(win_rate),
+                    "ci_lower_95": _format_float(ci_lower),
+                    "ci_upper_95": _format_float(ci_upper),
+                }
+            )
+
+
+def _generate_plots(
+    answers_dir: pathlib.Path,
+    arch_list: Sequence[str],
+    prompt_weighted_ranks: Dict[str, Dict[str, float]],
+    avg_prompt_rank_metrics_path: pathlib.Path,
+    pairwise_metrics_path: pathlib.Path,
+    *,
+    plot_format: str,
+    dpi: int,
+) -> None:
+    try:
+        mpl_config_dir = pathlib.Path("/tmp") / "matplotlib"
+        mpl_config_dir.mkdir(parents=True, exist_ok=True)
+        os.environ.setdefault("MPLCONFIGDIR", str(mpl_config_dir))
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print("[WARN] matplotlib is not installed; skipping plot generation.")
+        return
+
+    colors = plt.get_cmap("tab10").colors
+    color_map = {
+        arch: ARCH_FILL_COLORS.get(arch, colors[i % len(colors)])
+        for i, arch in enumerate(arch_list)
+    }
+
+    def _save(fig, stem: str) -> None:
+        fig.tight_layout()
+        fig.savefig(answers_dir / f"{stem}.{plot_format}", dpi=dpi)
+        plt.close(fig)
+
+    avg_rows: List[Dict[str, str]] = []
+    with avg_prompt_rank_metrics_path.open("r", encoding="utf-8", newline="") as f:
+        avg_rows = list(csv.DictReader(f, delimiter=";"))
+
+    avg_rows_by_arch = {row["arch_id"]: row for row in avg_rows}
+    avg_values = [
+        float(avg_rows_by_arch[arch]["avg_prompt_rank"])
+        for arch in arch_list
+        if avg_rows_by_arch.get(arch, {}).get("avg_prompt_rank")
+    ]
+    if avg_values:
+        ordered_rows = sorted(
+            (
+                {
+                    "arch_id": arch,
+                    "avg_prompt_rank": float(avg_rows_by_arch[arch]["avg_prompt_rank"]),
+                    "ci_lower_95": float(avg_rows_by_arch[arch]["ci_lower_95"]),
+                    "ci_upper_95": float(avg_rows_by_arch[arch]["ci_upper_95"]),
+                }
+                for arch in arch_list
+            ),
+            key=lambda row: row["avg_prompt_rank"],
+        )
+        fig, ax = plt.subplots(figsize=(7.8, 4.8))
+        positions = list(range(len(ordered_rows)))
+        labels = _display_arch_labels([row["arch_id"] for row in ordered_rows])
+        heights = []
+        lower_errors = []
+        upper_errors = []
+        bar_colors = []
+        for row in ordered_rows:
+            arch = row["arch_id"]
+            mean_value = row["avg_prompt_rank"]
+            ci_lower = row["ci_lower_95"]
+            ci_upper = row["ci_upper_95"]
+            heights.append(mean_value)
+            lower_errors.append(max(mean_value - ci_lower, 0.0))
+            upper_errors.append(max(ci_upper - mean_value, 0.0))
+            bar_colors.append(color_map[arch])
+        ax.bar(
+            positions,
+            heights,
+            yerr=[lower_errors, upper_errors],
+            capsize=5,
+            color=bar_colors,
+            edgecolor="black",
+            linewidth=1.0,
+        )
+        y_min = min(row["ci_lower_95"] for row in ordered_rows)
+        y_max = max(row["ci_upper_95"] for row in ordered_rows)
+        ax.set_ylim(y_min - 0.05, y_max + 0.10)
+        label_y = y_min - 0.015
+        for position, mean_value in zip(positions, heights):
+            ax.text(position, label_y, f"{mean_value:.2f}", va="top", ha="center", fontsize=10)
+        ax.set_xticks(positions, labels)
+        ax.set_ylabel("Confidence-weighted average prompt rank")
+        ax.set_title("RQ1: Weighted Average Prompt Rank (lower is better)")
+        ax.grid(axis="y", alpha=0.3)
+        _save(fig, "RQ1_weighted_avg_prompt_rank")
+    pair_rows: List[Dict[str, str]] = []
+    with pairwise_metrics_path.open("r", encoding="utf-8", newline="") as f:
+        pair_rows = list(csv.DictReader(f, delimiter=";"))
+
+    pairwise_summary: List[Tuple[str, float, int, int, int]] = []
+    for arch in arch_list:
+        win_rates: List[float] = []
+        wins_total = 0
+        losses_total = 0
+        ties_total = 0
+        for row in pair_rows:
+            arch_a = row["arch_a"]
+            arch_b = row["arch_b"]
+            wins_a = int(row["wins_a_over_b"])
+            wins_b = int(row["wins_b_over_a"])
+            ties = int(row["ties"])
+            win_rate_text = row.get("win_rate_a_over_b", "")
+            if arch == arch_a:
+                wins_total += wins_a
+                losses_total += wins_b
+                ties_total += ties
+                if win_rate_text:
+                    win_rates.append(float(win_rate_text))
+            elif arch == arch_b:
+                wins_total += wins_b
+                losses_total += wins_a
+                ties_total += ties
+                if win_rate_text:
+                    win_rates.append(1.0 - float(win_rate_text))
+        pairwise_summary.append((arch, _mean(win_rates), wins_total, losses_total, ties_total))
+
+    pairwise_summary.sort(key=lambda item: item[1], reverse=True)
+    if pairwise_summary:
+        fig, ax = plt.subplots(figsize=(8.2, 4.8))
+        positions = list(range(len(pairwise_summary)))
+        values = [item[1] for item in pairwise_summary]
+        labels = _display_arch_labels([item[0] for item in pairwise_summary])
+        colors_for_bars = [color_map[item[0]] for item in pairwise_summary]
+        ax.bar(
+            positions,
+            values,
+            color=colors_for_bars,
+            edgecolor="black",
+            linewidth=1.0,
+            alpha=0.75,
+        )
+        ax.axhline(0.5, color="#444444", linestyle="--", linewidth=1.1)
+        for position, (_, value, wins_total, losses_total, ties_total) in zip(
+            positions, pairwise_summary
+        ):
+            ax.text(
+                position,
+                0.02,
+                f"{value:.2f}",
+                va="bottom",
+                ha="center",
+                fontsize=10,
+            )
+            ax.text(
+                position,
+                value + 0.02,
+                f"{wins_total}-{losses_total} (T:{ties_total})",
+                va="bottom",
+                ha="center",
+                fontsize=9,
+            )
+        ax.set_xticks(positions, labels)
+        ax.set_ylim(0.0, 1.0)
+        ax.set_ylabel("Mean head-to-head prompt win rate")
+        ax.set_title("RQ1: Pairwise Summary (higher is better)")
+        ax.grid(axis="y", alpha=0.3)
+        _save(fig, "RQ1_pairwise_summary")
+
+
+def _bootstrap_metrics(
+    prompt_ids: Sequence[str],
+    arch_list: Sequence[str],
+    prompt_weighted_ranks: Dict[str, Dict[str, float]],
+    prompt_pairwise_winners: Dict[Tuple[str, str], Dict[str, int]],
+    *,
+    iterations: int,
+    seed: int,
+) -> Tuple[Dict[str, List[float]], Dict[Tuple[str, str], List[float]]]:
+    rng = random.Random(seed)
+    bootstrap_arch_metrics: Dict[str, List[float]] = {arch_id: [] for arch_id in arch_list}
+    bootstrap_pair_metrics: Dict[Tuple[str, str], List[float]] = {
+        (arch_a, arch_b): [] for arch_a, arch_b in combinations(arch_list, 2)
+    }
+
+    sample_size = len(prompt_ids)
+    if sample_size == 0:
+        return bootstrap_arch_metrics, bootstrap_pair_metrics
+
+    for _ in range(iterations):
+        sampled_prompt_ids = [prompt_ids[rng.randrange(sample_size)] for _ in range(sample_size)]
+
+        for arch_id in arch_list:
+            values = [
+                prompt_weighted_ranks[prompt_id][arch_id]
+                for prompt_id in sampled_prompt_ids
+                if arch_id in prompt_weighted_ranks[prompt_id]
+            ]
+            bootstrap_arch_metrics[arch_id].append(_mean(values))
+
+        for arch_a, arch_b in combinations(arch_list, 2):
+            wins_a = 0
+            wins_b = 0
+            for prompt_id in sampled_prompt_ids:
+                result = prompt_pairwise_winners.get((arch_a, arch_b), {}).get(prompt_id)
+                if result == 1:
+                    wins_a += 1
+                elif result == -1:
+                    wins_b += 1
+            non_tied_total = wins_a + wins_b
+            bootstrap_pair_metrics[(arch_a, arch_b)].append(
+                (wins_a / non_tied_total) if non_tied_total else float("nan")
+            )
+
+    return bootstrap_arch_metrics, bootstrap_pair_metrics
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Aggregate subject answers into a long-form CSV.")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Aggregate subject answers into long-form rankings and confidence-weighted RQ1 metrics."
+        )
+    )
     parser.add_argument(
         "--answers-dir",
         help=(
@@ -90,8 +607,43 @@ def main() -> None:
             f"(default: {DEFAULT_RQ1_RUNS_DIR})"
         ),
     )
-    parser.add_argument("--key", help="Key CSV to use for all answers files (default: <answers-dir>/key.csv)")
-    parser.add_argument("--out", help="Output CSV path (default: <answers-dir>/combined_rankings.csv)")
+    parser.add_argument(
+        "--key",
+        help="Key CSV to use for all answers files (default: <answers-dir>/key.csv)",
+    )
+    parser.add_argument(
+        "--out",
+        help="Output CSV path (default: <answers-dir>/combined_rankings.csv)",
+    )
+    parser.add_argument(
+        "--bootstrap-iterations",
+        type=int,
+        default=DEFAULT_BOOTSTRAP_ITERATIONS,
+        help=(
+            "Number of prompt bootstrap iterations for confidence intervals "
+            f"(default: {DEFAULT_BOOTSTRAP_ITERATIONS})"
+        ),
+    )
+    parser.add_argument(
+        "--bootstrap-seed",
+        type=int,
+        default=DEFAULT_BOOTSTRAP_SEED,
+        help=(
+            "Random seed used for bootstrap resampling "
+            f"(default: {DEFAULT_BOOTSTRAP_SEED})"
+        ),
+    )
+    parser.add_argument(
+        "--plot-format",
+        default="png",
+        help="Plot file format for generated RQ1 figures (default: png)",
+    )
+    parser.add_argument(
+        "--dpi",
+        type=int,
+        default=200,
+        help="DPI for generated plots (default: 200)",
+    )
     args = parser.parse_args()
 
     answers_dir = _resolve_answers_dir(args)
@@ -101,225 +653,157 @@ def main() -> None:
     answers_files = sorted(answers_dir.glob("answers_*.csv"))
     if not answers_files:
         raise SystemExit(f"No answers_*.csv files found in: {answers_dir}")
+    if args.bootstrap_iterations <= 0:
+        raise SystemExit("--bootstrap-iterations must be a positive integer")
 
     out_path = pathlib.Path(args.out) if args.out else answers_dir / "combined_rankings.csv"
     key_path = pathlib.Path(args.key) if args.key else (answers_dir / "key.csv")
     if not key_path.exists():
         raise SystemExit(f"Missing key: {key_path}")
 
+    key_map = _load_key(key_path)
+    prompt_label_map = _build_prompt_label_map(key_map)
+
     all_rows: List[Dict[str, str]] = []
+    prompt_ratings: Dict[str, List[PromptRating]] = {}
     arch_ids = set()
 
-    overall_rank_sum: Dict[str, int] = {}
-    overall_rank_count: Dict[str, int] = {}
-    overall_borda_sum: Dict[str, int] = {}
-    overall_first_count: Dict[str, int] = {}
-
-    prompt_rank_sum: Dict[Tuple[str, str], int] = {}
-    prompt_rank_count: Dict[Tuple[str, str], int] = {}
-    prompt_first_count: Dict[Tuple[str, str], int] = {}
-    prompt_first_total: Dict[str, int] = {}
-
-    pairwise_wins: Dict[Tuple[str, str], int] = {}
-
-    # Load the key once and reuse it for all answers files.
-    key_map = _load_key(key_path)
     for answers_path in answers_files:
         subject_id = answers_path.stem.replace("answers_", "", 1)
-
+        seen_prompts_for_subject = set()
         with answers_path.open("r", encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f, delimiter=";")
             if not reader.fieldnames:
                 continue
             rank_cols = _rank_columns(reader.fieldnames)
-            total_ranks = len(rank_cols)
+            if not rank_cols:
+                raise SystemExit(f"No rank columns found in {answers_path.name}")
+            if "confidence" not in reader.fieldnames:
+                raise SystemExit(f"Missing confidence column in {answers_path.name}")
 
             for row in reader:
-                pid = (row.get("prompt_id") or "").strip()
-                if not pid:
+                prompt_id = (row.get("prompt_id") or "").strip()
+                if not prompt_id:
                     continue
-                ordered_labels: List[str] = []
-                for col in rank_cols:
-                    label = (row.get(col) or "").strip().upper()
-                    if label:
-                        ordered_labels.append(label)
+                if prompt_id in seen_prompts_for_subject:
+                    raise SystemExit(
+                        f"Duplicate prompt '{prompt_id}' found in {answers_path.name}"
+                    )
+                seen_prompts_for_subject.add(prompt_id)
+                prompt_key_rows = prompt_label_map.get(prompt_id)
+                if not prompt_key_rows:
+                    raise SystemExit(
+                        f"Prompt '{prompt_id}' in {answers_path.name} is missing from key.csv"
+                    )
 
-                for idx, label in enumerate(ordered_labels, start=1):
-                    key_row = key_map.get((pid, label))
-                    if not key_row:
+                ordered_labels = _extract_ranked_labels(
+                    row,
+                    rank_cols,
+                    answers_path=answers_path,
+                    prompt_id=prompt_id,
+                    prompt_key_rows=prompt_key_rows,
+                )
+                confidence = (row.get("confidence") or "").strip().upper()
+                confidence_weight = _confidence_to_weight(
+                    confidence,
+                    answers_path=answers_path,
+                    prompt_id=prompt_id,
+                )
+
+                ranks_by_arch: Dict[str, int] = {}
+                for rank_position, label in enumerate(ordered_labels, start=1):
+                    key_row = prompt_key_rows[label]
+                    arch_id = key_row.get("arch_id", "").strip()
+                    if not arch_id:
                         raise SystemExit(
-                            f"Unknown label '{label}' for prompt '{pid}' in {answers_path.name}"
+                            f"Missing arch_id for prompt '{prompt_id}', label '{label}' in key.csv"
                         )
-                    arch_id = key_row.get("arch_id", "")
                     arch_ids.add(arch_id)
-
+                    ranks_by_arch[arch_id] = rank_position
                     all_rows.append(
                         {
                             "subject_id": subject_id,
-                            "prompt_id": pid,
-                            "rank_position": str(idx),
+                            "prompt_id": prompt_id,
+                            "rank_position": str(rank_position),
                             "label": label,
                             "arch_id": arch_id,
+                            "confidence": confidence,
+                            "confidence_weight": _format_float(confidence_weight),
                             "run_id": key_row.get("run_id", ""),
                             "run_group_id": key_row.get("run_group_id", ""),
                             "run_dir": key_row.get("run_dir", ""),
                         }
                     )
 
-                    overall_rank_sum[arch_id] = overall_rank_sum.get(arch_id, 0) + idx
-                    overall_rank_count[arch_id] = overall_rank_count.get(arch_id, 0) + 1
-                    borda_score = max(total_ranks - idx, 0)
-                    overall_borda_sum[arch_id] = overall_borda_sum.get(arch_id, 0) + borda_score
-
-                    prompt_key = (pid, arch_id)
-                    prompt_rank_sum[prompt_key] = prompt_rank_sum.get(prompt_key, 0) + idx
-                    prompt_rank_count[prompt_key] = prompt_rank_count.get(prompt_key, 0) + 1
-
-                    if idx == 1:
-                        overall_first_count[arch_id] = overall_first_count.get(arch_id, 0) + 1
-                        prompt_first_count[prompt_key] = prompt_first_count.get(prompt_key, 0) + 1
-                        prompt_first_total[pid] = prompt_first_total.get(pid, 0) + 1
-
-                # Pairwise wins (earlier rank beats later rank)
-                for i in range(len(ordered_labels)):
-                    for j in range(i + 1, len(ordered_labels)):
-                        label_i = ordered_labels[i]
-                        label_j = ordered_labels[j]
-                        key_row_i = key_map.get((pid, label_i))
-                        key_row_j = key_map.get((pid, label_j))
-                        if not key_row_i or not key_row_j:
-                            continue
-                        arch_i = key_row_i.get("arch_id", "")
-                        arch_j = key_row_j.get("arch_id", "")
-                        pairwise_wins[(arch_i, arch_j)] = pairwise_wins.get((arch_i, arch_j), 0) + 1
-
-    with out_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "subject_id",
-                "prompt_id",
-                "rank_position",
-                "label",
-                "arch_id",
-                "run_id",
-                "run_group_id",
-                "run_dir",
-            ],
-            delimiter=";",
-        )
-        writer.writeheader()
-        writer.writerows(all_rows)
-
-    # Metrics: overall per architecture
-    metrics_overall_path = answers_dir / "metrics_overall.csv"
-    total_firsts = sum(overall_first_count.values())
-    with metrics_overall_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "arch_id",
-                "n",
-                "avg_rank",
-                "borda_sum",
-                "borda_avg",
-                "win_count",
-                "win_rate",
-            ],
-            delimiter=";",
-        )
-        writer.writeheader()
-        for arch_id in sorted(arch_ids):
-            n = overall_rank_count.get(arch_id, 0)
-            avg_rank = (overall_rank_sum.get(arch_id, 0) / n) if n else 0.0
-            borda_sum = overall_borda_sum.get(arch_id, 0)
-            borda_avg = (borda_sum / n) if n else 0.0
-            win_count = overall_first_count.get(arch_id, 0)
-            win_rate = (win_count / total_firsts) if total_firsts else 0.0
-            writer.writerow(
-                {
-                    "arch_id": arch_id,
-                    "n": n,
-                    "avg_rank": f"{avg_rank:.6f}",
-                    "borda_sum": borda_sum,
-                    "borda_avg": f"{borda_avg:.6f}",
-                    "win_count": win_count,
-                    "win_rate": f"{win_rate:.6f}",
-                }
-            )
-
-    # Metrics: per prompt per architecture
-    metrics_prompt_path = answers_dir / "metrics_per_prompt.csv"
-    with metrics_prompt_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "prompt_id",
-                "arch_id",
-                "n",
-                "avg_rank",
-                "win_count",
-                "win_rate",
-            ],
-            delimiter=";",
-        )
-        writer.writeheader()
-        for (pid, arch_id), n in sorted(prompt_rank_count.items()):
-            avg_rank = prompt_rank_sum.get((pid, arch_id), 0) / n if n else 0.0
-            win_count = prompt_first_count.get((pid, arch_id), 0)
-            total_prompt_firsts = prompt_first_total.get(pid, 0)
-            win_rate = (win_count / total_prompt_firsts) if total_prompt_firsts else 0.0
-            writer.writerow(
-                {
-                    "prompt_id": pid,
-                    "arch_id": arch_id,
-                    "n": n,
-                    "avg_rank": f"{avg_rank:.6f}",
-                    "win_count": win_count,
-                    "win_rate": f"{win_rate:.6f}",
-                }
-            )
-
-    # Metrics: pairwise win rates
-    metrics_pairwise_path = answers_dir / "metrics_pairwise.csv"
-    arch_list = sorted(arch_ids)
-    with metrics_pairwise_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "arch_a",
-                "arch_b",
-                "wins_a_over_b",
-                "wins_b_over_a",
-                "total",
-                "win_rate_a_over_b",
-            ],
-            delimiter=";",
-        )
-        writer.writeheader()
-        for i in range(len(arch_list)):
-            for j in range(i + 1, len(arch_list)):
-                a = arch_list[i]
-                b = arch_list[j]
-                wins_a = pairwise_wins.get((a, b), 0)
-                wins_b = pairwise_wins.get((b, a), 0)
-                total = wins_a + wins_b
-                win_rate = (wins_a / total) if total else 0.0
-                writer.writerow(
-                    {
-                        "arch_a": a,
-                        "arch_b": b,
-                        "wins_a_over_b": wins_a,
-                        "wins_b_over_a": wins_b,
-                        "total": total,
-                        "win_rate_a_over_b": f"{win_rate:.6f}",
-                    }
+                prompt_ratings.setdefault(prompt_id, []).append(
+                    PromptRating(
+                        subject_id=subject_id,
+                        confidence=confidence,
+                        confidence_weight=confidence_weight,
+                        ranks_by_arch=ranks_by_arch,
+                    )
                 )
 
+    arch_list = _ordered_arches(arch_ids)
+    prompt_ids = sorted(prompt_ratings)
+    if not arch_list:
+        raise SystemExit("No architectures were found in the answers data.")
+    if not prompt_ids:
+        raise SystemExit("No prompts were found in the answers data.")
+
+    prompt_weighted_ranks = {
+        prompt_id: _weighted_prompt_rank(prompt_ratings[prompt_id])
+        for prompt_id in prompt_ids
+    }
+    prompt_pairwise_winners: Dict[Tuple[str, str], Dict[str, int]] = {}
+    for arch_a, arch_b in combinations(arch_list, 2):
+        pair_outcomes: Dict[str, int] = {}
+        for prompt_id in prompt_ids:
+            outcome = _weighted_pairwise_prompt_winner(
+                prompt_ratings[prompt_id], arch_a, arch_b
+            )
+            if outcome is not None:
+                pair_outcomes[prompt_id] = outcome
+        prompt_pairwise_winners[(arch_a, arch_b)] = pair_outcomes
+
+    bootstrap_arch_metrics, bootstrap_pair_metrics = _bootstrap_metrics(
+        prompt_ids,
+        arch_list,
+        prompt_weighted_ranks,
+        prompt_pairwise_winners,
+        iterations=args.bootstrap_iterations,
+        seed=args.bootstrap_seed,
+    )
+
+    avg_prompt_rank_metrics_path = answers_dir / "metrics_avg_prompt_rank.csv"
+    pairwise_metrics_path = answers_dir / "metrics_pairwise.csv"
+
+    _write_combined_rankings(out_path, all_rows)
+    _write_avg_prompt_rank_metrics(
+        avg_prompt_rank_metrics_path,
+        arch_list,
+        prompt_weighted_ranks,
+        bootstrap_arch_metrics,
+    )
+    _write_pairwise_metrics(
+        pairwise_metrics_path,
+        arch_list,
+        prompt_pairwise_winners,
+        bootstrap_pair_metrics,
+    )
+    _generate_plots(
+        answers_dir,
+        arch_list,
+        prompt_weighted_ranks,
+        avg_prompt_rank_metrics_path,
+        pairwise_metrics_path,
+        plot_format=args.plot_format,
+        dpi=args.dpi,
+    )
+
     print(f"Wrote combined rankings: {out_path}")
-    print(f"Wrote metrics: {metrics_overall_path}")
-    print(f"Wrote metrics: {metrics_prompt_path}")
-    print(f"Wrote metrics: {metrics_pairwise_path}")
+    print(f"Wrote metrics: {avg_prompt_rank_metrics_path}")
+    print(f"Wrote metrics: {pairwise_metrics_path}")
 
 
 if __name__ == "__main__":
