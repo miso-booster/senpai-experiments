@@ -216,7 +216,7 @@ def main() -> None:
     )
     md_lines.append("- Rank them from best to worst in the CSV.")
     md_lines.append(
-        "- In the CSV, put the best label in rank1, the second-best in rank2, and the worst in rank3."
+        "- In the CSV, put the best label in rank1, the second-best in rank2, and continue in order until the last rank column."
     )
     md_lines.append("- Use each label only once per prompt (no repeats).")
     md_lines.append("- Fill confidence with `H`, `M`, or `L` for each prompt ranking.")
