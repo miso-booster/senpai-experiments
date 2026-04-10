@@ -602,35 +602,6 @@ def main() -> None:
         "--out",
         help="Output CSV path (default: <answers-dir>/combined_rankings.csv)",
     )
-    parser.add_argument(
-        "--bootstrap-iterations",
-        type=int,
-        default=DEFAULT_BOOTSTRAP_ITERATIONS,
-        help=(
-            "Number of prompt bootstrap iterations for confidence intervals "
-            f"(default: {DEFAULT_BOOTSTRAP_ITERATIONS})"
-        ),
-    )
-    parser.add_argument(
-        "--bootstrap-seed",
-        type=int,
-        default=DEFAULT_BOOTSTRAP_SEED,
-        help=(
-            "Random seed used for bootstrap resampling "
-            f"(default: {DEFAULT_BOOTSTRAP_SEED})"
-        ),
-    )
-    parser.add_argument(
-        "--plot-format",
-        default="png",
-        help="Plot file format for generated RQ1 figures (default: png)",
-    )
-    parser.add_argument(
-        "--dpi",
-        type=int,
-        default=200,
-        help="DPI for generated plots (default: 200)",
-    )
     args = parser.parse_args()
 
     answers_dir = _resolve_answers_dir(args)
@@ -640,8 +611,6 @@ def main() -> None:
     answers_files = sorted(answers_dir.glob("answers_*.csv"))
     if not answers_files:
         raise SystemExit(f"No answers_*.csv files found in: {answers_dir}")
-    if args.bootstrap_iterations <= 0:
-        raise SystemExit("--bootstrap-iterations must be a positive integer")
 
     out_path = pathlib.Path(args.out) if args.out else answers_dir / "combined_rankings.csv"
     key_path = pathlib.Path(args.key) if args.key else (answers_dir / "key.csv")
@@ -758,8 +727,8 @@ def main() -> None:
         arch_list,
         prompt_weighted_ranks,
         prompt_pairwise_winners,
-        iterations=args.bootstrap_iterations,
-        seed=args.bootstrap_seed,
+        iterations=DEFAULT_BOOTSTRAP_ITERATIONS,
+        seed=DEFAULT_BOOTSTRAP_SEED,
     )
 
     avg_prompt_rank_metrics_path = answers_dir / "metrics_avg_prompt_rank.csv"
@@ -783,8 +752,8 @@ def main() -> None:
         arch_list,
         avg_prompt_rank_metrics_path,
         pairwise_metrics_path,
-        plot_format=args.plot_format,
-        dpi=args.dpi,
+        plot_format="png",
+        dpi=200,
     )
 
     print(f"Wrote combined rankings: {out_path}")
