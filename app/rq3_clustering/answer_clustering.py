@@ -21,20 +21,32 @@ from openai import (
 )
 
 try:
-    from app.setup_configuration import OUT_DIR, RQ3_EXPERIMENT_DIRNAME, resolve_model_output_dir, resolve_runs_dir
+    from app.setup_configuration import (
+        OUT_DIR,
+        RQ3_EXPERIMENT_DIRNAME,
+        resolve_model_output_dir,
+        resolve_runs_dir,
+        sanitize_path_component,
+    )
 except Exception:  # Supports `python app/rq3_clustering/answer_clustering.py` without package imports
     _ROOT = Path(__file__).resolve().parents[2]
     OUT_DIR = _ROOT / "out"
+    def sanitize_path_component(value: str) -> str:
+        sanitized = re.sub(r"[^a-z0-9]+", "-", value.strip().lower()).strip("-")
+        if not sanitized:
+            raise ValueError(f"Path component cannot be empty after sanitization: {value!r}")
+        return sanitized
+
     def resolve_runs_dir(experiment_dirname: str, model_label: str | None = None) -> Path:
         runs_dir = OUT_DIR / "runs"
         if not model_label:
             return runs_dir / experiment_dirname
-        return runs_dir / re.sub(r"[^a-z0-9]+", "-", model_label.strip().lower()).strip("-") / experiment_dirname
+        return runs_dir / sanitize_path_component(model_label) / experiment_dirname
 
     def resolve_model_output_dir(base_dir: Path, model_label: str | None = None) -> Path:
         if not model_label:
             return base_dir
-        return base_dir / re.sub(r"[^a-z0-9]+", "-", model_label.strip().lower()).strip("-")
+        return base_dir / sanitize_path_component(model_label)
 
     RQ3_EXPERIMENT_DIRNAME = "advanced_prompt_arch_comparison"
 
