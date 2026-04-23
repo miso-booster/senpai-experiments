@@ -11,11 +11,27 @@ from typing import Any
 import pandas as pd
 
 try:
-    from app.setup_configuration import OUT_DIR, RUNS_DIR
+    from app.setup_configuration import (
+        OUT_DIR,
+        RQ3_EXPERIMENT_DIRNAME,
+        resolve_model_output_dir,
+        resolve_runs_dir,
+    )
 except Exception:  # Supports `python app/rq3/tool_consistency.py` without package imports
     _ROOT = Path(__file__).resolve().parents[2]
     OUT_DIR = _ROOT / "out"
-    RUNS_DIR = OUT_DIR / "runs"
+    def resolve_runs_dir(experiment_dirname: str, model_label: str | None = None) -> Path:
+        runs_dir = OUT_DIR / "runs"
+        if not model_label:
+            return runs_dir / experiment_dirname
+        return runs_dir / re.sub(r"[^a-z0-9]+", "-", model_label.strip().lower()).strip("-") / experiment_dirname
+
+    def resolve_model_output_dir(base_dir: Path, model_label: str | None = None) -> Path:
+        if not model_label:
+            return base_dir
+        return base_dir / re.sub(r"[^a-z0-9]+", "-", model_label.strip().lower()).strip("-")
+
+    RQ3_EXPERIMENT_DIRNAME = "advanced_prompt_arch_comparison"
 
 try:
     from .excel import save_outputs
@@ -23,9 +39,16 @@ except ImportError:  # Supports `python app/rq3/tool_consistency.py`
     from excel import save_outputs
 
 
-DEFAULT_RUNS_DIR = RUNS_DIR / "advanced_prompt_arch_comparison"
 DEFAULT_OUT_DIR = OUT_DIR / "RQ3_tool_consistency_and_node_usage_consistency"
 DEFAULT_GRAPH_ARCHITECTURE = "graph_based_architecture"
+
+
+def default_rq3_runs_dir(model_label: str | None = None) -> Path:
+    return resolve_runs_dir(RQ3_EXPERIMENT_DIRNAME, model_label)
+
+
+def default_rq3_out_dir(model_label: str | None = None) -> Path:
+    return resolve_model_output_dir(DEFAULT_OUT_DIR, model_label)
 
 HEX_SUFFIX_RE = re.compile(r"__(?:[0-9a-f]{8,})$", re.IGNORECASE)
 PROMPT_ID_RE = re.compile(r"__(p\d+)_", re.IGNORECASE)
@@ -81,9 +104,19 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "--model-label",
+        help=(
+            "Optional model label used to resolve model-specific run folders and "
+            "default RQ3 output directories."
+        ),
+    )
+    parser.add_argument(
         "--runs-dir",
-        default=str(DEFAULT_RUNS_DIR),
-        help=f"Directory containing repeated run folders (default: {DEFAULT_RUNS_DIR})",
+        help=(
+            "Directory containing repeated run folders "
+            "(default: out/runs/advanced_prompt_arch_comparison or "
+            "out/runs/<model-label>/advanced_prompt_arch_comparison)"
+        ),
     )
     parser.add_argument(
         "--trace-glob",
@@ -92,8 +125,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--out-dir",
-        default=str(DEFAULT_OUT_DIR),
-        help=f"Output directory for RQ3 tables/workbook (default: {DEFAULT_OUT_DIR})",
+        help=(
+            "Output directory for RQ3 tables/workbook "
+            "(default: out/RQ3_tool_consistency_and_node_usage_consistency or "
+            "out/RQ3_tool_consistency_and_node_usage_consistency/<model-label>)"
+        ),
     )
     parser.add_argument(
         "--sheet",

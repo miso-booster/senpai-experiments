@@ -11,6 +11,7 @@ from app.setup_configuration import (
     RESULTS_PATH,
     ensure_dirs,
     load_architectures,
+    load_default_model_label,
     load_prompts_json,
     build_env,
     resolve_experiment_dirname,
@@ -177,7 +178,8 @@ def main():
         "--model-label",
         help=(
             "Optional storage label for the LLM used in this execution batch. "
-            "When set, runs are written under out/runs/<experiment>/by_model/<model-label>/."
+            "Overrides configs/architectures.json when both are set, and writes runs "
+            "under out/runs/<model-label>/<experiment>/."
         ),
     )
     args = parser.parse_args()
@@ -192,22 +194,25 @@ def main():
 
     ensure_dirs()
     logging.info("Loading architectures and prompts")
+    architecture_config_path = pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"
+    config_model_label = load_default_model_label(str(architecture_config_path))
+    effective_model_label = args.model_label or config_model_label
     experiment_dirname = resolve_experiment_dirname(rq2=args.rq2, rq3=args.rq3, rq4=args.rq4)
-    runs_root_dir = resolve_runs_dir(experiment_dirname, args.model_label)
-    model_slug = sanitize_path_component(args.model_label) if args.model_label else ""
+    runs_root_dir = resolve_runs_dir(experiment_dirname, effective_model_label)
+    model_slug = sanitize_path_component(effective_model_label) if effective_model_label else ""
 
     if args.rq2:
-        archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
+        archs = load_architectures(str(architecture_config_path))
         prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "prompts.json"))
         logging.info("RQ2 prompts selected.")
 
     if args.rq3:
-        archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
+        archs = load_architectures(str(architecture_config_path))
         prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "rq3_prompts.json"))
         logging.info("RQ3 prompts selected.")
 
     if args.rq4:
-        archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
+        archs = load_architectures(str(architecture_config_path))
         prompts = load_prompts_json(str(pathlib.Path(__file__).parent.parent / "configs" / "rq4_prompts.json"))
         logging.info("RQ4 prompts selected.")
 
@@ -221,7 +226,7 @@ def main():
         run_group_id = time.strftime("%Y%m%d_%H%M%S", time.localtime(now)) + f"_{int((now % 1) * 1000):03d}"
         automation_start_time = datetime.now(timezone.utc)
         group_results = []
-        tracing_envs = _collect_langsmith_export_envs(archs, run_group_id, model_label=args.model_label)
+        tracing_envs = _collect_langsmith_export_envs(archs, run_group_id, model_label=effective_model_label)
         for arch in archs:
             logging.info("Architecture start id=%s", arch.id)
             for p in prompts:
@@ -236,7 +241,7 @@ def main():
                         run_group_id=run_group_id,
                         verbose=args.verbose,
                         runs_root_dir=runs_root_dir,
-                        model_label=args.model_label,
+                        model_label=effective_model_label,
                         model_slug=model_slug,
                     )
                     append_jsonl(RESULTS_PATH, res)

@@ -5,7 +5,7 @@ import pathlib
 import logging
 
 
-from typing import List, Dict
+from typing import Any, List, Dict
 from app.architecture import Architecture
 
 
@@ -15,7 +15,6 @@ EXIT_COMMAND = "exit"
 OUT_DIR = pathlib.Path(__file__).parent.parent / "out"
 RUNS_DIR = OUT_DIR / "runs"
 RESULTS_PATH = OUT_DIR / "results.jsonl"
-MODEL_BUCKET_DIRNAME = "by_model"
 
 RQ2_EXPERIMENT_DIRNAME = "architecture_comparison"
 RQ3_EXPERIMENT_DIRNAME = "advanced_prompt_arch_comparison"
@@ -46,15 +45,36 @@ def resolve_experiment_dirname(*, rq2: bool = False, rq3: bool = False, rq4: boo
 
 
 def resolve_runs_dir(experiment_dirname: str, model_label: str | None = None) -> pathlib.Path:
-    base_dir = RUNS_DIR / experiment_dirname
+    if not model_label:
+        return RUNS_DIR / experiment_dirname
+    return RUNS_DIR / sanitize_path_component(model_label) / experiment_dirname
+
+
+def resolve_model_output_dir(base_dir: pathlib.Path, model_label: str | None = None) -> pathlib.Path:
     if not model_label:
         return base_dir
-    return base_dir / MODEL_BUCKET_DIRNAME / sanitize_path_component(model_label)
+    return base_dir / sanitize_path_component(model_label)
+
+
+def load_architecture_config(path: str) -> Dict[str, Any]:
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if not isinstance(data, dict):
+        raise ValueError(f"Architecture config must be a JSON object: {path}")
+    return data
+
+
+def load_default_model_label(path: str) -> str | None:
+    data = load_architecture_config(path)
+    value = data.get("model_label")
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
 
 
 def load_architectures(path: str) -> List[Architecture]:
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = load_architecture_config(path)
     archs = []
     for a in data["architectures"]:
         archs.append(

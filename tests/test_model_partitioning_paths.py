@@ -27,12 +27,12 @@ def test_resolve_runs_dir_uses_model_bucket_when_model_label_is_present() -> Non
     assert resolve_experiment_dirname(rq4=True) == "guardrail_test"
     assert resolve_runs_dir("architecture_comparison") == RUNS_DIR / "architecture_comparison"
     assert resolve_runs_dir("architecture_comparison", "GPT-5 Codex") == (
-        RUNS_DIR / "architecture_comparison" / "by_model" / "gpt-5-codex"
+        RUNS_DIR / "gpt-5-codex" / "architecture_comparison"
     )
 
 
 def test_rq1_and_rq2_defaults_match_model_scoped_layout() -> None:
-    expected_runs = RUNS_DIR / "architecture_comparison" / "by_model" / "gpt-4-1-mini"
+    expected_runs = RUNS_DIR / "gpt-4-1-mini" / "architecture_comparison"
     expected_rq1_out = OUT_DIR / "RQ1" / "gpt-4-1-mini"
     expected_rq2_out = OUT_DIR / "RQ2_architecture_metrics" / "gpt-4-1-mini"
 
@@ -46,7 +46,7 @@ def test_rq1_and_rq2_defaults_match_model_scoped_layout() -> None:
 
 
 def test_resolve_run_dir_ignores_non_run_directories(tmp_path: Path) -> None:
-    (tmp_path / "by_model" / "gpt-5-codex").mkdir(parents=True)
+    (tmp_path / "gpt-5-codex" / "architecture_comparison").mkdir(parents=True)
     legacy_run = tmp_path / "20260423_120000_000"
     legacy_run.mkdir()
     (legacy_run / "results.xlsx").touch()

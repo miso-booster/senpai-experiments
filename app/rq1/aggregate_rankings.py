@@ -14,8 +14,8 @@ from app.architecture_styles import ARCH_DISPLAY_LABELS, ARCH_FILL_COLORS
 from app.setup_configuration import (
     OUT_DIR,
     RQ2_EXPERIMENT_DIRNAME,
+    resolve_model_output_dir,
     resolve_runs_dir,
-    sanitize_path_component,
 )
 from app.rq1.utils import sanitize_run_dir
 
@@ -35,9 +35,7 @@ def default_rq1_runs_dir(model_label: str | None = None) -> pathlib.Path:
 
 
 def default_rq1_out_root(model_label: str | None = None) -> pathlib.Path:
-    if not model_label:
-        return DEFAULT_RQ1_OUT_ROOT
-    return DEFAULT_RQ1_OUT_ROOT / sanitize_path_component(model_label)
+    return resolve_model_output_dir(DEFAULT_RQ1_OUT_ROOT, model_label)
 
 @dataclass(frozen=True)
 class PromptRating:
@@ -609,7 +607,7 @@ def main() -> None:
         help=(
             "Directory containing run folders "
             "(default: out/runs/architecture_comparison or "
-            "out/runs/architecture_comparison/by_model/<model-label>)"
+            "out/runs/<model-label>/architecture_comparison)"
         ),
     )
     parser.add_argument(

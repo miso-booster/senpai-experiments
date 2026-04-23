@@ -12,8 +12,8 @@ from app.setup_configuration import (
     OUT_DIR,
     RQ2_EXPERIMENT_DIRNAME,
     load_prompts_json,
+    resolve_model_output_dir,
     resolve_runs_dir,
-    sanitize_path_component,
 )
 from app.yaml_validation import validate_answer_yaml_status
 
@@ -25,9 +25,7 @@ def default_rq1_runs_dir(model_label: str | None = None) -> pathlib.Path:
 
 
 def default_rq1_out_root(model_label: str | None = None) -> pathlib.Path:
-    if not model_label:
-        return DEFAULT_RQ1_OUT_ROOT
-    return DEFAULT_RQ1_OUT_ROOT / sanitize_path_component(model_label)
+    return resolve_model_output_dir(DEFAULT_RQ1_OUT_ROOT, model_label)
 
 
 def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
@@ -158,7 +156,7 @@ def main() -> None:
         help=(
             "Directory containing run folders "
             "(default: out/runs/architecture_comparison or "
-            "out/runs/architecture_comparison/by_model/<model-label>)"
+            "out/runs/<model-label>/architecture_comparison)"
         ),
     )
     parser.add_argument(

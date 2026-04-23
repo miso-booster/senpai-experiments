@@ -6,18 +6,18 @@ try:
     from .plots import generate_graph_plots, generate_plots
     from .tool_consistency import (
         DEFAULT_GRAPH_ARCHITECTURE,
-        DEFAULT_OUT_DIR,
-        DEFAULT_RUNS_DIR,
         build_rq3_results,
+        default_rq3_out_dir,
+        default_rq3_runs_dir,
     )
 except ImportError:  # Supports `python app/rq3/__main__.py`
     from excel import save_outputs
     from plots import generate_graph_plots, generate_plots
     from tool_consistency import (
         DEFAULT_GRAPH_ARCHITECTURE,
-        DEFAULT_OUT_DIR,
-        DEFAULT_RUNS_DIR,
         build_rq3_results,
+        default_rq3_out_dir,
+        default_rq3_runs_dir,
     )
 
 
@@ -26,9 +26,19 @@ def parse_args() -> argparse.Namespace:
         description="Run the full RQ3 pipeline (generate workbook + tool/graph plots)."
     )
     parser.add_argument(
+        "--model-label",
+        help=(
+            "Optional model label used to resolve model-specific run folders and "
+            "default RQ3 output directories."
+        ),
+    )
+    parser.add_argument(
         "--runs-dir",
-        default=str(DEFAULT_RUNS_DIR),
-        help=f"Directory containing repeated run folders (default: {DEFAULT_RUNS_DIR})",
+        help=(
+            "Directory containing repeated run folders "
+            "(default: out/runs/advanced_prompt_arch_comparison or "
+            "out/runs/<model-label>/advanced_prompt_arch_comparison)"
+        ),
     )
     parser.add_argument(
         "--trace-glob",
@@ -37,8 +47,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--out-dir",
-        default=str(DEFAULT_OUT_DIR),
-        help=f"Output directory for workbook and plots (default: {DEFAULT_OUT_DIR})",
+        help=(
+            "Output directory for workbook and plots "
+            "(default: out/RQ3_tool_consistency_and_node_usage_consistency or "
+            "out/RQ3_tool_consistency_and_node_usage_consistency/<model-label>)"
+        ),
     )
     parser.add_argument(
         "--sheet",
@@ -79,8 +92,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    runs_dir = Path(args.runs_dir)
-    out_dir = Path(args.out_dir)
+    runs_dir = Path(args.runs_dir) if args.runs_dir else default_rq3_runs_dir(args.model_label)
+    out_dir = Path(args.out_dir) if args.out_dir else default_rq3_out_dir(args.model_label)
 
     results = build_rq3_results(
         runs_dir,

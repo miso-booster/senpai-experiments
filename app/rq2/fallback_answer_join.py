@@ -9,8 +9,8 @@ try:
     from app.setup_configuration import (
         OUT_DIR,
         RQ2_EXPERIMENT_DIRNAME,
+        resolve_model_output_dir,
         resolve_runs_dir,
-        sanitize_path_component,
     )
     from .aggregate_metrics import discover_workbooks, load_all_results
 except ImportError:  # Supports `python app/rq2/fallback_answer_join.py`
@@ -20,8 +20,8 @@ except ImportError:  # Supports `python app/rq2/fallback_answer_join.py`
     from app.setup_configuration import (
         OUT_DIR,
         RQ2_EXPERIMENT_DIRNAME,
+        resolve_model_output_dir,
         resolve_runs_dir,
-        sanitize_path_component,
     )
     from aggregate_metrics import discover_workbooks, load_all_results
 
@@ -35,10 +35,7 @@ def default_rq2_runs_dir(model_label: str | None = None) -> Path:
 
 
 def default_rq2_out_dir(model_label: str | None = None) -> Path:
-    base_dir = OUT_DIR / "RQ2_architecture_metrics"
-    if not model_label:
-        return base_dir
-    return base_dir / sanitize_path_component(model_label)
+    return resolve_model_output_dir(OUT_DIR / "RQ2_architecture_metrics", model_label)
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,7 +59,7 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Directory containing run folders "
             "(default: out/runs/architecture_comparison or "
-            "out/runs/architecture_comparison/by_model/<model-label>)"
+            "out/runs/<model-label>/architecture_comparison)"
         ),
     )
     parser.add_argument(
