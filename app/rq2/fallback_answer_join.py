@@ -4,17 +4,25 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 import pandas as pd
-from app.setup_configuration import (
-    MODEL_BUCKET_DIRNAME,
-    OUT_DIR,
-    RQ2_EXPERIMENT_DIRNAME,
-    resolve_runs_dir,
-    sanitize_path_component,
-)
 
 try:
+    from app.setup_configuration import (
+        OUT_DIR,
+        RQ2_EXPERIMENT_DIRNAME,
+        resolve_runs_dir,
+        sanitize_path_component,
+    )
     from .aggregate_metrics import discover_workbooks, load_all_results
 except ImportError:  # Supports `python app/rq2/fallback_answer_join.py`
+    import sys
+
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from app.setup_configuration import (
+        OUT_DIR,
+        RQ2_EXPERIMENT_DIRNAME,
+        resolve_runs_dir,
+        sanitize_path_component,
+    )
     from aggregate_metrics import discover_workbooks, load_all_results
 
 
@@ -30,7 +38,7 @@ def default_rq2_out_dir(model_label: str | None = None) -> Path:
     base_dir = OUT_DIR / "RQ2_architecture_metrics"
     if not model_label:
         return base_dir
-    return base_dir / MODEL_BUCKET_DIRNAME / sanitize_path_component(model_label)
+    return base_dir / sanitize_path_component(model_label)
 
 
 def parse_args() -> argparse.Namespace:
@@ -67,7 +75,7 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Output directory for the joined fallback-answer files "
             "(default: out/RQ2_architecture_metrics or "
-            "out/RQ2_architecture_metrics/by_model/<model-label>)"
+            "out/RQ2_architecture_metrics/<model-label>)"
         ),
     )
     parser.add_argument(

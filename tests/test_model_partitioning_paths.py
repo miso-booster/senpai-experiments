@@ -33,8 +33,8 @@ def test_resolve_runs_dir_uses_model_bucket_when_model_label_is_present() -> Non
 
 def test_rq1_and_rq2_defaults_match_model_scoped_layout() -> None:
     expected_runs = RUNS_DIR / "architecture_comparison" / "by_model" / "gpt-4-1-mini"
-    expected_rq1_out = OUT_DIR / "RQ1" / "by_model" / "gpt-4-1-mini"
-    expected_rq2_out = OUT_DIR / "RQ2_architecture_metrics" / "by_model" / "gpt-4-1-mini"
+    expected_rq1_out = OUT_DIR / "RQ1" / "gpt-4-1-mini"
+    expected_rq2_out = OUT_DIR / "RQ2_architecture_metrics" / "gpt-4-1-mini"
 
     assert generate_rq1_runs_dir("GPT-4.1 mini") == expected_runs
     assert aggregate_rq1_runs_dir("GPT-4.1 mini") == expected_runs

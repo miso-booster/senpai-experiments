@@ -12,7 +12,6 @@ from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
 from app.architecture_styles import ARCH_DISPLAY_LABELS, ARCH_FILL_COLORS
 from app.setup_configuration import (
-    MODEL_BUCKET_DIRNAME,
     OUT_DIR,
     RQ2_EXPERIMENT_DIRNAME,
     resolve_runs_dir,
@@ -38,7 +37,7 @@ def default_rq1_runs_dir(model_label: str | None = None) -> pathlib.Path:
 def default_rq1_out_root(model_label: str | None = None) -> pathlib.Path:
     if not model_label:
         return DEFAULT_RQ1_OUT_ROOT
-    return DEFAULT_RQ1_OUT_ROOT / MODEL_BUCKET_DIRNAME / sanitize_path_component(model_label)
+    return DEFAULT_RQ1_OUT_ROOT / sanitize_path_component(model_label)
 
 @dataclass(frozen=True)
 class PromptRating:
@@ -592,7 +591,7 @@ def main() -> None:
         "--answers-dir",
         help=(
             "Directory containing answers_*.csv files. If omitted, uses "
-            "out/RQ1/<run_id> or out/RQ1/by_model/<model-label>/<run_id> "
+            "out/RQ1/<run_id> or out/RQ1/<model-label>/<run_id> "
             "for the selected/first run."
         ),
     )

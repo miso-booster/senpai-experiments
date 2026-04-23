@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from scipy.stats import wilcoxon
 from app.setup_configuration import (
-    MODEL_BUCKET_DIRNAME,
     OUT_DIR,
     RQ2_EXPERIMENT_DIRNAME,
     resolve_runs_dir,
@@ -54,7 +53,7 @@ def default_rq2_out_dir(model_label: str | None = None) -> Path:
     base_dir = OUT_DIR / "RQ2_architecture_metrics"
     if not model_label:
         return base_dir
-    return base_dir / MODEL_BUCKET_DIRNAME / sanitize_path_component(model_label)
+    return base_dir / sanitize_path_component(model_label)
 
 
 def compute_a12(x: pd.Series, y: pd.Series) -> float:
@@ -117,7 +116,7 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Output directory for the RQ2 workbook and plots "
             "(default: out/RQ2_architecture_metrics or "
-            "out/RQ2_architecture_metrics/by_model/<model-label>)"
+            "out/RQ2_architecture_metrics/<model-label>)"
         ),
     )
     parser.add_argument(

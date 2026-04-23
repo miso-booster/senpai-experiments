@@ -135,7 +135,7 @@ with `--runs-dir`.
 Main outputs go to:
 
 - `out/RQ1/<run_id>/` for the legacy/default layout
-- `out/RQ1/by_model/<model-label>/<run_id>/` when `--model-label` is used
+- `out/RQ1/<model-label>/<run_id>/` when `--model-label` is used
 
 Files:
 
@@ -183,7 +183,7 @@ python -m app.rq2 --model-label gpt-4.1-mini
 This produces the main RQ2 workbook and plots from the execution results.
 With `--model-label`, it reads from
 `out/runs/architecture_comparison/by_model/<model-label>/` and writes to
-`out/RQ2_architecture_metrics/by_model/<model-label>/`.
+`out/RQ2_architecture_metrics/<model-label>/`.
 
 The RQ2 workbook includes:
 

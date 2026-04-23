@@ -9,7 +9,6 @@ import pandas as pd
 
 from app.rq1.utils import sanitize_run_dir
 from app.setup_configuration import (
-    MODEL_BUCKET_DIRNAME,
     OUT_DIR,
     RQ2_EXPERIMENT_DIRNAME,
     load_prompts_json,
@@ -28,7 +27,7 @@ def default_rq1_runs_dir(model_label: str | None = None) -> pathlib.Path:
 def default_rq1_out_root(model_label: str | None = None) -> pathlib.Path:
     if not model_label:
         return DEFAULT_RQ1_OUT_ROOT
-    return DEFAULT_RQ1_OUT_ROOT / MODEL_BUCKET_DIRNAME / sanitize_path_component(model_label)
+    return DEFAULT_RQ1_OUT_ROOT / sanitize_path_component(model_label)
 
 
 def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
@@ -178,7 +177,7 @@ def main() -> None:
         "--out-dir",
         help=(
             "Output directory (default: out/RQ1/<run_id> or "
-            "out/RQ1/by_model/<model-label>/<run_id>)"
+            "out/RQ1/<model-label>/<run_id>)"
         ),
     )
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
