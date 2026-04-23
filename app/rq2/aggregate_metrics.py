@@ -6,12 +6,24 @@ from typing import Iterable, Sequence
 import numpy as np
 import pandas as pd
 from scipy.stats import wilcoxon
-from app.setup_configuration import (
-    OUT_DIR,
-    RQ2_EXPERIMENT_DIRNAME,
-    resolve_model_output_dir,
-    resolve_runs_dir,
-)
+
+try:
+    from app.setup_configuration import (
+        OUT_DIR,
+        RQ2_EXPERIMENT_DIRNAME,
+        resolve_model_output_dir,
+        resolve_runs_dir,
+    )
+except ImportError:  # Supports `python app/rq2/aggregate_metrics.py`
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from app.setup_configuration import (
+        OUT_DIR,
+        RQ2_EXPERIMENT_DIRNAME,
+        resolve_model_output_dir,
+        resolve_runs_dir,
+    )
 
 try:
     from .excel import save_outputs
