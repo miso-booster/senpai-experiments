@@ -1,0 +1,63 @@
+[project-context] Loaded 8 profile(s) [general_information_seeker.yaml, pizza_and_drink_order_placement.yaml, pizza_and_drinks_information_seeker.yaml, pizza_order_test_custom.yml, pizzaorder_ivan_test.yml, unrecognized_query_handler.yaml, user_experiencing_input_issues.yaml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\sensei_projects\pizza_shop
+[user-context] Loaded 4 connector(s) [345634_config.yml, ada-uam.yaml, metro-madrid.yml, postman.yaml] from E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\users\user_1\connectors
+conversation ID: graph_based_architecture__p34__pizza_shop__profile__3411c974
+Verbose activated
+[intent-classifier] {'intent': 'create_profile', 'raw': '{"intent": "create_profile", "reason": "user wants a new SENSEI profile for a specific conversation scenario"}'}
+[validation-decision] {'decision': 'TRUE', 'reason': 'user expects a correct profile'}
+$$$
+That sounds like a fun scenario to create! 😊 You can set up a profile where the user starts by asking for a custom pizza but then changes their mind and opts for a predefined pizza instead. Here’s a sample profile you can use as a template:
+
+```yaml
+test_name: "custom_to_predefined_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer trying to order a pizza, initially wanting a custom pizza but changing their mind."
+  context:
+    - "You are planning a pizza night and want to customize your pizza."
+    - "Halfway through, you decide to go for a predefined pizza instead."
+  goals:
+    - "I would like to order a custom pizza with {{custom_toppings}}."
+    - "Actually, can I get a {{predefined_pizza}} pizza instead?"
+    - custom_toppings:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, olives, extra cheese, bell peppers]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, BBQ Chicken, Vegetarian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get that. Could you please clarify your order?"
+  output:
+    - order_summary:
+        type: string
+        description: "Summary of the pizza order including type and toppings."
+    - total_cost:
+        type: currency
+        description: "The total cost of the order."
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 2
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+### Explanation:
+- **Goals**: The user first expresses a desire for a custom pizza with specific toppings and then changes their mind to order a predefined pizza.
+- **Interaction Style**: The `change your mind` style is included to simulate the user's change of heart during the conversation.
+- **Outputs**: The profile includes an order summary and total cost for validation.
+
+Feel free to tweak any part of this profile to better fit your needs! Happy testing! 🍕✨
+$$$

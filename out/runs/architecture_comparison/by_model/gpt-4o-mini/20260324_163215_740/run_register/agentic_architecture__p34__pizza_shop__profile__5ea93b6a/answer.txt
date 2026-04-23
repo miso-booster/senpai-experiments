@@ -1,0 +1,69 @@
+I've loaded the documentation for profiles from `sensei-chat-guide.md`. Now, let's create a profile where the user asks for a custom pizza but changes their mind halfway through and requests a predefined pizza instead. 
+
+### Profile Structure
+
+Here's how we can structure the profile:
+
+1. **Test Name**: A descriptive name for the profile.
+2. **User Role**: Define the user's role and context.
+3. **Goals**: Include goals for both the custom pizza request and the predefined pizza request.
+4. **Chatbot Output**: Specify what we want to extract after the conversation.
+5. **Conversation Controls**: Set the number of conversations and interaction styles.
+
+### Proposed Profile YAML
+
+Here's a draft of the profile based on the requirements:
+
+```yaml
+test_name: "custom_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer who wants to order a pizza."
+  context:
+    - "The user is indecisive and may change their mind."
+  goals:
+    - "I would like a custom pizza with {{custom_toppings}}."
+    - "Actually, I want the {{predefined_pizza}} instead."
+    - custom_toppings:
+        function: random()
+        type: string
+        data: ["pepperoni", "mushrooms", "onions", "extra cheese"]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: ["Margherita", "Pepperoni", "BBQ Chicken", "Veggie"]
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry, could you repeat that?"
+  output:
+    - order_id:
+        type: string
+        description: "The order identifier."
+    - final_choice:
+        type: string
+        description: "The final pizza choice made by the user."
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 3
+  interaction_style:
+    - change your mind
+```
+
+### Explanation of the Profile
+
+- **Goals**: The user first expresses a desire for a custom pizza and then changes their mind to a predefined option.
+- **Chatbot Output**: We extract the `order_id` and the `final_choice` of the pizza.
+- **Interaction Style**: The style includes the ability for the user to change their mind, which fits the scenario.
+
+Would you like to make any adjustments to this profile, or should I proceed to save it? 😊

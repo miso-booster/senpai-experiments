@@ -1,0 +1,80 @@
+[project-context] Loaded 8 profile(s) [general_information_seeker.yaml, pizza_and_drink_order_placement.yaml, pizza_and_drinks_information_seeker.yaml, pizza_order_test_custom.yml, pizzaorder_ivan_test.yml, unrecognized_query_handler.yaml, user_experiencing_input_issues.yaml, user_sim_pizzaorder_predefined.yml] and 6 rule(s) [conversation_lengths.yaml, more_toppings_cost_more.yaml, only_talks_about_pizza.yaml, ordering_conversation_turns.yaml, ordering_conversation_turns_assistant.yaml, same_number_of_toppings_cost_the_same.yaml] from E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\sensei_projects\pizza_shop
+[user-context] Loaded 4 connector(s) [345634_config.yml, ada-uam.yaml, metro-madrid.yml, postman.yaml] from E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\users\user_1\connectors
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__71246be2
+Verbose activated
+[intent-classifier] {'intent': 'create_profile', 'raw': '{"intent": "create_profile", "reason": "user wants a new SENSEI profile for a pizza shop with specific requirements"}'}
+[validation-decision] {'decision': 'TRUE', 'reason': 'user expects a correct profile'}
+$$$
+Sure! Here’s a profile for a pizza shop where the user is rude and wants things done quickly. I've included 4 goals with 4 variables, and two of them use pairwise functions to ensure we can determine the conversation number based on the pairwise matrix. Let’s dive in! 🍕✨
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A rude customer who wants their pizza order handled quickly."
+  context:
+    - "You're in a hurry and expect quick responses."
+    - "You don't have time for chit-chat."
+  goals:
+    - "Get me a {{pizza_type}} pizza, and make it {{pizza_size}}!"
+    - "I need {{number_of_drinks}} {{drink_type}} drinks, hurry up!"
+    - "What's the total cost for my order?"
+    - "When will my order be ready?"
+
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - number_of_drinks:
+        function: random(2)
+        type: int
+        data: {min: 1, max: 5}
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I didn't catch that. Just tell me what you want!"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation of the order details."
+    - total_cost:
+        type: currency
+        description: "Total cost of the order."
+    - estimated_ready_time:
+        type: time("hh:mm:ss")
+        description: "Estimated time for the order to be ready."
+
+conversation:
+  number: combinations(0.5, pairwise)  # Using pairwise functions for conversation number
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - long phrases
+    - change your mind
+```
+
+### Breakdown of the Profile:
+- **User Role**: A rude customer who wants quick service.
+- **Goals**: Four goals that include variables for pizza type, size, number of drinks, and drink type.
+- **Pairwise Functions**: Used for `pizza_type` and `pizza_size` to create a conversation number based on combinations.
+- **Chatbot Output**: Includes confirmation of the order, total cost, and estimated ready time.
+
+Feel free to tweak any part of this profile to better fit your needs! Happy testing! 😊🍕
+$$$
