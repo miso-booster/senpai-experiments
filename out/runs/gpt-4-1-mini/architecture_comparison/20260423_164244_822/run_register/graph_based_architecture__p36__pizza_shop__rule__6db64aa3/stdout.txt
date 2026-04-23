@@ -1,0 +1,42 @@
+conversation ID: graph_based_architecture__p36__pizza_shop__rule__6db64aa3
+$$$
+Hey! I see the rule you shared is meant to check that pizzas with more toppings cost more, but it’s missing the crucial part that compares the number of toppings between the two conversations. Without that, the rule doesn’t know *when* to expect the price to increase.
+
+Your current rule:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+**What’s missing?**  
+You need an `if:` clause that says: *if* the number of toppings in `conv[0]` is greater than in `conv[1]`, *then* the price should be higher.
+
+Here’s the fixed version with the `if:` clause added:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### Why this works better:
+- `when:` filters pairs of conversations to those with the same size and drink (good!).
+- `if:` checks the key metamorphic condition — more toppings in one conversation.
+- `then:` asserts the expected outcome — higher price for more toppings.
+
+Without the `if:`, the rule tries to compare prices for *all* pairs with same size and drink, regardless of toppings count, which doesn’t make sense.
+
+---
+
+If you want, I can help you write or review more rules like this! 😊
+$$$

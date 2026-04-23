@@ -1,0 +1,37 @@
+conversation ID: graph_based_architecture__p26__bikeshop__rule__d1d18111
+$$$
+Hey! 😊 I see what you want to do: check that the tune-up price is exactly $50. But the rule you wrote has a few issues:
+
+1. **`conversations: 2`** means the rule expects two conversations, but your rule only checks one conversation's price (`conv[0]`). For a single-conversation check, use `conversations: 1`.
+
+2. The **`when`** clause is filtering conversations where `conv[0].tune_up_price == 50`, so the rule only applies if the price is already 50. That means it won't catch cases where the price is wrong.
+
+3. The **`if`/`then`** part is not a valid boolean expression. The `then` should be a boolean expression that evaluates to True or False, not a string message.
+
+---
+
+### Here's a corrected version of your rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: conv[0].tune_up_price is not None
+oracle: extract_float(conv[0].tune_up_price) == 50
+```
+
+---
+
+### What I changed and why:
+
+- **`conversations: 1`** because you only need to check one conversation at a time.
+- **`when: conv[0].tune_up_price is not None`** to only apply the rule if the price is present.
+- Replaced the `if`/`then` with a single **`oracle`** boolean expression that extracts the numeric value from `tune_up_price` and checks if it equals 50.
+- Removed the string message from `then` because the rule expects a boolean condition.
+
+---
+
+If your `tune_up_price` field is a string like `"50 USD"` or `"$50"`, `extract_float` will correctly parse the number 50 for comparison.
+
+Let me know if you want me to help with anything else about SENSEI RULES! 😊
+$$$

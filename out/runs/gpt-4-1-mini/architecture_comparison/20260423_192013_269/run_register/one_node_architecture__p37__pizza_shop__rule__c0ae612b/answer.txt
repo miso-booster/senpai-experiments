@@ -1,0 +1,33 @@
+¡Claro! Para crear una regla en Sensei-check que verifique si el asistente confirma que añadió la bebida que el usuario pidió, necesitamos que la regla inspeccione la conversación y busque una confirmación explícita del asistente respecto a la bebida solicitada.
+
+Asumiendo que tu perfil expone en `chatbot.output` un campo con el tipo de bebida pedida por el usuario (por ejemplo, `drink_type`) y que la conversación contiene las frases del asistente en algún campo (por ejemplo, `chatbot_phrases` o similar), podemos usar una regla que busque en las respuestas del asistente una confirmación que mencione la bebida solicitada.
+
+Aquí tienes un ejemplo de regla que:
+
+- Se aplica a una sola conversación (`conversations: 1`).
+- Usa un `if` para asegurarse de que hay una bebida solicitada.
+- Usa un `oracle` para verificar que en las frases del asistente aparece una confirmación que incluye el nombre de la bebida.
+
+Si tu perfil no tiene exactamente esos campos, deberías adaptarlo a los nombres reales que usas.
+
+```yaml
+name: assistant_confirms_drink_added
+description: The assistant confirms that the requested drink was added to the order
+conversations: 1
+active: true
+when: drink_type is not None and drink_type != ""
+oracle: "any(drink_type.lower() in phrase.lower() and ('added' in phrase.lower() or 'included' in phrase.lower() or 'added to your order' in phrase.lower() or 'your drink' in phrase.lower()) for phrase in chatbot_phrases)"
+yields: "Assistant did not confirm adding the drink '{{drink_type}}' in the conversation."
+```
+
+---
+
+### Explicación rápida:
+
+- `when:` filtra solo conversaciones donde `drink_type` está definido y no vacío.
+- `oracle:` usa una expresión que recorre las frases del asistente (`chatbot_phrases`) y busca si alguna contiene el nombre de la bebida y palabras clave de confirmación como "added", "included", "your drink".
+- `yields:` muestra un mensaje útil si la regla falla.
+
+Si tu perfil no tiene `chatbot_phrases`, puedes usar otro campo que contenga las respuestas del asistente.
+
+¿Quieres que te ayude a adaptar esta regla a tus campos reales? 😊

@@ -1,0 +1,64 @@
+conversation ID: one_node_architecture__p12__alcampo__profile__bb905fa1
+$$$
+Here's a simple Sensei profile that simulates a user asking the chatbot to add items to their shopping cart. It includes variables for item names and quantities, with structured output fields to capture what the chatbot confirms about the cart additions.
+
+```yaml
+test_name: "shopping_cart_add_items"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a shopper who wants to add items to your shopping cart.
+    You ask the chatbot to add specific products with given quantities.
+  context:
+    - "You want to build your shopping cart efficiently."
+  goals:
+    - "Please add {{quantity}} units of {{item}} to my shopping cart."
+    - quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - item:
+        function: forward(quantity)
+        type: string
+        data:
+          - apples
+          - bananas
+          - milk
+          - bread
+          - eggs
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you please repeat?"
+  output:
+    - added_item:
+        type: string
+        description: "The item the chatbot confirms added to the cart"
+    - added_quantity:
+        type: int
+        description: "The quantity the chatbot confirms added to the cart"
+    - cart_total_items:
+        type: int
+        description: "Total number of items currently in the cart"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+This profile will generate conversations where the user asks to add varying quantities of different items, and the chatbot's extracted outputs will allow rules to verify that the cart additions are handled correctly. Let me know if you'd like it customized further! 😊
+$$$

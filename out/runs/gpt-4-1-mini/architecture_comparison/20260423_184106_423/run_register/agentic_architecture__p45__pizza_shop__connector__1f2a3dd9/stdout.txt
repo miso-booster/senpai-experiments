@@ -1,0 +1,41 @@
+conversation ID: agentic_architecture__p45__pizza_shop__connector__1f2a3dd9
+$$$
+Based on the provided request and response, and following the custom connector guide and examples, I will create a YAML connector that:
+
+- Uses the minimal required headers: `Content-Type`, `Authorization`, and `Origin` (since Origin is in the request and likely required).
+- Uses POST method to `/api/public/messages` on `https://api.1millionbot.com`.
+- Sends the JSON payload with placeholders for conversation, sender_type, sender, bot, language, url, and message text.
+- Extracts the assistant's response text from the JSON path `response.0.text`.
+- Removes HTML tags from the response text (this is a special requirement).
+
+Since the connector DSL does not natively support HTML tag removal in the response path, the standard approach is to extract the raw text and then post-process it outside the connector. However, if the connector supports a simple transformation or filter, it would be documented. The docs do not mention such a feature, so the best we can do is extract the raw text and note that HTML tags should be stripped after extraction.
+
+If you want me to include a note or a helper for HTML stripping outside the connector, I can do that.
+
+Here is the YAML connector draft for your review:
+```yaml
+name: "1MillionBot Minimal"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+**Note:** This connector extracts the raw response text including HTML tags. The connector DSL does not support stripping HTML tags directly, so you will need to remove HTML tags from the extracted text in your post-processing or downstream logic. If you want, I can help you design a rule or profile step to handle that. 
+
+Let me know if you want me to adjust or extend this!
+$$$

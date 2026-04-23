@@ -1,0 +1,64 @@
+conversation ID: one_node_architecture__p8__ada_uam__rule__043defe5
+$$$
+Hey! Let's check your Sensei rule `check_cau_information` together 😊.
+
+### What you wrote:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Is it okay?
+
+- The **`when`** clause is used to filter conversations where the contact details exactly match the expected values.
+- The **`oracle`** then checks the same exact condition.
+
+This means: the rule only applies to conversations where the contact details already match the expected values, and then it checks that they match. So it will never fail because it only runs on conversations that already meet the condition.
+
+### Why is this a problem?
+
+- The `when` filter is too strict — it excludes any conversation where the contact details are incorrect.
+- So the rule never catches errors because it only runs on "correct" conversations.
+- The `oracle` is redundant with `when` here.
+
+### How to fix it?
+
+You want to check that in **all conversations**, the contact details are exactly those values. So:
+
+- Remove or loosen the `when` filter (or remove it entirely).
+- Use the `oracle` to check that the fields equal the expected values.
+- Since this is a single-conversation rule, you can just check the fields directly.
+
+### Fixed version:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+Or, since it's a single conversation, you can omit `conv[0]` and just use the fields directly:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Explanation:
+
+- `conversations: 1` means the rule runs on each conversation individually.
+- The `oracle` expression checks that the extracted fields from the profile's `chatbot.output` match the expected CAU contact details.
+- We removed the `when` filter because it was filtering out all conversations except the ones that already have the correct info, so it prevented catching errors.
+- Using the fields directly (without `conv[0].`) is allowed in single-conversation rules and is cleaner.
+
+---
+
+If you want me to, I can provide the fixed rule in a YAML block for you! Just say the word 😊
+$$$

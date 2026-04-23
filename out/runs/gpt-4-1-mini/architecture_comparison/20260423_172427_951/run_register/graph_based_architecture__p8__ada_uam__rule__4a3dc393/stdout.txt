@@ -1,0 +1,81 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__4a3dc393
+$$$
+Hey! Thanks for sharing your rule 😊 Let’s take a close look at your Sensei-check rule named `check_cau_information`.
+
+---
+
+### Your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Is it okay?
+
+- **The `when` condition** here acts as a filter to select conversations where the contact info matches exactly those values.
+- **The `oracle` condition** then checks the **same exact condition**.
+
+This means:
+
+- The rule only applies to conversations that already have the correct info (because of the `when`).
+- Then it checks that the info is correct (which it already is, by the filter).
+- So this rule will **never fail** because it only runs on conversations that already match the correct info.
+
+---
+
+### What’s the problem?
+
+The `when` is too strict here — it only selects conversations where the info is already correct, so the check is trivial.
+
+Usually, for a single-conversation rule that verifies correctness of fields, you want to:
+
+- Run the rule on all conversations (or a broader filter),
+- Then assert the fields have the expected values.
+
+---
+
+### How to fix it?
+
+**Option 1: Remove the `when` clause entirely** so the rule runs on all conversations, and the `oracle` asserts the fields are exactly as expected.
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+**Option 2: If you want to filter conversations that mention CAU contact info, but still check correctness, you can use a broader `when` like checking if any of those fields are non-null or non-empty, then assert correctness.**
+
+Example:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email is not None or conv[0].contact_phone is not None or conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Explanation in simple terms:
+
+- The **`when`** clause is a filter that decides *which conversations* the rule applies to.
+- The **`oracle`** is the actual test that must be true for those conversations.
+- In your original rule, the filter (`when`) only lets conversations through that already have the correct info, so the test (`oracle`) is redundant.
+- By removing or loosening the `when`, the rule will check *all* conversations (or all that mention CAU info) to confirm the contact details are correct.
+- This way, if the bot gives wrong contact info, the rule will catch it!
+
+---
+
+If you want, I can help you write the fixed rule in your project format. Just let me know! 😊
+$$$

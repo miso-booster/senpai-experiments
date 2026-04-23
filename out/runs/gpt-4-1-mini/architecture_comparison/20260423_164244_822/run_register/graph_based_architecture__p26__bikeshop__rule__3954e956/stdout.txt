@@ -1,0 +1,50 @@
+conversation ID: graph_based_architecture__p26__bikeshop__rule__3954e956
+$$$
+Hey! Thanks for sharing your rule 😊 I see what you want to do: check that the tune-up price is exactly $50.
+
+But your current rule has some issues:
+
+1. The `conversations: 2` means it expects 2 conversations, but your rule only checks one conversation (`conv[0]`).
+2. The `then` part is a string message, but it should be a **boolean expression** that evaluates to True or False.
+3. The `when` condition is filtering for `conv[0].tune_up_price == 50`, so the rule will only run when the price is already 50 — which defeats the purpose of checking if it equals 50.
+4. The `if` condition is redundant if you want to check the price equals 50 anyway.
+
+---
+
+### Here's a corrected version for a **single conversation** rule that checks if the tune-up price is exactly $50:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: conv[0].tune_up_price is not None
+oracle: extract_float(conv[0].tune_up_price) == 50
+```
+
+---
+
+### What I changed and why:
+
+- Changed `conversations` from 2 to 1 because you only need one conversation to check a single price.
+- Used `when` to filter only conversations where `tune_up_price` is present (not None).
+- Replaced `if`/`then` with a single `oracle` boolean expression that asserts the price equals 50.
+- Used `extract_float()` helper to safely parse the price number from the string or number field.
+- Removed the string message from `then` because rules expect boolean expressions, not messages.
+
+---
+
+If your `tune_up_price` field is already a number, you could simplify to:
+
+```yaml
+name: tune_up_price_check
+description: Check that the tune-up price is exactly 50
+conversations: 1
+oracle: conv[0].tune_up_price == 50
+```
+
+But `extract_float` is safer if it might be a string like "50 USD".
+
+---
+
+Let me know if you want me to help adapt this for multiple conversations or add more conditions! 😊
+$$$

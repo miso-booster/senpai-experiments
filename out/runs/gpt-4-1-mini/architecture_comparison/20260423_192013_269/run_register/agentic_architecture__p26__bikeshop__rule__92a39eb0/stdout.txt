@@ -1,0 +1,45 @@
+conversation ID: agentic_architecture__p26__bikeshop__rule__92a39eb0
+$$$
+Thanks for sharing your rule! After reviewing the rules documentation, here are some observations and suggestions:
+
+### Your original rule:
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 2
+when: conv[0].tune_up_price == 50
+if: conv[0].tune_up_price is not None
+then: "The tune-up price is $50."
+```
+
+### Points to consider:
+- The `when` clause filters conversations to only those where `tune_up_price` is already 50, so the rule only runs on those cases, which defeats the purpose of checking the price.
+- The `if`/`then` structure requires both `if` and `then` to be boolean expressions. Here, `then` is a string message, which is invalid.
+- Since you want to check a single conversation’s price, `conversations` should be 1.
+- The assertion should be in an `oracle` clause for single-conversation rules.
+- Adding `active: true` is recommended to ensure the rule runs.
+
+### Suggested version:
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+active: true
+if: conv[0].tune_up_price is not None
+then: extract_float(conv[0].tune_up_price) == 50
+```
+
+This uses `if` as a precondition to ensure the price exists, and `then` asserts the price equals 50 using `extract_float`. It keeps the single conversation context and does not filter out conversations prematurely.
+
+If you prefer, you can also write this as a single `oracle` without `if`/`then`:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+active: true
+oracle: extract_float(conv[0].tune_up_price) == 50
+```
+
+Let me know if you want help adapting this to your profile or other scenarios!
+$$$

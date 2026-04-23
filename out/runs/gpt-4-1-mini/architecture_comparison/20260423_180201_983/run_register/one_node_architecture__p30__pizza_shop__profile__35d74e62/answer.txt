@@ -1,0 +1,74 @@
+Sure! Here's a friendly but rude pizza shop user profile with 4 goals and 4 variables, where 2 variables use `pairwise()` to generate a pairwise combination matrix for the conversation number. The user wants things done fast, so the role reflects impatience and directness.
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude and impatient customer who wants to order a pizza quickly.
+    You don't like wasting time and expect fast, direct answers. You may be blunt or curt.
+  context:
+    - "You are in a hurry and want your order processed as fast as possible."
+    - "You have little patience for small talk or delays."
+  goals:
+    - "Order a {{pizza_type}} pizza"
+    - "Choose the size {{pizza_size}}"
+    - "Add {{toppings}} as toppings"
+    - "Get {{drink}} to drink"
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: forward(pizza_type)
+        type: string
+        data: [cheese, mushrooms, olives, pepperoni]
+    - drink:
+        function: random()
+        type: string
+        data: [Coke, Water, Sprite]
+
+chatbot:
+  is_starter: false
+  fallback: "Please repeat your order quickly."
+  output:
+    - pizza_type:
+        type: string
+        description: "Type of pizza ordered"
+    - pizza_size:
+        type: string
+        description: "Size of the pizza"
+    - toppings:
+        type: list[string]
+        description: "List of toppings added"
+    - drink:
+        type: string
+        description: "Drink ordered"
+    - total_price:
+        type: currency
+        description: "Total price of the order"
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+    - long phrases
+```
+
+This profile uses `pairwise()` on `pizza_type` and `pizza_size` to generate a pairwise combination matrix, which determines the number of conversations. The other two variables use `forward()` and `random()` respectively. The user role emphasizes rudeness and impatience to reflect the "wants things done fast" requirement.
+
+Let me know if you'd like it tweaked! 🍕😎

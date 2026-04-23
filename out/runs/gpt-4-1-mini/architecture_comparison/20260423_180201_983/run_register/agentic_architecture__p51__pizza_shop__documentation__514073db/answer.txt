@@ -1,0 +1,36 @@
+Connectors in Chatbot Dojo are used to connect your chatbot testing framework to any external chatbot API without writing code. They act as a transport layer that sends user messages to the chatbot API and receives the chatbot's responses, allowing you to test and interact with the chatbot seamlessly.
+
+### Key fields of a connector YAML configuration:
+
+- **name** (optional): Friendly name for your chatbot.
+- **base_url** (required): The base URL of the chatbot API.
+- **send_message** (required): Defines how to send a message to the chatbot API, including:
+  - **path** (required): The API endpoint path appended to the base URL.
+  - **method** (optional, default POST): HTTP method like POST, GET, PUT, DELETE.
+  - **headers** (optional): Custom HTTP headers, e.g., for authentication.
+  - **payload_template** (required): JSON structure template for the request body, with `{user_msg}` as a placeholder for the user's message.
+- **response_path** (required): Dot-separated path to extract the chatbot's reply text from the JSON response.
+
+### How it works:
+
+- The connector sends the user message formatted according to `payload_template` to the API endpoint (`base_url + path`).
+- It then extracts the chatbot's reply from the JSON response using the `response_path`.
+
+### Example snippet:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+This config sends the user message as `message` in a POST request and extracts the reply from `json.message` in the response.
+
+---
+
+This explanation is based on the docs from `custom-connector-guide.md` and `connector-examples.md`. If you'd like, I can help you create or modify a connector YAML for your specific chatbot API! 😊

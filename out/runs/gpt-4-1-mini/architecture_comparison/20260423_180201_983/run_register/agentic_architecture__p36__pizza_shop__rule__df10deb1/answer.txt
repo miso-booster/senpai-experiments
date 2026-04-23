@@ -1,0 +1,40 @@
+Thanks for sharing the rule and letting me check your profile!
+
+### Why your rule is not working:
+- Your rule references fields: `size`, `drink`, and `price` in `conv[i]`.
+- However, the profile `pizza_and_drink_order_placement.yaml` exposes these fields in `chatbot.output`:
+  - `pizza_size` (not `size`)
+  - No `drink` field, but there is `drink_type` in user goals (not output)
+  - No `price` field, but there is `total_cost` (type: money) which likely corresponds to price.
+- Also, your rule lacks the `if:` condition that checks toppings count difference, which is important for monotonicity.
+
+### How to fix:
+- Update the rule to use the correct output field names:
+  - Replace `size` with `pizza_size`
+  - Replace `drink` with a comparable field — since no `drink` output exists, you might omit or replace it with something else if available.
+  - Replace `price` with `total_cost`
+- Add the `if:` condition to compare toppings count (if toppings are exposed).
+- Check if toppings are exposed in the profile output. They are not in this profile, so you cannot use `len(conv[0].toppings)` unless you add `toppings` to `chatbot.output`.
+- If toppings are missing, you either:
+  - Add `toppings` to the profile output, or
+  - Adjust the rule to work with available fields only.
+
+---
+
+### Suggested fixed rule (assuming you add `toppings` to profile output):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more (same size and drink)
+active: true
+conversations: 2
+when: conv[0].pizza_size == conv[1].pizza_size and conv[0].drink_type == conv[1].drink_type
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].total_cost) > extract_float(conv[1].total_cost)
+```
+
+If you cannot add `toppings` or `drink_type` to `chatbot.output`, you will need to modify the rule accordingly or extend the profile.
+
+---
+
+Would you like me to help you update the profile to add `toppings` and `drink_type` to `chatbot.output` so the rule can work? Or should I help you write a rule that fits the current profile outputs? 😊

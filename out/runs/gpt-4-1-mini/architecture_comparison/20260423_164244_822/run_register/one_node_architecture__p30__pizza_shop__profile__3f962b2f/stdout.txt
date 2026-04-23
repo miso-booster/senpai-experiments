@@ -1,0 +1,84 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__3f962b2f
+$$$
+Sure! Here's a Sensei profile for a pizza shop where the user is rude and wants things done fast. It includes 4 goals with 4 variables, two of which use `pairwise()` functions to enable pairwise combinations for conversation number calculation.
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude customer who wants to order a pizza quickly. You are impatient,
+    demanding, and expect fast responses and immediate action.
+  context:
+    - personality: personalities/rude-user.yml
+    - "You want things done fast and don't tolerate delays."
+  goals:
+    - "Order a {{pizza_type}} pizza"
+    - "Choose the size {{pizza_size}}"
+    - "Add {{toppings}} as toppings"
+    - "Get {{drink_quantity}} cans of {{drink_type}}"
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: forward(pizza_type)
+        type: string
+        data: [cheese, mushrooms, olives, bacon]
+    - drink_quantity:
+        function: random(3)
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Please be quick and clear."
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza ordered"
+    - pizza_size:
+        type: string
+        description: "The size of the pizza"
+    - toppings:
+        type: list[string]
+        description: "List of toppings added"
+    - drink_quantity:
+        type: int
+        description: "Number of drinks ordered"
+    - drink_type:
+        type: string
+        description: "Type of drink ordered"
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - rude
+    - single questions
+```
+
+This profile sets up a rude user with 4 goals and variables. The `pizza_type` and `pizza_size` use `pairwise()` so the total conversation count is based on their pairwise combinations. The other variables use `forward()` or `random()` for variety.
+
+Let me know if you'd like me to help with rules or anything else! 🍕😎
+$$$

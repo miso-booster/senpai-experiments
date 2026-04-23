@@ -1,0 +1,81 @@
+conversation ID: one_node_architecture__p8__ada_uam__rule__3368d3bc
+$$$
+Hey! Let's take a look at your Sensei-check rule `check_cau_information`. I'll review it step-by-step and then suggest improvements if needed.
+
+---
+
+### Your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Analysis:
+
+- **`conversations: 1`** means this is a single-conversation oracle rule, which is fine.
+- The `when:` clause is a filter that selects conversations where the three fields exactly match the given strings.
+- The `oracle:` clause asserts the same condition as `when:`.
+
+---
+
+### Problem:
+
+The `when:` clause is used to select conversations to which the rule applies. If you put the exact same condition in `when:` and `oracle:`, the rule will only check conversations where the condition is already true, so it will never fail. This defeats the purpose of validation.
+
+In other words, the rule says:
+
+- "Only check conversations where the contact info is exactly correct"
+- "Assert that the contact info is exactly correct"
+
+Since the filter only selects conversations where the info is correct, the oracle will always pass.
+
+---
+
+### How to fix it:
+
+You want to **check that the contact info fields have these exact values** in the conversation outputs.
+
+So:
+
+- The `when:` clause should be either omitted or relaxed (e.g., check that the fields exist or are not None).
+- The `oracle:` clause should assert the expected values.
+
+---
+
+### Fixed version:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email is not None and conv[0].contact_phone is not None and conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Explanation:
+
+- The `when:` clause now selects all conversations where the three fields are present (not None).
+- The `oracle:` clause asserts that the fields exactly match the expected values.
+- This way, if the chatbot returns wrong or missing info, the rule will fail as intended.
+
+---
+
+If you want to be even more robust, you could:
+
+- Normalize whitespace or case in the strings.
+- Use `in` or partial matching if exact match is too strict.
+
+But the above fix is the standard pattern for profile-bound single-conversation rules checking exact field values.
+
+---
+
+If you want me to generate the fixed YAML block for you, just say so! 😊
+$$$

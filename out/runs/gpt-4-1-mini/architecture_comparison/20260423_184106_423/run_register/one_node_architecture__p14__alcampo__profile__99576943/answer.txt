@@ -1,0 +1,77 @@
+¡Claro! Aquí tienes un perfil Sensei diseñado para probar la capacidad del chatbot de Alcampo para recomendar recetas y ayudar en la planificación de menús. Este perfil simula un usuario interesado en buscar recetas, gestionar ingredientes y planificar menús para diferentes ocasiones.
+
+```yaml
+test_name: "recipe_and_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a user looking for recipe recommendations and menu planning assistance.
+    You want to find recipes by category or season, add ingredients to a shopping list,
+    and get suggestions for balanced meals for different occasions.
+  context:
+    - personality: personalities/conversational-user.yml
+    - "You enjoy cooking and want to try new recipes."
+    - "You plan weekly menus and want help organizing ingredients."
+  goals:
+    - "Find recipes for {{meal_type}} suitable for {{occasion}}."
+    - "Add ingredients from the {{selected_recipe}} to my shopping list."
+    - "Ask for suggestions for a balanced menu including {{meal_type}} and {{side_dish}}."
+    - meal_type:
+        function: forward()
+        type: string
+        data: [breakfast, lunch, dinner, dessert]
+    - occasion:
+        function: random()
+        type: string
+        data: [weeknight dinner, family gathering, holiday meal, quick snack]
+    - selected_recipe:
+        function: random()
+        type: string
+        data:
+          - "vegetable lasagna"
+          - "chicken curry"
+          - "quinoa salad"
+          - "chocolate mousse"
+          - "grilled salmon"
+    - side_dish:
+        function: random()
+        type: string
+        data: [salad, roasted vegetables, rice, bread]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you please rephrase your recipe request?"
+  output:
+    - recommended_recipes:
+        type: string
+        description: "List of recipes recommended by the chatbot"
+    - shopping_list_items:
+        type: string
+        description: "Ingredients added to the shopping list"
+    - menu_suggestions:
+        type: string
+        description: "Suggested balanced menu for the occasion"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+Este perfil cubre:
+
+- Búsqueda de recetas por tipo de comida y ocasión.
+- Añadir ingredientes de una receta a la lista de la compra.
+- Solicitar sugerencias para menús equilibrados.
+
+Si quieres, puedo ayudarte a crear reglas Sensei-check para validar las salidas de este perfil. ¿Quieres? 😊

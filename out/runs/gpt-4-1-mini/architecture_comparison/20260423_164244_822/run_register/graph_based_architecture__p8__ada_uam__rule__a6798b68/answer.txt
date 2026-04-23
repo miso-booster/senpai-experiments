@@ -1,0 +1,78 @@
+Hey! 😊 Let’s take a look at your rule `check_cau_information` together.
+
+---
+
+### Your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### What it does:
+
+- It runs on **single conversations** (`conversations: 1`).
+- It uses a `when` filter that **only selects conversations where all three fields exactly match the expected values**.
+- Then the `oracle` asserts the **same exact condition**.
+
+---
+
+### Is this okay?
+
+**Not quite.** Here's why:
+
+- The `when` clause acts as a filter to decide *which conversations the rule applies to*.  
+- Your `when` condition is **exactly the same as the oracle condition** — it only selects conversations where the info is already correct.
+- So the rule will **only run on conversations that already have the correct info**, and then check that the info is correct — which will always pass.
+- This means the rule **never checks conversations where the info is wrong**, so it won't catch errors.
+
+---
+
+### How to fix it?
+
+You want the rule to **run on all conversations** (or at least those where the fields exist), and then check if the info matches the expected values.
+
+So:
+
+- Either **remove the `when` clause** (so it applies to all conversations), or
+- Use a `when` that just ensures the fields exist (e.g., `conv[0].contact_email is not None`), then
+- Use the `oracle` to check that the fields have the correct values.
+
+---
+
+### Fixed version:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email is not None and conv[0].contact_phone is not None and conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Explanation:
+
+- `when:` now filters to conversations that have these fields present (not null).
+- `oracle:` asserts the fields have the exact expected values.
+- This way, if the contact info is wrong or missing, the rule will **fail** and alert you.
+
+---
+
+### Bonus tip:
+
+If you want to be more tolerant to minor formatting differences (like spaces or case), you could normalize the strings or use helper functions, but for exact contact info, exact matches are usually best.
+
+---
+
+If you want, I can help you write a version that tolerates minor differences or checks partial matches! Just ask 😊
+
+---
+
+Does this help? Would you like me to explain anything else about Sensei rules?

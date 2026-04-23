@@ -1,0 +1,29 @@
+Hey! I see you want to fix your Sensei-check rule named `customer_service_contact_info`. Let's make it work smoothly 😊.
+
+Here are some issues I spotted:
+
+1. **Typo in `description`** — you wrote `descriptin`.
+2. The rule is missing the **`then:`** clause after the `if:` condition. Sensei-check rules with `if:` must have a corresponding `then:` to specify the expected condition.
+3. The `when:` filter is fine but make sure the fields `user_request`, `contact_options`, and `customer_service_number` actually exist in your profile's `chatbot.output`.
+4. The `then:` clause should specify what you expect when the `if` condition is true. For example, you might want to check that the contact info strings are non-empty or match a pattern.
+
+Here's a corrected and improved version of your rule:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: len(conv[0].contact_options) > 0 and len(conv[1].customer_service_number) > 0
+```
+
+### Explanation:
+- Fixed the typo in `description`.
+- Added a `then:` clause that asserts the contact info fields are not empty strings.
+- Kept the `when:` filter to select conversations where the user asked for contact options or customer service number.
+- This assumes your profile outputs `contact_options` and `customer_service_number` fields in `chatbot.output`.
+
+If you want to be more specific (e.g., check if the phone number matches a pattern), you could add more complex conditions in `then:` using Python expressions or helper functions.
+
+Let me know if you want me to help with that or if your profile uses different field names! 😊

@@ -1,0 +1,18 @@
+Got it! Here's a Sensei-check rule that ensures the chatbot outputs for the Ada UAM profile include non-empty values for `contact_email`, `contact_phone`, and `physical_address`. This will check that all necessary CAU contact info is present in each conversation:
+
+```yaml
+name: cau_contact_info_complete
+description: The chatbot must provide email, phone, and physical address for CAU
+conversations: 1
+active: true
+oracle: |
+  conv[0].contact_email is not None and conv[0].contact_email != "" and
+  conv[0].contact_phone is not None and conv[0].contact_phone != "" and
+  conv[0].physical_address is not None and conv[0].physical_address != ""
+yields: "Missing contact info: email='{}', phone='{}', address='{}'".format(
+  conv[0].contact_email, conv[0].contact_phone, conv[0].physical_address)
+```
+
+This rule runs on single conversations (`conversations: 1`) and asserts that none of those fields are empty or None. If any are missing, it yields a message showing which ones are missing or empty.
+
+Let me know if you want it adapted for multiple conversations or with more complex checks! 😊

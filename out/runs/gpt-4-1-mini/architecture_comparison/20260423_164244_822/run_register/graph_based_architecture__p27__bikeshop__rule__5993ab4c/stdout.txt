@@ -1,0 +1,41 @@
+conversation ID: graph_based_architecture__p27__bikeshop__rule__5993ab4c
+$$$
+¡Claro! Para crear una regla en Sensei-check que verifique que si se le dice dos veces la misma fecha al asistente, este debe rechazar la segunda vez, necesitamos:
+
+- Que la regla compare dos conversaciones (conversations: 2).
+- Que el campo de entrada relevante sea la fecha (por ejemplo, `date` o el nombre que use tu perfil en `chatbot.output`).
+- Que la segunda conversación con la misma fecha incluya alguna señal de rechazo en la respuesta del asistente (por ejemplo, un texto que contenga "no puedo aceptar", "fecha no disponible", "repetida", o similar).
+- Usar `utterance_index` para detectar en la segunda conversación la aparición de un rechazo.
+
+Aquí tienes un ejemplo de regla que asume que el perfil expone la fecha en `date` y que el rechazo se detecta con una frase clave en la respuesta del asistente:
+
+```yaml
+name: reject_duplicate_date
+description: Si se repite la misma fecha en dos conversaciones, la segunda debe ser rechazada
+conversations: 2
+when: conv[0].date == conv[1].date
+if: "True"
+then: utterance_index('assistant', 'no puedo aceptar') > 0 or utterance_index('assistant', 'fecha no disponible') > 0 or utterance_index('assistant', 'repetida') > 0
+```
+
+Si prefieres usar `if`/`then` para mayor claridad:
+
+```yaml
+name: reject_duplicate_date
+description: Si se repite la misma fecha en dos conversaciones, la segunda debe ser rechazada
+conversations: 2
+when: conv[0].date == conv[1].date
+if: "True"
+then: utterance_index('assistant', 'no puedo aceptar') > 0 or utterance_index('assistant', 'fecha no disponible') > 0 or utterance_index('assistant', 'repetida') > 0
+```
+
+---
+
+**Notas importantes:**
+
+- Cambia `date` por el nombre exacto del campo que tu perfil expone para la fecha.
+- Ajusta las frases clave que buscas en el rechazo según el lenguaje que use tu asistente.
+- `utterance_index('assistant', ...)` devuelve el índice del turno donde aparece la frase; si es mayor que 0, significa que el asistente la dijo.
+
+¿Quieres que te ayude a adaptar esta regla a tu perfil específico? 😊
+$$$

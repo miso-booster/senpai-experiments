@@ -1,0 +1,32 @@
+An **oracle** in Sensei-check is a condition or expression that acts as a correctness check for a conversation or set of conversations. It is a boolean expression that the system evaluates to determine if the chatbot's behavior meets the expected criteria.
+
+Here’s a quick summary based on the Sensei-check documentation (`sensei-check-doc.md` and `rules-examples.md`):
+
+- An oracle can be applied to:
+  - A **single conversation** (traditional oracle).
+  - Multiple conversations (metamorphic testing).
+  - All conversations in a batch (global checks).
+
+- The oracle is a boolean expression written in a Python-like DSL that inspects the conversation outputs (usually fields extracted by the profile in `chatbot.output`).
+
+- Example of a single-conversation oracle:
+  ```yaml
+  conversations: 1
+  oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+  ```
+  This checks that the price is at least 10 USD.
+
+- Example of a metamorphic oracle (across two conversations):
+  ```yaml
+  conversations: 2
+  when: conv[0].size == conv[1].size
+  if: len(conv[0].toppings) > len(conv[1].toppings)
+  then: extract_float(conv[0].price) > extract_float(conv[1].price)
+  ```
+  This checks that if two pizzas have the same size but one has more toppings, its price should be higher.
+
+- Oracles can also use built-in helpers like `language()`, `is_unique()`, `repeated_answers()`, etc.
+
+In short, the oracle is the core validation logic that defines what it means for the chatbot's output to be correct or consistent according to the test.
+
+If you want, I can show you more examples or explain how to write an oracle for your specific use case! 😊

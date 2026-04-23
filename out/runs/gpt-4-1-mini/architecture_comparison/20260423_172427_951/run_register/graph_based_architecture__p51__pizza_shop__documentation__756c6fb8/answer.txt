@@ -1,0 +1,61 @@
+Hey there! 😊 Let me explain connectors for you in the Sensei ecosystem.
+
+---
+
+### What are Connectors used for?
+
+Connectors are **YAML configuration files** that define how Sensei communicates with your chatbot's API. They let Sensei send user messages and receive chatbot responses without writing code. Think of a connector as a bridge or translator between Sensei and your chatbot service.
+
+By configuring a connector, you tell Sensei:
+
+- Where to send the user message (API endpoint)
+- How to format the request (HTTP method, headers, JSON payload)
+- How to find the chatbot's reply inside the API response
+
+This makes it super flexible to test any chatbot that offers an API, no matter the platform or tech stack.
+
+---
+
+### Key Fields in a Connector YAML
+
+Here’s a quick rundown of the main fields you’ll find or need to set in a connector:
+
+| Field                  | Description                                                                                         | Required? |
+|------------------------|---------------------------------------------------------------------------------------------------|-----------|
+| `name`                 | Friendly name for your chatbot connector (just for your reference)                                | No        |
+| `base_url`             | The base URL of the chatbot API (e.g., `https://api.mychatbot.com`)                               | Yes       |
+| `send_message.path`    | The API endpoint path appended to the base URL (e.g., `/chat/send`)                               | Yes       |
+| `send_message.method`  | HTTP method to use (POST, GET, etc.). Defaults to POST if omitted                                 | No        |
+| `send_message.headers` | Optional HTTP headers like `Authorization`, `Content-Type`, etc.                                 | No        |
+| `send_message.payload_template` | The JSON payload structure to send, with `{user_msg}` as a placeholder for the user’s message | Yes       |
+| `response_path`        | Dot-separated path to extract the chatbot’s reply from the JSON response (e.g., `response.text`) | Yes       |
+
+---
+
+### How it works in practice
+
+- When Sensei sends a message, it fills `{user_msg}` in the `payload_template`.
+- It sends the request to `base_url + send_message.path` using the specified method and headers.
+- It parses the JSON response and extracts the chatbot’s reply using `response_path`.
+
+---
+
+### Example snippet
+
+```yaml
+name: "My Custom Bot"
+base_url: "https://api.mychatbot.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Authorization: "Bearer your-api-key"
+    Content-Type: "application/json"
+  payload_template:
+    query: "{user_msg}"
+response_path: "response.text"
+```
+
+---
+
+If you want, I can help you create or fix a connector YAML for your chatbot! Just let me know 😊

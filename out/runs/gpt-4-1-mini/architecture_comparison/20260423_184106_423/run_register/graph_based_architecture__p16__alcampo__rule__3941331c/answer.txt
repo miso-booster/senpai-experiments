@@ -1,0 +1,32 @@
+Hey! Since you don’t have a profile yet for lactose-free product availability, we can create a general Sensei-check rule that looks for mentions of lactose-free products and checks if the assistant confirms their availability somewhere in the conversation.
+
+Here’s a simple example rule you can start with. It assumes:
+
+- The conversation has a field `lactose_free_requested` (boolean) indicating the user asked about lactose-free products.
+- The assistant’s replies are in `chatbot_phrases` (a list of strings).
+- The rule checks that if lactose-free products are requested, the assistant mentions availability (e.g., “available”, “in stock”, “we have lactose-free”, etc.).
+
+Since you don’t have a profile yet, you can adapt the field names later.
+
+```yaml
+name: lactose_free_availability_check
+description: Checks that if lactose-free products are requested, the assistant confirms their availability.
+conversations: 1
+when: lactose_free_requested is True
+oracle: >
+  any(
+    phrase.lower().find('lactose-free') >= 0 and 
+    any(keyword in phrase.lower() for keyword in ['available', 'in stock', 'yes', 'we have', 'offer', 'provide'])
+    for phrase in chatbot_phrases
+  )
+on-error: "Assistant did not confirm availability of lactose-free products when requested."
+```
+
+### Explanation:
+- `when:` filters conversations where lactose-free products were requested.
+- `oracle:` scans assistant phrases to find mentions of lactose-free AND some availability keywords.
+- If none found, the rule fails with the message.
+
+---
+
+If you want, I can help you design a profile next that exposes these fields (`lactose_free_requested`, `chatbot_phrases`) properly! Just let me know 😊

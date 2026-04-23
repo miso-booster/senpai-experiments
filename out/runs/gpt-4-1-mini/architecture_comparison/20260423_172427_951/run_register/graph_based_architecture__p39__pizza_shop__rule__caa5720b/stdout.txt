@@ -1,0 +1,26 @@
+conversation ID: graph_based_architecture__p39__pizza_shop__rule__caa5720b
+$$$
+Got it! You want a metamorphic Sensei-check rule that verifies: when two conversations differ only by the presence of a drink, the one with the drink costs exactly $2 more.
+
+Here's a clear rule for that, assuming the profile exposes `drink` (string) and `price` (currency string) in `chatbot.output`:
+
+```yaml
+name: drink_adds_two_dollars
+description: Adding a drink increases the total price by exactly $2
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].number == conv[1].number and conv[0].toppings == conv[1].toppings
+if: (conv[0].drink == '' or conv[0].drink is None) and (conv[1].drink != '' and conv[1].drink is not None)
+then: abs(extract_float(conv[1].price) - extract_float(conv[0].price) - 2) < 0.01
+on-error: "Price difference when adding drink is not $2: conv[0].price=${conv[0].price}, conv[1].price=${conv[1].price}"
+```
+
+### Explanation:
+- The `when` clause ensures the pizzas are identical in size, number, and toppings.
+- The `if` clause checks conv[0] has no drink, conv[1] has a drink.
+- The `then` clause asserts the price difference is exactly $2 (allowing a tiny epsilon for float precision).
+- The `on-error` message helps debug failures.
+
+If your `drink` field uses a different convention for "no drink" (like `null` or `"none"`), you can adjust the `if` condition accordingly.
+
+Would you like me to help you adapt this to your exact profile fields or test it? 😊
+$$$

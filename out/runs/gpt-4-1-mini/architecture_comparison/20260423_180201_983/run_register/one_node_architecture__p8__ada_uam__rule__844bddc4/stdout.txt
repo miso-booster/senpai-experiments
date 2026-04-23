@@ -1,0 +1,70 @@
+conversation ID: one_node_architecture__p8__ada_uam__rule__844bddc4
+$$$
+Hey! Thanks for sharing your rule. Let's take a look at it carefully 😊.
+
+Your rule is named `check_cau_information` and wants to verify that the CAU (Centro de Atención a Usuarios) provides the correct contact details: email, phone, and physical address.
+
+Here's your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Is this rule okay?
+
+- The `when` clause is used to **select** conversations where all three fields exactly match those values.
+- The `oracle` then repeats the exact same condition.
+
+This means: The rule only applies if the conversation already has those exact values, and then it checks that those exact values are present. So, effectively, the rule will only run if the data is already correct, which makes it not very useful.
+
+---
+
+### How to fix it?
+
+You want to **check that the fields equal those expected values** in the conversation output.
+
+For a single-conversation rule, you can **skip the `when` clause** (or make it more general) and just assert the `oracle` condition.
+
+Or, if you want to filter conversations where any of the fields is present (not None), you can do:
+
+```yaml
+when: conv[0].contact_email is not None or conv[0].contact_phone is not None or conv[0].physical_address is not None
+```
+
+Then assert the fields equal the expected values.
+
+---
+
+### Fixed version
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email is not None or conv[0].contact_phone is not None or conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Explanation
+
+- `conversations: 1` means this rule checks each conversation individually.
+- The `when` clause filters to only conversations where at least one of the fields is present (not None).
+- The `oracle` asserts that **all three fields** exactly match the expected values.
+- If any field is missing or incorrect, the rule will fail, reporting that the CAU info is wrong or incomplete.
+
+---
+
+If you want the rule to always run regardless of presence, you can omit `when:` entirely, but then you risk errors if fields are missing (None). Using `when` helps avoid that.
+
+---
+
+If you want me to help you write a more flexible or partial check (e.g., allow some fields missing), just ask! 😊
+$$$

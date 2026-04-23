@@ -1,0 +1,46 @@
+Hey! I see the rule you shared is missing the crucial `if:` condition that triggers the comparison based on the number of toppings. Without it, the rule doesn't know *when* to expect the price to be higher.
+
+Your original rule YAML is:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### What's missing?
+
+- The `if:` clause that says **"if conv[0] has more toppings than conv[1]"**, then the price should be higher.
+- Without `if:`, the `then:` condition is always applied whenever the `when:` filter matches, which is not what you want.
+
+### How to fix it?
+
+Add the `if:` condition comparing the number of toppings, like this:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+---
+
+### Why this works:
+
+- `when:` filters pairs of conversations that have the same size and drink (comparable).
+- `if:` checks if the first conversation has more toppings than the second.
+- `then:` asserts that the price of the first conversation should be greater.
+
+---
+
+If your profile exposes `toppings` as a list and `price` as a string with currency, this rule will properly check the monotonicity of price with respect to toppings count.
+
+Let me know if you want me to help you create or validate more rules! 😊

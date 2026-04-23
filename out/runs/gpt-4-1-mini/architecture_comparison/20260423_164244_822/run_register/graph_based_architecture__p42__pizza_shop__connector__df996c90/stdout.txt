@@ -1,0 +1,54 @@
+conversation ID: graph_based_architecture__p42__pizza_shop__connector__df996c90
+$$$
+Hey! 😊 I see the connector you shared isn’t working, and you also provided the actual request and response details from the API. Let’s fix it step by step.
+
+---
+
+### What I noticed:
+
+1. Your connector is sending to `/api/messages` on `https://api.bot.com`, but the real request is to `POST /api/public/messages` on `https://api.1millionbot.com`.
+2. Your payload is missing several required fields like `conversation`, `sender_type`, `sender`, `bot`, and `url`.
+3. The `Authorization` header is missing in your connector.
+4. The `response_path` you have is `"request.text"`, but the actual bot reply is inside the JSON response under `response[0].text`.
+
+---
+
+### How to fix your connector YAML:
+
+```yaml
+name: "Fixed Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"  # Your auth token here
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+---
+
+### Explanation:
+
+- **Base URL & path** match the real API endpoint.
+- **Headers** include the `Authorization` token from your example.
+- **Payload** includes all required fields (`conversation`, `sender_type`, `sender`, `bot`, `language`, `url`) exactly as in your example.
+- **`{user_msg}`** placeholder is kept for dynamic user input.
+- **Response path** points to the bot’s reply text inside the `response` array.
+
+---
+
+If you update your connector like this, it should work smoothly! 🚀
+
+If you want, I can help you create a ready-to-use YAML file or explain any part in more detail. Just let me know! 😊
+$$$

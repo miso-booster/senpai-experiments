@@ -1,0 +1,30 @@
+Sure! Here's a Sensei-check rule that verifies the expected values for your profile's outputs:
+
+- The `opening_and_closing` time should be between 10 and 20 (assuming this means hours, e.g., "10 AM to 8 PM").
+- The `tune_up` price should be 50.
+- The `seat_price` should be 20.
+- The `tire` price should be 20.
+
+Since `opening_and_closing` and `seat_price` are strings, I'll assume you want to check if the opening time is at least 10 and closing time at most 20 (hours). For this, you might need to parse the string, but since rules are limited, I'll do a simple numeric check using `extract_float` on the string to get the opening and closing hours.
+
+If you want a more precise check, you might need to adjust the profile or extraction logic.
+
+Here's the rule in YAML:
+
+```yaml
+name: bike_shop_price_and_hours_check
+description: Checks that opening hours are between 10 and 20, and prices for tune-up, seat, and tire are as expected.
+conversations: 1
+oracle: |
+  # Extract floats from opening_and_closing string, expecting format like "10 to 20" or "10-20"
+  hours = [extract_float(h) for h in opening_and_closing.replace('-', ' to ').split(' to ') if extract_float(h) is not None]
+  hours_valid = len(hours) == 2 and hours[0] >= 10 and hours[1] <= 20
+  tune_up_price = extract_float(tune_up)
+  seat_price_val = extract_float(seat_price)
+  tire_price_val = extract_float(tire)
+  hours_valid and tune_up_price == 50 and seat_price_val == 20 and tire_price_val == 20
+yields: |
+  f"Opening hours or prices are incorrect: opening_and_closing={opening_and_closing}, tune_up={tune_up}, seat_price={seat_price}, tire={tire}"
+```
+
+Would you like me to help you adapt it further or add metamorphic checks? 😊

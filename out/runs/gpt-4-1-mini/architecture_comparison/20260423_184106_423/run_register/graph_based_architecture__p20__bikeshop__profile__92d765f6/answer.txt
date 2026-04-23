@@ -1,0 +1,76 @@
+Got it! Let's create a Sensei profile for a user who wants to set an appointment specifically to have their bike wheels changed. We'll focus on varying dates and times to test how the chatbot handles scheduling.
+
+Here’s a profile YAML that fits your request:
+
+```yaml
+test_name: "bike_wheel_change_appointment"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a bike owner wanting to set an appointment to have your bike wheels changed.
+    You want to ask for available dates and times and confirm the appointment.
+  context:
+    - "You want the appointment as soon as possible."
+    - "You prefer morning or early afternoon slots."
+  goals:
+    - "I want to set an appointment to change my bike wheels on {{appointment_date}} at {{appointment_time}}."
+    - appointment_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - "November 6th, 2024"
+          - "November 7th, 2024"
+          - "November 8th, 2024"
+          - "November 9th, 2024"
+    - appointment_time:
+        function: another()
+        type: string
+        data:
+          - "09:00"
+          - "10:30"
+          - "13:00"
+          - "14:30"
+          - "16:00"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you please repeat your appointment request?"
+  output:
+    - confirmed_date:
+        type: date
+        description: "The date confirmed by the chatbot for the wheel change appointment."
+    - confirmed_time:
+        type: string
+        description: "The time confirmed by the chatbot for the wheel change appointment."
+    - appointment_confirmation:
+        type: string
+        description: "Full confirmation message from the chatbot about the appointment."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - single questions
+```
+
+### Explanation:
+- **User goals** include setting an appointment with variables `appointment_date` and `appointment_time` to test different date/time combinations.
+- `function: forward()` for dates to iterate through the list in order.
+- `function: another()` for times to cycle through times without repetition.
+- `chatbot.output` fields capture the confirmed date, time, and full confirmation message for validation.
+- Conversation number is set to `combinations` to cover all date/time pairs.
+- Interaction style is `single questions` to keep each user input focused.
+
+Would you like me to help you tweak or extend this profile? 😊

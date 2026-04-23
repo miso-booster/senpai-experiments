@@ -1,0 +1,60 @@
+Hey! 😊 I see you want to create a Sensei-check rule that verifies the outputs of your bike shop chatbot conversations. The rule should check that:
+
+- The opening and closing time is between 10 and 20 (I assume these are hours, like 10:00 to 20:00),
+- The tune-up price is 50,
+- The seat price is 20,
+- The tire price is 20.
+
+Great! Let's write a single-conversation rule (since these are fixed expected values) that asserts these conditions on the chatbot's output fields.
+
+Here’s a clear YAML rule you can use:
+
+```yaml
+name: bike_shop_price_and_hours_check
+description: Checks that opening/closing times are between 10 and 20, and prices for tune-up, seat, and tire are correct.
+conversations: 1
+oracle: >
+  # Parse opening and closing times from the string (assuming format like "10-20" or "10:00-20:00")
+  import re
+  times = re.findall(r'\d+', opening_and_closing)
+  opening = int(times[0]) if len(times) > 0 else None
+  closing = int(times[1]) if len(times) > 1 else None
+
+  # Check times are between 10 and 20
+  opening is not None and closing is not None and 10 <= opening <= 20 and 10 <= closing <= 20 and
+
+  # Check prices (assuming prices are strings with numbers, extract floats)
+  float(tune_up) == 50 and
+  float(seat_price) == 20 and
+  float(tire) == 20
+```
+
+### Explanation:
+
+- We extract numbers from the `opening_and_closing` string to get opening and closing hours.
+- We check both are between 10 and 20.
+- We convert `tune_up`, `seat_price`, and `tire` to floats and check they match the expected values.
+
+---
+
+If your prices are stored as strings like `"20 USD"` or `"20.00"`, you might want to use the helper `extract_float()` from Sensei-check to safely parse numbers. Here's an improved version using that helper:
+
+```yaml
+name: bike_shop_price_and_hours_check
+description: Checks opening/closing times between 10 and 20, and prices for tune-up, seat, and tire.
+conversations: 1
+oracle: >
+  import re
+  times = re.findall(r'\d+', opening_and_closing)
+  opening = int(times[0]) if len(times) > 0 else None
+  closing = int(times[1]) if len(times) > 1 else None
+
+  opening is not None and closing is not None and 10 <= opening <= 20 and 10 <= closing <= 20 and
+  extract_float(tune_up) == 50 and
+  extract_float(seat_price) == 20 and
+  extract_float(tire) == 20
+```
+
+---
+
+Would you like me to help you adapt this rule if your `opening_and_closing` format is different? Or if you want a metamorphic rule comparing multiple conversations? Just let me know! 😊

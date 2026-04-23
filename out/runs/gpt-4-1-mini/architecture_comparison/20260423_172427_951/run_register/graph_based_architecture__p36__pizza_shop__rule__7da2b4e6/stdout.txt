@@ -1,0 +1,31 @@
+conversation ID: graph_based_architecture__p36__pizza_shop__rule__7da2b4e6
+$$$
+Hey! I see the rule you shared is missing the crucial `if:` condition that triggers the comparison. In Sensei-check metamorphic rules, when you want to say "if X, then Y," you need both `if:` and `then:` parts.
+
+Your current rule has only `when:` (filter) and `then:` (assertion), but no `if:` to specify the condition under which the price should be higher.
+
+From your rule name and description, you want to check that if the number of toppings in `conv[0]` is more than in `conv[1]`, then the price should be higher.
+
+So, the fix is to add the `if:` condition checking toppings count.
+
+Here’s the corrected rule:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+**Why this matters:**  
+- `when:` filters pairs of conversations to comparable ones (same size and drink).  
+- `if:` checks the specific condition (more toppings in conv[0]).  
+- `then:` asserts the expected relation (price higher in conv[0]).
+
+Without the `if:`, the rule tries to apply the `then:` to all pairs matching `when:`, which is not what you want.
+
+Give this a try! It should work perfectly now 😊. Let me know if you want me to help with anything else!
+$$$

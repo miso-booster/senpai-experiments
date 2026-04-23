@@ -1,0 +1,36 @@
+Hey! 😊 I see you want to create a Sensei-check rule to verify the outputs of your bike shop chatbot profile. You have these fields exposed in `chatbot.output`:
+
+- `opening_and_closing` (string, e.g., "10 to 20")
+- `tire` (money, expected 20)
+- `tune_up` (money, expected 50)
+- `seat_price` (string, expected 20)
+- `care_bike` (string, some advice text)
+
+You want to check that:
+
+- Opening and closing time is between 10 and 20 (I assume you mean the string should say something like "10 to 20")
+- Tune-up price is 50
+- Seat price is 20
+- Tire price is 20
+
+Here’s a simple **single-conversation** rule that checks these expectations:
+
+```yaml
+name: bike_shop_price_and_hours_check
+description: Check bike shop opening hours and prices for tire, tune-up, and seat
+conversations: 1
+oracle: >
+  # Check opening_and_closing contains "10" and "20"
+  ('10' in opening_and_closing and '20' in opening_and_closing)
+  and extract_float(tune_up) == 50
+  and extract_float(tire) == 20
+  and extract_float(seat_price) == 20
+  and care_bike is not None and len(care_bike) > 0
+```
+
+### Explanation:
+- We check that the `opening_and_closing` string contains both "10" and "20" (you can adjust this if you want a stricter time format).
+- We use `extract_float` helper to parse the numeric prices from the string fields.
+- We check `care_bike` is non-empty to ensure the assistant provides some advice.
+
+If you want, I can help you make this rule more strict or add metamorphic checks comparing multiple conversations. Just let me know! 🚲✨

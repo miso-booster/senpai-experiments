@@ -1,0 +1,81 @@
+¡Hola! 😊 Qué bueno que tengas ese perfil tan completo para "Usuarios Nuevos y Admisiones". Para probarlo con Sensei-check, te recomiendo crear reglas que validen la coherencia, completitud y consistencia de las salidas que tu chatbot genera en las conversaciones simuladas.
+
+Aquí te dejo algunas ideas de reglas útiles para tu perfil, basadas en los campos que expones en `chatbot.output`:
+
+---
+
+### 1) Regla para verificar que los enlaces importantes siempre estén presentes
+
+Queremos asegurarnos de que en cada conversación el bot siempre entregue URLs para los temas clave (admisión, lista de espera, futuros estudiantes, Welcome Day).
+
+```yaml
+name: essential_links_present
+description: El bot debe proporcionar enlaces para admisión, lista de espera, futuros estudiantes y Welcome Day
+conversations: 1
+oracle: >
+  admission_to_grados_link is not None and admission_to_grados_link != '' and
+  waitlist_info_link is not None and waitlist_info_link != '' and
+  future_students_link is not None and future_students_link != '' and
+  welcome_day_link is not None and welcome_day_link != ''
+```
+
+---
+
+### 2) Regla para validar que las fechas importantes estén en formato correcto y sean futuras
+
+Por ejemplo, la fecha del Welcome Day y la fecha límite de admisión deben ser fechas válidas y no pasadas (asumiendo que la prueba se corre en tiempo real).
+
+```yaml
+name: dates_valid_and_future
+description: Las fechas de Welcome Day y admisión deben ser válidas y no anteriores a hoy
+conversations: 1
+oracle: >
+  welcome_day_date is not None and welcome_day_date >= today() and
+  admission_deadline is not None and admission_deadline >= today()
+```
+
+*Nota:* `today()` es un helper que Sensei-check puede tener para la fecha actual; si no existe, puedes omitir la comparación o validar solo que no sea nula.
+
+---
+
+### 3) Regla para verificar que la lista de grados y cursos disponibles contenga al menos uno de los valores definidos en el perfil
+
+Esto asegura que el bot mencione grados y cursos reales que el usuario podría preguntar.
+
+```yaml
+name: available_degrees_and_courses_consistency
+description: Los grados y cursos listados deben incluir al menos uno de los esperados
+conversations: 1
+oracle: >
+  any(g in grados_available for g in ['Licenciatura en Psicología', 'Máster en Ingeniería de Software', 'Grado en Business Administration']) and
+  any(c in cursos_available for c in ['Ingeniería en Sistemas Computacionales', 'Licenciatura en Psicología', 'Arquitectura'])
+```
+
+---
+
+### 4) Regla metamórfica para consistencia entre conversaciones con distintos grados o cursos
+
+Si cambias el grado o curso en la entrada, el enlace de admisión o la información relacionada debería cambiar o al menos no ser idéntica (para evitar respuestas genéricas sin personalización).
+
+```yaml
+name: admission_info_varies_with_degree
+description: La información de admisión debe variar al cambiar el grado solicitado
+conversations: 2
+when: conv[0].grados != conv[1].grados
+oracle: conv[0].admission_to_grados_link != conv[1].admission_to_grados_link
+```
+
+---
+
+### 5) Regla para verificar que el costo de la solicitud (application_fee) sea un valor positivo
+
+```yaml
+name: application_fee_positive
+description: La tarifa de solicitud debe ser un valor positivo
+conversations: 1
+oracle: extract_float(application_fee) > 0
+```
+
+---
+
+### ¿Quieres que te ayude a escribir estas reglas en YAML listas para usar? O si prefieres, puedo ayudarte a crear reglas más específicas según lo que quieras validar. ¡Solo dime! 😊

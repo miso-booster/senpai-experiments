@@ -1,0 +1,31 @@
+conversation ID: one_node_architecture__p37__pizza_shop__rule__488a0e31
+$$$
+¡Claro! Para crear una regla en Sensei-check que verifique si el asistente confirma que añadió la bebida que el usuario pidió, necesitamos asegurarnos de que:
+
+- La conversación contiene la bebida solicitada por el usuario (por ejemplo, en un campo como `drink` o similar en `chatbot.output`).
+- El asistente confirma explícitamente la adición de esa bebida en sus respuestas (podemos buscar frases clave en las respuestas del asistente).
+
+Asumiendo que tu perfil expone un campo en `chatbot.output` llamado `drink` (la bebida solicitada) y que el texto de las respuestas del asistente está accesible para búsqueda (por ejemplo, en `chatbot_phrases` o similar), podemos usar la función `utterance_index` para buscar si el asistente dijo algo que confirme la bebida.
+
+Aquí tienes un ejemplo de regla que verifica que en la conversación el asistente confirma la bebida pedida:
+
+```yaml
+name: assistant_confirms_drink_added
+description: The assistant confirms that the requested drink was added to the order
+conversations: 1
+active: true
+when: drink is not None and drink != ""
+oracle: utterance_index('assistant', f'added {drink}') >= 0 or utterance_index('assistant', f'included {drink}') >= 0 or utterance_index('assistant', f'your {drink}') >= 0
+on-error: "Assistant did not confirm adding the drink: {drink}"
+```
+
+Explicación rápida:
+
+- `when` filtra solo conversaciones donde `drink` is not None y no vacío.
+- `oracle` usa `utterance_index` para buscar en las frases del asistente alguna confirmación que contenga "added {drink}", "included {drink}" o "your {drink}" (puedes ajustar las frases clave según el estilo de tu bot).
+- Si no encuentra ninguna, la regla falla y muestra el mensaje de error.
+
+Si tu perfil usa otro nombre para la bebida o la confirmación está en otro campo, solo reemplaza `drink` y ajusta las frases.
+
+¿Quieres que te ayude a adaptar esta regla a tu perfil específico? 😊
+$$$

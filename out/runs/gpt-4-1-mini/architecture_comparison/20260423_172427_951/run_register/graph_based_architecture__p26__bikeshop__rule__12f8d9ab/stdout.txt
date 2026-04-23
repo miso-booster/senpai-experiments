@@ -1,0 +1,58 @@
+conversation ID: graph_based_architecture__p26__bikeshop__rule__12f8d9ab
+$$$
+Hey! Thanks for sharing your rule 😊 Let's review it carefully.
+
+Your goal: **Check that the tune-up price is $50.**
+
+Here’s what I see in your rule:
+
+- `conversations: 2` — means you want to compare two conversations, but your check is about a single price value.
+- `when: conv[0].tune_up_price == 50` — this filters conversations where the price is already 50, so the rule only applies if price is 50.
+- `if: conv[0].tune_up_price is not None` — checks price is not None.
+- `then: "The tune-up price is $50."` — this is a string, but the `then` expects a boolean expression (True/False), not a message.
+
+**Issues:**
+
+1. The rule is set for 2 conversations but only uses `conv[0]`. For a single conversation check, `conversations` should be 1.
+2. The `when` clause filters only conversations where price is already 50, so the rule never checks if price is NOT 50.
+3. The `then` clause is a string message, but it should be a boolean condition.
+4. The `if` is redundant if you want to check price equals 50.
+
+---
+
+### Fixed version:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is exactly $50.
+conversations: 1
+when: conv[0].tune_up_price is not None
+oracle: extract_float(conv[0].tune_up_price) == 50
+```
+
+**What I changed:**
+
+- Set `conversations: 1` because this is a single-conversation check.
+- Used `when` to filter only conversations where `tune_up_price` is present.
+- Used `oracle` instead of `if/then` for a simple boolean check.
+- Used `extract_float()` helper to parse the price in case it's a string like `"50 USD"` or `"$50"`.
+- The condition checks if the numeric price equals 50.
+- Removed the string message in `then` — rules expect boolean expressions.
+
+---
+
+If your `tune_up_price` field is always a number (int/float), you can simplify:
+
+```yaml
+name: tune_up_price_check
+description: Check that the tune-up price is exactly 50
+conversations: 1
+oracle: conv[0].tune_up_price == 50
+```
+
+But `extract_float` is safer if the price is a string.
+
+---
+
+Let me know if you want me to help you write a rule that compares prices across conversations or something else! 😊
+$$$

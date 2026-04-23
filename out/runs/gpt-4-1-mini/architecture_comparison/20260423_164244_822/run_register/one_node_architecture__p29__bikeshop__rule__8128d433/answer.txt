@@ -1,0 +1,37 @@
+Absolutely! To write a Sensei-check rule that verifies if the chatbot confirms an appointment when the user requests to schedule a bike service, we need to:
+
+1. Target the profile that includes appointment scheduling (looks like you have one named `bike_repair_and_maintenance_scheduler` or `appointment.yml`).
+2. Use a field from the profile’s `chatbot.output` that captures the appointment confirmation. From your profiles, I see a field like `appointment_confirmation` in `bike_repair_and_maintenance_scheduler` or `confirmed_date` and `confirmed_time` in `appointment.yml`.
+3. Write a rule that checks if, when the user requests a service appointment, the chatbot outputs a non-empty confirmation.
+
+Here’s a simple single-conversation rule example that checks if the chatbot provides an appointment confirmation string when the user schedules a bike service:
+
+```yaml
+name: appointment_confirmation_present
+description: The chatbot confirms the appointment when the user schedules a bike service
+conversations: 1
+active: true
+when: 'any("schedule" in user_utterance.lower() or "appointment" in user_utterance.lower() for user_utterance in user.phrases)'
+oracle: appointment_confirmation is not None and appointment_confirmation != ""
+yields: "Appointment confirmation missing or empty when scheduling a bike service."
+```
+
+Explanation:
+
+- The `when` clause filters conversations where the user mentions scheduling or appointment.
+- The `oracle` asserts that the `appointment_confirmation` field (from `chatbot.output`) is present and not empty.
+- The `yields` message helps identify failures.
+
+If your profile uses different field names like `confirmed_date` and `confirmed_time`, you can adapt the rule accordingly, for example:
+
+```yaml
+name: appointment_confirmation_present
+description: The chatbot confirms the appointment date and time when the user schedules a bike service
+conversations: 1
+active: true
+when: 'any("schedule" in user_utterance.lower() or "appointment" in user_utterance.lower() for user_utterance in user.phrases)'
+oracle: confirmed_date is not None and confirmed_time is not None and confirmed_date != "" and confirmed_time != ""
+yields: "Appointment date or time confirmation missing when scheduling a bike service."
+```
+
+Would you like me to tailor this rule to a specific profile or field names you use? 😊

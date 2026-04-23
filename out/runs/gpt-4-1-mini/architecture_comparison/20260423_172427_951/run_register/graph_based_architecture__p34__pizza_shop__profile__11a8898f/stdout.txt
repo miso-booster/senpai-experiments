@@ -1,0 +1,63 @@
+conversation ID: graph_based_architecture__p34__pizza_shop__profile__11a8898f
+$$$
+Hey! That sounds like a perfect use case for the `change your mind` interaction style in a Sensei profile 😊. I can help you craft a profile YAML where the user starts ordering a custom pizza but then switches to ordering a predefined pizza during the conversation.
+
+Here's a simple example profile outline for that scenario:
+
+```yaml
+test_name: "custom_to_predefined_pizza_order_change_mind"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who initially wants to order a custom pizza with specific toppings,
+    but halfway through the conversation, you change your mind and decide to order a predefined pizza instead.
+  context:
+    - "You like to customize your pizza but sometimes change your mind."
+  goals:
+    - "Order a custom pizza with {{size}} size and {{toppings}} toppings."
+    - "Change your mind and order a {{predefined_pizza}} pizza instead."
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: random()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you please repeat?"
+  output:
+    - final_order:
+        type: string
+        description: "The final pizza order confirmation after the user changes their mind."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 5
+  interaction_style:
+    - change your mind
+```
+
+### Explanation:
+- The user starts with a goal to order a custom pizza (`size` + `toppings`).
+- Then the user changes their mind and orders a predefined pizza (`predefined_pizza`).
+- The `interaction_style` includes `change your mind` so Sensei simulates that behavior naturally.
+- The chatbot output extracts a `final_order` string to capture the final pizza choice.
+
+Would you like me to help you customize this further? Maybe add more detailed variables or specific chatbot output fields? 😊
+$$$

@@ -1,0 +1,21 @@
+Got it! You want a metamorphic rule that verifies: when two orders are identical except that one has a drink added, the price difference should be exactly $2.
+
+Here’s a Sensei-check rule for that, assuming your profile’s `chatbot.output` includes fields like `size`, `toppings`, `number`, `drink`, and `price` (with `drink` being empty or null when no drink is ordered):
+
+```yaml
+name: drink_addition_costs_two_dollars
+description: Adding a drink increases the total price by exactly $2
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings and conv[0].number == conv[1].number and (conv[0].drink == '' or conv[0].drink is None) and (conv[1].drink != '' and conv[1].drink is not None)
+if: "True"
+then: extract_float(conv[1].price) - extract_float(conv[0].price) == 2.0
+```
+
+### Explanation:
+- The `when` clause filters pairs where everything is the same except that `conv[0]` has no drink (`''` or `None`) and `conv[1]` has a drink.
+- The `then` clause asserts the price difference is exactly 2 dollars.
+- You can adjust the empty drink check if your profile uses a different convention for “no drink”.
+
+If your `drink` field uses a specific value for “no drink” (like `"none"`), just replace the checks accordingly.
+
+Would you like me to help you adapt this rule to your exact profile fields or naming? 😊

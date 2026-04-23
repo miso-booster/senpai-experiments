@@ -1,0 +1,83 @@
+Hey! I see a few things in your profile that need fixing to make it work smoothly with Sensei. Let me help you clean it up and explain the changes so you understand what's going on 😊.
+
+---
+
+### Issues I spotted:
+
+1. **`llm.temperature` value**:  
+   You wrote `temperature: low` but it expects a **float number** (e.g., 0.0 to 1.0). So `"low"` is invalid.
+
+2. **`chatbot.output` fields missing `type`**:  
+   For `seat_price` and `care_bike`, you didn't specify the `type`. This is required.
+
+3. **`chatbot.is_starter` should be lowercase boolean**:  
+   You wrote `False` which is fine YAML-wise, but just double-check your YAML parser accepts it. Usually, lowercase `false` is safer.
+
+4. **`user.context` items should be strings**:  
+   You wrote them as plain text without quotes, which is okay, but better to quote them for clarity.
+
+---
+
+### Here's your fixed profile with comments inline:
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.0        # Changed from 'low' to 0.0 (lowest temperature)
+  model: gpt-4o-mini
+
+user:
+  language: English
+  role: "you have to act as a user talking to a virtual assistant of a bike shop"
+  context:
+    - "You are interested in asking the items below."
+    - "Just stick to asking opening times, prices of tire, price of tune-up, price of seat, and actions to the care of bike. Do not ask anything else."
+  goals:
+    - "opening and closing time of the bike shop"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false       # lowercase boolean
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string       # Changed from 'str' to 'string' (Sensei expects 'string')
+        description: "the opening and closing time of the shop"
+    - tire:
+        type: money
+        description: "the price of a new tire"
+    - tune_up:
+        type: money
+        description: "the price of a tune-up"
+    - seat_price:
+        type: money        # Added missing type
+        description: "the price of a new seat"
+    - care_bike:
+        type: string       # Added missing type
+        description: "actions to take care of the bike"
+
+conversation:
+  number: 5
+  interaction_style:
+    - default
+```
+
+---
+
+### Why these changes?
+
+- **`temperature` must be a float** because Sensei uses it to control randomness in LLM calls.
+- **`type` fields in `chatbot.output` are mandatory** so Sensei knows how to parse and validate the extracted info.
+- Use **`string` instead of `str`** for output types because Sensei expects the full word `string`.
+- Quoting strings in YAML avoids parsing ambiguity.
+- `is_starter` should be lowercase boolean for consistency.
+
+---
+
+If you apply these fixes, your profile should run without errors and extract the fields properly! If you want, I can help you validate it or explain any part in more detail 😊👍.
+
+Would you like me to help with that?

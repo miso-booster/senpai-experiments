@@ -1,0 +1,16 @@
+Got it! Here's a metamorphic Sensei-check rule that verifies adding a drink increases the total price by exactly 2 dollars. It assumes your profile's `chatbot.output` includes fields `drink` (string or None) and `price` (currency).
+
+```yaml
+name: drink_adds_two_dollars
+description: Adding a drink increases the total price by exactly 2 USD
+conversations: 2
+when: conv[0].drink is None and conv[1].drink is not None
+if: True
+then: extract_float(conv[1].price) == extract_float(conv[0].price) + 2 and currency(conv[1].price) == 'USD' and currency(conv[0].price) == 'USD'
+on-error: |
+  f"Price difference when adding drink is {extract_float(conv[1].price) - extract_float(conv[0].price)}, expected 2 USD"
+```
+
+This rule compares two conversations where the first has no drink and the second has a drink, checking that the price difference is exactly $2 USD.
+
+If your `drink` field is structured differently or you want a tolerance range, just let me know! 😊

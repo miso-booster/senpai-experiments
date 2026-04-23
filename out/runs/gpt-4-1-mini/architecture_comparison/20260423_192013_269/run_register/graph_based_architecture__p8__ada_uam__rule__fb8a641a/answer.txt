@@ -1,0 +1,93 @@
+Hey! 😊 Thanks for sharing your rule. Let me help you check it out and explain it clearly.
+
+---
+
+### Your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### What this rule does:
+
+- It runs on **1 conversation** (`conversations: 1`).
+- The `when` clause filters conversations where **all three fields** (`contact_email`, `contact_phone`, `physical_address`) exactly match the expected values.
+- The `oracle` then checks the **same exact condition** again.
+
+---
+
+### Is this okay?
+
+**Not quite ideal.** Here's why:
+
+- The `when` clause is meant to **select** conversations where the rule applies.
+- The `oracle` should **check** the property you want to verify.
+- But in your case, the `when` and the `oracle` are exactly the same condition. So the rule only runs on conversations that already have the correct info, and then it checks that same info again — which will always pass.
+
+**This means your rule never checks if the info is incorrect or missing.** It only runs when the info is already correct, so it doesn't catch errors.
+
+---
+
+### How to fix it?
+
+You want the rule to:
+
+- Run on **all conversations** (or at least those where the info is present),
+- And check if the contact info **matches the expected values**.
+
+So:
+
+- Remove or simplify the `when` clause (or omit it to apply to all conversations),
+- In the `oracle`, check that the fields equal the expected values.
+
+---
+
+### Fixed version:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Explanation:
+
+- We removed the `when` clause so the rule applies to **every conversation**.
+- The `oracle` asserts that the three fields **must exactly match** the expected CAU contact info.
+- If any field is missing or different, the rule will fail, alerting you that the CAU info is incorrect or incomplete.
+
+---
+
+### Optional improvement: handle missing fields gracefully
+
+If some conversations might not have all fields, you can add a `when` to only check when fields exist:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email is not None and conv[0].contact_phone is not None and conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+This way, the rule only runs when all fields are present, avoiding false failures on missing data.
+
+---
+
+If you want, I can help you write that version too! Just ask 😊
+
+---
+
+**Summary:**  
+Your original rule filtered only conversations that already had perfect info, so it never caught errors. Removing or simplifying the `when` clause lets the rule check all conversations and catch incorrect or missing CAU contact details.
+
+Hope this helps! Let me know if you want me to explain anything else or help with more rules! 🚀

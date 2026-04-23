@@ -1,0 +1,24 @@
+Got it! You want a Sensei-check rule that verifies the chatbot outputs for the CAU contact info are exactly as expected: location, email, and phone number.
+
+Since your profile exposes these fields in `chatbot.output` as `contact_email`, `contact_phone`, and `physical_address`, we can write a single-conversation rule (checking each conversation individually) to assert these fields match the correct values.
+
+Here’s a rule YAML you can add to your project:
+
+```yaml
+name: cau_contact_info_correctness
+description: Checks that the CAU contact information is exactly correct in each conversation
+conversations: 1
+oracle: >
+  conv[0].contact_email == 'cau@uam.es' and
+  conv[0].contact_phone == '91 497 4029' and
+  conv[0].physical_address == 'Higher Polytechnic School\nC/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Explanation:
+- `conversations: 1` means this rule checks each conversation individually.
+- The `oracle` asserts that the three fields exactly match your provided info.
+- The physical address includes a line break (`\n`) between the school name and the street address, matching your format.
+
+If your actual output formatting differs (e.g., no line break or extra spaces), you might want to adjust the string accordingly or use a more flexible check (e.g., substring containment). But this is the strictest correctness check.
+
+Would you like me to help you make it more flexible or add error messages? 😊

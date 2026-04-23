@@ -1,0 +1,39 @@
+Hey! I see the rule you shared is missing the `if:` condition, which is essential for a metamorphic rule that compares conversations based on the number of toppings.
+
+Your current rule has:
+
+- `when:` filtering comparable conversations (good!)
+- `then:` stating the expected relation (good!)
+- But **no `if:` condition** to say *when* the price should be higher (e.g., when one conversation has more toppings than the other).
+
+Without the `if:` clause, the rule doesn't know under what condition the price should increase, so it won't work as intended.
+
+---
+
+### How to fix it?
+
+Add an `if:` condition that checks when the first conversation has more toppings than the second, like this:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+---
+
+### Why?
+
+- `when:` filters pairs of conversations with the same size and drink (so we compare apples to apples).
+- `if:` checks if the first conversation has more toppings than the second.
+- `then:` asserts that the price in the first conversation should be greater than the second.
+
+This pattern follows the **metamorphic testing style** perfectly and matches the examples from the Sensei-check docs.
+
+---
+
+If you want, I can help you write more rules or explain any part of this! 😊

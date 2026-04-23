@@ -1,0 +1,31 @@
+conversation ID: graph_based_architecture__p38__pizza_shop__rule__e3c60871
+$$$
+Hey! 😊 To create a Sensei-check rule that verifies the chatbot provides an `order_id` in its output, you want a single-conversation rule (since you check each conversation individually).
+
+Here’s a simple example that checks if `order_id` is present and not empty in the `chatbot.output`:
+
+```yaml
+name: order_id_present
+description: The chatbot must provide a non-empty order_id in every conversation
+conversations: 1
+oracle: conv[0].order_id is not None and conv[0].order_id != ''
+```
+
+Explanation:
+- `conversations: 1` means it checks each conversation alone.
+- `conv[0].order_id` accesses the `order_id` field from the profile’s `chatbot.output`.
+- The oracle asserts that `order_id` is neither `None` nor an empty string.
+
+If you want to be extra sure (e.g., no whitespace-only IDs), you can do:
+
+```yaml
+name: order_id_presence
+description: Each conversation must have a non-empty order_id
+conversations: 1
+oracle: conv[0].order_id is not None and conv[0].order_id.strip() != ''
+```
+
+This rule will fail if the chatbot forgets to provide an order ID or returns an empty one.
+
+Let me know if you want me to help you write it with more conditions or style! 🍕✨
+$$$

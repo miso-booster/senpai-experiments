@@ -1,0 +1,36 @@
+The `pairwise` function is not explicitly mentioned in the Sensei-check documentation I loaded, so it might not be a built-in helper or standard function in the Sensei DSL itself.
+
+However, based on the context of Sensei-check metamorphic rules, "pairwise" usually refers to the concept of comparing pairs of conversations to check relations between them. This is done by writing rules that specify conditions on pairs of conversations, accessed as `conv[0]` and `conv[1]` in the rule expressions.
+
+### How pairwise comparison works in Sensei-check:
+
+- You write a rule with `conversations: 2` to indicate the rule applies to pairs of conversations.
+- You use `when:` to filter pairs that are comparable (e.g., same pizza size).
+- You use `if:` and `then:` to express the metamorphic relation between the two conversations.
+- You access fields from each conversation as `conv[0].field` and `conv[1].field`.
+
+For example, a classic pairwise metamorphic rule checks that adding more toppings increases price:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Here, the rule compares pairs of conversations (`conv[0]` and `conv[1]`) that have the same size, drink, and number of pizzas, and asserts that the one with more toppings should have a higher price.
+
+---
+
+### Summary
+
+- The "pairwise" concept in Sensei-check is implemented by writing metamorphic rules over 2 conversations.
+- You use `conv[0]` and `conv[1]` to access each conversation's outputs.
+- The rule filters pairs with `when:` and asserts relations with `if:`/`then:` or `oracle:`.
+- There is no separate `pairwise` function; the pairwise behavior is intrinsic to writing 2-conversation rules.
+
+If you meant a specific function named `pairwise` in your project or code, please clarify or provide more context, and I can help further! 😊
+
+I based this explanation on the `sensei-check-doc.md` and `rules-examples.md` documentation.
