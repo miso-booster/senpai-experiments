@@ -198,8 +198,16 @@ def main():
     config_model_label = load_default_model_label(str(architecture_config_path))
     effective_model_label = args.model_label or config_model_label
     experiment_dirname = resolve_experiment_dirname(rq2=args.rq2, rq3=args.rq3, rq4=args.rq4)
-    runs_root_dir = resolve_runs_dir(experiment_dirname, effective_model_label)
-    model_slug = sanitize_path_component(effective_model_label) if effective_model_label else ""
+    try:
+        runs_root_dir = resolve_runs_dir(experiment_dirname, effective_model_label)
+        model_slug = sanitize_path_component(effective_model_label) if effective_model_label else ""
+    except ValueError as exc:
+        raise SystemExit(
+            "Invalid model label "
+            f"{effective_model_label!r}. The label must contain at least one "
+            "letter or number after sanitization. Examples of valid values: "
+            "'gpt-4o', 'llama3-8b', 'claude_3_sonnet'."
+        ) from exc
 
     if args.rq2:
         archs = load_architectures(str(architecture_config_path))
