@@ -109,6 +109,20 @@ def _render_config_value(value: Any, context: Dict[str, Any], *, field_name: str
     return value
 
 
+def _validate_architecture_cmd(value: Any, *, architecture_id: str) -> List[str]:
+    if not isinstance(value, list) or not value:
+        raise ValueError(
+            f"Architecture '{architecture_id}' must define a non-empty 'cmd' list "
+            "after applying config defaults/templates."
+        )
+    if not all(isinstance(item, str) and item for item in value):
+        raise ValueError(
+            f"Architecture '{architecture_id}' has an invalid 'cmd': expected a non-empty "
+            "list of non-empty strings."
+        )
+    return value
+
+
 def load_architectures(path: str) -> List[Architecture]:
     data = load_architecture_config(path)
     variables = _validate_object("variables", data.get("variables"))
@@ -126,6 +140,10 @@ def load_architectures(path: str) -> List[Architecture]:
         if resolved_cwd is not None:
             merged_context["cwd"] = resolved_cwd
         resolved_cmd = _render_config_value(merged.get("cmd"), merged_context, field_name="cmd")
+        resolved_cmd = _validate_architecture_cmd(
+            resolved_cmd,
+            architecture_id=str(merged.get("id", "")),
+        )
         resolved_env = _render_config_value(merged.get("env"), merged_context, field_name="env")
         resolved_env_file = _render_config_value(
             merged.get("env_file"),
