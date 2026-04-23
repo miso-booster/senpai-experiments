@@ -7,24 +7,37 @@ import pandas as pd
 from scipy.stats import wilcoxon
 
 try:
-    from app.setup_configuration import OUT_DIR, RQ4_EXPERIMENT_DIRNAME, resolve_model_output_dir, resolve_runs_dir
+    from app.setup_configuration import (
+        OUT_DIR,
+        RQ4_EXPERIMENT_DIRNAME,
+        resolve_model_output_dir,
+        resolve_runs_dir,
+        sanitize_path_component,
+    )
 except Exception:  # Supports `python app/rq4/aggregate_metrics.py`
+    import re
+
     _ROOT = Path(__file__).resolve().parents[2]
     OUT_DIR = _ROOT / "out"
+
+    def sanitize_path_component(value: str, *, field_name: str = "path component") -> str:
+        sanitized = re.sub(r"[^a-z0-9]+", "-", value.strip().lower()).strip("-")
+        if not sanitized:
+            raise ValueError(
+                f"{field_name} must contain at least one alphanumeric character after sanitization: {value!r}"
+            )
+        return sanitized
+
     def resolve_runs_dir(experiment_dirname: str, model_label: str | None = None) -> Path:
         runs_dir = OUT_DIR / "runs"
         if not model_label:
             return runs_dir / experiment_dirname
-        import re
-
-        return runs_dir / re.sub(r"[^a-z0-9]+", "-", model_label.strip().lower()).strip("-") / experiment_dirname
+        return runs_dir / sanitize_path_component(model_label, field_name="model label") / experiment_dirname
 
     def resolve_model_output_dir(base_dir: Path, model_label: str | None = None) -> Path:
         if not model_label:
             return base_dir
-        import re
-
-        return base_dir / re.sub(r"[^a-z0-9]+", "-", model_label.strip().lower()).strip("-")
+        return base_dir / sanitize_path_component(model_label, field_name="model label")
 
     RQ4_EXPERIMENT_DIRNAME = "guardrail_test"
 
