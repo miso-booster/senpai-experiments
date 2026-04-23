@@ -38,7 +38,7 @@ Configuration
 
 Edit `configs/architectures.json`.
 
-You can also set the default execution model label once at the top level:
+You can set the default execution model label once at the top level:
 
 ```json
 {
@@ -54,6 +54,31 @@ under `out/runs/<model_label>/...`. It does not by itself force the downstream
 architecture projects to change model; those projects still need to read the
 real model from their own config/env. The CLI flag `--model-label` still exists
 and overrides the JSON value when you need a one-off run.
+
+You can also avoid repeating shared architecture fields by using top-level
+`variables` and `defaults`. String values support placeholders like `{cwd}` and
+`{automation_root}`:
+
+```json
+{
+  "model_label": "gpt-4.1-mini",
+  "variables": {
+    "automation_root": "/home/ivan/miso/automatizacion"
+  },
+  "defaults": {
+    "cwd": "{automation_root}/{project_dir}",
+    "cmd": ["{cwd}/.venv/bin/python", "-m", "app.main"],
+    "env_file": "{automation_root}/configs/.env"
+  },
+  "architectures": [
+    { "id": "agentic_architecture", "project_dir": "agentic" },
+    { "id": "graph_based_architecture", "project_dir": "graph" },
+    { "id": "one_node_architecture", "project_dir": "one-node" }
+  ]
+}
+```
+
+The older fully expanded format still works.
 
 For each architecture, make sure:
 

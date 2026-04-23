@@ -3,6 +3,7 @@ import re
 import json
 import pathlib
 import logging
+import string
 
 
 from typing import Any, List, Dict
@@ -73,17 +74,72 @@ def load_default_model_label(path: str) -> str | None:
     return text or None
 
 
+def _validate_object(name: str, value: Any) -> Dict[str, Any]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError(f"Architecture config field '{name}' must be a JSON object.")
+    return value
+
+
+def _format_string_template(template: str, context: Dict[str, Any], *, field_name: str) -> str:
+    formatter = string.Formatter()
+    referenced_keys = [name for _, name, _, _ in formatter.parse(template) if name]
+    missing = sorted({key for key in referenced_keys if key not in context or context[key] is None})
+    if missing:
+        raise ValueError(
+            f"Missing template values for field '{field_name}': {', '.join(missing)}"
+        )
+    return template.format_map(context)
+
+
+def _render_config_value(value: Any, context: Dict[str, Any], *, field_name: str) -> Any:
+    if isinstance(value, str):
+        return _format_string_template(value, context, field_name=field_name)
+    if isinstance(value, list):
+        return [
+            _render_config_value(item, context, field_name=field_name)
+            for item in value
+        ]
+    if isinstance(value, dict):
+        return {
+            key: _render_config_value(item, context, field_name=f"{field_name}.{key}")
+            for key, item in value.items()
+        }
+    return value
+
+
 def load_architectures(path: str) -> List[Architecture]:
     data = load_architecture_config(path)
+    variables = _validate_object("variables", data.get("variables"))
+    defaults = _validate_object("defaults", data.get("defaults"))
     archs = []
     for a in data["architectures"]:
+        if not isinstance(a, dict):
+            raise ValueError("Each architecture entry must be a JSON object.")
+        merged: Dict[str, Any] = dict(defaults)
+        merged.update(a)
+        merged_context: Dict[str, Any] = dict(variables)
+        merged_context.update(merged)
+
+        resolved_cwd = _render_config_value(merged.get("cwd"), merged_context, field_name="cwd")
+        if resolved_cwd is not None:
+            merged_context["cwd"] = resolved_cwd
+        resolved_cmd = _render_config_value(merged.get("cmd"), merged_context, field_name="cmd")
+        resolved_env = _render_config_value(merged.get("env"), merged_context, field_name="env")
+        resolved_env_file = _render_config_value(
+            merged.get("env_file"),
+            merged_context,
+            field_name="env_file",
+        )
+
         archs.append(
             Architecture(
-                id=a["id"],
-                cmd=a["cmd"],
-                cwd=a.get("cwd"),
-                env=a.get("env"),
-                env_file=a.get("env_file"),
+                id=str(merged["id"]),
+                cmd=resolved_cmd,
+                cwd=resolved_cwd,
+                env=resolved_env,
+                env_file=resolved_env_file,
             )
         )
     return archs
