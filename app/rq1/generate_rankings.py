@@ -8,11 +8,24 @@ from typing import Dict, List, Tuple
 import pandas as pd
 
 from app.rq1.utils import sanitize_run_dir
-from app.setup_configuration import OUT_DIR, RUNS_DIR, load_prompts_json
+from app.setup_configuration import (
+    OUT_DIR,
+    RQ2_EXPERIMENT_DIRNAME,
+    load_prompts_json,
+    resolve_model_output_dir,
+    resolve_runs_dir,
+)
 from app.yaml_validation import validate_answer_yaml_status
 
-DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
 DEFAULT_RQ1_OUT_ROOT = OUT_DIR / "RQ1"
+
+
+def default_rq1_runs_dir(model_label: str | None = None) -> pathlib.Path:
+    return resolve_runs_dir(RQ2_EXPERIMENT_DIRNAME, model_label)
+
+
+def default_rq1_out_root(model_label: str | None = None) -> pathlib.Path:
+    return resolve_model_output_dir(DEFAULT_RQ1_OUT_ROOT, model_label)
 
 
 def _load_results(results_path: pathlib.Path) -> List[Dict[str, str]]:
@@ -98,9 +111,11 @@ def _resolve_run_dir(runs_dir: pathlib.Path, run_id: str | None) -> pathlib.Path
             raise SystemExit(f"run_id path is not a directory: {run_dir}")
         return run_dir
 
-    run_dirs = sorted(p for p in runs_dir.iterdir() if p.is_dir())
+    run_dirs = sorted(
+        p for p in runs_dir.iterdir() if p.is_dir() and (p / "results.xlsx").is_file()
+    )
     if not run_dirs:
-        raise SystemExit(f"No run directories found in: {runs_dir}")
+        raise SystemExit(f"No run directories with results.xlsx found in: {runs_dir}")
     selected = run_dirs[0]
     print(f"Using first run in {runs_dir}: {selected.name}")
     return selected
@@ -109,16 +124,17 @@ def _resolve_run_dir(runs_dir: pathlib.Path, run_id: str | None) -> pathlib.Path
 def _resolve_results_path(args: argparse.Namespace) -> pathlib.Path:
     if args.results:
         return pathlib.Path(args.results)
-    run_dir = _resolve_run_dir(pathlib.Path(args.runs_dir), args.run_id)
+    runs_dir = pathlib.Path(args.runs_dir) if args.runs_dir else default_rq1_runs_dir(args.model_label)
+    run_dir = _resolve_run_dir(runs_dir, args.run_id)
     return run_dir / "results.xlsx"
 
 
 def _resolve_out_dir(
-    results_path: pathlib.Path, out_dir_arg: str | None
+    results_path: pathlib.Path, out_dir_arg: str | None, model_label: str | None
 ) -> pathlib.Path:
     if out_dir_arg:
         return pathlib.Path(out_dir_arg)
-    return DEFAULT_RQ1_OUT_ROOT / results_path.parent.name
+    return default_rq1_out_root(model_label) / results_path.parent.name
 
 
 def main() -> None:
@@ -137,10 +153,17 @@ def main() -> None:
     )
     parser.add_argument(
         "--runs-dir",
-        default=str(DEFAULT_RQ1_RUNS_DIR),
         help=(
             "Directory containing run folders "
-            f"(default: {DEFAULT_RQ1_RUNS_DIR})"
+            "(default: out/runs/architecture_comparison or "
+            "out/runs/<model-label>/architecture_comparison)"
+        ),
+    )
+    parser.add_argument(
+        "--model-label",
+        help=(
+            "Optional model label used to resolve model-specific run folders and "
+            "default RQ1 output directories."
         ),
     )
     parser.add_argument(
@@ -149,7 +172,11 @@ def main() -> None:
         help="Path to prompts.json",
     )
     parser.add_argument(
-        "--out-dir", help="Output directory (default: out/RQ1/<run_id>)"
+        "--out-dir",
+        help=(
+            "Output directory (default: out/RQ1/<run_id> or "
+            "out/RQ1/<model-label>/<run_id>)"
+        ),
     )
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
     args = parser.parse_args()
@@ -162,7 +189,7 @@ def main() -> None:
     if not prompts_path.exists():
         raise SystemExit(f"prompts.json not found: {prompts_path}")
 
-    out_dir = _resolve_out_dir(results_path, args.out_dir)
+    out_dir = _resolve_out_dir(results_path, args.out_dir, args.model_label)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     seed = args.seed if args.seed is not None else int(time.time() * 1000)

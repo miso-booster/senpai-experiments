@@ -21,11 +21,34 @@ from openai import (
 )
 
 try:
-    from app.setup_configuration import OUT_DIR, RUNS_DIR
+    from app.setup_configuration import (
+        OUT_DIR,
+        RQ3_EXPERIMENT_DIRNAME,
+        resolve_model_output_dir,
+        resolve_runs_dir,
+        sanitize_path_component,
+    )
 except Exception:  # Supports `python app/rq3_clustering/answer_clustering.py` without package imports
     _ROOT = Path(__file__).resolve().parents[2]
     OUT_DIR = _ROOT / "out"
-    RUNS_DIR = OUT_DIR / "runs"
+    def sanitize_path_component(value: str) -> str:
+        sanitized = re.sub(r"[^a-z0-9]+", "-", value.strip().lower()).strip("-")
+        if not sanitized:
+            raise ValueError(f"Path component cannot be empty after sanitization: {value!r}")
+        return sanitized
+
+    def resolve_runs_dir(experiment_dirname: str, model_label: str | None = None) -> Path:
+        runs_dir = OUT_DIR / "runs"
+        if not model_label:
+            return runs_dir / experiment_dirname
+        return runs_dir / sanitize_path_component(model_label) / experiment_dirname
+
+    def resolve_model_output_dir(base_dir: Path, model_label: str | None = None) -> Path:
+        if not model_label:
+            return base_dir
+        return base_dir / sanitize_path_component(model_label)
+
+    RQ3_EXPERIMENT_DIRNAME = "advanced_prompt_arch_comparison"
 
 try:
     from app.setup_configuration import parse_env_file
@@ -56,7 +79,6 @@ except ImportError:  # Supports `python app/rq3_clustering/answer_clustering.py`
     from review import build_review_assignments, build_review_cluster_reference
 
 
-DEFAULT_RUNS_DIR = RUNS_DIR / "advanced_prompt_arch_comparison"
 DEFAULT_OUT_DIR = OUT_DIR / "RQ3_clustering"
 DEFAULT_MODEL = "gpt-4o-mini"
 DEFAULT_API_TIMEOUT_S = 120
@@ -64,6 +86,14 @@ DEFAULT_CACHE_DIRNAME = "_cluster_cache"
 DEFAULT_MAX_CLUSTER_RETRIES = 4
 REQUIRED_COLUMNS = ("arch_id", "prompt_id", "run_group_id", "answer")
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def default_rq3_runs_dir(model_label: str | None = None) -> Path:
+    return resolve_runs_dir(RQ3_EXPERIMENT_DIRNAME, model_label)
+
+
+def default_rq3_out_dir(model_label: str | None = None) -> Path:
+    return resolve_model_output_dir(DEFAULT_OUT_DIR, model_label)
 
 CLUSTER_JSON_SCHEMA: dict[str, Any] = {
     "type": "json_schema",
@@ -108,9 +138,19 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "--model-label",
+        help=(
+            "Optional model label used to resolve model-specific run folders and "
+            "default RQ3 clustering output directories."
+        ),
+    )
+    parser.add_argument(
         "--runs-dir",
-        default=str(DEFAULT_RUNS_DIR),
-        help=f"Directory containing run folders (default: {DEFAULT_RUNS_DIR})",
+        help=(
+            "Directory containing run folders "
+            "(default: out/runs/advanced_prompt_arch_comparison or "
+            "out/runs/<model-label>/advanced_prompt_arch_comparison)"
+        ),
     )
     parser.add_argument(
         "--results-name",
@@ -119,8 +159,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--out-dir",
-        default=str(DEFAULT_OUT_DIR),
-        help=f"Output directory for clustering workbooks (default: {DEFAULT_OUT_DIR})",
+        help=(
+            "Output directory for clustering workbooks "
+            "(default: out/RQ3_clustering or out/RQ3_clustering/<model-label>)"
+        ),
     )
     parser.add_argument(
         "--sheet",
@@ -1106,8 +1148,8 @@ def cluster_all_prompt_groups(
 
 def main() -> None:
     args = parse_args()
-    runs_dir = Path(args.runs_dir)
-    out_dir = Path(args.out_dir)
+    runs_dir = Path(args.runs_dir) if args.runs_dir else default_rq3_runs_dir(args.model_label)
+    out_dir = Path(args.out_dir) if args.out_dir else default_rq3_out_dir(args.model_label)
     cache_dir = Path(args.cache_dir) if args.cache_dir else out_dir / DEFAULT_CACHE_DIRNAME
 
     workbooks = discover_workbooks(runs_dir, args.results_name)

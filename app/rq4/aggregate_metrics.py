@@ -1,3 +1,4 @@
+import argparse
 from itertools import combinations
 from pathlib import Path
 from typing import Iterable, Sequence
@@ -6,11 +7,39 @@ import pandas as pd
 from scipy.stats import wilcoxon
 
 try:
-    from app.setup_configuration import OUT_DIR, RUNS_DIR
+    from app.setup_configuration import (
+        OUT_DIR,
+        RQ4_EXPERIMENT_DIRNAME,
+        resolve_model_output_dir,
+        resolve_runs_dir,
+        sanitize_path_component,
+    )
 except Exception:  # Supports `python app/rq4/aggregate_metrics.py`
+    import re
+
     _ROOT = Path(__file__).resolve().parents[2]
     OUT_DIR = _ROOT / "out"
-    RUNS_DIR = OUT_DIR / "runs"
+
+    def sanitize_path_component(value: str, *, field_name: str = "path component") -> str:
+        sanitized = re.sub(r"[^a-z0-9]+", "-", value.strip().lower()).strip("-")
+        if not sanitized:
+            raise ValueError(
+                f"{field_name} must contain at least one alphanumeric character after sanitization: {value!r}"
+            )
+        return sanitized
+
+    def resolve_runs_dir(experiment_dirname: str, model_label: str | None = None) -> Path:
+        runs_dir = OUT_DIR / "runs"
+        if not model_label:
+            return runs_dir / experiment_dirname
+        return runs_dir / sanitize_path_component(model_label, field_name="model label") / experiment_dirname
+
+    def resolve_model_output_dir(base_dir: Path, model_label: str | None = None) -> Path:
+        if not model_label:
+            return base_dir
+        return base_dir / sanitize_path_component(model_label, field_name="model label")
+
+    RQ4_EXPERIMENT_DIRNAME = "guardrail_test"
 
 try:
     from .excel import save_outputs
@@ -19,8 +48,6 @@ except ImportError:  # Supports `python app/rq4/aggregate_metrics.py`
     from excel import save_outputs
     from plots import generate_plots
 
-
-DEFAULT_RUNS_DIR = RUNS_DIR / "guardrail_test"
 DEFAULT_OUT_DIR = OUT_DIR / "RQ4_guardrail_metrics"
 DEFAULT_PROMPT_CONFIG = Path(__file__).resolve().parents[2] / "configs" / "rq4_prompts.json"
 
@@ -47,6 +74,78 @@ PAIRWISE_ID_COLUMNS = (
     "prompt_id",
     "prompt",
 )
+
+
+def default_rq4_runs_dir(model_label: str | None = None) -> Path:
+    return resolve_runs_dir(RQ4_EXPERIMENT_DIRNAME, model_label)
+
+
+def default_rq4_out_dir(model_label: str | None = None) -> Path:
+    return resolve_model_output_dir(DEFAULT_OUT_DIR, model_label)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Aggregate repeated guardrail-test runs into the RQ4 metrics workbook and plots."
+    )
+    parser.add_argument(
+        "--model-label",
+        help=(
+            "Optional model label used to resolve model-specific run folders and "
+            "default RQ4 output directories."
+        ),
+    )
+    parser.add_argument(
+        "--runs-dir",
+        help=(
+            "Directory containing run folders "
+            "(default: out/runs/guardrail_test or out/runs/<model-label>/guardrail_test)"
+        ),
+    )
+    parser.add_argument(
+        "--out-dir",
+        help=(
+            "Output directory for the RQ4 workbook and plots "
+            "(default: out/RQ4_guardrail_metrics or out/RQ4_guardrail_metrics/<model-label>)"
+        ),
+    )
+    parser.add_argument(
+        "--prompt-config",
+        default=str(DEFAULT_PROMPT_CONFIG),
+        help=f"Prompt catalog JSON path (default: {DEFAULT_PROMPT_CONFIG})",
+    )
+    parser.add_argument(
+        "--results-name",
+        default="results.xlsx",
+        help="Workbook filename inside each run folder (default: results.xlsx)",
+    )
+    parser.add_argument(
+        "--sheet",
+        help="Excel sheet name to read (default: first sheet)",
+    )
+    parser.add_argument(
+        "--plot-format",
+        default="png",
+        choices=("png", "svg", "pdf"),
+        help="Plot file format (default: png)",
+    )
+    parser.add_argument(
+        "--dpi",
+        type=int,
+        default=160,
+        help="Plot DPI for raster formats (default: 160)",
+    )
+    parser.add_argument(
+        "--no-export-csvs",
+        action="store_true",
+        help="Skip CSV exports and write the Excel workbook only",
+    )
+    parser.add_argument(
+        "--no-detailed-sheets",
+        action="store_true",
+        help="Skip extra detailed workbook sheets",
+    )
+    return parser.parse_args()
 
 
 def compute_a12(x: pd.Series, y: pd.Series) -> float:
@@ -526,15 +625,16 @@ def build_pairwise_wilcoxon_summary(df: pd.DataFrame, metric_cols: Sequence[str]
 
 
 def main() -> None:
-    runs_dir = DEFAULT_RUNS_DIR
-    out_dir = DEFAULT_OUT_DIR
-    prompt_config = DEFAULT_PROMPT_CONFIG
-    results_name = "results.xlsx"
-    sheet_name = None
-    plot_format = "png"
-    dpi = 160
-    export_csvs = True
-    detailed_sheets = True
+    args = parse_args()
+    runs_dir = Path(args.runs_dir) if args.runs_dir else default_rq4_runs_dir(args.model_label)
+    out_dir = Path(args.out_dir) if args.out_dir else default_rq4_out_dir(args.model_label)
+    prompt_config = Path(args.prompt_config)
+    results_name = args.results_name
+    sheet_name = args.sheet
+    plot_format = args.plot_format
+    dpi = args.dpi
+    export_csvs = not args.no_export_csvs
+    detailed_sheets = not args.no_detailed_sheets
 
     if not runs_dir.exists():
         raise SystemExit(f"runs-dir not found: {runs_dir}")

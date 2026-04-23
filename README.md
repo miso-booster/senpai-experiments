@@ -38,6 +38,48 @@ Configuration
 
 Edit `configs/architectures.json`.
 
+You can set the default execution model label once at the top level:
+
+```json
+{
+  "model_label": "gpt-4.1-mini",
+  "architectures": [
+    { "...": "..." }
+  ]
+}
+```
+
+`model_label` is used by `python -m app.main` to decide where runs are stored
+under `out/runs/<model_label>/...`. It does not by itself force the downstream
+architecture projects to change model; those projects still need to read the
+real model from their own config/env. The CLI flag `--model-label` still exists
+and overrides the JSON value when you need a one-off run.
+
+You can also avoid repeating shared architecture fields by using top-level
+`variables` and `defaults`. String values support placeholders like `{cwd}` and
+`{automation_root}`:
+
+```json
+{
+  "model_label": "gpt-4.1-mini",
+  "variables": {
+    "automation_root": "/home/ivan/miso/automatizacion"
+  },
+  "defaults": {
+    "cwd": "{automation_root}/{project_dir}",
+    "cmd": ["{cwd}/.venv/bin/python", "-m", "app.main"],
+    "env_file": "{automation_root}/configs/.env"
+  },
+  "architectures": [
+    { "id": "agentic_architecture", "project_dir": "agentic" },
+    { "id": "graph_based_architecture", "project_dir": "graph" },
+    { "id": "one_node_architecture", "project_dir": "one-node" }
+  ]
+}
+```
+
+The older fully expanded format still works.
+
 For each architecture, make sure:
 
 - `cmd` points to the correct Python executable
@@ -89,12 +131,15 @@ python -m app.main -rq3
 python -m app.main -rq4
 python -m app.main -rq2 -r 20
 python -m app.main -rq2 -r 20 -v
+python -m app.main -rq2 -r 5
+python -m app.main -rq2 -r 5 --model-label gpt-5-codex
 ```
 
 Important flags:
 
 - `-r, --runs`: number of repeated executions
 - `-v, --verbose`: verbose logging
+- `--model-label`: optional override for the model label defined in `configs/architectures.json`
 
 Execution Outputs
 -----------------
@@ -102,11 +147,13 @@ Execution Outputs
 Every run writes:
 
 - `out/results.jsonl`: append-only raw run log
-- `out/runs/<run_group_id>/results.xlsx`: one workbook for that execution batch
+- `out/runs/<experiment>/<run_group_id>/results.xlsx`: legacy/default layout
+- `out/runs/<model_label>/<experiment>/<run_group_id>/results.xlsx`: model-scoped layout when `--model-label` is used
 
 `<run_group_id>` is timestamp-based, so each execution batch gets its own folder.
+For `-rq2`, `<experiment>` is `architecture_comparison`.
 
-The generated results also include `is_yaml_valid` for prompt types that expect YAML.
+The generated results also include `is_yaml_valid` for prompt types that expect YAML, plus `model_label` and `model_slug` metadata columns.
 
 Analysis Workflows
 ------------------
@@ -118,12 +165,21 @@ Generate the randomized ranking package:
 
 ```bash
 python -m app.rq1.generate_rankings
+python -m app.rq1.generate_rankings --model-label gpt-5-codex
 ```
 
 This reads the first run folder under `out/runs/architecture_comparison/` by
-default. You can override that with `--run-id`.
+default. With `--model-label`, it reads from
+`out/runs/<model-label>/architecture_comparison/`.
+You can override the selected run with `--run-id` or bypass the default lookup
+with `--runs-dir`.
 
-Main outputs in `out/RQ1/<run_id>/`:
+Main outputs go to:
+
+- `out/RQ1/<run_id>/` for the legacy/default layout
+- `out/RQ1/<model-label>/<run_id>/` when `--model-label` is used
+
+Files:
 
 - `ranking.md`
 - `key.csv`
@@ -139,11 +195,13 @@ Aggregate completed subject answers:
 
 ```bash
 python -m app.rq1.aggregate_rankings
+python -m app.rq1.aggregate_rankings --model-label gpt-5-codex --run-id 20260423_120000_000
 ```
 
 Useful flags:
 
 - `--run-id <run_id>`
+- `--model-label <label>`
 - `--answers-dir <path>`
 
 Main aggregate outputs:
@@ -161,9 +219,13 @@ Aggregate metrics across execution runs:
 
 ```bash
 python -m app.rq2
+python -m app.rq2 --model-label gpt-4.1-mini
 ```
 
 This produces the main RQ2 workbook and plots from the execution results.
+With `--model-label`, it reads from
+`out/runs/<model-label>/architecture_comparison/` and writes to
+`out/RQ2_architecture_metrics/<model-label>/`.
 
 The RQ2 workbook includes:
 
@@ -183,6 +245,7 @@ Supplementary fallback/answer join:
 
 ```bash
 python app/rq2/fallback_answer_join.py
+python app/rq2/fallback_answer_join.py --model-label gpt-5-codex
 ```
 
 This writes:
@@ -191,6 +254,7 @@ This writes:
 
 Useful flags for the join script:
 
+- `--model-label`
 - `--runs-dir`
 - `--out-dir`
 - `--sheet`
@@ -204,15 +268,18 @@ Run the RQ3 consistency pipeline:
 
 ```bash
 python -m app.rq3_consistency
+python -m app.rq3_consistency --model-label gpt-4o-mini
 ```
 
 Default input:
 
 - `out/runs/advanced_prompt_arch_comparison/`
+- `out/runs/<model-label>/advanced_prompt_arch_comparison/` when `--model-label` is used
 
 Default output directory:
 
 - `out/RQ3_tool_consistency_and_node_usage_consistency/`
+- `out/RQ3_tool_consistency_and_node_usage_consistency/<model-label>/` when `--model-label` is used
 
 This workflow reads repeated LangSmith tracing exports (`tracing_*.xlsx`) and
 measures whether the architectures behave consistently from run to run.
@@ -242,15 +309,18 @@ metrics.
 
 ```bash
 python -m app.rq3_clustering
+python -m app.rq3_clustering --model-label gpt-4o-mini
 ```
 
 Default input:
 
 - `out/runs/advanced_prompt_arch_comparison/`
+- `out/runs/<model-label>/advanced_prompt_arch_comparison/` when `--model-label` is used
 
 Default output directory:
 
 - `out/RQ3_clustering/`
+- `out/RQ3_clustering/<model-label>/` when `--model-label` is used
 
 Main outputs:
 
@@ -310,15 +380,18 @@ Run the RQ4 guardrail analysis pipeline:
 
 ```bash
 python -m app.rq4
+python -m app.rq4 --model-label gpt-4o-mini
 ```
 
 Default input:
 
 - `out/runs/guardrail_test/`
+- `out/runs/<model-label>/guardrail_test/` when `--model-label` is used
 
 Default output directory:
 
 - `out/RQ4_guardrail_metrics/`
+- `out/RQ4_guardrail_metrics/<model-label>/` when `--model-label` is used
 
 This workflow reads repeated `guardrail_test` execution workbooks, merges them
 with the `configs/rq4_prompts.json` prompt catalog, classifies each final answer
@@ -332,4 +405,8 @@ Main outputs:
 - `RQ4_guardrail_prompt_block_rate_heatmap.png`
 - `RQ4_guardrail_blocked_counts.png`
 
-`app.rq4` currently runs with fixed defaults and does not expose extra CLI flags.
+Useful flags:
+
+- `--model-label`
+- `--runs-dir`
+- `--out-dir`
