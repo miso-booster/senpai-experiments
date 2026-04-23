@@ -17,9 +17,6 @@ from app.yaml_validation import validate_answer_yaml
 
 
 EXIT_COMMAND = "exit"
-OUT_DIR = pathlib.Path(__file__).parent.parent / "out"
-RUNS_DIR = OUT_DIR / "runs"
-RESULTS_PATH = OUT_DIR / "results.jsonl"
 
 
 def extract_senpai_answer(stdout: str) -> str:
@@ -74,13 +71,16 @@ def run_one(
         prompt_type: str,
         timeout_s: int,
         run_group_id: str,
-        verbose: bool
+        verbose: bool,
+        runs_root_dir: pathlib.Path,
+        model_label: str | None = None,
+        model_slug: str = "",
 ) -> Dict[str, Any]:
     run_id = f"{arch.id}__{prompt_id}__{sensei_project}__{prompt_type}__{uuid.uuid4().hex[:8]}"
-    run_dir = RUNS_DIR / run_group_id / "run_register" / run_id
+    run_dir = runs_root_dir / run_group_id / "run_register" / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     cmd = build_cmd(arch, sensei_project, prompt_text, verbose, run_id)
-    run_env = build_env(arch, run_group_id)
+    run_env = build_env(arch, run_group_id, model_label=model_label)
     logging.info("Run start arch=%s prompt=%s", arch.id, prompt_id)
     logging.debug("Cmd: %s", cmd)
     if arch.cwd:
@@ -197,6 +197,8 @@ def run_one(
         "answer_code_lines": answer_code_lines,
         "llm_call_count": None,
         "total_input_tokens": None,
+        "model_label": model_label or "",
+        "model_slug": model_slug or "",
         "conversation_id": conversation_id,
         "run_dir": str(run_dir),
     }

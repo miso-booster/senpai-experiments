@@ -15,8 +15,41 @@ EXIT_COMMAND = "exit"
 OUT_DIR = pathlib.Path(__file__).parent.parent / "out"
 RUNS_DIR = OUT_DIR / "runs"
 RESULTS_PATH = OUT_DIR / "results.jsonl"
+MODEL_BUCKET_DIRNAME = "by_model"
+
+RQ2_EXPERIMENT_DIRNAME = "architecture_comparison"
+RQ3_EXPERIMENT_DIRNAME = "advanced_prompt_arch_comparison"
+RQ4_EXPERIMENT_DIRNAME = "guardrail_test"
 
 SENPAI_PREFIX_RE = re.compile(r"Senpai:\s*(.*)$")
+
+
+def sanitize_path_component(raw: str) -> str:
+    normalized = (raw or "").strip().lower()
+    if not normalized:
+        raise ValueError("Path component cannot be empty.")
+    slug = re.sub(r"[^a-z0-9]+", "-", normalized).strip("-")
+    if not slug:
+        raise ValueError(f"Could not derive a filesystem-safe slug from: {raw!r}")
+    return slug
+
+
+def resolve_experiment_dirname(*, rq2: bool = False, rq3: bool = False, rq4: bool = False) -> str:
+    enabled = [name for name, flag in {
+        RQ2_EXPERIMENT_DIRNAME: rq2,
+        RQ3_EXPERIMENT_DIRNAME: rq3,
+        RQ4_EXPERIMENT_DIRNAME: rq4,
+    }.items() if flag]
+    if len(enabled) != 1:
+        raise ValueError("Exactly one experiment flag must be enabled.")
+    return enabled[0]
+
+
+def resolve_runs_dir(experiment_dirname: str, model_label: str | None = None) -> pathlib.Path:
+    base_dir = RUNS_DIR / experiment_dirname
+    if not model_label:
+        return base_dir
+    return base_dir / MODEL_BUCKET_DIRNAME / sanitize_path_component(model_label)
 
 
 def load_architectures(path: str) -> List[Architecture]:
@@ -105,7 +138,12 @@ def ensure_dirs():
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def build_env(arch: Architecture, timestamp: str) -> Dict[str, str]:
+def build_env(
+    arch: Architecture,
+    timestamp: str,
+    *,
+    model_label: str | None = None,
+) -> Dict[str, str]:
     env = os.environ.copy()
     if arch.env_file:
         env.update(parse_env_file(arch.env_file))
@@ -117,6 +155,9 @@ def build_env(arch: Architecture, timestamp: str) -> Dict[str, str]:
     env.setdefault("LANG", "C.UTF-8")
     env.setdefault("LC_ALL", "C.UTF-8")
     env["AUTOMATION_RUN_TIMESTAMP"] = timestamp
+    if model_label:
+        env["AUTOMATION_MODEL_LABEL"] = model_label
+        env["AUTOMATION_MODEL_SLUG"] = sanitize_path_component(model_label)
 
     langsmith_project = env.get("LANGSMITH_PROJECT")
     if langsmith_project:

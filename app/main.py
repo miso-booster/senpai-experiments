@@ -8,12 +8,14 @@ from datetime import datetime, timezone
 
 from app.run_interaction import run_one
 from app.setup_configuration import (
-    RUNS_DIR,
     RESULTS_PATH,
     ensure_dirs,
     load_architectures,
     load_prompts_json,
     build_env,
+    resolve_experiment_dirname,
+    resolve_runs_dir,
+    sanitize_path_component,
 )
 from app.local_tracing import (
     export_langsmith_traces_to_xlsx,
@@ -28,7 +30,7 @@ RESULT_COLUMNS = [
     "run_id", "run_group_id", "arch_id", "prompt_id", "prompt", "timeout_s",
     "timed_out", "returncode", "latency_s", "answer", "fallback", "is_yaml_valid", "stdout_chars",
     "stderr_chars", "answer_chars", "answer_word_count", "answer_code_lines", "llm_call_count",
-    "total_input_tokens",
+    "total_input_tokens", "model_label", "model_slug",
     "conversation_id", "run_dir"
 ]
 MANDATORY_TRACING_COLUMNS = ["end_time", "latency_s"]
@@ -39,11 +41,16 @@ def append_jsonl(path: pathlib.Path, obj: Dict[str, Any]):
         f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
 
-def _collect_langsmith_export_envs(archs: list[Any], run_group_id: str) -> list[dict[str, str]]:
+def _collect_langsmith_export_envs(
+    archs: list[Any],
+    run_group_id: str,
+    *,
+    model_label: str | None = None,
+) -> list[dict[str, str]]:
     export_envs: list[dict[str, str]] = []
     seen: set[tuple[str, str, str]] = set()
     for arch in archs:
-        env = build_env(arch, run_group_id)
+        env = build_env(arch, run_group_id, model_label=model_label)
         project_name = env.get("LANGSMITH_PROJECT") or env.get("LANGCHAIN_PROJECT") or ""
         api_url = env.get("LANGSMITH_ENDPOINT") or env.get("LANGCHAIN_ENDPOINT") or "https://api.smith.langchain.com"
         api_key = env.get("LANGSMITH_API_KEY") or env.get("LANGCHAIN_API_KEY") or ""
@@ -166,6 +173,13 @@ def main():
     parser.add_argument("-rq2", "--rq2", action="store_true", help="RQ2 prompts .json selected")
     parser.add_argument("-rq3", "--rq3", action="store_true", help="RQ3 prompts .json selected")
     parser.add_argument("-rq4", "--rq4", action="store_true", help="RQ4 prompts .json selected")
+    parser.add_argument(
+        "--model-label",
+        help=(
+            "Optional storage label for the LLM used in this execution batch. "
+            "When set, runs are written under out/runs/<experiment>/by_model/<model-label>/."
+        ),
+    )
     args = parser.parse_args()
 
     selected_rq_flags = [args.rq2, args.rq3, args.rq4]
@@ -178,6 +192,9 @@ def main():
 
     ensure_dirs()
     logging.info("Loading architectures and prompts")
+    experiment_dirname = resolve_experiment_dirname(rq2=args.rq2, rq3=args.rq3, rq4=args.rq4)
+    runs_root_dir = resolve_runs_dir(experiment_dirname, args.model_label)
+    model_slug = sanitize_path_component(args.model_label) if args.model_label else ""
 
     if args.rq2:
         archs = load_architectures(str(pathlib.Path(__file__).parent.parent / "configs" / "architectures.json"))
@@ -204,7 +221,7 @@ def main():
         run_group_id = time.strftime("%Y%m%d_%H%M%S", time.localtime(now)) + f"_{int((now % 1) * 1000):03d}"
         automation_start_time = datetime.now(timezone.utc)
         group_results = []
-        tracing_envs = _collect_langsmith_export_envs(archs, run_group_id)
+        tracing_envs = _collect_langsmith_export_envs(archs, run_group_id, model_label=args.model_label)
         for arch in archs:
             logging.info("Architecture start id=%s", arch.id)
             for p in prompts:
@@ -217,7 +234,10 @@ def main():
                         prompt_type=p["type"],
                         timeout_s=timeout_s,
                         run_group_id=run_group_id,
-                        verbose=args.verbose
+                        verbose=args.verbose,
+                        runs_root_dir=runs_root_dir,
+                        model_label=args.model_label,
+                        model_slug=model_slug,
                     )
                     append_jsonl(RESULTS_PATH, res)
                     group_results.append(res)
@@ -238,13 +258,13 @@ def main():
             logging.info("Architecture end id=%s", arch.id)
 
         if group_results:
-            group_dir = RUNS_DIR / run_group_id
+            group_dir = runs_root_dir / run_group_id
             group_dir.mkdir(parents=True, exist_ok=True)
             group_xlsx_path = group_dir / "results.xlsx"
             df = pd.DataFrame(group_results, columns=RESULT_COLUMNS)
             df.to_excel(group_xlsx_path, index=False)
 
-            tracing_xlsx_path = RUNS_DIR / run_group_id / f"tracing_{run_group_id}.xlsx"
+            tracing_xlsx_path = group_dir / f"tracing_{run_group_id}.xlsx"
             _export_tracing_with_completeness_retry(
                 tracing_xlsx_path=tracing_xlsx_path,
                 tracing_envs=tracing_envs,

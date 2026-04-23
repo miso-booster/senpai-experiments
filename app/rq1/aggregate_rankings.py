@@ -11,10 +11,15 @@ from types import MappingProxyType
 from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
 from app.architecture_styles import ARCH_DISPLAY_LABELS, ARCH_FILL_COLORS
-from app.setup_configuration import OUT_DIR, RUNS_DIR
+from app.setup_configuration import (
+    MODEL_BUCKET_DIRNAME,
+    OUT_DIR,
+    RQ2_EXPERIMENT_DIRNAME,
+    resolve_runs_dir,
+    sanitize_path_component,
+)
 from app.rq1.utils import sanitize_run_dir
 
-DEFAULT_RQ1_RUNS_DIR = RUNS_DIR / "architecture_comparison"
 DEFAULT_RQ1_OUT_ROOT = OUT_DIR / "RQ1"
 DEFAULT_BOOTSTRAP_ITERATIONS = 10_000
 DEFAULT_BOOTSTRAP_SEED = 20260409
@@ -24,6 +29,16 @@ CONFIDENCE_WEIGHTS = {
     "M": 2.0 / 3.0,
     "L": 1.0 / 3.0,
 }
+
+
+def default_rq1_runs_dir(model_label: str | None = None) -> pathlib.Path:
+    return resolve_runs_dir(RQ2_EXPERIMENT_DIRNAME, model_label)
+
+
+def default_rq1_out_root(model_label: str | None = None) -> pathlib.Path:
+    if not model_label:
+        return DEFAULT_RQ1_OUT_ROOT
+    return DEFAULT_RQ1_OUT_ROOT / MODEL_BUCKET_DIRNAME / sanitize_path_component(model_label)
 
 @dataclass(frozen=True)
 class PromptRating:
@@ -86,9 +101,11 @@ def _resolve_run_dir(runs_dir: pathlib.Path, run_id: str | None) -> pathlib.Path
             raise SystemExit(f"run_id path is not a directory: {run_dir}")
         return run_dir
 
-    run_dirs = sorted(p for p in runs_dir.iterdir() if p.is_dir())
+    run_dirs = sorted(
+        p for p in runs_dir.iterdir() if p.is_dir() and (p / "results.xlsx").is_file()
+    )
     if not run_dirs:
-        raise SystemExit(f"No run directories found in: {runs_dir}")
+        raise SystemExit(f"No run directories with results.xlsx found in: {runs_dir}")
     selected = run_dirs[0]
     print(f"Using first run in {runs_dir}: {selected.name}")
     return selected
@@ -97,8 +114,9 @@ def _resolve_run_dir(runs_dir: pathlib.Path, run_id: str | None) -> pathlib.Path
 def _resolve_answers_dir(args: argparse.Namespace) -> pathlib.Path:
     if args.answers_dir:
         return pathlib.Path(args.answers_dir)
-    run_dir = _resolve_run_dir(pathlib.Path(args.runs_dir), args.run_id)
-    return DEFAULT_RQ1_OUT_ROOT / run_dir.name
+    runs_dir = pathlib.Path(args.runs_dir) if args.runs_dir else default_rq1_runs_dir(args.model_label)
+    run_dir = _resolve_run_dir(runs_dir, args.run_id)
+    return default_rq1_out_root(args.model_label) / run_dir.name
 
 
 def _confidence_to_weight(
@@ -574,7 +592,8 @@ def main() -> None:
         "--answers-dir",
         help=(
             "Directory containing answers_*.csv files. If omitted, uses "
-            "out/RQ1/<run_id> for the selected/first run."
+            "out/RQ1/<run_id> or out/RQ1/by_model/<model-label>/<run_id> "
+            "for the selected/first run."
         ),
     )
     parser.add_argument(
@@ -588,10 +607,17 @@ def main() -> None:
     )
     parser.add_argument(
         "--runs-dir",
-        default=str(DEFAULT_RQ1_RUNS_DIR),
         help=(
             "Directory containing run folders "
-            f"(default: {DEFAULT_RQ1_RUNS_DIR})"
+            "(default: out/runs/architecture_comparison or "
+            "out/runs/architecture_comparison/by_model/<model-label>)"
+        ),
+    )
+    parser.add_argument(
+        "--model-label",
+        help=(
+            "Optional model label used to resolve model-specific run folders and "
+            "default RQ1 output directories."
         ),
     )
     parser.add_argument(

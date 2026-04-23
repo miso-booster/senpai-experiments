@@ -4,6 +4,13 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 import pandas as pd
+from app.setup_configuration import (
+    MODEL_BUCKET_DIRNAME,
+    OUT_DIR,
+    RQ2_EXPERIMENT_DIRNAME,
+    resolve_runs_dir,
+    sanitize_path_component,
+)
 
 try:
     from .aggregate_metrics import discover_workbooks, load_all_results
@@ -13,6 +20,17 @@ except ImportError:  # Supports `python app/rq2/fallback_answer_join.py`
 
 INDEX_COLUMNS = ("run_group_id", "prompt_id", "prompt")
 REQUIRED_COLUMNS = (*INDEX_COLUMNS, "arch_id", "answer", "fallback")
+
+
+def default_rq2_runs_dir(model_label: str | None = None) -> Path:
+    return resolve_runs_dir(RQ2_EXPERIMENT_DIRNAME, model_label)
+
+
+def default_rq2_out_dir(model_label: str | None = None) -> Path:
+    base_dir = OUT_DIR / "RQ2_architecture_metrics"
+    if not model_label:
+        return base_dir
+    return base_dir / MODEL_BUCKET_DIRNAME / sanitize_path_component(model_label)
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,9 +43,19 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "--model-label",
+        help=(
+            "Optional model label used to resolve model-specific run folders and "
+            "default RQ2 output directories."
+        ),
+    )
+    parser.add_argument(
         "--runs-dir",
-        default="out/runs/architecture_comparison",
-        help="Directory containing run folders (default: out/runs/architecture_comparison)",
+        help=(
+            "Directory containing run folders "
+            "(default: out/runs/architecture_comparison or "
+            "out/runs/architecture_comparison/by_model/<model-label>)"
+        ),
     )
     parser.add_argument(
         "--results-name",
@@ -36,8 +64,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--out-dir",
-        default="out/RQ2_architecture_metrics",
-        help="Output directory for the joined fallback-answer files",
+        help=(
+            "Output directory for the joined fallback-answer files "
+            "(default: out/RQ2_architecture_metrics or "
+            "out/RQ2_architecture_metrics/by_model/<model-label>)"
+        ),
     )
     parser.add_argument(
         "--sheet",
@@ -165,8 +196,8 @@ def save_outputs(out_dir: Path, joined_df: pd.DataFrame) -> tuple[Path, Path]:
 def main() -> None:
     """Run the fallback-answer join workflow and write output files."""
     args = parse_args()
-    runs_dir = Path(args.runs_dir)
-    out_dir = Path(args.out_dir)
+    runs_dir = Path(args.runs_dir) if args.runs_dir else default_rq2_runs_dir(args.model_label)
+    out_dir = Path(args.out_dir) if args.out_dir else default_rq2_out_dir(args.model_label)
 
     if not runs_dir.exists():
         raise SystemExit(f"runs-dir not found: {runs_dir}")

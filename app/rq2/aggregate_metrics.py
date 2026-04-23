@@ -6,6 +6,13 @@ from typing import Iterable, Sequence
 import numpy as np
 import pandas as pd
 from scipy.stats import wilcoxon
+from app.setup_configuration import (
+    MODEL_BUCKET_DIRNAME,
+    OUT_DIR,
+    RQ2_EXPERIMENT_DIRNAME,
+    resolve_runs_dir,
+    sanitize_path_component,
+)
 
 try:
     from .excel import save_outputs
@@ -37,6 +44,17 @@ PAIRWISE_ID_COLUMNS = (
     "prompt_id",
     "prompt",
 )
+
+
+def default_rq2_runs_dir(model_label: str | None = None) -> Path:
+    return resolve_runs_dir(RQ2_EXPERIMENT_DIRNAME, model_label)
+
+
+def default_rq2_out_dir(model_label: str | None = None) -> Path:
+    base_dir = OUT_DIR / "RQ2_architecture_metrics"
+    if not model_label:
+        return base_dir
+    return base_dir / MODEL_BUCKET_DIRNAME / sanitize_path_component(model_label)
 
 
 def compute_a12(x: pd.Series, y: pd.Series) -> float:
@@ -75,9 +93,19 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "--model-label",
+        help=(
+            "Optional model label used to resolve model-specific run folders and "
+            "default RQ2 output directories."
+        ),
+    )
+    parser.add_argument(
         "--runs-dir",
-        default="out/runs/architecture_comparison",
-        help="Directory containing run folders (default: out/runs/architecture_comparison)",
+        help=(
+            "Directory containing run folders "
+            "(default: out/runs/architecture_comparison or "
+            "out/runs/architecture_comparison/by_model/<model-label>)"
+        ),
     )
     parser.add_argument(
         "--results-name",
@@ -86,8 +114,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--out-dir",
-        default="out/RQ2_architecture_metrics",
-        help="Output directory for the RQ2 workbook and plots",
+        help=(
+            "Output directory for the RQ2 workbook and plots "
+            "(default: out/RQ2_architecture_metrics or "
+            "out/RQ2_architecture_metrics/by_model/<model-label>)"
+        ),
     )
     parser.add_argument(
         "--sheet",
@@ -514,8 +545,8 @@ def build_pairwise_wilcoxon_summary(df: pd.DataFrame, metric_cols: Sequence[str]
 def main() -> None:
     """Run the full RQ2 aggregation pipeline and write workbook/plots outputs."""
     args = parse_args()
-    runs_dir = Path(args.runs_dir)
-    out_dir = Path(args.out_dir)
+    runs_dir = Path(args.runs_dir) if args.runs_dir else default_rq2_runs_dir(args.model_label)
+    out_dir = Path(args.out_dir) if args.out_dir else default_rq2_out_dir(args.model_label)
 
     if not runs_dir.exists():
         raise SystemExit(f"runs-dir not found: {runs_dir}")

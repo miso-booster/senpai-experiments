@@ -89,12 +89,15 @@ python -m app.main -rq3
 python -m app.main -rq4
 python -m app.main -rq2 -r 20
 python -m app.main -rq2 -r 20 -v
+python -m app.main -rq2 -r 5 --model-label gpt-4.1-mini
+python -m app.main -rq2 -r 5 --model-label gpt-5-codex
 ```
 
 Important flags:
 
 - `-r, --runs`: number of repeated executions
 - `-v, --verbose`: verbose logging
+- `--model-label`: optional storage label used to isolate runs by LLM model
 
 Execution Outputs
 -----------------
@@ -102,11 +105,13 @@ Execution Outputs
 Every run writes:
 
 - `out/results.jsonl`: append-only raw run log
-- `out/runs/<run_group_id>/results.xlsx`: one workbook for that execution batch
+- `out/runs/<experiment>/<run_group_id>/results.xlsx`: legacy/default layout
+- `out/runs/<experiment>/by_model/<model_label>/<run_group_id>/results.xlsx`: model-scoped layout when `--model-label` is used
 
 `<run_group_id>` is timestamp-based, so each execution batch gets its own folder.
+For `-rq2`, `<experiment>` is `architecture_comparison`.
 
-The generated results also include `is_yaml_valid` for prompt types that expect YAML.
+The generated results also include `is_yaml_valid` for prompt types that expect YAML, plus `model_label` and `model_slug` metadata columns.
 
 Analysis Workflows
 ------------------
@@ -118,12 +123,21 @@ Generate the randomized ranking package:
 
 ```bash
 python -m app.rq1.generate_rankings
+python -m app.rq1.generate_rankings --model-label gpt-5-codex
 ```
 
 This reads the first run folder under `out/runs/architecture_comparison/` by
-default. You can override that with `--run-id`.
+default. With `--model-label`, it reads from
+`out/runs/architecture_comparison/by_model/<model-label>/`.
+You can override the selected run with `--run-id` or bypass the default lookup
+with `--runs-dir`.
 
-Main outputs in `out/RQ1/<run_id>/`:
+Main outputs go to:
+
+- `out/RQ1/<run_id>/` for the legacy/default layout
+- `out/RQ1/by_model/<model-label>/<run_id>/` when `--model-label` is used
+
+Files:
 
 - `ranking.md`
 - `key.csv`
@@ -139,11 +153,13 @@ Aggregate completed subject answers:
 
 ```bash
 python -m app.rq1.aggregate_rankings
+python -m app.rq1.aggregate_rankings --model-label gpt-5-codex --run-id 20260423_120000_000
 ```
 
 Useful flags:
 
 - `--run-id <run_id>`
+- `--model-label <label>`
 - `--answers-dir <path>`
 
 Main aggregate outputs:
@@ -161,9 +177,13 @@ Aggregate metrics across execution runs:
 
 ```bash
 python -m app.rq2
+python -m app.rq2 --model-label gpt-4.1-mini
 ```
 
 This produces the main RQ2 workbook and plots from the execution results.
+With `--model-label`, it reads from
+`out/runs/architecture_comparison/by_model/<model-label>/` and writes to
+`out/RQ2_architecture_metrics/by_model/<model-label>/`.
 
 The RQ2 workbook includes:
 
@@ -183,6 +203,7 @@ Supplementary fallback/answer join:
 
 ```bash
 python app/rq2/fallback_answer_join.py
+python app/rq2/fallback_answer_join.py --model-label gpt-5-codex
 ```
 
 This writes:
@@ -191,6 +212,7 @@ This writes:
 
 Useful flags for the join script:
 
+- `--model-label`
 - `--runs-dir`
 - `--out-dir`
 - `--sheet`
