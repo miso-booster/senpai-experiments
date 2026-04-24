@@ -1,0 +1,62 @@
+conversation ID: graph_based_architecture__p34__pizza_shop__profile__ed0708db
+$$$
+Hey! That sounds like a great use case to test how your chatbot handles users who change their minds mid-conversation 😊.
+
+You want a Sensei profile where the user starts by asking for a custom pizza but then switches to ordering a predefined pizza. The key here is to use the `interaction_style` with `"change your mind"` so the user simulator will naturally change their request during the chat.
+
+Here’s a minimal example profile YAML you can adapt, based on your pizza ordering context:
+
+```yaml
+test_name: "custom_to_predefined_pizza_change_mind"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who initially wants to order a custom pizza with specific toppings,
+    but halfway through the conversation, you change your mind and decide to order a predefined pizza instead.
+  context:
+    - "You like experimenting with pizza toppings but sometimes prefer simpler options."
+  goals:
+    - "I want a custom pizza with {{toppings}}."
+    - "Actually, I'd like to order a {{predefined_pizza}} pizza instead."
+    - toppings:
+        function: forward()
+        type: string
+        data: [cheese, mushrooms, pepperoni]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you please repeat?"
+  output:
+    - final_order:
+        type: string
+        description: "The chatbot's confirmation of the final pizza order."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 6
+  interaction_style:
+    - change your mind
+```
+
+### Explanation:
+- The user starts with a goal to order a custom pizza with some toppings.
+- Then the user changes their mind and orders a predefined pizza.
+- The `interaction_style: change your mind` ensures the user simulator will switch goals mid-conversation.
+- The `goals` list includes both requests with variables (`toppings` and `predefined_pizza`) declared properly.
+- The `chatbot.output.final_order` field is where you expect the chatbot to confirm the final pizza choice.
+
+If you want, I can help you customize it further or integrate drink orders or other details. Just let me know! 🍕✨
+$$$

@@ -1,0 +1,39 @@
+¡Claro! Para crear una regla en Sensei-check que verifique si el asistente confirma que añadió la bebida que el usuario pidió, necesitamos asegurarnos de que:
+
+- La conversación incluya una confirmación explícita del asistente sobre la bebida.
+- Podemos buscar en los turnos del asistente una frase que mencione la bebida solicitada.
+
+Asumiendo que el perfil de chat expone en `chatbot.output` un campo como `drink` con el nombre de la bebida que pidió el usuario, podemos usar la función `utterance_index` para buscar en las respuestas del asistente una confirmación que mencione esa bebida.
+
+Aquí te dejo un ejemplo de regla que hace esto en una sola conversación:
+
+```yaml
+name: assistant_confirms_drink
+description: El asistente confirma que añadió la bebida que el usuario pidió
+conversations: 1
+oracle: utterance_index('assistant', conv.drink) > 0
+```
+
+**Explicación:**
+
+- `utterance_index('assistant', conv.drink)` busca en qué turno el asistente menciona la bebida que está en `conv.drink`.
+- Si el resultado es mayor que 0, significa que el asistente confirmó la bebida en algún momento.
+
+---
+
+Si quieres una regla más robusta que busque frases típicas de confirmación (como "he añadido", "confirmo", "agregado", etc.) junto con la bebida, podríamos hacer algo así:
+
+```yaml
+name: assistant_confirms_drink_explicit
+description: El asistente confirma explícitamente que añadió la bebida pedida
+conversations: 1
+oracle: utterance_index('assistant', 'added ' + conv.drink) > 0 or utterance_index('assistant', 'added the ' + conv.drink) > 0 or utterance_index('assistant', 'confirmed ' + conv.drink) > 0
+```
+
+Pero esta versión depende de que el asistente use esas frases exactas.
+
+---
+
+Si no tienes un campo `drink` en `chatbot.output`, primero deberías agregarlo en el perfil para que la regla pueda usarlo.
+
+¿Quieres que te ayude a crear o modificar el perfil para exponer ese campo? 😊

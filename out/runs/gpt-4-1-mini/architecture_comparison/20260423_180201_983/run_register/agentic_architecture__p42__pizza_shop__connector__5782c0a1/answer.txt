@@ -1,0 +1,54 @@
+I have reviewed your connector and the real request/response you shared, along with the connector docs and examples.
+
+Here are the key differences and fixes needed:
+
+1. **Base URL and path:**
+   - Your base_url is `"https://api.bot.com"` but the real request uses `"https://api.1millionbot.com"` and the path is `/api/public/messages`.
+   
+2. **Headers:**
+   - The real request includes an `Authorization` header with a token.
+   - It also includes `Content-Type: application/json`.
+   - Other headers like `User-Agent`, `Accept`, etc., are usually optional or handled by the HTTP client.
+
+3. **Payload:**
+   - The real payload is a JSON object with many fields:
+     - `conversation`
+     - `sender_type`
+     - `sender`
+     - `bot`
+     - `language`
+     - `url`
+     - `message` with nested `text` containing the user message.
+   - Your current payload only has `language` and `message.text`.
+
+4. **Response path:**
+   - The real response JSON has a structure:
+     ```json
+     {
+       "request": {"text": "hola"},
+       "response": [
+         {
+           "text": "<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>",
+           ...
+         }
+       ]
+     }
+     ```
+   - So the correct response path to extract the bot reply text is: `response.0.text`.
+
+---
+
+**To fix your connector, you need to:**
+
+- Update `base_url` to `"https://api.1millionbot.com"`.
+- Update `send_message.path` to `"/api/public/messages"`.
+- Add the `Authorization` header with the correct token.
+- Expand the `payload_template` to include all required fields (you need to provide values or placeholders for `conversation`, `sender_type`, `sender`, `bot`, `url`).
+- Keep the `language` and `message.text` with `{user_msg}` placeholder.
+- Update `response_path` to `"response.0.text"`.
+
+---
+
+Since some fields like `conversation`, `sender`, `bot`, and `url` are specific to your context, you should provide those values or variables.
+
+Would you like me to draft a fixed connector YAML with placeholders for those fields so you can fill them? Or do you want me to use example values?

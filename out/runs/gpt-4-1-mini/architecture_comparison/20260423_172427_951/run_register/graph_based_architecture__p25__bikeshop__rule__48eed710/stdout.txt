@@ -1,0 +1,47 @@
+conversation ID: graph_based_architecture__p25__bikeshop__rule__48eed710
+$$$
+Hey there! 😊 I see you want a Sensei-check rule to verify the outputs of your bike shop chatbot, specifically checking that:
+
+- The opening and closing times are between 10 and 20 (I assume hours in 24h format),
+- The tune-up price is 50,
+- The seat price is 20,
+- The tire price is 20.
+
+Got it! Here's how you can write a single-conversation rule to check these conditions in Sensei-check YAML format. Since the profile exposes these fields in `chatbot.output`, the rule will reference them directly.
+
+```yaml
+name: bike_shop_price_and_hours_check
+description: Checks opening/closing times and fixed prices for tire, tune-up, and seat
+conversations: 1
+oracle: >
+  # Parse opening and closing times from the string, assuming format like "10-20" or "10:00-20:00"
+  # We'll extract numbers and check they are between 10 and 20
+  import re
+  times = re.findall(r'\d+', opening_and_closing)
+  len(times) >= 2 and all(10 <= int(t) <= 20 for t in times[:2]) and \
+  float(tune_up) == 50 and float(tire) == 20 and float(seat_price) == 20
+```
+
+### Explanation:
+- The `opening_and_closing` is a string, so we extract numbers from it (like "10" and "20").
+- We check that the first two numbers are between 10 and 20.
+- The prices (`tune_up`, `tire`, `seat_price`) are money types, so we convert them to floats and check equality.
+- This rule applies to a single conversation (`conversations: 1`).
+
+If your `seat_price` is a string but contains a number (like "20 USD"), `float(seat_price)` will work if it’s a clean number string; otherwise, you might want to use `extract_float(seat_price)` helper for safer extraction.
+
+Here’s a slightly safer version using `extract_float` helper for prices:
+
+```yaml
+name: bike_shop_price_and_hours_check
+description: Checks opening/closing times and fixed prices for tire, tune-up, and seat
+conversations: 1
+oracle: >
+  import re
+  times = re.findall(r'\d+', opening_and_closing)
+  len(times) >= 2 and all(10 <= int(t) <= 20 for t in times[:2]) and \
+  extract_float(tune_up) == 50 and extract_float(tire) == 20 and extract_float(seat_price) == 20
+```
+
+Would you like me to help you adapt this rule for multiple conversations or add more detailed error messages? 😊
+$$$

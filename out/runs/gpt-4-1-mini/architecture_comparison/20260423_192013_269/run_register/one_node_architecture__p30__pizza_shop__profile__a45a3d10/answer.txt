@@ -1,0 +1,69 @@
+Sure! Here's a Sensei profile for a pizza shop where the user is rude and wants things done fast. It includes 4 goals with 4 variables, two of which use `pairwise()` functions to enable pairwise combinations for conversation generation.
+
+```yaml
+test_name: "pizza_shop_rude_fast_user"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude customer who is impatient and wants things done quickly.
+    You demand fast service and show little patience in your tone.
+  context:
+    - personality: personalities/rude-user.yml
+    - "You want your pizza and drinks as fast as possible."
+  goals:
+    - "Order a {{pizza_type}} pizza with {{pizza_size}} size"
+    - "Add {{toppings}} as toppings"
+    - "Order {{drink_quantity}} {{drink_type}} to drink"
+    - "Request the estimated delivery time"
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: forward(pizza_type)
+        type: string
+        data: [cheese, mushrooms, olives, pepperoni]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Please repeat quickly."
+  output:
+    - order_confirmation:
+        type: string
+        description: Confirmation message of the pizza and drink order
+    - estimated_delivery_time:
+        type: time("hh:mm")
+        description: Estimated delivery or pickup time
+    - total_price:
+        type: currency
+        description: Total price of the order
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.5
+  interaction_style:
+    - rude
+    - single questions
+```
+
+This profile sets up a rude user ordering pizza and drinks with pairwise combinations on `pizza_type` and `pizza_size` to cover all pairs efficiently. The other variables use `forward()` to iterate through their options. The conversation number is determined by the pairwise matrix of those two variables.
+
+Let me know if you'd like it adjusted or extended! 🍕😠

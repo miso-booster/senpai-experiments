@@ -1,0 +1,563 @@
+run_group_id,prompt_id,prompt,answer_agentic_architecture,answer_graph_based_architecture,answer_one_node_architecture,fallback_agentic_architecture,fallback_graph_based_architecture,fallback_one_node_architecture
+20260423_164244_822,p6,"Create a rule that checks that ada uam gave us all the necessary information about the CAU, that we have a phone number, an email address, physical address. The chatbout outputs would be these
+
+  output:
+  - contact_email:
+      type: string
+      description: Correo electrónico del CAU
+  - contact_phone:
+      type: string
+      description: Número de teléfono del CAU
+  - physical_address:
+      type: string
+      description: Dirección física del CAU","I found a profile named `consultante_de_servicios_y_asistencia_del_cau.yaml` that matches your description. It includes the following relevant `chatbot.output` fields:
+
+- contact_email (string): Correo electrónico del CAU
+- contact_phone (string): Número de teléfono del CAU
+- physical_address (string): Dirección física del CAU
+
+This perfectly fits your requirement for checking that the CAU contact info is complete.
+
+Shall I create the rule targeting this profile to check that these three fields are present (non-empty) in each conversation's output?","I'm sorry we couldn't get the rule validated after three attempts. It seems the issue lies in the YAML formatting of the rule checking that ADA UAM provides all necessary CAU contact information, including email, phone, and physical address. Please consider revising the instructions or applying the feedback about invalid mapping values to correct the YAML syntax. If you prefer, you can provide more details or clarify your request, and I'll be happy to assist further.
+
+Validator feedback:
+Validation repair summary:
+- invalid blocks: 1
+- valid blocks: none
+
+Block 1 (rule 1) (yaml)
+- issue: Rule is not valid YAML: mapping values are not allowed here
+  in ""<unicode string>"", line 2, column 55:
+     ... ot must provide CAU contact info: email, phone, and physical address
+                                         ^.
+
+Final instruction:
+Keep blocks none unchanged. Rewrite the full reply, but only modify blocks 1 and any prose that references them.","Got it! Here's a Sensei-check rule that checks if the chatbot outputs for the Ada UAM profile include non-empty values for `contact_email`, `contact_phone`, and `physical_address` — ensuring the CAU contact info is fully provided:
+
+```yaml
+name: cau_contact_info_complete
+description: The chatbot provides all necessary CAU contact info: email, phone, and physical address
+conversations: 1
+active: true
+oracle: |
+  conv[0].contact_email is not None and conv[0].contact_email.strip() != """" and
+  conv[0].contact_phone is not None and conv[0].contact_phone.strip() != """" and
+  conv[0].physical_address is not None and conv[0].physical_address.strip() != """"
+yields: |
+  f""Missing CAU contact info: email='{conv[0].contact_email}', phone='{conv[0].contact_phone}', address='{conv[0].physical_address}'""
+```
+
+This rule runs on single conversations and asserts that none of those fields are empty or missing. If any are missing, it will report which ones are incomplete. Let me know if you want it adapted for multiple conversations or any other tweaks! 😊",False,True,False
+20260423_164244_822,p15,"Make this rule work please: 
+name: customer_service_contact_info
+descriptin: Ensure the chatbot provides correct contact options and 
+information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 
+'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is 
+not None","Thanks for sharing the context! I found a profile named `customer_service_assistance.yaml` that matches your domain. It exposes these relevant output fields in `chatbot.output`:
+
+- `contact_options` (string): Methods to reach customer service for payment issues
+- `customer_service_number` (string): Contact number for general inquiries at Alcampo
+- `hours_of_operation` (string)
+- `online_form_instructions` (string)
+- `required_fields` (string)
+- `message_details` (string)
+
+Your rule wants to check two conversations where the user asks for ""contact options"" and ""customer service number,"" and the chatbot provides non-null answers for those fields.
+
+Before I fix your rule YAML, a couple of clarifications:
+
+1. Are the user requests exactly the strings `'contact options'` and `'customer service number'` in the conversations? Or do you want a more flexible way to detect those intents (e.g., substring or semantic match)?
+
+2. Should the rule just check that the chatbot provides non-null values for `contact_options` and `customer_service_number` in those conversations? Or do you want additional checks (e.g., format, correctness)?
+
+Once you confirm, I can generate a corrected and polished rule YAML for you based on the profile outputs and the rules DSL. 😊","I'm sorry, but I couldn't produce a YAML response that passed validation after multiple attempts. Please adjust your instructions and try again.","Hey! I spotted a few issues in your rule that we can fix to make it work smoothly:
+
+1. There's a typo in `description` (you wrote `descriptin`).
+2. The `when` condition uses `user_request` fields, but these must exist in your profile's `chatbot.output` or be valid fields from the conversations. Make sure `user_request` is actually exposed.
+3. The rule is missing a `then` or `oracle` clause after the `if` — the `if` alone is not enough.
+4. The `if` condition should be paired with a `then` that states what you expect when the `if` is true.
+
+Assuming you want to check that when the user requests ""contact options"" or ""customer service number"", the chatbot provides non-empty info, here’s a corrected version:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and customer service number when requested.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: True
+```
+
+If you want to assert that both fields are non-empty strings, you could be more explicit:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and customer service number when requested.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: len(conv[0].contact_options) > 0 and len(conv[1].customer_service_number) > 0
+```
+
+Make sure that `user_request`, `contact_options`, and `customer_service_number` are defined in your profile’s `chatbot.output` or otherwise available in the conversation data.
+
+If `user_request` is not part of the outputs, you might need to adjust the `when` filter to use other fields or metadata.
+
+Let me know if you want me to help you adjust it to your profile’s actual fields! 😊",False,True,False
+20260423_172427_951,p36,"Why is this rule not working? fix it:
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+then: extract_float(conv[0].price) > extract_float(conv[1].price)","Sorry, I tried several times but couldn't finish a version that passes all checks because your profile is missing the required top-level ""conversation"" field. Could you share that part or an example of your full profile? That will help me fix the rule properly.","Hey! I see the rule you shared is missing the crucial `if:` condition that triggers the comparison. In Sensei-check metamorphic rules, when you want to say ""if X, then Y,"" you need both `if:` and `then:` parts.
+
+Your current rule has only `when:` (filter) and `then:` (assertion), but no `if:` to specify the condition under which the price should be higher.
+
+From your rule name and description, you want to check that if the number of toppings in `conv[0]` is more than in `conv[1]`, then the price should be higher.
+
+So, the fix is to add the `if:` condition checking toppings count.
+
+Here’s the corrected rule:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+**Why this matters:**  
+- `when:` filters pairs of conversations to comparable ones (same size and drink).  
+- `if:` checks the specific condition (more toppings in conv[0]).  
+- `then:` asserts the expected relation (price higher in conv[0]).
+
+Without the `if:`, the rule tries to apply the `then:` to all pairs matching `when:`, which is not what you want.
+
+Give this a try! It should work perfectly now 😊. Let me know if you want me to help with anything else!","Hey! I see the rule you shared is missing the `if:` condition, which is essential for metamorphic rules using `if`/`then` syntax. The `if:` part defines the condition under which the `then:` assertion applies.
+
+In your case, you want to check that when the number of toppings in `conv[0]` is greater than in `conv[1]`, the price should also be higher.
+
+Here's the fixed version of your rule with the `if:` condition added:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+This way, the rule says: *If* the first conversation has more toppings than the second (and size and drink are equal), *then* its price must be higher.
+
+Let me know if you want me to help with anything else! 😊",True,False,False
+20260423_180201_983,p10,"I have this profile that has a lot of things but I dont know how to try it, could you suggest me a rule or more to do it?
+
+test_name: Usuarios Nuevos y Admisiones
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: Spanish
+  role: Estudiante potencial que busca información sobre el proceso de admisión y recursos disponibles.
+  context:
+  - 'personality: personalities/conversational-user'
+  - Estás considerando inscribirte en una universidad y buscas información detallada sobre el proceso de admisión y las opciones académicas disponibles.
+  - Te gustaría conocer más sobre los diferentes grados y cursos que ofrece la universidad para poder tomar una decisión informada.
+  - Además, tienes interés en participar en eventos como Welcome Day, ya que crees que podrían ayudarte a integrarte mejor como nuevo estudiante.
+  goals:
+  - Solicitar información sobre el proceso de admisión para {{grados}} en la UAM.
+  - Pedir detalles sobre los procedimientos de lista de espera para admisiones a grados.
+  - Consultar la información disponible para futuros estudiantes sobre los {{cursos}} y grados ofrecidos.
+  - Solicitar información sobre el evento de Welcome Day y su relevancia para los nuevos estudiantes.
+  - cursos:
+      function: forward()
+      type: string
+      data:
+      - Ingeniería en Sistemas Computacionales
+      - Licenciatura en Psicología
+      - Arquitectura
+      - Biología
+      - Administración de Empresas
+      - Química
+  - grados:
+      function: forward()
+      type: string
+      data:
+      - Licenciatura en Psicología
+      - Máster en Ingeniería de Software
+      - Grado en Business Administration
+      - Doctorado en Educación
+      - Licenciatura en Medicina
+      - Grado en Ciencias Políticas
+chatbot:
+  is_starter: false
+  fallback: ¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro\ncatálogo de servicios\n.\nRespondo a preguntas dirigidas al\nCentro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+  - admission_to_grados_link:
+      type: string
+      description: URL con detalles sobre los procesos de admisión
+  - waitlist_info_link:
+      type: string
+      description: URL con detalles sobre listas de espera de admisión
+  - future_students_link:
+      type: string
+      description: URL con recursos para estudiantes potenciales
+  - welcome_day_link:
+      type: string
+      description: URL con detalles sobre el Welcome Day
+  - grados_available:
+      type: string
+      description: Lista de grados ofrecidos
+  - cursos_available:
+      type: string
+      description: Lista de cursos ofrecidos
+  - waitlist_procedures:
+      type: string
+      description: Procedimientos para lista de espera
+  - welcome_day_date:
+      type: date
+      description: Fecha del evento Welcome Day
+  - welcome_day_time:
+      type: time
+      description: Hora del evento Welcome Day
+  - admission_deadline:
+      type: date
+      description: Fecha límite para admisión
+  - future_students_info:
+      type: string
+      description: Información general para futuros estudiantes
+  - admission_requirements:
+      type: string
+      description: Requisitos de admisión para grados
+  - event_location:
+      type: string
+      description: Ubicación del evento Welcome Day
+  - enrollment_process:
+      type: string
+      description: Proceso de inscripción para nuevos estudiantes
+  - contact_admissions:
+      type: string
+      description: Información de contacto de admisiones
+  - application_fee:
+      type: money
+      description: Costo de la solicitud de admisión
+conversation:
+  number: 6
+  max_cost: 0.9
+  goal_style:
+    steps: 30
+  interaction_style:
+  - single questions","Sorry, I tried a few times but couldn’t finish a version that meets all requirements. The main issue is that one rule had a condition written as a true/false value instead of a proper string. If you want, I can fix that and send you the corrected rules to test your profile smoothly!","¡Hola! 😊 Qué bueno que tengas ese perfil tan completo para ""Usuarios Nuevos y Admisiones"". Para probarlo con Sensei-check, te recomiendo crear reglas que validen la coherencia, completitud y consistencia de las salidas que tu chatbot genera en las conversaciones simuladas.
+
+Aquí te dejo algunas ideas de reglas útiles para tu perfil, basadas en los campos que expones en `chatbot.output`:
+
+---
+
+### 1) Regla para verificar que los enlaces importantes siempre estén presentes
+
+Queremos asegurarnos de que en cada conversación el bot siempre entregue URLs para los temas clave (admisión, lista de espera, futuros estudiantes, Welcome Day).
+
+```yaml
+name: essential_links_present
+description: El bot debe proporcionar enlaces para admisión, lista de espera, futuros estudiantes y Welcome Day
+conversations: 1
+oracle: >
+  admission_to_grados_link is not None and admission_to_grados_link != '' and
+  waitlist_info_link is not None and waitlist_info_link != '' and
+  future_students_link is not None and future_students_link != '' and
+  welcome_day_link is not None and welcome_day_link != ''
+```
+
+---
+
+### 2) Regla para validar que las fechas importantes estén en formato correcto y sean futuras
+
+Por ejemplo, la fecha del Welcome Day y la fecha límite de admisión deben ser fechas válidas y no pasadas (asumiendo que la prueba se corre en tiempo real).
+
+```yaml
+name: dates_valid_and_future
+description: Las fechas de Welcome Day y admisión deben ser válidas y no anteriores a hoy
+conversations: 1
+oracle: >
+  welcome_day_date is not None and welcome_day_date >= today() and
+  admission_deadline is not None and admission_deadline >= today()
+```
+
+*Nota:* `today()` es un helper que Sensei-check puede tener para la fecha actual; si no existe, puedes omitir la comparación o validar solo que no sea nula.
+
+---
+
+### 3) Regla para verificar que la lista de grados y cursos disponibles contenga al menos uno de los valores definidos en el perfil
+
+Esto asegura que el bot mencione grados y cursos reales que el usuario podría preguntar.
+
+```yaml
+name: available_degrees_and_courses_consistency
+description: Los grados y cursos listados deben incluir al menos uno de los esperados
+conversations: 1
+oracle: >
+  any(g in grados_available for g in ['Licenciatura en Psicología', 'Máster en Ingeniería de Software', 'Grado en Business Administration']) and
+  any(c in cursos_available for c in ['Ingeniería en Sistemas Computacionales', 'Licenciatura en Psicología', 'Arquitectura'])
+```
+
+---
+
+### 4) Regla metamórfica para consistencia entre conversaciones con distintos grados o cursos
+
+Si cambias el grado o curso en la entrada, el enlace de admisión o la información relacionada debería cambiar o al menos no ser idéntica (para evitar respuestas genéricas sin personalización).
+
+```yaml
+name: admission_info_varies_with_degree
+description: La información de admisión debe variar al cambiar el grado solicitado
+conversations: 2
+when: conv[0].grados != conv[1].grados
+oracle: conv[0].admission_to_grados_link != conv[1].admission_to_grados_link
+```
+
+---
+
+### 5) Regla para verificar que el costo de la solicitud (application_fee) sea un valor positivo
+
+```yaml
+name: application_fee_positive
+description: La tarifa de solicitud debe ser un valor positivo
+conversations: 1
+oracle: extract_float(application_fee) > 0
+```
+
+---
+
+### ¿Quieres que te ayude a escribir estas reglas en YAML listas para usar? O si prefieres, puedo ayudarte a crear reglas más específicas según lo que quieras validar. ¡Solo dime! 😊","Hey! Your profile looks great and quite detailed for the ""Usuarios Nuevos y Admisiones"" scenario. To test it effectively, you can create Sensei-check rules that verify the outputs your profile exposes in `chatbot.output`. Since your profile extracts many useful fields like URLs, dates, strings, and even money, here are some friendly rule ideas you can try to get started:
+
+1. **Check that important URLs are non-empty strings**  
+Make sure the bot always returns URLs for admission info, waitlist, welcome day, etc.
+
+2. **Validate that date fields are valid and in the future**  
+For example, the Welcome Day date and admission deadline should be valid dates and ideally not in the past.
+
+3. **Check that the application fee is non-negative**  
+The fee should be a positive money value or zero.
+
+4. **Ensure that lists of available courses and degrees are non-empty strings**  
+The bot should provide some info here.
+
+Here’s a sample Sensei-check rule YAML block with these ideas to get you started:
+
+```yaml
+name: admission_info_completeness
+description: Ensure key admission info fields are present and valid
+conversations: 1
+oracle: |
+  admission_to_grados_link is not None and admission_to_grados_link != """" and
+  waitlist_info_link is not None and waitlist_info_link != """" and
+  future_students_link is not None and future_students_link != """" and
+  welcome_day_link is not None and welcome_day_link != """" and
+  grados_available is not None and grados_available != """" and
+  cursos_available is not None and cursos_available != """" and
+  contact_admissions is not None and contact_admissions != """"
+```
+
+```yaml
+name: welcome_day_date_valid
+description: Welcome Day date and time should be valid and not empty
+conversations: 1
+oracle: |
+  welcome_day_date is not None and welcome_day_time is not None
+```
+
+```yaml
+name: admission_deadline_valid
+description: Admission deadline date should be present
+conversations: 1
+oracle: admission_deadline is not None
+```
+
+```yaml
+name: application_fee_non_negative
+description: Application fee should be zero or positive
+conversations: 1
+oracle: application_fee is not None and application_fee >= 0
+```
+
+If you want to get fancy, you can also write metamorphic rules comparing conversations, for example:
+
+- If the degree (`grados`) changes, the application fee should not be negative.
+- The Welcome Day date should be consistent across conversations.
+
+But starting with these simple presence and sanity checks will already help you validate your profile outputs and catch missing or malformed data.
+
+Would you like me to help you craft more specific or advanced rules based on your profile? 😊",True,False,False
+20260423_180201_983,p33,"I have this profile, but I don't know what to add to the chatbot field. Can you help me completing it for me?: test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+chatbot:
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single question","I found your profile file `pizza_and_drinks_information_seeker.yaml` in the project. It already has a complete `chatbot` field filled out, including:
+
+- `is_starter: false` (the user starts the conversation)
+- A fallback message for the bot's fallback response
+- An `output` section with these extracted fields:
+  - `pizza_types` (string): list of pizza types offered
+  - `margarita_price` (money): price of Margarita pizza
+  - `drinks_and_prices` (string): list of drinks and prices
+  - `operating_hours` (string): shop hours
+  - `delivery_availability` (string): whether delivery is available
+
+This matches perfectly your user goals about asking for pizza types, prices, drinks, hours, and delivery.
+
+If you want, I can help you polish or extend this `chatbot` field, but it looks well structured and aligned with your profile's user goals and context.
+
+Would you like me to:
+
+- Explain the current `chatbot` field in detail?
+- Suggest any improvements or additional output fields?
+- Help you create rules that validate these outputs?
+- Or do you want me to generate a minimal example from scratch for learning purposes?
+
+Let me know how you'd like to proceed! 😊","I'm sorry we couldn't complete the chatbot field correctly after three attempts. Since you wanted help fixing the existing profile, please consider adjusting the interaction_style to one of the allowed options such as ""single questions"" (plural) or ""all questions"" as indicated in the validation feedback. You can also apply the detailed feedback provided to update your profile accordingly. If you need further assistance, feel free to clarify or provide new instructions.
+
+Validator feedback:
+Validation repair summary:
+- invalid blocks: 1
+- valid blocks: none
+
+Block 1 (yaml)
+- issue: conversation.interaction_style '['single question']' are invalid interaction styles. Allowed styles: all questions, change language, change your mind, default, long phrases, make spelling mistakes, single questions.
+
+Final instruction:
+Keep blocks none unchanged. Rewrite the full reply, but only modify blocks 1 and any prose that references them.","Sure! To complete the `chatbot` section in your profile, you want to define:
+
+- Whether the chatbot starts the conversation (`is_starter`).
+- A fallback message for when the chatbot doesn't understand.
+- The `output` fields that your rules or validations will check after the conversation. These fields should correspond to the information your user is asking about (pizza types, Margarita pizza price, drinks and prices, operating hours, delivery availability).
+
+Here’s a completed `chatbot` section tailored to your profile's goals, with appropriate output fields and descriptions:
+
+```yaml
+chatbot:
+  is_starter: false
+  fallback: ""I'm sorry, I did not get what you said. Can you please rephrase or ask about our pizzas, drinks, or delivery options?""
+  output:
+    - pizza_types:
+        type: string
+        description: ""A list of the pizza types offered by the shop.""
+    - margarita_price:
+        type: money
+        description: ""The price of a Margarita pizza, including currency.""
+    - drinks_and_prices:
+        type: string
+        description: ""A list of available drinks and their prices.""
+    - operating_hours:
+        type: string
+        description: ""The shop's operating hours, including opening and closing times.""
+    - delivery_availability:
+        type: string
+        description: ""Information about whether the shop offers delivery.""
+```
+
+This setup will allow your profile to extract and validate the key pieces of information your user is interested in. If you want, I can help you write some Sensei-check rules that use these outputs too! 😊",False,True,False
+20260423_184106_423,p21,"We are testing a bikeshop and we need to make a profile for a user that needs to go there to have his bike set up, he got a new bike recently and wants it tailored for his liking by changing the seat and the handlebar grips",- `product_name` (string for the product),"I'm sorry, but I couldn't produce a YAML response that passed validation after multiple attempts. Please adjust your instructions and try again.","Got it! You want a Sensei profile for a user visiting the bike shop to get their new bike customized, specifically changing the seat and handlebar grips. I'll create a profile YAML that simulates this user scenario, with relevant goals and output fields for the chatbot to confirm or provide info about the customization.
+
+Here's a friendly, clear profile for that use case:
+
+```yaml
+test_name: ""bike_setup_and_customization""
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and want to visit the bike shop to have it tailored
+    to your preferences. You want to change the seat and the handlebar grips to more comfortable options.
+  context:
+    - ""You want to discuss options for seats and handlebar grips.""
+    - ""You care about comfort and style.""
+  goals:
+    - ""Ask about available seat options and prices.""
+    - ""Request to change the bike seat to a {{seat_type}}.""
+    - ""Ask about handlebar grip options and prices.""
+    - ""Request to change the handlebar grips to {{grip_type}}.""
+    - seat_type:
+        function: forward()
+        type: string
+        data: [gel seat, leather seat, ergonomic seat]
+    - grip_type:
+        function: forward()
+        type: string
+        data: [foam grips, leather grips, ergonomic grips]
+
+chatbot:
+  is_starter: false
+  fallback: ""Sorry, could you please repeat that?""
+  output:
+    - seat_change_confirmation:
+        type: string
+        description: ""Chatbot confirmation about changing the bike seat.""
+    - grip_change_confirmation:
+        type: string
+        description: ""Chatbot confirmation about changing the handlebar grips.""
+    - seat_price:
+        type: money
+        description: ""Price quoted for the new seat.""
+    - grip_price:
+        type: money
+        description: ""Price quoted for the new handlebar grips.""
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 6
+  interaction_style:
+    - single questions
+```
+
+This profile:
+
+- Defines a user role focused on bike customization.
+- Has goals to ask about seat and grip options, request changes with variable types.
+- Extracts chatbot outputs confirming changes and prices.
+- Runs 4 conversations cycling through seat and grip types.
+
+If you want, I can help you write some Sensei-check rules to validate the outputs from this profile too! 😊",False,True,False

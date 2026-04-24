@@ -1,0 +1,73 @@
+conversation ID: graph_based_architecture__p26__bikeshop__rule__e2be357b
+$$$
+Hey! Thanks for sharing your rule 😊 Let's review it carefully.
+
+Your goal is to check that the tune-up price is exactly $50.
+
+Here's what I see:
+
+1. You wrote `conversations: 2` — but your rule only seems to need a single conversation to check the price. Usually, price equality checks are single-conversation oracles (`conversations: 1`).
+
+2. Your `when:` condition is `conv[0].tune_up_price == 50` — this means the rule only applies if the price is already 50, so it won't catch if the price is wrong.
+
+3. Your `if:` condition is `conv[0].tune_up_price is not None` — good to check the price exists.
+
+4. Your `then:` is a string `"The tune-up price is $50."` — but this should be a boolean expression (a condition) that evaluates to True or False, not a message string.
+
+---
+
+### What to fix?
+
+- Use `conversations: 1` since you only check one conversation.
+
+- Use `when:` to filter conversations where the price is present (not None).
+
+- Use `oracle:` or `if`/`then` to check that the price equals 50.
+
+- Use `extract_float()` helper if the price is a string like `"50 USD"` or `"$50"`.
+
+- The `then:` must be a boolean expression, not a string message.
+
+---
+
+### Here's a corrected version:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: conv[0].tune_up_price is not None
+oracle: extract_float(conv[0].tune_up_price) == 50
+```
+
+---
+
+### Explanation of changes:
+
+- Changed `conversations` from 2 to 1 because only one conversation is needed.
+
+- Changed `when` to check that `tune_up_price` exists (not None).
+
+- Replaced `if`/`then` with a single `oracle` that asserts the price equals 50.
+
+- Used `extract_float()` to parse the numeric price from the field, in case it's a string with currency symbols.
+
+- Removed the string message in `then`, replaced with a boolean condition.
+
+---
+
+If your profile's `chatbot.output` exposes `tune_up_price` as a numeric field already, you can omit `extract_float()` and just do:
+
+```yaml
+name: tune_up_price_check
+description: Check that the tune up price is exactly 50
+conversations: 1
+oracle: conv[0].tune_up_price == 50
+```
+
+But using `extract_float()` is safer if the price is a string.
+
+---
+
+Let me know if you want me to help adapt this to your exact profile fields! 😊
+$$$

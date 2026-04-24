@@ -1,0 +1,33 @@
+Absolutely! To write a Sensei-check rule for this, we need to check that when the user requests to schedule a bike service appointment, the chatbot provides a confirmation in its output.
+
+From your profiles, I see the `bike_repair_and_maintenance_scheduler` profile has an output field called `appointment_confirmation` which contains the confirmation message.
+
+So, a good rule would:
+
+- Run on 1 conversation (single-conversation oracle).
+- Check if the `appointment_confirmation` field is not empty or contains a confirmation phrase.
+- Optionally, you can check the presence of keywords like "confirmed", "appointment", or a date/time pattern.
+
+Here's a simple example rule you can adapt:
+
+```yaml
+name: appointment_confirmation_present
+description: The chatbot confirms the appointment when the user schedules a bike service
+conversations: 1
+active: true
+oracle: appointment_confirmation is not None and len(appointment_confirmation) > 0
+yields: "Appointment confirmation missing or empty"
+```
+
+If you want to be more specific and check for keywords inside the confirmation text, you could do:
+
+```yaml
+name: appointment_confirmation_keywords
+description: The chatbot confirmation message contains expected keywords
+conversations: 1
+active: true
+oracle: appointment_confirmation is not None and any(word in appointment_confirmation.lower() for word in ['confirm', 'appointment', 'scheduled', 'date', 'time'])
+yields: "Appointment confirmation missing expected keywords"
+```
+
+Would you like me to help you customize it further or combine both checks? 😊

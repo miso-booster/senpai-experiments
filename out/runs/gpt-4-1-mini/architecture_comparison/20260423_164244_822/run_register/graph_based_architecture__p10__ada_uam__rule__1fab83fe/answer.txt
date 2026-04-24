@@ -1,0 +1,87 @@
+¡Qué buena base tienes con ese perfil! 😊 Para probarlo con Sensei-check, lo ideal es crear reglas que validen que el chatbot responde con la información esperada y que los datos extraídos en `chatbot.output` tengan sentido. Aquí te dejo algunas ideas de reglas que puedes usar o adaptar para tu perfil "Usuarios Nuevos y Admisiones":
+
+---
+
+### 1) Regla básica: Validar que URLs importantes estén presentes
+
+Queremos asegurarnos que el chatbot siempre devuelve enlaces para los procesos clave (admisión, lista de espera, futuros estudiantes, Welcome Day).
+
+```yaml
+name: essential_links_present
+description: El chatbot debe devolver URLs para admisión, lista de espera, futuros estudiantes y Welcome Day
+conversations: 1
+oracle: >
+  conv[0].admission_to_grados_link is not None and conv[0].admission_to_grados_link != '' and
+  conv[0].waitlist_info_link is not None and conv[0].waitlist_info_link != '' and
+  conv[0].future_students_link is not None and conv[0].future_students_link != '' and
+  conv[0].welcome_day_link is not None and conv[0].welcome_day_link != ''
+```
+
+---
+
+### 2) Regla de consistencia: La lista de grados y cursos ofrecidos debe incluir al menos un grado y un curso
+
+```yaml
+name: offered_programs_not_empty
+description: La lista de grados y cursos ofrecidos no debe estar vacía
+conversations: 1
+oracle: >
+  conv[0].grados_available is not None and len(conv[0].grados_available) > 0 and
+  conv[0].cursos_available is not None and len(conv[0].cursos_available) > 0
+```
+
+*Nota:* Si `grados_available` y `cursos_available` son strings con listas separadas por comas, podríamos usar algo como `len(conv[0].grados_available.split(',')) > 0`.
+
+---
+
+### 3) Regla de fecha/hora: El evento Welcome Day debe tener fecha y hora válidas
+
+```yaml
+name: welcome_day_datetime_valid
+description: El evento Welcome Day debe tener fecha y hora definidas y coherentes
+conversations: 1
+oracle: >
+  conv[0].welcome_day_date is not None and conv[0].welcome_day_date != '' and
+  conv[0].welcome_day_time is not None and conv[0].welcome_day_time != ''
+```
+
+---
+
+### 4) Regla de coherencia monetaria: El costo de la solicitud debe ser positivo
+
+```yaml
+name: application_fee_positive
+description: El costo de la solicitud de admisión debe ser mayor a cero
+conversations: 1
+oracle: extract_float(conv[0].application_fee) > 0
+```
+
+---
+
+### 5) Regla metamórfica simple: Si se cambia el grado solicitado, la información de admisión debe cambiar (o al menos no ser idéntica)
+
+Esto ayuda a validar que el chatbot adapta la respuesta según el grado consultado.
+
+```yaml
+name: admission_info_varies_with_degree
+description: Cambiar el grado debe cambiar la información de admisión o los enlaces asociados
+conversations: 2
+when: conv[0].grados != conv[1].grados
+if: "True"
+then: conv[0].admission_requirements != conv[1].admission_requirements or conv[0].admission_to_grados_link != conv[1].admission_to_grados_link
+```
+
+*Nota:* Aquí asumo que `grados` es un campo de entrada o contexto que varía entre conversaciones. Si no, habría que ajustar el filtro `when:` para comparar las entradas que cambian.
+
+---
+
+### Consejos para probar estas reglas:
+
+- Asegúrate que tu perfil expone en `chatbot.output` todos los campos que usas en las reglas.
+- Si algún campo no existe o tiene otro nombre, adapta las reglas para usar los nombres correctos.
+- Puedes empezar con reglas simples de un solo diálogo para validar que los datos básicos están presentes.
+- Luego, añade reglas metamórficas para comparar respuestas entre variaciones de entrada (por ejemplo, diferentes grados o cursos).
+
+---
+
+Si quieres, puedo ayudarte a escribir las reglas completas en YAML para que las copies y pruebes directamente. ¿Quieres que prepare algunas para ti? 😊

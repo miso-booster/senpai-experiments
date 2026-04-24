@@ -1,0 +1,28 @@
+conversation ID: one_node_architecture__p38__pizza_shop__rule__6b7d8f3f
+$$$
+Great question! To check that the chatbot provides an `order_id` in the output, you can write a simple single-conversation rule that asserts the presence and non-nullity of the `order_id` field.
+
+Here’s a straightforward Sensei-check rule for that:
+
+```yaml
+name: order_id_presence
+description: The chatbot must provide a non-empty order_id in the output
+conversations: 1
+active: true
+oracle: conv[0].order_id is not None and conv[0].order_id != ""
+yields: "Missing or empty order_id in conversation 0"
+```
+
+Explanation:
+- `conversations: 1` means this rule checks each conversation individually.
+- The `oracle` expression checks that `order_id` exists and is not an empty string.
+- The `yields` message helps identify which conversation failed if the rule triggers.
+
+If you want to be more flexible, for example allowing whitespace-only strings to be rejected, you could trim and check length:
+
+```yaml
+oracle: conv[0].order_id is not None and conv[0].order_id.strip() != ""
+```
+
+Let me know if you want me to help adapt this for your project! 😊
+$$$

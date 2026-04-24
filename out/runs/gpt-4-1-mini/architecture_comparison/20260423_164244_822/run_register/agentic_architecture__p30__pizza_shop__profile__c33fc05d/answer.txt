@@ -1,0 +1,80 @@
+I'll create a pizza shop profile where the user is rude and wants things done fast. The profile will have 4 goals with 4 variables, and 2 of these variables will use pairwise functions to define the conversation number by the pairwise matrix.
+
+Here is the profile YAML for you: 
+
+```yaml
+test_name: "pizza_shop_rude_fast"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude customer who wants to order pizza quickly. You are impatient and expect fast responses.
+  context:
+    - "You are in a hurry and dislike waiting."
+    - "You tend to be blunt and rude to get things done faster."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}}"
+    - "Choose a {{crust}} crust"
+    - "Request delivery in {{delivery_time}} minutes"
+    - "Pay with {{payment_method}}"
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, onions, olives]
+    - crust:
+        function: random()
+        type: string
+        data: [thin, thick, stuffed]
+    - delivery_time:
+        function: random()
+        type: int
+        data:
+          min: 15
+          max: 45
+          step: 5
+    - payment_method:
+        function: random()
+        type: string
+        data: [credit card, cash, mobile pay]
+
+chatbot:
+  is_starter: false
+  fallback: "Please clarify your order."
+
+  output:
+    - order_id:
+        type: string
+        description: "Order confirmation ID"
+    - estimated_time:
+        type: int
+        description: "Estimated delivery time in minutes"
+    - total_price:
+        type: float
+        description: "Total price of the order"
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+Summary:
+- The user role is rude and impatient.
+- 4 goals with variables: size, toppings (both pairwise), crust, delivery_time, payment_method.
+- The conversation number is controlled by the pairwise combination of size and toppings.
+- Interaction style is single questions to keep it fast.
+
+Would you like me to save this profile under a specific filename or make any adjustments? 😊

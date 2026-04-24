@@ -1,0 +1,79 @@
+conversation ID: agentic_architecture__p8__ada_uam__rule__100a3c8f
+$$$
+Thanks for sharing your rule! Let's review it carefully based on the Sensei-check rules documentation and best practices.
+
+Your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Analysis:
+
+1. **`conversations: 1`** — This is a single conversation oracle, which is appropriate.
+
+2. **`when:`** — The rule filters to only conversations where the contact info fields exactly match the expected values.
+
+3. **`oracle:`** — The oracle asserts the same fields equal those expected values.
+
+---
+
+### Issues:
+
+- The `when:` condition is identical to the `oracle:` condition. This means the rule only runs on conversations where the contact info is already correct, and then asserts the same condition again. This is redundant and prevents detecting incorrect contact info.
+
+- Typically, the `when:` clause filters conversations where the check should apply (e.g., all conversations or those with some relevant property), and the `oracle:` asserts the correctness condition.
+
+- If you want to verify that the contact info fields are exactly those values, you should **not** filter conversations by that in `when:` because that excludes conversations with incorrect info (which you want to catch).
+
+- Instead, run the rule on all relevant conversations, and use the `oracle:` to check the expected values.
+
+---
+
+### Suggested adjustment:
+
+- Remove the `when:` clause or replace it with a more general condition selecting conversations that have contact info (if needed).
+
+- Keep the `oracle:` as the correctness check.
+
+Example:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+Optionally, to restrict to conversations that contain contact info:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email is not None or conv[0].contact_phone is not None or conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Explanation:
+
+- The `when:` clause controls which conversations the rule applies to.
+
+- The `oracle:` clause asserts the correctness condition.
+
+- If `when:` is too strict (requiring exact correct values), the rule never runs on incorrect conversations, so errors cannot be detected.
+
+- By removing or loosening `when:`, the rule runs on all relevant conversations and flags those where the contact info is incorrect.
+
+---
+
+If you want, I can provide the YAML with or without the `when:` clause—just let me know your preference!
+$$$

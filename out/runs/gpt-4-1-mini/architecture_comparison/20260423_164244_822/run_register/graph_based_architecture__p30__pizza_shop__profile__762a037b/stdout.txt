@@ -1,0 +1,91 @@
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__762a037b
+$$$
+Got it! Let's create a Sensei profile for a pizza shop where the user is rude and wants things done fast. I'll include 4 goals with 4 variables, and 2 of those variables will use `pairwise()` functions so that the conversation number can be derived from the pairwise matrix.
+
+Here's a profile YAML template for you:
+
+```yaml
+test_name: "rude_and_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude customer who demands fast service at a pizza shop.
+    You are impatient and expect quick responses and immediate action.
+  context:
+    - personality: personalities/rude-user.yml
+    - "You want your order processed as quickly as possible."
+    - "You have no patience for delays or small talk."
+  goals:
+    - "Order a {{pizza_type}} pizza with {{pizza_size}} size."
+    - "Add {{topping}} as extra topping."
+    - "Order {{drink_quantity}} {{drink_type}} to drink."
+    - "Ask for the estimated ready time in {{time_frame}}."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Pepperoni, Margherita, BBQ Chicken, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - topping:
+        function: forward()
+        type: string
+        data: [extra cheese, mushrooms, jalapenos, olives]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - time_frame:
+        function: random()
+        type: string
+        data: [now, in 10 minutes, ASAP]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you please repeat?"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation message of the pizza and drink order."
+    - total_price:
+        type: currency
+        description: "Total price for the order including toppings and drinks."
+    - estimated_ready_time:
+        type: time("hh:mm")
+        description: "Estimated time when the order will be ready."
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.5
+  interaction_style:
+    - change your mind
+    - make spelling mistakes
+```
+
+### Explanation:
+- The user is rude and impatient (linked to a rude-user personality).
+- 4 goals with 4 variables: `pizza_type` and `pizza_size` use `pairwise()` to generate combinations.
+- `topping` and `drink_type` use `forward()` to iterate through their lists.
+- `conversation.number` is set to `combinations(pairwise)` to generate the pairwise matrix based on the two pairwise variables.
+- Interaction styles include "change your mind" and "make spelling mistakes" to simulate a realistic rude and impatient user.
+
+Would you like me to help you save this profile or customize it further? 😊🍕
+$$$

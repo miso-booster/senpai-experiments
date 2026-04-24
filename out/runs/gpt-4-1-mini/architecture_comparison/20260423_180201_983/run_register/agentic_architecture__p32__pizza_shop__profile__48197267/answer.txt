@@ -1,0 +1,64 @@
+Voy a crear un perfil para probar un chatbot de pizzería que incluya en el output los campos que mencionaste: tipo de pizza, bebida, id del pedido y precio final en dólares.
+
+El perfil tendrá:
+- Variables para simular pedidos con tipos de pizza y bebidas.
+- En `chatbot.output` los campos: pizza_type, drink, order_id y total_price (en dólares).
+
+Ahora te preparo el YAML del perfil.
+```yaml
+test_name: "pizzeria_order_test"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering pizza from a pizzeria chatbot.
+    You want to order a pizza and a drink, and get the final price and order ID.
+  context:
+    - "You like classic and popular pizzas."
+  goals:
+    - "Order a {{pizza_type}} pizza with a {{drink}}"
+    - pizza_type:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Veggie, BBQ Chicken]
+    - drink:
+        function: random()
+        type: string
+        data: [Coke, Sprite, Water, Beer]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you please repeat?"
+  output:
+    - pizza_type:
+        type: string
+        description: "Type of pizza ordered"
+    - drink:
+        type: string
+        description: "Drink ordered"
+    - order_id:
+        type: string
+        description: "Unique identifier for the order"
+    - total_price:
+        type: currency
+        description: "Final price of the order in USD"
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 6
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+      - single questions
+```
+
+Este perfil simula usuarios que ordenan pizzas y bebidas, y extrae los datos clave para validar el pedido. ¿Quieres que te ayude a crear reglas para validar este perfil también?

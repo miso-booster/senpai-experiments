@@ -1,0 +1,75 @@
+Got it! You want a Sensei profile for a user who recently bought a new bike and wants to customize it by changing the seat and handlebar grips at the bike shop.
+
+I'll create a profile YAML for that scenario, including variables for seat type and handlebar grip type, with a user role and goals reflecting this setup request. The chatbot output will extract confirmation and pricing info for those customizations.
+
+Here’s a friendly, clear profile you can use or adapt for your bikeshop testing:
+
+```yaml
+test_name: "bike_setup_and_customization"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently purchased a new bike and are visiting the bike shop to have it set up
+    and tailored to your preferences. You want to change the seat and the handlebar grips.
+  context:
+    - "You want a comfortable and personalized bike setup."
+    - "You are interested in seat and handlebar grip options and prices."
+  goals:
+    - "I want to change the seat to a {{seat_type}}."
+    - "I also want to replace the handlebar grips with {{grip_type}}."
+    - "Please tell me the price for changing the seat and grips."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [comfort seat, racing seat, gel seat, leather seat]
+    - grip_type:
+        function: forward()
+        type: string
+        data: [foam grips, leather grips, rubber grips, ergonomic grips]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you please repeat?"
+  output:
+    - seat_change_confirmation:
+        type: string
+        description: "Confirmation from the chatbot about the seat change service."
+    - grip_change_confirmation:
+        type: string
+        description: "Confirmation from the chatbot about the handlebar grip change service."
+    - seat_change_price:
+        type: money
+        description: "Price quoted for changing the seat."
+    - grip_change_price:
+        type: money
+        description: "Price quoted for changing the handlebar grips."
+    - total_setup_price:
+        type: money
+        description: "Total price for the bike setup including seat and grip changes."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - single question
+```
+
+This profile:
+
+- Defines the user role and goals focused on changing seat and grips.
+- Includes variables for seat and grip types with forward iteration.
+- Extracts confirmations and prices from the chatbot output for later rule checks.
+- Runs 4 conversations with all goals answered, exporting results.
+
+If you want, I can also help you create metamorphic rules to check price monotonicity or confirmation presence for this profile! 😊

@@ -1,0 +1,43 @@
+conversation ID: graph_based_architecture__p15__alcampo__rule__958ef929
+$$$
+Hey! I see you want to fix your Sensei-check rule named `customer_service_contact_info`. No worries, I’ll help you get it working smoothly 😊.
+
+Here are the issues I spotted:
+
+1. **Typo in `description`** — you wrote `descriptin` instead of `description`.
+2. The rule is missing the `then:` part after the `if:` condition. Sensei-check rules with `if:` need a corresponding `then:` to specify the expected relation.
+3. The `when:` filter uses `user_request` fields, which must exist in your profile’s `chatbot.output` or inputs. Make sure these fields are available or adjust accordingly.
+4. The `if:` condition checks for non-None values but doesn’t specify what should happen next — you need a boolean expression in `then:` to assert correctness.
+
+Here’s a corrected and improved version of your rule with comments:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: 
+  # For example, check that the contact options mention a phone or email,
+  # and the customer service number looks like a phone number (non-empty string).
+  ('phone' in conv[0].contact_options.lower() or 'email' in conv[0].contact_options.lower()) and len(conv[1].customer_service_number.strip()) > 0
+```
+
+### Explanation:
+- Added the missing `then:` with a boolean condition.
+- Used `.lower()` to check for keywords in `contact_options`.
+- Checked that `customer_service_number` is a non-empty string.
+- Fixed the typo in `description`.
+
+Make sure your **profile’s `chatbot.output`** exposes these fields:
+
+- `user_request` (string)
+- `contact_options` (string)
+- `customer_service_number` (string)
+
+If these fields don’t exist, you’ll need to add them to your profile first.
+
+---
+
+If you want, I can help you craft the matching profile output or further refine the rule! Just let me know 😊📋
+$$$

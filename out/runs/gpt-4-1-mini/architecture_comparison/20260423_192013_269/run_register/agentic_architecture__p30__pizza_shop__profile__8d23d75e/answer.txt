@@ -1,0 +1,80 @@
+Here is a SENSEI profile YAML for a pizza shop user who is rude and wants things done fast. It includes 4 goals with 4 variables, where 2 variables use pairwise functions to determine the conversation number via pairwise combinations:
+
+```yaml
+test_name: "pizza_shop_rude_fast"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude customer ordering pizza. You want everything done quickly and with no delays.
+    You are impatient and may express frustration if the chatbot is slow or unclear.
+  context:
+    - "You dislike waiting and want your pizza order processed immediately."
+    - "You are blunt and sometimes rude in your requests."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}}"
+    - "Choose a {{crust}} crust"
+    - "Add {{drink}} to the order"
+    - "Request delivery in {{timeframe}} minutes"
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, onions, olives]
+    - crust:
+        function: random()
+        type: string
+        data: [thin, thick, stuffed]
+    - drink:
+        function: another()
+        type: string
+        data: [cola, water, lemonade]
+    - timeframe:
+        function: random()
+        type: int
+        data:
+          min: 10
+          max: 30
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "Please clarify your order."
+  output:
+    - order_id:
+        type: string
+        description: "Unique order identifier"
+    - estimated_time:
+        type: int
+        description: "Estimated delivery time in minutes"
+    - total_price:
+        type: float
+        description: "Total price of the order"
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+Summary:
+- The user is rude and impatient (described in `user.role` and `context`).
+- Four goals with variables: `size` and `toppings` use `pairwise()` to enable pairwise combination coverage.
+- `crust` and `drink` use other functions (`random()` and `another()`).
+- `timeframe` is a random integer between 10 and 30 minutes in 5-minute steps.
+- `conversation.number` is set to `combinations(pairwise)` to use the pairwise matrix from the two pairwise variables.
+- The chatbot output fields include order ID, estimated delivery time, and total price for validation.
+
+Would you like me to save this profile under a specific filename or make any adjustments? 😊

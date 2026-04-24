@@ -1,0 +1,34 @@
+Hey! I spotted a few issues in your rule that we can fix to make it work smoothly:
+
+1. There's a typo in `description` (you wrote `descriptin`).
+2. The `when` condition uses `user_request` fields, but these must exist in your profile's `chatbot.output` or be valid fields from the conversations. Make sure `user_request` is actually exposed.
+3. The rule is missing a `then` or `oracle` clause after the `if` — the `if` alone is not enough.
+4. The `if` condition should be paired with a `then` that states what you expect when the `if` is true.
+
+Assuming you want to check that when the user requests "contact options" or "customer service number", the chatbot provides non-empty info, here’s a corrected version:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and customer service number when requested.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: True
+```
+
+If you want to assert that both fields are non-empty strings, you could be more explicit:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and customer service number when requested.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: len(conv[0].contact_options) > 0 and len(conv[1].customer_service_number) > 0
+```
+
+Make sure that `user_request`, `contact_options`, and `customer_service_number` are defined in your profile’s `chatbot.output` or otherwise available in the conversation data.
+
+If `user_request` is not part of the outputs, you might need to adjust the `when` filter to use other fields or metadata.
+
+Let me know if you want me to help you adjust it to your profile’s actual fields! 😊

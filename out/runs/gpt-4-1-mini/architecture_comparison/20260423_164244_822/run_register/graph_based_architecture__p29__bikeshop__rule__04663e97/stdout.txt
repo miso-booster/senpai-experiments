@@ -1,0 +1,49 @@
+conversation ID: graph_based_architecture__p29__bikeshop__rule__04663e97
+$$$
+Hey there! 😊 I’d love to help you craft a Sensei-check rule for that.
+
+To check if the chatbot confirms an appointment when the user asks to schedule a bike service, we need to make sure:
+
+1. Your **SENSEI Chat profile** for this scenario exposes a field in `chatbot.output` that indicates the appointment confirmation status or message. For example, something like `appointment_confirmed` (boolean or string), or maybe a confirmation phrase in `chatbot_phrases`.
+
+2. Then, the rule will check, for conversations where the user requests a bike service appointment, that the chatbot indeed confirms it.
+
+---
+
+### Here’s a simple example rule assuming:
+
+- Your profile exposes `appointment_confirmed` as a boolean in `chatbot.output`.
+- The user’s request is captured in a field like `user_intent` or you can filter by presence of “bike service” in user utterances.
+
+```yaml
+name: appointment_confirmation_for_bike_service
+description: Chatbot confirms appointment when user requests bike service scheduling
+conversations: 1
+when: 'user_intent == "schedule_bike_service"'
+oracle: appointment_confirmed is True
+on-error: "Expected appointment confirmation but got: {appointment_confirmed}"
+```
+
+---
+
+### If you don’t have `appointment_confirmed` but want to check chatbot phrases for confirmation words, you could do:
+
+```yaml
+name: appointment_confirmation_phrase_check
+description: Chatbot replies with confirmation phrase when scheduling bike service
+conversations: 1
+when: 'user_intent == "schedule_bike_service"'
+oracle: utterance_index("assistant", "appointment confirmed") > 0 or utterance_index("assistant", "scheduled") > 0
+on-error: "No confirmation phrase found in assistant replies"
+```
+
+---
+
+### What you need to do:
+
+- Check your profile’s `chatbot.output` fields to see what you have for appointment confirmation.
+- Adjust the `when:` filter to match how you detect the user’s scheduling request.
+- Use either a boolean flag or phrase detection in the rule.
+
+If you want, share your profile’s relevant output fields or example conversation data, and I can help tailor the rule exactly! 🚲✨
+$$$

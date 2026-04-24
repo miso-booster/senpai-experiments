@@ -1,0 +1,93 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__d176ae69
+$$$
+Hey! That sounds like a great use case for a Sensei profile 😊 — a user wanting to set up their new bike with specific customizations like changing the seat and handlebar grips.
+
+I can help you create a Sensei **profile YAML** for that scenario, focusing on the user goals around bike setup, seat and handlebar grip changes, and maybe asking about pricing or appointment scheduling.
+
+Here’s a simple but complete example profile tailored for your bikeshop test:
+
+```yaml
+test_name: "bike_setup_and_customization"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and want to have it set up at the shop.
+    You want to change the seat and handlebar grips to suit your preferences.
+    You may ask about available options, pricing, and scheduling an appointment.
+  context:
+    - "You want a comfortable seat and good grip on the handlebars."
+    - "You prefer ergonomic and durable accessories."
+  goals:
+    - "Ask about options for changing the bike seat."
+    - "Inquire about handlebar grip options."
+    - "Ask for the price of changing the seat to {{seat_type}}."
+    - "Ask for the price of changing the handlebar grips to {{grip_type}}."
+    - "Schedule an appointment for the bike setup on {{appointment_date}} at {{appointment_time}}."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [comfort, racing, gel, leather]
+    - grip_type:
+        function: forward()
+        type: string
+        data: [foam, leather, rubber, ergonomic]
+    - appointment_date:
+        function: random()
+        type: string
+        data: [tomorrow, "next Monday", "November 10th, 2024"]
+    - appointment_time:
+        function: random()
+        type: string
+        data: ["10:00 AM", "2:00 PM", "4:00 PM"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you please repeat that?"
+  output:
+    - seat_change_options:
+        type: string
+        description: "Chatbot's response listing seat options."
+    - grip_change_options:
+        type: string
+        description: "Chatbot's response listing handlebar grip options."
+    - seat_change_price:
+        type: money
+        description: "Price quoted for changing the seat."
+    - grip_change_price:
+        type: money
+        description: "Price quoted for changing the handlebar grips."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation message for the scheduled appointment."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - single questions
+```
+
+---
+
+### Explanation:
+
+- The **user.role** describes the scenario clearly.
+- The **goals** cover asking about options, prices for seat and grip changes, and scheduling an appointment.
+- Variables like `seat_type`, `grip_type`, `appointment_date`, and `appointment_time` are defined with data and fill functions.
+- The **chatbot.output** fields define what we want to extract for validation and rule checks.
+- The conversation runs 4 times to cover combinations with all goals answered.
+- Interaction style is `single questions` to keep the dialogue clear and focused.
+
+If you want, I can help you customize it further or explain how to run this profile with your Sensei setup. Just let me know! 🚲✨
+$$$

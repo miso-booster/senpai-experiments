@@ -1,0 +1,51 @@
+conversation ID: agentic_architecture__p26__bikeshop__rule__cabe8920
+$$$
+Thanks for sharing your rule! Based on the Sensei-check rules documentation (`sensei-check-doc.md`) and examples (`rules-examples.md`), here are some points about your rule:
+
+### Your rule:
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 2
+when: conv[0].tune_up_price == 50
+if: conv[0].tune_up_price is not None
+then: "The tune-up price is $50."
+```
+
+### Issues and corrections:
+1. **`conversations: 2`** means this is a metamorphic rule comparing two conversations, but your rule only references `conv[0]` and does not compare two conversations. For a single conversation check, use `conversations: 1`.
+2. **`when` clause** is a filter selecting conversations where `conv[0].tune_up_price == 50`. This means the rule only applies if the price is already 50, so the rule will never fail (it won't check if price is not 50).
+3. **`if` clause** is redundant here because `when` already filters for price 50.
+4. **`then` clause** is a string, but it should be a boolean expression (a condition that evaluates to True/False). The rule needs an `oracle` or an `if`/`then` condition.
+5. To check that the tune-up price is exactly 50, a **single-conversation oracle** is better.
+
+### Corrected version (single conversation oracle):
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is exactly $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+```
+
+- Here, `conversations: 1` means check each conversation individually.
+- `oracle` is a boolean expression that checks if the numeric value extracted from `tune_up_price` equals 50.
+- `extract_float` is a helper to parse numeric values from strings, useful if `tune_up_price` is a string like "$50" or "50 dollars".
+
+---
+
+If you want a two-conversation metamorphic rule, you need to specify a relation between `conv[0]` and `conv[1]`, but for this price equality check, a single conversation oracle is simpler and clearer.
+
+---
+
+**Summary of changes:**
+
+- Changed `conversations` from 2 to 1.
+- Removed `when` and `if` clauses.
+- Replaced `then` string with a proper `oracle` boolean expression.
+- Used `extract_float` helper to parse the price.
+
+---
+
+Would you like me to help you update this rule in your project YAML file? Also, do you have a profile that exposes `tune_up_price` in its `chatbot.output`? If yes, I can check that too.
+$$$

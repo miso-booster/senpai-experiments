@@ -1,0 +1,26 @@
+¡Claro! Para crear una regla en Sensei-check que verifique si el asistente confirma haber añadido la bebida que el usuario pidió, necesitamos asegurarnos de que:
+
+- La conversación contiene una confirmación explícita del asistente sobre la bebida.
+- La bebida confirmada coincide con la bebida solicitada por el usuario.
+
+Asumiendo que tu perfil de SENSEI Chat expone en `chatbot.output` un campo como `drink` con la bebida solicitada, y que el texto del asistente está disponible para buscar confirmaciones, podemos usar el helper `utterance_index` para detectar si el asistente menciona algo como "confirm" o "added" junto con la bebida.
+
+Aquí te dejo un ejemplo de regla para este caso:
+
+```yaml
+name: assistant_confirms_drink_added
+description: El asistente confirma que añadió la bebida que el usuario pidió
+conversations: 1
+oracle: utterance_index('assistant', f'added {drink}') > 0 or utterance_index('assistant', f'confirmed {drink}') > 0
+```
+
+Explicación:
+
+- `utterance_index('assistant', 'added {drink}') > 0` busca si el asistente en alguna de sus intervenciones menciona que añadió la bebida solicitada.
+- Lo mismo con `confirmed {drink}` para cubrir confirmaciones.
+- `drink` es el campo extraído del perfil, que debe contener el nombre de la bebida solicitada.
+- `conversations: 1` porque es una regla que revisa una sola conversación.
+
+Si tu perfil no expone `drink` directamente, o si quieres hacerlo más robusto, podemos ajustar la regla para buscar confirmaciones más generales o usar expresiones más flexibles.
+
+¿Quieres que te ayude a adaptarla a tu perfil o a hacerla más precisa? 😊

@@ -1,0 +1,36 @@
+Hey! Great question 😊 In Sensei, a **metamorphic rule** is a special kind of test rule that checks relationships *between* multiple generated conversations, rather than just verifying a single conversation’s output.
+
+Here’s the gist:
+
+- Instead of saying “this one conversation’s answer must be X,” metamorphic rules say things like:
+  - “If input A changes to input B in a certain way, then output X should change in a predictable way.”
+  - Or “If two conversations have the same inputs except for one factor, then their outputs should relate accordingly.”
+
+This helps solve the *oracle problem* — where it’s hard to know the exact correct answer — by verifying *relations* or *invariants* across conversations.
+
+### How it works in Sensei:
+
+1. Sensei-chat generates many conversations using profiles with different inputs.
+2. Sensei-check applies metamorphic rules that:
+   - Specify how many conversations to compare (usually 2 or more).
+   - Filter which conversation pairs to compare (using `when:`).
+   - Define the expected relation between their outputs (using `if:` and `then:` or `oracle:`).
+
+For example, a classic metamorphic rule might say:
+
+> If two pizza orders have the same size and drink, but one has more toppings, then the price should be higher.
+
+This would be written in YAML roughly like:
+
+```yaml
+name: toppings_monotonicity
+description: More toppings increase price when size and drink are equal
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+So, metamorphic rules are all about checking *relations* between conversations to catch subtle bugs or inconsistencies in chatbot behavior.
+
+If you want, I can help you write or understand specific metamorphic rules too! 😊

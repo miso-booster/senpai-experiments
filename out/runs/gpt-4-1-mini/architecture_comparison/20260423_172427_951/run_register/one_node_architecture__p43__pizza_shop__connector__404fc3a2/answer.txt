@@ -1,0 +1,82 @@
+¡Claro! El conector que tienes está casi perfecto, solo que la ruta `response_path` debe apuntar correctamente a la ubicación del texto en la respuesta JSON.
+
+Dado que tu respuesta es:
+
+```json
+{
+  "status": "success",
+  "response": {
+    "text": "¡Hola! ¿Cómo puedo ayudarte hoy?"
+  }
+}
+```
+
+El path correcto para extraer el texto es `"response.text"` (que ya tienes), así que está bien.
+
+Sin embargo, el problema puede estar en la indentación del `payload_template`. En tu request, el JSON es:
+
+```json
+{
+  "message": {
+    "text": "hola"
+  }
+}
+```
+
+Y en tu conector tienes:
+
+```yaml
+payload_template:
+  message:
+    text: "{user_msg}"
+```
+
+Esto es correcto, pero a veces el sistema espera que el placeholder `{user_msg}` esté directamente en el string, no anidado.
+
+Si tu chatbot API espera exactamente esa estructura, está bien.
+
+Solo asegúrate que:
+
+- El conector usa `method: POST` (ya está correcto).
+- El `Content-Type` es `"application/json"` (correcto).
+- El `payload_template` refleja exactamente la estructura de la request.
+
+Tu conector corregido y limpio quedaría así:
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+Si con esto no funciona, puede ser que el sistema no esté serializando bien el JSON anidado. En ese caso, prueba a poner el payload como un string JSON con formato:
+
+```yaml
+payload_template: '{"message": {"text": "{user_msg}"}}'
+```
+
+Así:
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template: '{"message": {"text": "{user_msg}"}}'
+response_path: "response.text"
+```
+
+Esto fuerza a enviar el JSON tal cual, con el placeholder.
+
+¿Quieres que te prepare el conector con esta segunda opción para que lo pruebes? 😊

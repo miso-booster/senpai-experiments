@@ -1,0 +1,57 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__d2ef68d6
+$$$
+Hey! Your profile looks great and quite detailed for the "Usuarios Nuevos y Admisiones" scenario 😊. To help you test it effectively, I can suggest some Sensei-check rules that fit your profile's `chatbot.output` fields and goals. These rules will check for completeness, consistency, and some basic logical relations in the extracted outputs.
+
+Here are a few example rules you can try with your profile:
+
+```yaml
+# Rule 1: All key URLs should be non-empty strings (basic completeness)
+name: key_urls_present
+description: All important URLs for admissions and events must be provided
+conversations: 1
+oracle: |
+  all([
+    admission_to_grados_link != "",
+    waitlist_info_link != "",
+    future_students_link != "",
+    welcome_day_link != ""
+  ])
+
+# Rule 2: Dates related to Welcome Day and admission deadlines should be valid and in the future
+name: valid_dates_future
+description: Welcome Day and admission deadline dates should be valid and not in the past
+conversations: 1
+oracle: |
+  welcome_day_date is not None and admission_deadline is not None and
+  welcome_day_date > "2023-01-01" and admission_deadline > "2023-01-01"
+
+# Rule 3: The application fee should be non-negative and reasonable (e.g., less than 1000)
+name: application_fee_reasonable
+description: Application fee must be a positive amount and less than 1000
+conversations: 1
+oracle: application_fee is not None and 0 <= application_fee < 1000
+
+# Rule 4: The lists of available courses and degrees should mention the requested variables
+name: courses_and_degrees_mention_variables
+description: The chatbot output lists should mention the requested courses and degrees
+conversations: 1
+oracle: |
+  all(course in cursos_available for course in cursos) and
+  all(degree in grados_available for degree in grados)
+
+# Rule 5: Consistency between waitlist info and procedures (both should be non-empty)
+name: waitlist_info_and_procedures
+description: Waitlist info link and procedures must be provided together
+conversations: 1
+oracle: (waitlist_info_link != "") == (waitlist_procedures != "")
+```
+
+These rules cover:
+
+- Presence of important URLs and info.
+- Validity and sanity of dates and fees.
+- That the chatbot output mentions the courses and degrees your user requested.
+- Consistency between related fields.
+
+You can add these rules as separate YAML files under your `rules/` folder and run Sensei-check against your profile outputs. If you want, I can help you tailor or extend these rules further! Just ask 😊
+$$$

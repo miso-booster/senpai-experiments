@@ -1,0 +1,67 @@
+Got it! You want a Sensei profile for a user who recently bought a new bike and is visiting the shop to get it customized—specifically changing the seat and handlebar grips.
+
+Here’s a friendly, clear profile YAML for that scenario. It includes variables for seat and grip types, user goals for setting up the bike, and output fields you might want to extract (like confirmation of the requested changes).
+
+```yaml
+test_name: "bike_setup_and_customization"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and are visiting the bike shop to have it tailored to your liking.
+    You want to change the seat and the handlebar grips to specific types.
+  context:
+    - "You want a comfortable and personalized bike setup."
+    - "You have preferences for seat and grip types."
+  goals:
+    - "I want to change the seat to a {{seat_type}}."
+    - "I also want to replace the handlebar grips with {{grip_type}}."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [gel seat, leather seat, ergonomic seat, racing seat]
+    - grip_type:
+        function: forward()
+        type: string
+        data: [foam grips, leather grips, rubber grips, silicone grips]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you please repeat that?"
+  output:
+    - seat_change_confirmation:
+        type: string
+        description: "Confirmation from the chatbot about changing the seat to the requested type."
+    - grip_change_confirmation:
+        type: string
+        description: "Confirmation from the chatbot about changing the handlebar grips to the requested type."
+    - appointment_scheduled:
+        type: string
+        description: "Confirmation of any scheduled appointment for the bike setup."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - single questions
+```
+
+This profile:
+
+- Defines user goals with variables for seat and grip types.
+- Extracts chatbot confirmations for the requested changes.
+- Uses a small conversation number for quick tests.
+- Uses `all_answered` goal style to ensure all goals are fulfilled.
+- Keeps interaction style simple with single questions.
+
+If you want, I can help you add metamorphic rules later to check consistency or pricing related to these customizations! 😊

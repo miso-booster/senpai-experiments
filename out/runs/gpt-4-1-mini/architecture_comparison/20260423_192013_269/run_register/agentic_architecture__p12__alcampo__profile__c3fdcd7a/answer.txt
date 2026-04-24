@@ -1,0 +1,65 @@
+Here is a new profile YAML for a chatbot test where the user asks the chatbot to add items to their shopping cart. It includes variables for item names and quantities, a user role description, and output fields to extract the final cart contents and total items.
+
+```yaml
+test_name: "shopping_cart_add_items"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a shopper who wants to add items to your online shopping cart.
+    You will ask the chatbot to add specific items with quantities.
+  context:
+    - "You prefer organic products when available."
+    - "You want to add items efficiently."
+  goals:
+    - "Add {{quantity}} of {{item}} to my shopping cart"
+    - quantity:
+        function: random(3)
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - item:
+        function: random()
+        type: string
+        data:
+          - apples
+          - bananas
+          - carrots
+          - milk
+          - bread
+          - eggs
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you please repeat?"
+  output:
+    - cart_contents:
+        type: list[string]
+        description: "List of items currently in the shopping cart"
+    - total_items:
+        type: int
+        description: "Total number of items in the cart"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - single questions
+      - make spelling mistakes
+```
+
+This profile simulates a user adding 1 to 5 units of various grocery items to their cart, with some randomness in quantities and items. The chatbot's response is expected to confirm the cart contents and total items, which are extracted for validation.
+
+Let me know if you want me to save this as a profile file or customize it further!

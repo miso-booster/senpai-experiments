@@ -1,0 +1,87 @@
+Got it! Let's create a Sensei profile for a pizza shop where the user is rude and wants things done fast. We'll include 4 goals with 4 variables, and 2 of those variables will use `pairwise()` functions so the conversation number can be based on the pairwise matrix.
+
+Here's a profile YAML you can use or adapt:
+
+```yaml
+test_name: "rude_user_fast_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude customer who is impatient and wants their pizza order done quickly.
+    You demand fast responses and show little patience for delays or explanations.
+  context:
+    - personality: personalities/rude-user.yml
+    - "You want things done fast and expect the chatbot to keep up."
+  goals:
+    - "Order a {{pizza_type}} pizza immediately."
+    - "Choose the size {{pizza_size}} for the pizza."
+    - "Add {{drink_quantity}} cans of {{drink_type}}."
+    - "Specify the payment method as {{payment_method}}."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Pepperoni, Margherita, BBQ Chicken, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water]
+    - payment_method:
+        function: random()
+        type: string
+        data: [cash, credit card, mobile payment]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Please be quick and clear."
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation message including pizza type, size, drinks, and payment method."
+    - total_price:
+        type: currency
+        description: "Total price for the order."
+    - estimated_ready_time:
+        type: time("hh:mm")
+        description: "Estimated time until the order is ready."
+    - payment_status:
+        type: string
+        description: "Status of the payment confirmation."
+
+conversation:
+  number: combinations(pairwise)  # uses pairwise matrix from pizza_type and pizza_size
+  goal_style:
+    steps: 6
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+### Explanation:
+- The user role and context emphasize rudeness and impatience.
+- Four goals with variables: `pizza_type` and `pizza_size` use `pairwise()` to generate combinations efficiently.
+- `drink_quantity` and `drink_type` use `forward()` to iterate through values.
+- `payment_method` is chosen randomly each run.
+- `conversation.number` is set to `combinations(pairwise)` to generate the conversation count from the pairwise matrix of the two pairwise variables.
+- Interaction style includes a custom `"rude"` style (assuming you have a `personalities/rude-user.yml` or similar) and `single questions` to keep interactions short and sharp.
+- The chatbot output fields cover order confirmation, price, readiness time, and payment status for validation and rules.
+
+If you want, I can help you tweak or expand this profile! 😊🍕

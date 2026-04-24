@@ -1,0 +1,86 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__b4c4f1d5
+$$$
+Hey! 😊 Thanks for sharing your rule `check_cau_information`. Let me take a look and help you out.
+
+---
+
+### Your rule:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### What I notice:
+
+1. **Use of `when` and `oracle` with the same condition**:  
+   The `when` clause is a filter that selects which conversations the rule applies to. The `oracle` is the actual check that must hold true for those conversations.
+
+   Here, your `when` condition requires that the conversation already has the exact correct contact info. Then the `oracle` repeats the same condition.
+
+   This means:  
+   - The rule only runs on conversations that already have the correct info (because of `when`).  
+   - Then it checks that the info is correct (which it is, since the filter already required it).
+
+   So this rule will never fail, but also never check anything useful because it excludes conversations where the info is wrong.
+
+2. **`when` is usually used to select conversations where the rule applies, not to check the correctness itself.**
+
+---
+
+### How to fix it?
+
+You want to **check that the CAU info is correct** for all conversations, or at least for those that provide contact info.
+
+So:
+
+- Use `when` to select conversations that have any contact info (or maybe no filter at all if you want to check all).
+- Use `oracle` to assert that the contact info fields equal the expected values.
+
+---
+
+### Fixed version:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email is not None and conv[0].contact_phone is not None and conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+---
+
+### Explanation:
+
+- The `when` clause now filters conversations that have **any** contact info (not necessarily correct). This way, the rule applies to conversations where the contact info is present.
+- The `oracle` asserts that the contact info **must exactly match** the expected CAU details.
+- If the contact info is missing (`None`), the rule is skipped.
+- If the contact info is present but wrong, the rule fails, which is what you want.
+
+---
+
+### Optional: If you want to check **all** conversations regardless of presence, you can omit `when`:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+But this will fail if any field is missing (`None`), so the first version with `when` is safer.
+
+---
+
+If you want me to help you create a more flexible rule (e.g., allow some variations or partial info), just ask! 😊
+
+---
+
+Hope this helps! Let me know if you want me to explain any part more or help with other rules! 🌟
+$$$

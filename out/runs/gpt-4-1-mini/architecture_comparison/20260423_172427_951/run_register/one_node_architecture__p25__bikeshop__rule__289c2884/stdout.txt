@@ -1,0 +1,33 @@
+conversation ID: one_node_architecture__p25__bikeshop__rule__289c2884
+$$$
+Sure! Here's a Sensei-check rule that verifies the expected ranges and exact prices for the outputs you mentioned:
+
+- `opening_and_closing` should indicate opening and closing times between 10 and 20 (interpreted as hours).
+- `tune_up` price should be exactly 50.
+- `seat_price` should be exactly 20.
+- `tire` price should be exactly 20.
+
+Since `opening_and_closing` is a string, we'll check if it contains numbers between 10 and 20 (you might want to adapt this depending on the exact format). For prices, we use `extract_float` to parse the numeric value from the money type.
+
+Here's the rule in YAML:
+
+```yaml
+name: bike_shop_price_and_hours_check
+description: Check opening hours between 10 and 20, and prices for tune-up, seat, and tire.
+conversations: 1
+oracle: |
+  # Extract floats from prices
+  tune_up_price = extract_float(tune_up)
+  seat_price_val = extract_float(seat_price)
+  tire_price_val = extract_float(tire)
+
+  # Check prices exactly
+  tune_up_price == 50 and seat_price_val == 20 and tire_price_val == 20 and (
+
+    # Check opening_and_closing contains hours between 10 and 20 (simple heuristic)
+    any(str(hour) in opening_and_closing for hour in range(10, 21))
+  )
+```
+
+If you want a more precise check on `opening_and_closing` (e.g., parsing times), you can extend the logic, but this should work as a starting point! Let me know if you want me to help refine it. 😊
+$$$

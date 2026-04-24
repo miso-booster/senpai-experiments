@@ -1,0 +1,53 @@
+Hey! I'd love to help you craft that rule 😊
+
+To write a Sensei-check rule that verifies if the chatbot confirms an appointment when the user requests to schedule a bike service, we need a few things:
+
+1. **Profile outputs:**  
+   Your SENSEI Chat profile should expose some output fields related to the appointment confirmation. For example, a boolean slot like `appointment_confirmed` or a text slot like `confirmation_message` that contains the confirmation.
+
+2. **Rule logic:**  
+   The rule should check conversations where the user asks to schedule a bike service, and then verify that the chatbot confirms the appointment.
+
+---
+
+### Here's a simple example rule assuming your profile exposes a boolean `appointment_confirmed` in `chatbot.output`:
+
+```yaml
+name: appointment_confirmation
+description: Chatbot confirms appointment when user requests bike service scheduling
+conversations: 1
+when: 'user_intent == "schedule_bike_service"'
+oracle: conv[0].appointment_confirmed is True
+on-error: "Appointment was not confirmed despite scheduling request in conversation {{conv[0].id}}"
+```
+
+---
+
+### Explanation:
+
+- `when:` filters conversations where the user intent is `"schedule_bike_service"` (you'll need your profile or simulator to tag or expose this intent).
+- `oracle:` asserts that in those conversations, the chatbot output field `appointment_confirmed` is `True`.
+- `on-error:` gives a friendly error message if the rule fails.
+
+---
+
+### If you don't have a boolean field but have a text confirmation message, you could do something like:
+
+```yaml
+name: appointment_confirmation_text
+description: Chatbot replies with confirmation text when scheduling bike service
+conversations: 1
+when: user_intent == "schedule_bike_service"
+oracle: |
+  'confirmation' in conv[0].confirmation_message.lower()
+on-error: "No confirmation text found in conversation {{conv[0].id}}"
+```
+
+---
+
+### What you need to check or add in your profile:
+
+- Does your profile expose a field like `appointment_confirmed` or `confirmation_message` in `chatbot.output`?  
+- Is there a way to detect the user intent `schedule_bike_service` or equivalent?
+
+If you want, I can help you design the profile outputs or adapt the rule to your existing fields — just let me know! 🚲✨

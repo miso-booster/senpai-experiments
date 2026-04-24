@@ -1,0 +1,30 @@
+conversation ID: one_node_architecture__p15__alcampo__rule__91fb052b
+$$$
+Hey! I see you want to fix your Sensei rule for checking customer service contact info. There are a few small issues to correct:
+
+- Typo in `description` (you wrote `descriptin`)
+- The `if` clause needs a corresponding `then` clause to specify the expected condition.
+- The `when` clause refers to `conv[i].user_request` but you need to confirm that this field exists in your profile's `chatbot.output`. If it doesn't, the rule won't work.
+- The rule logic should be a complete if/then or oracle expression.
+
+Here's a corrected version assuming `user_request`, `contact_options`, and `customer_service_number` are valid fields from your profile's `chatbot.output`. If `user_request` is not part of outputs, you might want to filter differently.
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and customer service number when requested.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: True
+```
+
+If you want to check that both fields are non-empty strings, you can do:
+
+```yaml
+then: conv[0].contact_options != '' and conv[1].customer_service_number != ''
+```
+
+If `user_request` is not in `chatbot.output`, you might want to filter by other fields or remove `when` and just check presence in all conversations.
+
+Let me know if you want me to adapt it to your profile fields! 😊
+$$$

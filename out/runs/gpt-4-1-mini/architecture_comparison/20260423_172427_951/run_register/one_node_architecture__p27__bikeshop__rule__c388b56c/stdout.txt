@@ -1,0 +1,29 @@
+conversation ID: one_node_architecture__p27__bikeshop__rule__c388b56c
+$$$
+¡Claro! Para crear una regla en Sensei-check que verifique que cuando se le dice dos veces la misma fecha al asistente, este niega aceptar la segunda, podemos usar una regla metamórfica con dos conversaciones.
+
+Asumamos que el perfil expone en `chatbot.output` un campo relacionado con la fecha que el asistente confirma o responde, por ejemplo `confirmed_date` o similar. También asumiremos que la negación se puede detectar en las frases del asistente, por ejemplo, buscando palabras clave como "no", "no puedo", "no acepto", "ya está agendado", etc., en la segunda conversación.
+
+Aquí te dejo una regla ejemplo que:
+
+- Selecciona dos conversaciones con la misma fecha dada por el usuario.
+- Verifica que en la segunda conversación el asistente responde con una negación o rechazo.
+
+Si tu perfil usa otro nombre para la fecha confirmada o la forma de detectar la negación, solo tienes que ajustar los campos y la condición.
+
+```yaml
+name: reject_duplicate_date
+description: Si se dice la misma fecha dos veces, el asistente niega aceptar la segunda
+conversations: 2
+when: conv[0].confirmed_date == conv[1].confirmed_date and conv[0].confirmed_date is not None
+if: True
+then: 
+  # Buscamos en la segunda conversación frases de negación en la respuesta del asistente
+  any("no" in phrase.lower() or "no puedo" in phrase.lower() or "no acepto" in phrase.lower() or "ya está agendado" in phrase.lower() for phrase in conv[1].chatbot_phrases)
+on-error: "La segunda conversación no niega la fecha duplicada: conv[1].confirmed_date = {conv[1].confirmed_date}"
+```
+
+Esta regla usa `conv[1].chatbot_phrases` para revisar todas las frases del asistente en la segunda conversación y busca indicios de rechazo.
+
+Si quieres, puedo ayudarte a ajustar la regla a los nombres exactos de tu perfil o a la forma en que detectas la negación. ¿Quieres? 😊
+$$$

@@ -1,0 +1,52 @@
+conversation ID: agentic_architecture__p51__pizza_shop__documentation__24ba3286
+$$$
+Connectors in Chatbot Dojo are used to connect your testing environment to any external chatbot API without writing code. They act as a bridge by describing in YAML how to send user messages to the chatbot API and how to extract the chatbot's reply from the API response.
+
+### Key fields of a connector YAML configuration:
+
+- **name** (optional): A friendly name for your chatbot.
+- **base_url** (required): The base URL of the chatbot API.
+- **send_message** (required): Defines how to send a message to the chatbot API.
+  - **path** (required): The API endpoint path appended to the base_url.
+  - **method** (optional, default POST): HTTP method like POST, GET, PUT, DELETE.
+  - **headers** (optional): Custom HTTP headers, e.g., for authentication.
+  - **payload_template** (required): JSON structure describing the request body, where `{user_msg}` is a placeholder for the user's message.
+- **response_path** (required): A dot-separated path to extract the chatbot's reply from the JSON response.
+
+### How it works:
+- When sending a message, the connector constructs the full URL by combining `base_url` and `send_message.path`.
+- It sends the request with the specified method, headers, and payload (with `{user_msg}` replaced by the actual user input).
+- It then extracts the chatbot's reply from the response JSON using the `response_path`.
+
+### Examples:
+- Simple echo bot:
+  ```yaml
+  name: "Echo Bot"
+  base_url: "https://postman-echo.com"
+  send_message:
+    path: "/post"
+    method: "POST"
+    payload_template:
+      message: "{user_msg}"
+  response_path: "json.message"
+  ```
+- Bot with authentication headers and complex payload:
+  ```yaml
+  name: "Secure Bot"
+  base_url: "https://api.mychatbot.com"
+  send_message:
+    path: "/chat/send"
+    method: "POST"
+    headers:
+      Authorization: "Bearer your-api-key"
+      Content-Type: "application/json"
+    payload_template:
+      query: "{user_msg}"
+      session_id: "user123"
+  response_path: "response.text"
+  ```
+
+This setup allows Chatbot Dojo to send user messages to your chatbot API and receive responses seamlessly.
+
+I based this explanation on the docs `custom-connector-guide.md` and `connector-examples.md`. Would you like me to help you create or modify a connector YAML file? 😊
+$$$

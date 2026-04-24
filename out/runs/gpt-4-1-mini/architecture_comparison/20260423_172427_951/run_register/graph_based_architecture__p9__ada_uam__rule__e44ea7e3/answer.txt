@@ -1,0 +1,35 @@
+¡Claro! Para comprobar que el horario de la biblioteca es de 9 a 20 en tu perfil llamado "Préstamos y Recursos de la Biblioteca", podemos escribir una regla Sensei-check que inspeccione el campo `library_hours` del `chatbot.output`.
+
+La regla verificará que el texto del horario contenga la franja "9" y "20" (o equivalentes) y que semánticamente coincida con el horario esperado "9 a 20".
+
+Aquí tienes un ejemplo de regla en YAML para eso:
+
+```yaml
+name: library_hours_check
+description: Verifica que el horario de la biblioteca sea de 9 a 20
+conversations: 1
+# No filtro especial, se aplica a todas las conversaciones
+oracle: semantic_content(conv[0].library_hours, '9 a 20')
+on-error: "Horario incorrecto o no especificado: \"{{ conv[0].library_hours }}\""
+```
+
+Explicación:
+
+- `conversations: 1` porque es una regla de un solo diálogo.
+- `conv[0].library_hours` accede al campo que el perfil expone con el horario.
+- `semantic_content` es un helper LLM que comprueba si el texto semánticamente coincide con la frase "9 a 20".
+- `on-error` muestra el valor recibido para facilitar la depuración.
+
+Si quieres que la regla sea más estricta y compruebe que el texto contenga explícitamente "9" y "20", podríamos hacer algo así:
+
+```yaml
+name: library_hours_check_explicit
+description: El horario debe mencionar las horas 9 y 20
+conversations: 1
+oracle: "'9' in conv[0].library_hours and '20' in conv[0].library_hours"
+on-error: "Horario no menciona 9 y 20: \"{{ conv[0].library_hours }}\""
+```
+
+Pero la primera opción con `semantic_content` es más robusta para variaciones de texto.
+
+¿Quieres que te ayude a crear la regla en tu proyecto o con alguna variación? 😊

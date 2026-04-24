@@ -1,0 +1,50 @@
+Great! I found your profile named `usuarios_nuevos_y_admisiones.yaml` with detailed `chatbot.output` fields like URLs for admission info, waitlist, future students, Welcome Day details, dates, times, fees, and more.
+
+To help you test this profile, I suggest some simple rules that check:
+
+1. **All expected output slots are filled** — to ensure the chatbot extracts all key info.
+2. **Links are non-empty and valid URLs** — to catch missing or empty URLs.
+3. **Dates and times are valid and present** — for Welcome Day and admission deadlines.
+4. **Monotonic or logical relations where applicable** — e.g., admission deadline date should be before Welcome Day date.
+5. **Language consistency** — chatbot replies in Spanish as expected.
+
+Here are example rules you could try (profile-bound to your outputs):
+
+```yaml
+name: all_slots_filled
+description: All expected output fields are filled in the conversation
+conversations: 1
+oracle: data_collected() is True
+```
+
+```yaml
+name: non_empty_links
+description: All URL fields must not be empty strings
+conversations: 1
+oracle: all(len(conv[0][field]) > 0 for field in ['admission_to_grados_link', 'waitlist_info_link', 'future_students_link', 'welcome_day_link'])
+```
+
+```yaml
+name: valid_dates_and_times
+description: Dates and times for Welcome Day and admission deadlines are present
+conversations: 1
+oracle: conv[0].welcome_day_date is not None and conv[0].welcome_day_time is not None and conv[0].admission_deadline is not None
+```
+
+```yaml
+name: admission_deadline_before_welcome_day
+description: Admission deadline date should be before Welcome Day date
+conversations: 1
+oracle: conv[0].admission_deadline < conv[0].welcome_day_date
+```
+
+```yaml
+name: chatbot_responds_in_spanish
+description: Chatbot replies in Spanish language
+conversations: 1
+oracle: responds_in_same_language() and language(conv[0].chatbot_phrases) == 'ESP'
+```
+
+These rules will help you verify that the chatbot provides complete, consistent, and language-appropriate information based on your profile's outputs.
+
+Would you like me to generate these rules in full YAML files for you? Or do you want to focus on a specific aspect? 😊

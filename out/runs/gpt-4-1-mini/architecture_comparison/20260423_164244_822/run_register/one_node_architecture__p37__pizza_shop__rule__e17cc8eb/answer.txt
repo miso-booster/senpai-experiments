@@ -1,0 +1,28 @@
+¡Claro! Para crear una regla en Sensei-check que verifique si el asistente confirma que añadió la bebida que el usuario pidió, primero necesitamos asumir que el perfil de chat expone en `chatbot.output` algún campo relevante, por ejemplo:
+
+- `drink_ordered`: la bebida que el usuario pidió.
+- `drink_confirmation`: la respuesta del asistente confirmando la bebida añadida.
+
+Si estos campos existen o puedes agregarlos, la regla puede comprobar que la confirmación contenga la bebida solicitada.
+
+Aquí te dejo un ejemplo de regla que verifica que la confirmación mencione la bebida pedida:
+
+```yaml
+name: drink_added_confirmation
+description: The assistant confirms that the requested drink was added to the order
+conversations: 1
+active: true
+when: drink_ordered is not None and drink_confirmation is not None
+oracle: f"'{drink_ordered.lower()}' in drink_confirmation.lower()"
+on-error: f"The assistant did not confirm adding the requested drink: {drink_ordered}"
+```
+
+Explicación rápida:
+
+- `when`: solo aplica si ambos campos existen.
+- `oracle`: verifica que el texto de confirmación incluya el nombre de la bebida pedida (ignorando mayúsculas/minúsculas).
+- `on-error`: mensaje útil si falla.
+
+Si tu perfil no tiene esos campos, deberías añadirlos en `chatbot.output` para que Sensei pueda extraerlos y la regla funcione.
+
+¿Quieres que te ayude a crear o modificar el perfil para incluir esos campos? 😊

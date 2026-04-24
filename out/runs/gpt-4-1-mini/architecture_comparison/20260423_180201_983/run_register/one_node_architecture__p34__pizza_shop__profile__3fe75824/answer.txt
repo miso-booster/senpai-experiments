@@ -1,0 +1,60 @@
+Got it! Here's a Sensei profile where the user starts by asking for a custom pizza but then changes their mind during the conversation and requests a predefined pizza instead. It uses the `change your mind` interaction style to simulate that behavior.
+
+```yaml
+test_name: "custom_to_predefined_pizza_change_mind"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who initially wants to order a custom pizza with specific toppings.
+    However, halfway through the conversation, you change your mind and decide to order a predefined pizza instead.
+  context:
+    - "You are indecisive and tend to change your mind during ordering."
+  goals:
+    - "I want to order a custom pizza with {{toppings}}."
+    - "Actually, I changed my mind. I want a {{predefined_pizza}} pizza instead."
+    - toppings:
+        function: random(3)
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives, bacon, onions]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian, BBQ Chicken]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't get that. Could you please clarify your order?"
+  output:
+    - final_pizza_type:
+        type: string
+        description: "The final pizza type ordered by the user (custom or predefined)."
+    - toppings_selected:
+        type: list[string]
+        description: "List of toppings selected for the custom pizza, if any."
+    - order_confirmation:
+        type: string
+        description: "Chatbot's confirmation message of the final order."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 6
+  interaction_style:
+    - change your mind
+```
+
+This profile:
+
+- Defines two goals: first ordering a custom pizza with toppings, then changing to a predefined pizza.
+- Uses `change your mind` interaction style to simulate the user switching requests mid-conversation.
+- Extracts outputs like the final pizza type and toppings for validation or rules later.
+
+Let me know if you'd like it adapted or extended! 😊

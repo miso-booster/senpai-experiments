@@ -1,0 +1,71 @@
+Hey! I can help you create a Sensei profile for a user who asks the chatbot about items to add to their shopping cart. 😊
+
+Here’s a simple example profile YAML that you can use as a starting point. It defines a user who wants to add various grocery items to their cart, with some variables to customize the items requested.
+
+```yaml
+test_name: "shopping_cart_item_addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a shopper who wants to add items to your online shopping cart.
+    Ask the chatbot about available products and request to add specific items to your cart.
+  context:
+    - "You are planning your weekly grocery shopping."
+    - "You want to add a variety of items including fruits, vegetables, and snacks."
+  goals:
+    - "Add {{quantity}} {{item}} to my shopping cart."
+    - quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - item:
+        function: forward(quantity)
+        type: string
+        data:
+          - apples
+          - bananas
+          - carrots
+          - chips
+          - chocolate
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you please specify the items you'd like to add to your cart?"
+  output:
+    - added_item:
+        type: string
+        description: "The name of the item added to the shopping cart"
+    - added_quantity:
+        type: int
+        description: "The quantity of the item added to the shopping cart"
+    - cart_total_items:
+        type: int
+        description: "Total number of items currently in the shopping cart"
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+### Explanation:
+- The user role clearly states the intent: adding items to the shopping cart.
+- The `goals` section uses variables `quantity` and `item` to generate combinations of requests.
+- The chatbot output defines fields to extract: what item was added, how many, and the current cart total.
+- Conversation runs through combinations of quantities and items.
+- Interaction style is set to single questions to keep each interaction focused.
+
+If you want, I can help you customize it further or add more complex behaviors! Just let me know 😊.

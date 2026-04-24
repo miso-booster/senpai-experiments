@@ -1,0 +1,35 @@
+conversation ID: one_node_architecture__p37__pizza_shop__rule__7dc8ab4a
+$$$
+¡Claro! Para crear una regla en Sensei-check que verifique si el asistente confirma haber añadido la bebida que el usuario pidió, necesitamos asegurarnos de que:
+
+- La regla se aplique a una sola conversación (`conversations: 1`).
+- Busque en las respuestas del asistente una confirmación relacionada con la bebida pedida.
+- Podemos usar la función `utterance_index` para buscar en qué turno el asistente menciona la confirmación de la bebida.
+- La confirmación debe ocurrir en algún momento (índice > 0).
+
+Aquí tienes un ejemplo de regla que hace eso. Puedes ajustar el texto de búsqueda según cómo el asistente confirme la bebida en tu proyecto (por ejemplo, "added your drink", "your drink has been added", "I added the {{drink}}", etc.):
+
+```yaml
+name: assistant_confirms_drink_added
+description: The assistant confirms that the drink requested by the user was added to the order
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'added your drink') > 0 or utterance_index('assistant', 'your drink has been added') > 0 or utterance_index('assistant', 'added the drink') > 0
+yields: "Assistant did not confirm adding the drink in the conversation."
+```
+
+Si quieres que la regla sea más flexible y use el valor real de la bebida pedida, necesitaríamos que el perfil exponga el campo de la bebida en `chatbot.output` (por ejemplo, `drink`), y luego usar una expresión con ese valor. Por ejemplo:
+
+```yaml
+name: assistant_confirms_drink_added_dynamic
+description: The assistant confirms that the specific drink requested by the user was added to the order
+conversations: 1
+active: true
+oracle: utterance_index('assistant', conv[0].drink) > 0
+yields: "Assistant did not confirm adding the requested drink: {conv[0].drink}"
+```
+
+Pero esto depende de que `drink` esté correctamente extraído y disponible.
+
+¿Quieres que te ayude a adaptar la regla a tu perfil específico? 😊
+$$$

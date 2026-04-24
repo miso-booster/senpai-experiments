@@ -1,0 +1,83 @@
+conversation ID: agentic_architecture__p30__pizza_shop__profile__1a12df5e
+$$$
+Here is a SENSEI profile for a pizza shop user who is rude and wants things done fast. It includes 4 goals with 4 variables, where 2 variables use pairwise functions to define the conversation number by the pairwise matrix:
+
+```yaml
+test_name: "pizza_shop_rude_fast"
+
+llm:
+  temperature: 0.9
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude customer at a pizza shop. You want your order done fast and are impatient.
+  context:
+    - "You are rude and demand quick service."
+    - "You want the pizza shop to prioritize speed over politeness."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}}"
+    - "Request delivery in {{delivery_time}} minutes"
+    - "Ask for {{payment_method}} payment"
+    - "Complain about {{issue}} if the order is delayed"
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, onions, olives]
+    - delivery_time:
+        function: random()
+        type: int
+        data: [15, 20, 25]
+    - payment_method:
+        function: another()
+        type: string
+        data: [cash, credit card, mobile pay]
+    - issue:
+        function: random()
+        type: string
+        data: [late delivery, wrong order, cold pizza]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't get that. Could you please repeat?"
+  output:
+    - order_size:
+        type: string
+        description: "Size of the pizza ordered"
+    - order_toppings:
+        type: list[string]
+        description: "Toppings requested"
+    - delivery_eta:
+        type: int
+        description: "Delivery time in minutes promised"
+    - payment_type:
+        type: string
+        description: "Payment method used"
+    - complaint:
+        type: string
+        description: "Complaint made by user if any"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+    - long phrases
+```
+
+- The variables `size` and `toppings` use `pairwise()` so the conversation count is determined by the pairwise matrix of these two.
+- The user role and context enforce rudeness and impatience.
+- The conversation number uses `combinations(1, pairwise)` to cover all pairwise combinations fully.
+- The output fields correspond to the goals to extract key info for validation.
+
+If you want me to save this as a profile file or adjust anything, just let me know! 😊
+$$$

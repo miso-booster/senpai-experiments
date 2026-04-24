@@ -1,0 +1,21 @@
+Hey! I see you want to fix your Sensei rule for checking customer service contact info. There are a few issues to address:
+
+1. Typo: `descriptin` → should be `description`.
+2. The `if` clause needs a corresponding `then` clause to complete the rule.
+3. The `when` clause checks `conv[i].user_request` but this field must exist in your profile's `chatbot.output` or inputs; if it doesn't, the rule will fail.
+4. The rule should have a proper `then` condition (e.g., check that the fields are non-empty strings or meet some criteria).
+
+Here's a fixed and improved version of your rule assuming `user_request` is a valid field and you want to check that the chatbot provides non-empty contact info in those conversations:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: len(conv[0].contact_options.strip()) > 0 and len(conv[1].customer_service_number.strip()) > 0
+```
+
+If `user_request` is not part of your profile outputs, you might want to filter by something else or remove the `when` clause.
+
+Let me know if you want me to help adapt it to your actual profile fields! 😊

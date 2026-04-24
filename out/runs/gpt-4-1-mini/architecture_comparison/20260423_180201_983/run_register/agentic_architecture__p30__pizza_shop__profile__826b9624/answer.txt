@@ -1,0 +1,74 @@
+Here is a SENSEI profile YAML for a pizza shop user who is rude and wants things done fast. It includes 4 goals with 4 variables, where 2 variables use pairwise functions so the conversation number can be determined by the pairwise matrix:
+
+```yaml
+test_name: "pizza_shop_rude_fast"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude customer ordering pizza. You want things done quickly and are impatient.
+  context:
+    - "You are rude and impatient."
+    - "You want your pizza order processed as fast as possible."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}}"
+    - "Choose a {{crust}} crust"
+    - "Request delivery in {{delivery_time}} minutes"
+    - "Specify payment method: {{payment_method}}"
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, onions, olives]
+    - crust:
+        function: random()
+        type: string
+        data: [thin, thick, stuffed]
+    - delivery_time:
+        function: random()
+        type: int
+        data: [15, 30, 45]
+    - payment_method:
+        function: random()
+        type: string
+        data: [credit card, cash, mobile pay]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't get that. Could you please repeat?"
+  output:
+    - order_id:
+        type: string
+        description: "Unique order identifier"
+    - estimated_time:
+        type: int
+        description: "Estimated delivery time in minutes"
+    - total_price:
+        type: float
+        description: "Total price of the order"
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+Summary:
+- The user role is rude and impatient.
+- 4 goals with variables: size, toppings (both pairwise), crust, delivery_time, payment_method.
+- `conversation.number` uses `combinations(pairwise)` to cover pairwise combinations of the two pairwise variables.
+- Interaction style is set to single questions for fast interactions.
+
+If you'd like, I can help you adjust or extend this profile! 😊

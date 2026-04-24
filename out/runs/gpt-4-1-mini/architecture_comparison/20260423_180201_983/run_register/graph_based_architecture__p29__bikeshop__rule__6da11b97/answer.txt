@@ -1,0 +1,53 @@
+Hey! I'd love to help you craft that rule 😊
+
+To write a Sensei-check rule that verifies the chatbot confirms an appointment when the user requests to schedule a bike service, we need a few things:
+
+1. **Profile output fields**:  
+   Does your SENSEI Chat profile expose any fields related to appointment confirmation? For example, something like `appointment_confirmed`, `confirmation_message`, or even a flag in the chatbot's utterances that indicates confirmation?
+
+2. **What does "confirmation" look like?**  
+   Is it a specific phrase the bot says? Or a structured field in `chatbot.output`?  
+   For instance, does the bot reply with something like "Your bike service is scheduled for [date/time]"?
+
+---
+
+### How to proceed?
+
+- If your profile exposes a field like `appointment_confirmed` (boolean), the rule can check that this field is `True` when the user requests scheduling.
+
+- If not, we can write a rule that looks for confirmation phrases in the assistant's utterances using helpers like `utterance_index`.
+
+---
+
+### Example rule assuming a field `appointment_confirmed` in `chatbot.output`:
+
+```yaml
+name: appointment_confirmation
+description: Bot confirms appointment when user requests bike service scheduling
+conversations: 1
+when: 'user_intent == "schedule_bike_service"'
+oracle: conv[0].appointment_confirmed is True
+on-error: "Expected appointment confirmation, but none found in conversation."
+```
+
+- Here, `user_intent` is assumed to be a field indicating the user's request type.  
+- `appointment_confirmed` is a boolean output from the chatbot confirming the appointment.
+
+---
+
+### Example rule if you want to detect confirmation phrase in assistant utterances:
+
+```yaml
+name: appointment_confirmation_phrase
+description: Bot confirms appointment by mentioning scheduling when user asks for bike service
+conversations: 1
+when: 'user_intent == "schedule_bike_service"'
+oracle: utterance_index('assistant', 'appointment scheduled') > 0 or utterance_index('assistant', 'service booked') > 0
+on-error: "No appointment confirmation phrase found in assistant replies."
+```
+
+- This looks for phrases like "appointment scheduled" or "service booked" in the assistant's replies.
+
+---
+
+If you can share your profile's `chatbot.output` fields or how confirmation is represented, I can tailor the rule better! Let me know 😊

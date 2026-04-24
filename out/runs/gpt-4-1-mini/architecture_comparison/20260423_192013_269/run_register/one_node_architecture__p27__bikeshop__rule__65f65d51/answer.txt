@@ -1,0 +1,25 @@
+¡Claro! Para crear una regla en Sensei-check que verifique que si se le dice dos veces la misma fecha al asistente, este rechaza la segunda, podemos hacer una regla metamórfica de 2 conversaciones.
+
+Asumamos que en el `chatbot.output` de tu perfil hay un campo que indica si la fecha fue aceptada o rechazada, por ejemplo `date_accepted` (tipo string, con valores como "yes" o "no"). Si no tienes ese campo, deberías agregarlo para que la regla funcione.
+
+La lógica sería:
+
+- Cuando las dos conversaciones tengan la misma fecha (`conv[0].ap_date == conv[1].ap_date`),
+- Entonces la primera debe ser aceptada (`conv[0].date_accepted == "yes"`) y la segunda debe ser rechazada (`conv[1].date_accepted == "no"`).
+
+Si no tienes un campo explícito, podríamos buscar en las frases del asistente alguna señal de rechazo, pero lo ideal es usar un campo estructurado.
+
+Aquí tienes un ejemplo de regla YAML para esto:
+
+```yaml
+name: reject_duplicate_date
+description: If the same appointment date is given twice, the assistant rejects the second one
+conversations: 2
+when: conv[0].ap_date == conv[1].ap_date
+if: conv[0].date_accepted == "yes"
+then: conv[1].date_accepted == "no"
+on-error: |
+  f"Expected second conversation to reject duplicate date {conv[1].ap_date}, but got acceptance: {conv[1].date_accepted}"
+```
+
+Si tu perfil usa otro nombre de campo o formato, dime y te ayudo a adaptarla. También puedo ayudarte a crear un extractor para ese campo si no existe 😊.

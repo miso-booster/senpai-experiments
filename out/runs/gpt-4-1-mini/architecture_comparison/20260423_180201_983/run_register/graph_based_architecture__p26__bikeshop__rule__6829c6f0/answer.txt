@@ -1,0 +1,38 @@
+Hey! Thanks for sharing your rule 😊 I see what you're aiming for: checking that the tune-up price is exactly $50.
+
+However, the current rule has some issues:
+
+1. **`conversations: 2`** means this is a metamorphic rule comparing two conversations, but your rule only references `conv[0]`. If you want to check a single conversation's price, it should be `conversations: 1`.
+
+2. The **`when`** clause is filtering conversations where `conv[0].tune_up_price == 50` — so it only selects conversations where the price is already 50. Then the rule checks if `conv[0].tune_up_price is not None` (which is redundant because if it equals 50, it can't be None).
+
+3. The **`then`** clause is a string `"The tune-up price is $50."` — but it should be a boolean expression (a condition to check). The rule expects a boolean expression, not a message string.
+
+---
+
+### Here's a corrected version for your intent:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: conv[0].tune_up_price is not None
+oracle: extract_float(conv[0].tune_up_price) == 50
+on-error: "Tune-up price is {{ conv[0].tune_up_price }}, expected $50."
+```
+
+---
+
+### What I changed and why:
+
+- **`conversations: 1`** because this is a single-conversation check.
+- **`when:`** filters only conversations where `tune_up_price` is present (not None).
+- **`oracle:`** is a boolean condition that extracts the numeric value from `tune_up_price` and checks equality to 50.
+- Added **`on-error:`** to provide a helpful error message if the check fails.
+- Removed the incorrect `if`/`then` structure and replaced it with a simple `oracle` expression since this is a single-conversation check.
+
+---
+
+If your `tune_up_price` field is a string like `"50 USD"` or `"$50"`, `extract_float` will correctly parse the number 50 for comparison.
+
+Let me know if you want me to help with a metamorphic rule comparing multiple conversations instead! 😊

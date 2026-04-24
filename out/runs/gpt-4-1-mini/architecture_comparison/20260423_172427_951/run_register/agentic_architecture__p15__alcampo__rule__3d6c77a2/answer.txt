@@ -1,0 +1,44 @@
+Thanks for sharing your rule and the context! I see you want to ensure the chatbot provides correct contact options and customer service number information, and you have a profile named `customer_service_assistance.yaml` that exposes the relevant output fields:
+
+- `contact_options`
+- `customer_service_number`
+- (and others)
+
+Your original rule has some issues:
+- There's a typo: `descriptin` should be `description`.
+- The `when` condition is a bit strict and uses `user_request` which is not a field in the profile outputs.
+- The `if` condition checks for `conv[0].contact_options is not None` but does not specify what to check next or what the expected relation is.
+- The rule is missing an `oracle` or `then` clause to specify what should hold true.
+
+### How to fix it?
+
+1. Use the profile's `chatbot.output` fields (`contact_options`, `customer_service_number`) in the rule.
+2. Use a proper `when` filter to select conversations where these fields are relevant.
+3. Use an `oracle` or `if`/`then` to check that these fields are not empty or None.
+4. Fix the typo and add `active: true` for clarity.
+
+---
+
+### Proposed fixed rule YAML for your profile:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and customer service number information.
+active: true
+conversations: 2
+when: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+oracle: conv[0].contact_options != '' and conv[1].customer_service_number != ''
+on-error: "Missing contact options or customer service number in conversations 0 or 1."
+```
+
+---
+
+### Explanation:
+- We check two conversations (`conversations: 2`).
+- The `when` clause filters pairs where the first conversation has `contact_options` and the second has `customer_service_number`.
+- The `oracle` asserts that these fields are not empty strings.
+- An `on-error` message helps identify failures.
+
+---
+
+Would you like me to add any more specific checks or conditions? Or should I generate this rule file for you? 😊
