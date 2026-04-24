@@ -209,8 +209,13 @@ Main aggregate outputs:
 - `combined_rankings.csv`
 - `metrics_avg_prompt_rank.csv`
 - `metrics_pairwise.csv`
+- `metrics_position_distribution.csv`
+- `metrics_friedman.csv`
+- `metrics_interrater_by_prompt.csv`
+- `metrics_interrater_summary.csv`
 - `RQ1_weighted_avg_prompt_rank.png`
 - `RQ1_pairwise_summary.png`
+- `RQ1_position_distribution.png`
 
 RQ2: Architecture Metrics Aggregation
 -------------------------------------
