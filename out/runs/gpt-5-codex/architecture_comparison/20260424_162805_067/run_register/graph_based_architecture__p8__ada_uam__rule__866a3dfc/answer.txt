@@ -1,0 +1,26 @@
+Hola! 👋 Thanks for sharing the rule. I took a close look, and there’s a small issue we should fix to make sure it actually validates the CAU contact information.
+
+### What’s wrong right now?
+- Your `when:` clause checks that the contact info is already correct.
+- The `oracle:` repeats the exact same check.
+- That means the rule only runs when the info is already perfect, so it never catches mistakes — it’s essentially a tautology.
+- Also, because this is a single-conversation rule (`conversations: 1`), you don’t need the `conv[0]` prefix. In single-convo rules, you can reference fields directly.
+
+### Fixed version
+Here’s a corrected version that actually enforces the contact details:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the expected contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works better
+- The rule now checks every conversation, not just the ones that already have correct data.
+- It directly asserts the expected values in the `oracle`.
+- By dropping `conv[0]`, it follows the recommended syntax for single-conversation checks in Sensei-check.
+
+If you happen to have a field that identifies CAU-specific conversations (e.g., `department == 'CAU'`), you could add a more targeted `when:` condition. Otherwise, this version already ensures the contact info must match these exact entries whenever those fields are present.
+
+Let me know if you’d like to build a related rule or add an error message for easier debugging! 😊

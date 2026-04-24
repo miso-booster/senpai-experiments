@@ -1,0 +1,20 @@
+conversation ID: agentic_architecture__p36__pizza_shop__rule__05ee93b1
+$$$
+Hey there! 👋 Based on the Sensei-check DSL docs (`sensei-check-doc.md`, §4 and the toppings example in `rules-examples.md`), the reason your rule was failing is that it used a `then:` clause without the matching `if:` clause. In Sensei-check, `then:` must always be paired with an `if:` to describe the relation you’re asserting across the conversations. Without it the rule parser can’t evaluate the condition, so the rule is ignored/errored out.
+
+Here’s the fixed version:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+This follows the canonical metamorphic pattern from the docs: compare two conversations with the same size and drink, check that one has more toppings, and require its price to be higher. ✅
+
+Heads-up: this rule assumes your target profile exposes `size`, `drink`, `toppings`, and `price` in `chatbot.output`. I didn’t see those fields in the current pizza profiles (they mostly expose combined summary strings), so if you’re pointing this at, say, `pizza_order_test_custom.yml`, you may need to extend its `chatbot.output` section to include those slots before the rule can actually pass. Let me know which profile you want to use and we can adjust either the profile or the rule to line up perfectly.
+$$$

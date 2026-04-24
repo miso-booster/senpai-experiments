@@ -1,0 +1,89 @@
+¡Hola! 😊 Here’s a draft Sensei profile tailored for your “new bike, custom fit” scenario. I focused on capturing the user’s need to customize the seat and handlebar grips, making sure the goals cover service availability, product options, pricing, and appointment scheduling. Feel free to tweak the context or values if you need different tones or coverage!
+
+```yaml
+test_name: bike_fit_customization
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who just purchased a new bike and wants it professionally set up.
+    You care about comfort and control, so you’re looking for seat adjustments and new handlebar grips.
+  context:
+    - You recently invested in a new road bike and want to personalize its fit.
+    - You want the seat position dialed in and smoother grips for longer rides.
+    - You’d prefer to get everything done in one appointment at the shop.
+  goals:
+    - "Explain that you bought a new bike recently and need a professional fitting session."
+    - "Ask if the shop can adjust the seat height, tilt, and fore/aft position to match your preferences."
+    - "Ask which seat options they recommend, mentioning you're considering a {{seat_type}} saddle."
+    - "Ask about replacing the handlebar grips with {{grip_material}} grips and whether installation is included."
+    - "Ask for the total price estimate for the seat adjustment and grip installation."
+    - "Schedule a fitting appointment for {{appointment_date}} at {{appointment_time}}."
+    - seat_type:
+        function: forward()
+        type: string
+        data:
+          - comfort saddle
+          - performance saddle
+          - gel saddle
+    - grip_material:
+        function: another()
+        type: string
+        data:
+          - ergonomic rubber
+          - leather wrap
+          - cork blend
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - tomorrow
+          - this Saturday
+          - next Tuesday
+    - appointment_time:
+        function: random()
+        type: string
+        data:
+          - "10:00 AM"
+          - "1:30 PM"
+          - "4:00 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_adjustment_details:
+        type: string
+        description: "Details about the seat fitting service, including adjustments or recommendations provided."
+    - grip_replacement_information:
+        type: string
+        description: "Information about available handlebar grip options and whether installation is included."
+    - fitting_service_price:
+        type: money
+        description: "Quoted price for the seat adjustment and handlebar grip installation."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the fitting appointment with the agreed date and time."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      limit: 18
+      export: false
+  interaction_style:
+    - default
+```
+
+### Why it’s structured this way
+- **Clear user intent:** The context and goals spell out the customer’s focus on customizing seat and grips.
+- **Variable coverage:** `seat_type`, `grip_material`, `appointment_date`, and `appointment_time` keep runs varied without exploding the number of conversations.
+- **Outputs aligned with checks:** Fields like `seat_adjustment_details` and `fitting_service_price` make it easy to write Sensei-check rules later (e.g., validating that the bot confirms the service and prices it).
+
+If you’d like to add tone variations (polite, rushed, etc.) or integrate personality snippets, we can slip in a `personality: ...` reference. Just let me know! 💪🚴‍♂️

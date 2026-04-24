@@ -1,0 +1,79 @@
+Here’s a ready-to-run profile that guides the chatbot to suggest and manage shopping cart items 😊
+
+```yaml
+test_name: Shopping Cart Item Addition
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A shopper building an online cart who wants the chatbot to recommend, add, and manage items efficiently.
+  context:
+    - personality: personalities/conversational-user
+    - You are planning a week of meals and want convenient help filling your Alcampo shopping cart.
+    - You appreciate thoughtful bundles that match your preferences and time-saving tips for checkout.
+    - You like to double-check totals before completing an order.
+  goals:
+    - "Ask the chatbot to suggest items from the {{first_item_category}} section that I should add to my cart."
+    - "Request a recommendation from the {{second_item_category}} aisle and add one suggested product to the cart."
+    - "Confirm how many items are currently in my shopping cart."
+    - "Ask for complementary items that fit a {{bundle_preference}} theme so I can add them quickly."
+    - "Request instructions on how to remove or replace an item in the shopping cart."
+    - "Inquire about any promotions or savings that apply to the items already in my cart."
+    - first_item_category:
+        function: forward()
+        type: string
+        data: [fresh produce, household essentials, beverages, pantry staples]
+    - second_item_category:
+        function: forward(first_item_category)
+        type: string
+        data: [bakery, dairy, frozen foods, snacks]
+    - bundle_preference:
+        function: random()
+        type: string
+        data: [healthy options, family meals, quick snacks, breakfast essentials]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - cart_items:
+        type: list[string]
+        description: Detailed list of items currently added to the shopping cart
+    - cart_item_count:
+        type: int
+        description: Total number of items in the shopping cart
+    - added_item_confirmation:
+        type: string
+        description: Confirmation message that an item was added to the cart
+    - complementary_recommendations:
+        type: string
+        description: Suggested complementary items based on user preferences
+    - cart_promotions:
+        type: string
+        description: Promotions or discounts that apply to items in the cart
+    - removal_instructions:
+        type: string
+        description: Guidance on how to remove or replace items in the cart
+    - delivery_slot_options:
+        type: string
+        description: Available delivery or pickup slot options for the current cart
+    - cart_total_amount:
+        type: money
+        description: Current total cost of the items in the shopping cart
+
+conversation:
+  number: combinations
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+  interaction_style:
+    - change your mind
+    - random:
+        - single questions
+        - make spelling mistakes
+```

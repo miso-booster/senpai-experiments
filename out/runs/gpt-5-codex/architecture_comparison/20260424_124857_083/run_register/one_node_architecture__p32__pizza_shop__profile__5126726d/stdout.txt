@@ -1,0 +1,83 @@
+conversation ID: one_node_architecture__p32__pizza_shop__profile__5126726d
+$$$
+¡Con gusto! Aquí tienes un perfil listo para probar tu chatbot de pizzería con los campos de salida que necesitas 😊:
+
+```yaml
+test_name: "pizza_checkout_validation"
+
+llm:
+  model: gpt-4o-mini
+  model_prov: openai
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres una persona que quiere hacer un pedido completo en la pizzería para llevar."
+  context:
+    - "Esta noche organizas una cena informal con amistades y quieres asegurarte de que el pedido quede perfectamente confirmado."
+    - "Valoras que el chatbot confirme claramente el tipo de pizza, la bebida, el precio final en dólares y el identificador del pedido."
+  goals:
+    - "Pregunta qué pizzas tienen disponibles."
+    - "Elige la pizza {{pizza_type}} en tamaño {{pizza_size}}."
+    - "Pregunta por las bebidas disponibles y selecciona {{drink_quantity}} {{drink_type}}."
+    - "Solicita la confirmación completa del pedido y pide el precio final en dólares."
+    - "Pide explícitamente que te indiquen el número de pedido."
+    - pizza_type:
+        function: forward()
+        type: string
+        data:
+          - Margarita
+          - Pepperoni
+          - Cuatro quesos
+          - Vegetariana
+          - Hawaiiana
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data: [pequeña, mediana, grande]
+    - drink_type:
+        function: pairwise()
+        type: string
+        data: [Refresco, Agua, Té helado, Cerveza artesanal]
+    - drink_quantity:
+        function: forward(drink_type)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu mensaje. Puedo ayudarte con pedidos de pizzas personalizadas, bebidas y recoger tu orden."
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmada en la respuesta del chatbot."
+    - drink_type:
+        type: string
+        description: "Tipo de bebida confirmada para el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido proporcionado por el chatbot."
+    - final_price_usd:
+        type: currency
+        description: "Precio final del pedido expresado en dólares estadounidenses (USD)."
+
+conversation:
+  number: 6
+  goal_style:
+    all_answered:
+      limit: 18
+      export: false
+  interaction_style:
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - long phrases
+        - single questions
+  max_cost: 0.9
+```
+$$$

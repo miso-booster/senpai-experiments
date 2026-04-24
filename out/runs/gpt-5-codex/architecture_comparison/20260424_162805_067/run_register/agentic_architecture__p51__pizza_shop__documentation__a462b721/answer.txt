@@ -1,0 +1,15 @@
+Connectors are the bridge between the Chatbot Dojo simulator and whatever external chatbot API you want to test. Instead of writing custom code, you describe how to talk to that API in a small YAML file, and the simulator uses it to send user messages and collect the bot’s replies. (See `custom-connector-guide.md`.)
+
+**Key fields you can configure**  
+*(summarised from `custom-connector-guide.md`, with examples echoed in `connector-examples.md`)*
+
+- `name` *(optional)* — a friendly label for the connector, helpful when you have several bots configured.
+- `base_url` *(required)* — the API’s root URL; everything else is appended to this.
+- `send_message` *(section)* — describes how to send each request:
+  - `path` *(required)* — the endpoint path relative to `base_url`.
+  - `method` *(optional, defaults to `POST`)* — HTTP verb to use.
+  - `headers` *(optional)* — any HTTP headers the API needs (auth tokens, content type, etc.).
+  - `payload_template` *(required)* — JSON structure for the request body; include `{user_msg}` where the simulator should inject the current user message. You can nest objects here to match whatever the API expects.
+- `response_path` *(required)* — dot-notation pointer that tells the simulator where, in the JSON response, the chatbot’s text lives (e.g., `response.0.text`).
+
+That’s all you need: once those are set, the simulator can automatically send user turns, receive responses, and run the rest of your SENSEI profiles and rules against the conversation.

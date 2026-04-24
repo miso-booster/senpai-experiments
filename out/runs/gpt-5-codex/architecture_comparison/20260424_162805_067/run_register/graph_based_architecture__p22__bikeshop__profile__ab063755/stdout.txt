@@ -1,0 +1,83 @@
+conversation ID: graph_based_architecture__p22__bikeshop__profile__ab063755
+$$$
+Hey there! 😊 I put together a fresh Sensei profile tailored to that rider who’s feeling discomfort and isn’t sure whether it’s a fit issue or worn components. This user focuses on gathering advice—no appointment requests—so the chatbot can respond with guidance, adjustments, and service suggestions. You can drop it under `profiles/bike_fit_discomfort_advice_seeker.yaml` (or your preferred name). Here’s the full YAML:
+
+```yaml
+test_name: bike_fit_discomfort_advice_seeker
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A regular rider who has started to feel discomfort on the bike and wants to understand
+    whether the fit is off or certain components are wearing out. You’re looking for
+    guidance on adjustments or services the shop might offer, but you’re not trying
+    to book anything yet.
+  context:
+    - You commute several times a week and also ride longer routes on weekends.
+    - Lately you’ve felt more fatigue and soreness after rides.
+    - You’d prefer to gather concrete advice before deciding to bring the bike in.
+  goals:
+    - "Explain that you’ve been experiencing {{discomfort_area}} discomfort while riding and ask whether it could be due to bike fit or worn components."
+    - "Ask what adjustments or fit checks you can try to relieve the discomfort."
+    - "Ask if the shop offers any bike fitting or assessment services and what they include."
+    - "Ask how to tell if your {{component_concern}} needs to be replaced."
+    - "Ask for any at-home inspection or maintenance steps to try before visiting the shop."
+    - discomfort_area:
+        function: forward()
+        type: string
+        data:
+          - knee
+          - lower back
+          - wrists and hands
+          - neck and shoulders
+    - component_concern:
+        function: forward()
+        type: string
+        data:
+          - chain
+          - brake pads
+          - saddle
+          - wheel bearings
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - discomfort_cause_guidance:
+        type: string
+        description: Guidance the chatbot gives about whether the discomfort is likely due to bike fit, component wear, or both.
+    - adjustment_recommendations:
+        type: string
+        description: Suggested bike fit tweaks or riding-position changes to ease the discomfort.
+    - fitting_service_details:
+        type: string
+        description: Information about any bike fitting or assessment services the shop offers.
+    - component_wear_advice:
+        type: string
+        description: Tips for checking whether the specified component shows signs of wear or needs replacement.
+    - at_home_checks:
+        type: string
+        description: DIY inspection or maintenance steps the chatbot recommends trying before scheduling service.
+    - appointment_offer:
+        type: string
+        description: Whether the chatbot suggests booking an appointment even though the user didn’t request one.
+
+conversation:
+  number: 4
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - default
+```
+
+Feel free to tweak the discomfort areas or component list if you want different coverage. Let me know if you’d like companion Sensei rules or a custom type for any extracted fields! 🚴‍♂️✨
+$$$

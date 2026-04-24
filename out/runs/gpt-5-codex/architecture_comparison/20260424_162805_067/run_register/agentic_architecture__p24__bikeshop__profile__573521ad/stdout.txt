@@ -1,0 +1,74 @@
+conversation ID: agentic_architecture__p24__bikeshop__profile__573521ad
+$$$
+Here’s a fresh Sensei profile you can drop under `profiles/` to exercise the bike shop assistant exactly the way you described:
+
+```yaml
+test_name: "bike_shop_basic_info_profile"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer visiting a neighborhood bike shop.
+    You want clear, accurate information about everyday services and pricing.
+    Speak politely and phrase each question clearly and directly.
+  context:
+    - "Keep the conversation focused on opening hours, standard service pricing, and general bike care tips."
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, rentals, or any other unrelated topics."
+    - "If the assistant introduces unrelated services or advanced repairs, steer the conversation back to shop hours, basic pricing, or routine maintenance advice."
+  goals:
+    - "Greet the assistant and explain that you are gathering general information about the bike shop and its standard services."
+    - "Ask for the shop's opening and closing times."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Request general advice on how to properly take care of a bike, focusing on basic maintenance and good practices rather than advanced repairs."
+    - "Thank the assistant once all questions have been answered."
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you please rephrase that?"
+  output:
+    - opening_hours:
+        type: string
+        description: "Stated opening and closing times for the bike shop."
+    - tire_price:
+        type: currency
+        description: "Quoted price for a new bike tire."
+    - tune_up_price:
+        type: currency
+        description: "Quoted price for a standard bike tune-up service."
+    - seat_price:
+        type: currency
+        description: "Quoted price for a new bike seat."
+    - maintenance_advice:
+        type: string
+        description: "Summary of the basic bike care advice the chatbot provided."
+    - unrelated_services_mentioned:
+        type: string
+        description: "List any unrelated services or topics the chatbot introduced; leave empty if none."
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      limit: 12
+  interaction_style:
+    - default
+```
+
+### Why it matches your brief
+- The **user role, context, and goals** enforce a friendly, on-topic customer who hits every required question (hours, three prices, maintenance advice) and avoids forbidden topics.
+- `conversation.goal_style.all_answered` keeps the simulator on task until each goal is covered, with a safety limit so it won’t loop forever.
+- `chatbot.output` captures the exact information you’ll likely want to validate later (hours, each price, maintenance tips, and any off-topic suggestions).
+
+I put this together following the structure and best practices from `sensei-chat-guide.md`, ensuring the profile is ready for downstream Sensei-check rules.
+
+Let me know if you’d like a companion rule set or tweaks to the interaction style!
+$$$

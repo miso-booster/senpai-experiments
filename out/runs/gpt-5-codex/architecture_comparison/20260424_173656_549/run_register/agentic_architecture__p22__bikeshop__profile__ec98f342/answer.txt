@@ -1,0 +1,76 @@
+Here’s a new Sensei profile tailored for the cyclist experiencing discomfort:
+
+```yaml
+test_name: "bike_fitting_discomfort_consult"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist who recently started feeling uncomfortable on long rides.
+    You want professional guidance from a bike shop on whether the pain comes from a poor fit
+    or worn components, but you are not ready to schedule an appointment.
+  context:
+    - "You have increased your weekly mileage ahead of an upcoming charity ride."
+    - "Your bike is well-maintained overall, but you suspect contact points or drivetrain wear."
+    - "You are looking for expert advice on adjustments or services without committing to a booking yet."
+  goals:
+    - "Explain that you have been feeling {{discomfort_area}} discomfort during recent rides on your {{bike_style}} bike."
+    - "Ask whether the issue could come from bike fit problems or worn components."
+    - "Request suggestions on adjustments or in-store services that could diagnose and resolve the discomfort."
+    - "Ask for rough cost or turnaround guidance while clarifying that you are not booking an appointment right now."
+    - discomfort_area:
+        function: pairwise()
+        type: string
+        data:
+          - neck
+          - lower back
+          - knees
+          - wrists
+    - bike_style:
+        function: pairwise()
+        type: string
+        data:
+          - road
+          - mountain
+          - gravel
+
+chatbot:
+  is_starter: false
+  fallback: "I’m sorry, could you clarify what you need help with?"
+  output:
+    - primary_cause_hypothesis:
+        type: string
+        description: "Chatbot’s assessment of what might be causing the rider discomfort."
+    - suggested_adjustments:
+        type: list[string]
+        description: "Fit tweaks or setup changes the chatbot recommends."
+    - service_recommendations:
+        type: list[string]
+        description: "Specific shop services offered to investigate or fix the issue."
+    - cost_guidance:
+        type: string
+        description: "Any price or turnaround-time estimate provided for the suggested services."
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+```
+
+### What’s happening here?
+
+- **Persona & goals:** The profile captures a cyclist unsure whether fit or component wear is the culprit. They explicitly seek advice but don’t book a service.
+- **Variable coverage:** Using `pairwise()` on `discomfort_area` and `bike_style` gives varied combinations without exploding conversation count, matching the guidance in `sensei-chat-guide.md`.
+- **Outputs for future rules:** The `chatbot.output` section collects the key insights you’ll likely want to validate later—root cause, adjustment advice, services, and any pricing info.
+
+Let me know if you’d like to tweak the tone, add more variables, or change the interaction style!

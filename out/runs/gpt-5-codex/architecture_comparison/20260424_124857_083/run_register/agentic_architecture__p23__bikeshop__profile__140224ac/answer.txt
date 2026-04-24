@@ -1,0 +1,60 @@
+Hey there! Happy to help 😊 I spotted a few format issues that were keeping your profile from loading correctly. Based on the guidance in `sensei-chat-guide.md`, I made sure the YAML uses valid data types (e.g., `temperature` must be numeric, booleans are lowercase) and that every `chatbot.output` slot has a supported `type` like `string` or `currency`.
+
+Here’s the cleaned-up profile—just replace your original file with this version:
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.2
+  model: gpt-4o-mini
+  model_prov: openai
+
+user:
+  language: English
+  role: >
+    You are acting as a customer speaking with a virtual assistant at a bike shop.
+    Ask about store hours, prices for specific items, and how to care for your bike.
+  context:
+    - You are interested in asking the items below.
+    - Just stick to asking opening times, prices of tire, price of tune-up, price of seat, and actions to the care of bike. Do not ask anything else.
+  goals:
+    - "opening and closing time of the bike shop"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false
+  fallback: I'm sorry it's a little loud in my shop, can you say that again?
+  output:
+    - opening_and_closing:
+        type: string
+        description: the opening and closing time of the shop
+    - tire:
+        type: currency
+        description: the price of a new tire
+    - tune_up:
+        type: currency
+        description: the price of a tune-up
+    - seat_price:
+        type: currency
+        description: the price of a new seat
+    - care_bike:
+        type: string
+        description: actions to take care of the bike
+
+conversation:
+  number: 5
+  interaction_style:
+    - default
+```
+
+Key fixes:
+- `temperature` is now a numeric value.
+- Added `model_prov` so Sensei knows which provider to call.
+- Ensured booleans use YAML’s lowercase `true/false`.
+- Standardized `chatbot.output` types to recognized values (`string`, `currency`), since unsupported types cause validation errors.
+
+Let me know if you’d like to tweak goal phrasing or interaction settings next!

@@ -1,0 +1,75 @@
+conversation ID: graph_based_architecture__p10__ada_uam__rule__7252a852
+$$$
+¡Hola! 😊 Qué bueno que ya tienes un perfil tan completo; ahora toca sacarle partido con algunas reglas de Sensei-check. Te dejo varias propuestas (incluyen una explicación breve y su YAML) para que puedas empezar a validar que el bot entrega toda la información clave de admisiones y Welcome Day.
+
+---
+
+### 1. Recursos de admisión siempre listos
+Asegura que los tres enlaces principales existan y parezcan URLs válidas.  
+```yaml
+name: admissions_links_provided
+description: El bot debe compartir enlaces útiles para admisiones, listas de espera y futuros estudiantes.
+conversations: 1
+oracle: |
+  admission_to_grados_link
+  and admission_to_grados_link.lower().startswith('http')
+  and waitlist_info_link
+  and waitlist_info_link.lower().startswith('http')
+  and future_students_link
+  and future_students_link.lower().startswith('http')
+```
+
+---
+
+### 2. Paquete completo de Welcome Day  
+Si el asistente da el enlace al evento, debe acompañarlo con fecha, hora y lugar.
+```yaml
+name: welcome_day_package_complete
+description: Cuando el bot comparte el enlace del Welcome Day, también debe dar fecha, hora y lugar.
+conversations: 1
+if: welcome_day_link and welcome_day_link.lower().startswith('http')
+then: welcome_day_date not in [None, '', 'N/A'] and welcome_day_time not in [None, '', 'N/A'] and event_location not in [None, '', 'N/A']
+```
+
+---
+
+### 3. Coherencia de la información sobre listas de espera  
+Revisa que, al hablar de la lista de espera, el bot dé instrucciones claras además del link.
+```yaml
+name: waitlist_info_coherent
+description: La información de lista de espera debe incluir link y procedimientos concretos.
+conversations: 1
+oracle: |
+  bool(waitlist_info_link)
+  and waitlist_info_link.lower().startswith('http')
+  and bool(waitlist_procedures)
+  and 'lista' in waitlist_procedures.lower()
+```
+
+---
+
+### 4. Consistencia del Welcome Day entre conversaciones (regla metamórfica)  
+Si Sensei-chat genera dos diálogos con el mismo enlace del Welcome Day, las fechas y horas deberían coincidir.
+```yaml
+name: welcome_day_schedule_consistency
+description: Conversaciones con el mismo enlace del Welcome Day deben compartir fecha y hora.
+conversations: 2
+when: conv[0].welcome_day_link and conv[1].welcome_day_link and conv[0].welcome_day_link == conv[1].welcome_day_link
+oracle: conv[0].welcome_day_date == conv[1].welcome_day_date and conv[0].welcome_day_time == conv[1].welcome_day_time
+```
+
+---
+
+### 5. Coste de solicitud comprensible  
+Verifica que el bot entregue un monto numérico para la cuota de inscripción.
+```yaml
+name: application_fee_is_numeric
+description: El bot debe devolver un costo de solicitud con un valor numérico legible.
+conversations: 1
+oracle: extract_float(application_fee) is not None and extract_float(application_fee) >= 0
+```
+
+---
+
+Con estas reglas cubres: enlaces críticos, detalle del evento, claridad en listas de espera, consistencia entre ejecuciones y validez del costo de inscripción. Puedes ir ejecutando Sensei-check para ver qué tan robusto está tu perfil y ajustar prompts/campos según los resultados. Si luego quieres reforzar otras áreas (por ejemplo, requisitos de admisión o contacto), dime y lo armamos juntos. ¡Ánimo con esas pruebas! 🚀
+$$$

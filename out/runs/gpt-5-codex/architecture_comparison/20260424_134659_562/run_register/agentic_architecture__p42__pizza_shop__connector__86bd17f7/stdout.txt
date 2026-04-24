@@ -1,0 +1,37 @@
+conversation ID: agentic_architecture__p42__pizza_shop__connector__86bd17f7
+$$$
+¡Hola! 😊 Revisando los headers reales que compartiste, la llamada efectiva usa el endpoint público de 1MillionBot y necesita varios campos fijos en el payload, además de extraer la respuesta desde el array `response`. Me basé en `custom-connector-guide.md` y en el ejemplo de MillionBot de `connector-examples.md` para ajustar la configuración.
+
+Puntos clave que estaban fallando:
+- `base_url` y `path` apuntaban a otra ruta (`/api/messages` en lugar de `/api/public/messages`).
+- Faltaba la cabecera `Authorization` y otros headers que el endpoint suele exigir.
+- El payload no incluía los campos fijos (`conversation`, `sender`, `bot`, etc.) que se enviaron en la petición real.
+- `response_path` apuntaba a `request.text`, pero la respuesta correcta viene en `response[0].text`.
+
+Aquí tienes el conector corregido:
+
+```yaml
+name: "Connector Saic Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Con esto deberías poder comunicarte con el bot usando los mismos parámetros de la petición que nos mostraste. Si algún identificador (como `conversation` o `sender`) debe variar por sesión, solo tendrías que parametrizarlo o actualizarlo según tus necesidades. ¿Te ayudo a eso también?
+$$$

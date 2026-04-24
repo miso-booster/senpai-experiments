@@ -1,0 +1,76 @@
+¡Claro que sí! Vamos a armar un perfil Sensei perfecto para probar cómo responde el bot del CAU cuando alguien busca sus datos de contacto 😊. Te dejo primero una breve explicación y luego el YAML listo para pegar.
+
+---
+
+### 🧭 Enfoque del perfil
+- **Objetivo del usuario simulado:** Obtener la información de contacto clave del CAU (teléfono, correo, dirección física y horarios).
+- **Tono del usuario:** Podemos simular a alguien muy práctico que solo quiere esos datos sin rodeos.
+- **Extracciones (`chatbot.output`):** Definimos campos para cada pieza de información, así tus reglas o revisiones manuales los pueden validar al final de la conversación.
+
+---
+
+### 🧾 Perfil propuesto (`profiles/soporte_contacto_cau.yaml`)
+
+```yaml
+test_name: "Soporte de Contacto CAU"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Usuario que necesita contactar urgentemente con el Centro de Atención a Usuarios (CAU) de la UAM."
+  context:
+    - personality: personalities/direct-user
+    - "Tienes un incidente abierto y necesitas hablar con alguien del CAU cuanto antes."
+    - "Prefieres respuestas concisas y con datos verificables."
+    - "Deseas confirmar todos los canales de contacto disponibles por si alguno falla."
+  goals:
+    - "Solicitar el número de teléfono oficial del CAU."
+    - "Pedir el correo electrónico de contacto del CAU para incidencias."
+    - "Preguntar por la dirección física donde se atienden casos presenciales."
+    - "Confirmar el horario de atención del CAU."
+    - "Si es posible, pedir una breve confirmación de los canales de contacto disponibles."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Podrías reformular tu consulta? También puedes revisar el catálogo de servicios del CAU."
+  output:
+    - cau_phone_number:
+        type: string
+        description: "Número de teléfono oficial del CAU"
+    - cau_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - cau_physical_address:
+        type: string
+        description: "Dirección física donde atiende el CAU"
+    - cau_service_hours:
+        type: string
+        description: "Horario de atención al público del CAU"
+    - contact_channels_summary:
+        type: string
+        description: "Resumen de los canales de contacto mencionados"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 12
+  interaction_style:
+    - single questions
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+---
+
+### ✅ Siguientes pasos
+1. Copia el YAML en tu carpeta `profiles/` con el nombre sugerido.
+2. Ajusta la personalidad o los objetivos si quieres que el simulador pregunte de forma más amable o más insistente.
+3. Ejecuta Sensei con este perfil y revisa que el chatbot complete todos los campos en `chatbot.output`.
+
+Si necesitas ayuda con la validación o con alguna regla de Sensei Check luego, aquí estoy. ¡Mucho éxito con las pruebas! 💪

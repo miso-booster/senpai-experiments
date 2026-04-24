@@ -1,0 +1,23 @@
+conversation ID: graph_based_architecture__p15__alcampo__rule__76923952
+$$$
+Sure thing! Here’s a cleaned-up version of your rule with the missing pieces filled in and the typo in `description` fixed. I’ve also added a clear `then:` clause so Sensei-check knows exactly what to verify:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides consistent contact options and customer service number.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: str(conv[1].customer_service_number) in str(conv[0].contact_options)
+on-error: >
+  Expected {conv[1].customer_service_number} to appear within the contact options
+  "{conv[0].contact_options}".
+```
+
+A couple of quick reminders to keep things running smoothly:
+
+- Make sure the profile feeding these conversations actually exposes `user_request`, `contact_options`, and `customer_service_number` in its `chatbot.output`. If any of those fields aren’t there yet, you’ll want to add them first.
+- If `contact_options` is stored as a list (instead of plain text), the `str(... ) in str(... )` trick still works, but feel free to tighten that logic if you’d prefer a stricter list check.
+
+Let me know if you’d like to adapt this rule to other contact properties or add extra safety checks—I’m happy to help! 😊
+$$$

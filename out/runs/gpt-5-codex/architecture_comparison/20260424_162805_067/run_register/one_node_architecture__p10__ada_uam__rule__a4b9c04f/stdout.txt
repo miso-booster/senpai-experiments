@@ -1,0 +1,31 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__a4b9c04f
+$$$
+¡Este perfil viene súper completo! Para empezar a “probarlo” te propongo tres reglas sencillas que validan justo las salidas más críticas que declaraste en `chatbot.output`. Puedes guardarlas (cada bloque en un archivo separado o en uno solo, sin mezclar con `---`) dentro de `rules/` y ejecutarlas con Sensei-check.
+
+```yaml
+name: admissions_links_completeness
+description: El bot debe entregar los enlaces clave para admisión y estudiantes futuros
+conversations: 1
+active: true
+oracle: all(field not in [None, ''] for field in [admission_to_grados_link, waitlist_info_link, future_students_link, welcome_day_link])
+```
+
+```yaml
+name: welcome_day_details_complete
+description: Si ofrece el enlace del Welcome Day, también debe sumar fecha, hora y lugar
+conversations: 1
+active: true
+if: welcome_day_link not in [None, '']
+then: welcome_day_date is not None and welcome_day_time is not None and event_location not in [None, '']
+```
+
+```yaml
+name: application_fee_in_eur
+description: El costo de la solicitud se reporta en euros y con un valor válido
+conversations: 1
+active: true
+oracle: application_fee not in [None, ''] and extract_float(application_fee) >= 0 and currency(application_fee) == 'EUR'
+```
+
+Con estas reglas ya puedes correr una primera validación: revisarás que siempre se devuelven los enlaces básicos, que el evento Welcome Day venga acompañado de los detalles necesarios y que la tasa de solicitud esté bien formateada. Si necesitas más chequeos (por ejemplo, estilo o consistencia de listas de grados/cursos), dime y lo añadimos 😊
+$$$

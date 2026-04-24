@@ -1,0 +1,78 @@
+conversation ID: graph_based_architecture__p20__bikeshop__profile__eddb3d30
+$$$
+Sure thing! Here’s a fresh Sensei profile that focuses on scheduling wheel-change appointments while cycling through multiple days and times so you can really stress-test the chatbot’s date handling. Save it as something like `profiles/wheel_change_appointment_scheduler.yml` inside your bike shop project.
+
+```yaml
+test_name: wheel_change_appointment_scheduler
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.3
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist whose wheels need to be swapped out. You’re detail-oriented
+    about dates and times, and you expect the assistant to confirm everything clearly.
+  context:
+    - You rely on your bike for both commuting and weekend rides.
+    - You want a wheel change service as soon as possible but can be flexible within the week.
+    - You prefer morning appointments but will take an afternoon slot if needed.
+  goals:
+    - "I'd like to schedule a wheel change for {{appointment_date}} at {{appointment_time}}."
+    - "Can you double-check that the wheel change service includes inspecting the hubs and spokes?"
+    - "If {{appointment_date}} at {{appointment_time}} is unavailable, what’s the earliest slot you can offer?"
+    - appointment_date:
+        type: string
+        function: forward()
+        data:
+          - tomorrow
+          - "next Monday"
+          - "April 22nd, 2025"
+          - "April 24th, 2025"
+    - appointment_time:
+        type: string
+        function: forward(appointment_date)
+        data:
+          - "9:00 AM"
+          - "11:30 AM"
+          - "2:00 PM"
+          - "4:30 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmed_service:
+        type: string
+        description: "Chatbot confirmation that a wheel change service is scheduled."
+    - confirmed_date:
+        type: date
+        description: "The appointment date confirmed by the chatbot."
+    - confirmed_time:
+        type: string
+        description: "The appointment time confirmed by the chatbot."
+    - alternate_slot_offered:
+        type: string
+        description: "Details about any alternative date/time the chatbot proposes."
+
+conversation:
+  number: combinations(0.6)
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      limit: 10
+      export: false
+  interaction_style:
+    - default
+```
+
+### Why this setup?
+- **`forward()` + `forward(appointment_date)`** creates a nice coverage grid of dates and times. With `combinations(0.6)`, Sensei samples 60% of the possible pairings to keep runs practical while still mixing things up.
+- The goals push the chatbot to **confirm the booking** and handle **fallback scheduling** gracefully.
+- The `chatbot.output` fields capture exactly what you’ll want to validate later in Sensei-check rules (date/time confirmations and alternative slot handling).
+
+Feel free to tweak the date strings or add more goals if you want to test extra edge cases—maybe asking about lead times or reminders. Let me know if you want a companion rule set to verify the confirmations, too! 😊
+$$$

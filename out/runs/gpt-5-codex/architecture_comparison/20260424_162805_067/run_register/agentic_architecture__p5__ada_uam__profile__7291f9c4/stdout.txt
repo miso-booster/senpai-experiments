@@ -1,0 +1,68 @@
+conversation ID: agentic_architecture__p5__ada_uam__profile__7291f9c4
+$$$
+Here’s a focused profile you can save as `profiles/consulta_contacto_cau_uam.yaml`:
+
+```yaml
+test_name: Consulta de contacto del CAU UAM
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un miembro de la comunidad de la UAM que necesita contactar con el
+    Centro de Atención a Usuarios (CAU) para resolver una incidencia relacionada
+    con los servicios digitales de la universidad.
+  context:
+    - Te urge disponer de los datos de contacto actualizados para comunicarte hoy mismo con el CAU.
+    - Quieres asegurarte de que los canales oficiales están disponibles cuando los necesites.
+    - Esperas respuestas claras y verificables para poder compartirlas con tus compañeros si hace falta.
+  goals:
+    - "Solicita el número de teléfono oficial del Centro de Atención a Usuarios (CAU)."
+    - "Pregunta por la dirección de correo electrónico operativa del CAU."
+    - "Pide que confirmen la ubicación física del CAU (edificio, planta y detalles relevantes)."
+    - "Comprueba el horario de atención presencial y telefónica del CAU."
+    - "Si alguna respuesta queda incompleta, solicita confirmación o una fuente oficial."
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no dispongo de esa información. ¿Podrías reformular tu consulta?"
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - office_location:
+        type: string
+        description: "Ubicación física del CAU (edificio, planta, referencias)"
+    - opening_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 1
+  max_cost: 0.25
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+**What’s included & why**
+
+- The goals walk through each of the four contact details the UAM user wants (teléfono, correo, ubicación, horario), finishing with a request for confirmation when answers look incomplete.
+- `interaction_style: single questions` keeps the simulator asking about one item at a time, making it easier to verify each reply.
+- `chatbot.output` exposes exactly the four fields you’ll need for downstream rules or reporting.
+- A modest `max_cost` and eight-step limit protect you from runaway conversations.
+
+**Docs used:** this structure follows the guidance from `sensei-chat-guide.md` (sections on user goals, chatbot output, and conversation controls).  
+I also peeked at the existing `consultante_de_servicios_y_asistencia_del_cau.yaml` profile to make sure the new one focuses solely on contact details rather than the broader service catalogue.
+
+Let me know if you’d like variations (e.g., multiple conversation permutations or added context about the incident). 😊
+$$$

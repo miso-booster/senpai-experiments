@@ -1,0 +1,25 @@
+conversation ID: agentic_architecture__p17__alcampo__rule__58383f80
+$$$
+¡Hola! 😊 Vamos a ver qué pasaba con tu regla.
+
+### Por qué no funcionaba
+- **`conversations` estaba vacío.** Según *sensei-check-doc.md*, cada regla debe indicar el número de conversaciones (`1`, `2` o `all`). Con el campo en blanco Sensei-check no llega a evaluarla.
+- **El chequeo era demasiado débil.** Solo comprobaba que `membership_benefits` no fuese cadena vacía, pero no evitaba respuestas con espacios o contenido irrelevante. Revisando el perfil `general_shopper_and_member_support.yaml` (donde se define el slot `membership_benefits`, ver *sensei-chat-guide.md*), reforcé la condición para exigir texto real que describa los beneficios.
+
+### Regla actualizada
+Asumiendo que estás ejecutando el perfil `general_shopper_and_member_support.yaml`, aquí tienes una versión más robusta (añadí también `active: true` y un mensaje de error útil):
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot details Club de Socios membership benefits.
+active: true
+conversations: 1
+oracle: membership_benefits not in [None, ''] and membership_benefits.strip() != '' and semantic_content(membership_benefits, "Explain the Club de Socios membership perks, such as exclusive discounts, points, personalised offers, or savings advantages.")
+on-error: f"Membership benefits info missing or incomplete: {membership_benefits}"
+```
+
+- `semantic_content(...)` (documentado en *sensei-check-doc.md*) verifica que el texto realmente hable de los beneficios del Club de Socios.
+- El `strip()` garantiza que no pasen cadenas con solo espacios.
+
+Si usas otro perfil con campos distintos, avísame para ajustarla. ¿Te sirve así o quieres que afinemos algún criterio más?
+$$$

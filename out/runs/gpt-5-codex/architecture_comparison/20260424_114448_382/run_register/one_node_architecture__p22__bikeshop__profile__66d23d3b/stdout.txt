@@ -1,0 +1,72 @@
+conversation ID: one_node_architecture__p22__bikeshop__profile__66d23d3b
+$$$
+Sure thing! Here’s a new profile tailored for that discomfort scenario—feel free to tweak any details if you need a different tone or coverage 😊
+
+```yaml
+test_name: bike_fit_discomfort_inquirer
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: Guidance provided by the chatbot on potential bike fit adjustments for the user's discomfort.
+    - service_options:
+        type: string
+        description: Services the shop offers to evaluate or correct bike fit issues (e.g., professional fitting, tune-ups).
+    - component_wear_guidance:
+        type: string
+        description: Advice on assessing whether specific components might be worn and contributing to discomfort.
+    - appointment_encouragement:
+        type: string
+        description: Any mention of booking or scheduling further services; should reflect whether the chatbot encourages an appointment.
+
+user:
+  language: English
+  role: >
+    You are an everyday cyclist feeling physical discomfort on rides and want help determining
+    whether a bike-fit issue or worn components are to blame.
+  context:
+    - You rely on your bike for commuting and weekend rides, so riding comfortably is important.
+    - Recently you've noticed growing discomfort and you are unsure whether to adjust the bike or replace parts.
+    - You prefer to understand your options before committing to any appointment.
+  goals:
+    - "Explain that you're experiencing discomfort in your {{discomfort_area}} while riding and ask if the bike might need a fit adjustment."
+    - "Ask what services the shop offers to evaluate bike fit or make adjustments."
+    - "Inquire how to check whether components like the {{component_focus}} might be worn and contributing to the issue."
+    - "Request advice on adjustments or maintenance steps you can try yourself before scheduling any service."
+    - discomfort_area:
+        function: forward()
+        type: string
+        data:
+          - lower back
+          - knees
+          - wrists
+          - shoulders
+    - component_focus:
+        function: forward(discomfort_area)
+        type: string
+        data:
+          - saddle
+          - handlebars
+          - drivetrain
+          - suspension components
+
+conversation:
+  number: combinations
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      limit: 16
+      export: false
+  interaction_style:
+    - default
+```
+$$$

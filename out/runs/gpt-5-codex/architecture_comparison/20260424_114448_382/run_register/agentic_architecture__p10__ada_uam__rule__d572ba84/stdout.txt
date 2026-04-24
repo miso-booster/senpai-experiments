@@ -1,0 +1,84 @@
+conversation ID: agentic_architecture__p10__ada_uam__rule__d572ba84
+$$$
+¡Hola! Tu perfil ya cubre un montón de información valiosa, así que la clave para “probarlo” es crear reglas que comprueben que el bot devuelve los datos críticos de manera consistente. Apoyándome en `sensei-chat-guide.md` y `sensei-check-doc.md` (más algunos ejemplos de `rules-examples.md`), te dejo varias ideas listas para usar o adaptar. Cada bloque es un documento YAML independiente.
+
+---
+
+### 1. Consistencia idiomática (regla general)
+Asegura que el bot responda en el mismo idioma que el usuario (español).
+
+```yaml
+name: spanish_language_responses
+description: El chatbot responde en español para Usuarios Nuevos y Admisiones
+conversations: 1
+oracle: responds_in_same_language()
+```
+
+### 2. Enlaces de admisiones no vacíos
+Comprueba que los cuatro enlaces principales realmente existan y parezcan URLs.
+
+```yaml
+name: admission_links_are_present
+description: Verifica que los enlaces de admisiones y recursos no estén vacíos
+conversations: 1
+oracle: |
+  all([
+    admission_to_grados_link and admission_to_grados_link.startswith('http'),
+    waitlist_info_link and waitlist_info_link.startswith('http'),
+    future_students_link and future_students_link.startswith('http'),
+    welcome_day_link and welcome_day_link.startswith('http')
+  ])
+```
+
+### 3. Welcome Day completo
+Si el bot menciona el evento, debe dar fecha, hora y lugar.
+
+```yaml
+name: welcome_day_details_complete
+description: El bot proporciona fecha, hora y ubicación cuando habla del Welcome Day
+conversations: 1
+if: welcome_day_link
+then: welcome_day_date is not None and welcome_day_time is not None and event_location and event_location.strip() != ""
+```
+
+### 4. Cuota de solicitud válida
+Revisa que `application_fee` sea un importe positivo y tenga divisa.
+
+```yaml
+name: application_fee_positive
+description: La cuota de solicitud debe ser mayor que cero y especificar moneda
+conversations: 1
+oracle: extract_float(application_fee) > 0
+```
+
+### 5. Procedimientos de lista de espera completos
+Garantiza que, cuando haya enlace para la lista de espera, también haya texto explicativo.
+
+```yaml
+name: waitlist_guidance_complete
+description: Cuando se ofrece enlace de lista de espera, el bot explica el procedimiento
+conversations: 1
+if: waitlist_info_link
+then: waitlist_procedures and waitlist_procedures.strip() != ""
+```
+
+### 6. (Opcional) Regla metamórfica de consistencia
+Si dos charlas listan exactamente los mismos grados, deberían compartir el mismo enlace de admisión. Útil para detectar respuestas inconsistentes.
+
+```yaml
+name: consistent_admission_link_for_same_grados
+description: Misma lista de grados ⇒ mismo enlace de admisión
+conversations: 2
+when: conv[0].grados_available == conv[1].grados_available
+oracle: conv[0].admission_to_grados_link == conv[1].admission_to_grados_link
+```
+
+---
+
+#### Pasos siguientes
+1. Guarda tu perfil (por ejemplo `profiles/usuarios_nuevos_admisiones.yml`).
+2. Elige una o varias reglas de la lista (cada una en su propio archivo bajo `rules/`).
+3. Ejecuta Sensei-chat con el perfil y luego Sensei-check con las reglas para ver si el bot cumple.
+
+Si quieres que te prepare alguno de estos archivos en concreto (con nombre de fichero y todo) o necesitas otra familia de comprobaciones, dímelo y lo ajusto encantado 😊.
+$$$

@@ -1,0 +1,115 @@
+conversation ID: agentic_architecture__p34__pizza_shop__profile__5c481e98
+$$$
+Here’s a fresh profile that captures the “custom pizza → menu pizza” flip you described. It follows the structure from `sensei-chat-guide.md` and reuses naming patterns from the existing pizza profiles so future rules can hook into familiar outputs.
+
+```yaml
+test_name: pizza_custom_to_predefined_switch
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+
+user:
+  language: English
+  role: >
+    You are a pizza lover chatting with a pizzeria chatbot.
+    Start confident about building a custom pizza, but you often second-guess yourself
+    and pivot to a popular menu option midway.
+  context:
+    - You like experimenting with toppings but get anxious about ruining the flavour.
+    - You usually add a couple of canned drinks to your order.
+  goals:
+    - "Order a custom {{size}} pizza on {{crust}} with toppings: {{toppings}}."
+    - "Add {{drink_count}} cans of {{drink_type}}."
+    - "Ask for the estimated delivery time and the total price."
+    - "After discussing the custom pizza, change your mind and request the predefined {{predefined_option}} pizza instead."
+    - size:
+        function: forward()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+    - crust:
+        function: forward(size)
+        type: string
+        data:
+          - thin crust
+          - hand-tossed crust
+          - gluten-free crust
+    - toppings:
+        function: pairwise()
+        type: string
+        data:
+          - mushrooms and caramelized onions
+          - pepperoni and jalapeños
+          - spinach and feta cheese
+          - roasted veggies mix
+    - drink_type:
+        function: another()
+        type: string
+        data:
+          - sparkling water
+          - cola
+          - lemon soda
+          - iced tea
+          - any(2 craft sodas)
+    - drink_count:
+        function: forward(drink_type)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - predefined_option:
+        function: pairwise()
+        type: string
+        data:
+          - House Supreme
+          - Vegan Delight
+          - BBQ Chicken Classic
+          - Margherita Special
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase?"
+  output:
+    - final_pizza_name:
+        type: string
+        description: Name of the pizza the order ends with after changing mind
+    - final_size:
+        type: string
+        description: Size of the final pizza selection
+    - price:
+        type: currency
+        description: Total price for the completed order
+    - ready_time:
+        type: time("hh:mm")
+        description: Estimated time until the order is ready or delivered
+    - order_id:
+        type: string
+        description: Order identifier returned by the bot
+    - drinks:
+        type: string
+        description: Summary of the drink selection (type and count)
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+**Highlights**
+
+- The `goals` make the user start with a bespoke pizza, ask about drinks/time/price, and then explicitly switch to a predefined menu item.
+- Two `pairwise()` variables (`toppings`, `predefined_option`) enable mixed coverage while keeping runs manageable via `conversation.number: combinations(0.6, pairwise)`.
+- `interaction_style: change your mind` ensures Sensei enforces the mid-conversation pivot.
+- `chatbot.output` captures the final pizza choice, size, drinks, price, timing, and order ID so rules can verify the bot honored the switch.
+
+Let me know if you’d like variants (e.g., multilingual, more drink options, different predefined pizzas)!
+$$$

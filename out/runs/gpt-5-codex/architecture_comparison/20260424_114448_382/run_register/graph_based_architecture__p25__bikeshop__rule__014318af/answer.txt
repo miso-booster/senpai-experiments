@@ -1,0 +1,22 @@
+Absolutely, happy to help! Since your profile already exposes the slots we care about (`opening_and_closing`, `tire`, `tune_up`, `seat_price`, and `care_bike`), we can write a single-conversation rule that verifies those values line up with the expectations you listed.
+
+Here’s a ready-to-use Sensei-check rule:
+
+```yaml
+name: bike_shop_expected_values
+description: Ensure the bike shop profile returns the expected schedule, prices, and care guidance
+conversations: 1
+oracle: >
+  '10' in opening_and_closing and '20' in opening_and_closing and
+  extract_float(tune_up) == 50 and
+  extract_float(tire) == 20 and
+  extract_float(seat_price) == 20 and
+  care_bike is not None and len(care_bike.strip()) > 0
+```
+
+**Why it works:**
+- Checks that the opening/closing string mentions both “10” and “20”, covering your “10 to 20” requirement.
+- Uses `extract_float` to grab the numeric parts of the money strings and confirm the tune-up, tire, and seat prices (50, 20, and 20 respectively).
+- Makes sure the `care_bike` guidance isn’t empty, so the assistant actually provides some maintenance tips.
+
+Drop this rule into your Sensei-check suite, and it’ll flag any conversation where those values drift. Let me know if you’d like stricter formatting checks (like enforcing “10:00–20:00” exactly) or additional constraints! 😊

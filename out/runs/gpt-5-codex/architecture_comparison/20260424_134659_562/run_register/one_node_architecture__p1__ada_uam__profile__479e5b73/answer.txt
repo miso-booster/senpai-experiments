@@ -1,0 +1,96 @@
+¡Perfecto! Aquí tienes el nuevo perfil centrado en la configuración fallida de eduroam 😊
+
+```yaml
+test_name: "Configuración fallida de eduroam"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Usuario universitario que intenta configurar la red eduroam en su dispositivo sin éxito."
+  context:
+    - personality: personalities/impatient-user
+    - "Has seguido varios tutoriales oficiales de la UAM pero tu dispositivo sigue sin conectarse a eduroam."
+    - "Necesitas confirmar que tienes los certificados y credenciales adecuados antes de volver a intentarlo."
+    - "Buscas instrucciones claras y enlaces oficiales para no cometer más errores durante la configuración."
+  goals:
+    - "Explicar que intenté configurar eduroam usando {{metodo_actual}} pero sigo sin conexión."
+    - "Pedir instrucciones paso a paso para volver a intentarlo mediante {{metodo_alternativo}}."
+    - "Solicitar recomendaciones y requisitos previos antes de recurrir a {{metodo_de_respaldo}}."
+    - "Preguntar por canales de soporte en caso de que ninguno de estos métodos funcione."
+    - metodo_actual:
+        function: forward()
+        type: string
+        data:
+          - "el instalador automático proporcionado por la UAM"
+          - "la aplicación eduroam CAT"
+          - "la guía de configuración manual en Windows"
+          - "la guía de configuración manual en macOS"
+          - "la configuración manual en Android"
+          - "la configuración manual en iOS"
+    - metodo_alternativo:
+        function: pairwise()
+        type: string
+        data:
+          - "la aplicación eduroam CAT"
+          - "la guía de configuración manual en Windows"
+          - "la guía de configuración manual en macOS"
+          - "la configuración manual en Android"
+          - "la configuración manual en iOS"
+          - "el instalador automático proporcionado por la UAM"
+    - metodo_de_respaldo:
+        function: pairwise()
+        type: string
+        data:
+          - "un perfil descargado desde el portal de eduroam"
+          - "una configuración manual en Linux"
+          - "la asistencia presencial del CAU"
+          - "el formulario de soporte remoto del CAU"
+          - "la reconfiguración mediante la aplicación eduroam CAT"
+          - "la reinstalación del certificado de seguridad"
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - eduroam_configuration_steps:
+        type: string
+        description: "Pasos específicos proporcionados para configurar eduroam."
+    - prerequisites_summary:
+        type: string
+        description: "Requisitos previos (credenciales, certificados, actualizaciones) mencionados por el bot."
+    - troubleshooting_tips:
+        type: string
+        description: "Recomendaciones de resolución de problemas para eduroam."
+    - os_specific_instructions:
+        type: string
+        description: "Indicaciones específicas para el sistema operativo mencionado."
+    - certificate_download_link:
+        type: string
+        description: "Enlaces oficiales para descargar certificados o instaladores de eduroam."
+    - support_contact_info:
+        type: string
+        description: "Canales de contacto con el CAU para soporte adicional."
+    - wifi_profile_status:
+        type: string
+        description: "Estado o verificación sugerida del perfil Wi-Fi eduroam."
+    - alternative_access_options:
+        type: string
+        description: "Opciones alternativas de conexión temporal sugeridas por el bot."
+
+conversation:
+  number: combinations(0.8, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+    max_cost: 0.08
+  interaction_style:
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - long phrases
+```

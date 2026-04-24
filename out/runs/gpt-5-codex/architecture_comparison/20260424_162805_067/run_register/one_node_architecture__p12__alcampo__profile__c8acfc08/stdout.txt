@@ -1,0 +1,92 @@
+conversation ID: one_node_architecture__p12__alcampo__profile__c8acfc08
+$$$
+Hey there! I put together a friendly profile that nudges the chatbot to add specific products to the user’s shopping cart and confirm what made it in. Let me know if you’d like to tweak the items or conversational style. 😊
+
+```yaml
+test_name: "shopping_cart_item_addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are organizing your weekly grocery haul and want the chatbot to add specific
+    items to your shopping cart while keeping track of the quantities and confirming
+    the cart contents.
+  context:
+    - "You prefer a mix of fresh produce, pantry staples, and beverages."
+    - "You are mindful of stock availability and want alternatives when something is unavailable."
+    - "You like getting a quick summary of the cart before checkout."
+  goals:
+    - "Ask the chatbot to add {{primary_item}} to your shopping cart."
+    - "Request adding {{secondary_item}} with {{secondary_quantity}} units to the cart."
+    - "Inquire about stock status for {{availability_item}} and ask for a substitute if it is unavailable."
+    - "Confirm the current items in the cart and their quantities."
+    - "Ask the chatbot for the total number of items in the cart before confirming the order."
+    - primary_item:
+        function: forward()
+        type: string
+        data:
+          - fresh strawberries
+          - organic almond milk
+          - wholegrain sandwich bread
+    - secondary_item:
+        function: pairwise()
+        type: string
+        data:
+          - sparkling water bottles
+          - free-range eggs
+          - decaf coffee beans
+    - secondary_quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 4
+    - availability_item:
+        function: another()
+        type: string
+        data:
+          - gluten-free pasta
+          - ripe avocados
+          - lactose-free yogurt
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - cart_items:
+        type: list[string]
+        description: Items the chatbot confirms as added to the cart
+    - cart_quantities:
+        type: list[int]
+        description: Quantities associated with each cart item
+    - total_cart_items:
+        type: int
+        description: Total number of items currently in the cart
+    - stock_updates:
+        type: string
+        description: Stock or availability notes for requested products
+    - substitution_suggestions:
+        type: string
+        description: Suggested alternatives when an item is unavailable
+    - cart_summary_confirmation:
+        type: string
+        description: Chatbot’s confirmation message summarizing the cart contents
+
+conversation:
+  number: combinations
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - random:
+      - single questions
+      - make spelling mistakes
+      - change your mind
+```
+$$$

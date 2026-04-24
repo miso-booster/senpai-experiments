@@ -1,0 +1,23 @@
+conversation ID: agentic_architecture__p16__alcampo__rule__a2a5dc7c
+$$$
+Here’s a rule-first draft that enforces availability for lactose-free products. I leaned on `sensei-check-doc.md` (plus the examples in `rules-examples.md`) to keep the syntax aligned with Sensei-check’s single-conversation oracles.
+
+```yaml
+name: lactose_free_items_in_stock
+description: Lactose-free products must be reported as available.
+active: false
+conversations: 1
+if: dietary_tags is not None and 'lactose_free' in [tag.lower().replace('-', '_') for tag in dietary_tags]
+then: availability_status is not None and availability_status.lower() in ['available', 'in_stock', 'preorder']
+on-error: f"Lactose-free item {product_name or 'unknown product'} returned availability '{availability_status}'"
+```
+
+### Assumptions for the future profile
+For this rule to work, the eventual Sensei Chat profile should expose at least these outputs in `chatbot.output`:
+
+- `dietary_tags` – list of strings, including `"lactose_free"` when relevant.
+- `availability_status` – string such as `"available"`, `"in_stock"`, or `"preorder"`.
+- `product_name` – optional string used for clearer error messages.
+
+I set `active: false` so the rule won’t fire until the matching profile exists. Once the profile is in place (with those fields), flip `active` to `true` and you’ll be ready to validate lactose-free availability. Let me know if you’d like help sketching that profile too! 😊
+$$$

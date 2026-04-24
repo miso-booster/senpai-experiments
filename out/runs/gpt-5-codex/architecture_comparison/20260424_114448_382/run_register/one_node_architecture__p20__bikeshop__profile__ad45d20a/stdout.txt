@@ -1,0 +1,87 @@
+conversation ID: one_node_architecture__p20__bikeshop__profile__ad45d20a
+$$$
+Here you go! 😊 Let me know if you’d like any tweaks or extra interaction styles added.
+
+```yaml
+test_name: wheel_change_appointment_scheduler
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who needs a wheel change and wants to get an appointment set
+    up with the shop. Be polite but clear about your timing needs.
+  context:
+    - You're preparing for a long ride next week and want fresh wheels installed beforehand.
+    - You rely on the shop to confirm exact dates and times before you commit.
+    - You're hoping the assistant can suggest alternatives if your first pick is unavailable.
+  goals:
+    - "I'd like to schedule a wheel change for {{preferred_date}} at {{preferred_time}}."
+    - "If that slot isn't available, could you check {{backup_date}} around {{backup_time}}?"
+    - "Please confirm the appointment details and let me know if there's anything I should bring."
+    - preferred_date:
+        function: pairwise()
+        type: string
+        data:
+          - next Monday
+          - June 12th
+          - this Friday
+    - preferred_time:
+        function: pairwise()
+        type: string
+        data:
+          - 9:00 AM
+          - 1:30 PM
+          - 4:15 PM
+    - backup_date:
+        function: forward(preferred_date)
+        type: string
+        data:
+          - next Saturday
+          - June 15th
+          - this Saturday
+    - backup_time:
+        function: forward(backup_date)
+        type: string
+        data:
+          - 10:30 AM
+          - 2:00 PM
+          - 11:45 AM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop—could you say that again?"
+  output:
+    - confirmed_service:
+        type: string
+        description: "Service the chatbot confirms for the appointment (e.g., wheel change)."
+    - confirmed_date:
+        type: string
+        description: "Date the chatbot confirms for the appointment."
+    - confirmed_time:
+        type: string
+        description: "Time the chatbot confirms for the appointment."
+    - alternate_slot_response:
+        type: string
+        description: "How the chatbot responds to the backup slot request (availability or suggestion)."
+    - preparation_instructions:
+        type: string
+        description: "Any guidance the chatbot provides about what to bring or prepare for the wheel change."
+
+conversation:
+  number: combinations
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - default
+    - change your mind
+```
+$$$

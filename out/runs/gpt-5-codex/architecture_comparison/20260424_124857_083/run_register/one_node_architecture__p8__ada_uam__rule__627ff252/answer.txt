@@ -1,0 +1,17 @@
+¡Hola! Gracias por compartir la regla. Te comento dos detallitos que la hacían fallar:
+
+1. **Uso de `conv[0]` en reglas de una sola conversación.** Para `conversations: 1`, Sensei expone los campos directamente (por ejemplo, `contact_email`) y no a través de `conv[0]`.  
+2. **`when` duplicaba la condición del `oracle`.** Bastaba con usar `when` para filtrar que los campos existan, y dejar el chequeo exacto dentro del `oracle`.
+
+Aquí tienes la versión corregida (incluí un `on-error` para que el reporte resulte más claro):
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: contact_email is not None and contact_phone is not None and physical_address is not None
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+on-error: f"Expected CAU contact details to match official records but got email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+Con esto la regla se aplicará solo cuando los tres datos hayan sido capturados y validará que coincidan con los valores oficiales del CAU. Si necesitas algo más, aquí estoy 😊

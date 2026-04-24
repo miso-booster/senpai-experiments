@@ -1,0 +1,26 @@
+conversation ID: one_node_architecture__p39__pizza_shop__rule__1d3ba6e2
+$$$
+Hey there! 😊 I put together the metamorphic rule you asked for—just a heads-up that, in the current project, none of the profiles expose a `drink` slot yet. To make the rule work, be sure the profile you target (for example, `pizza_and_drink_order_placement`) includes a `drink` field in `chatbot.output`, alongside the fields you’ll use to assert that the base pizza order is identical.
+
+Once those slots are available, drop the rule below into `rules/drink.yaml` (or any filename you prefer):
+
+```yaml
+name: drink
+description: Adding one drink increases the order total by exactly $2 when the pizza configuration stays the same.
+conversations: 2
+when: (
+  conv[0].pizza_type == conv[1].pizza_type
+  and conv[0].pizza_size == conv[1].pizza_size
+  and sorted(conv[0].toppings) == sorted(conv[1].toppings)
+  and conv[0].pizza_quantity == conv[1].pizza_quantity
+)
+if: conv[0].drink == conv[1].drink + 1
+then: abs(
+  extract_float(conv[0].total_cost) - extract_float(conv[1].total_cost) - 2
+) <= 0.01
+on-error: >
+  f"Expected a +$2.00 delta when drinks went from {conv[1].drink} to {conv[0].drink}, but saw {extract_float(conv[0].total_cost) - extract_float(conv[1].total_cost):.2f}."
+```
+
+Feel free to swap out `pizza_type`, `pizza_size`, `toppings`, or `pizza_quantity` with the exact slot names from your profile if they differ. Let me know if you’d like help wiring the `drink` output into the profile too!
+$$$

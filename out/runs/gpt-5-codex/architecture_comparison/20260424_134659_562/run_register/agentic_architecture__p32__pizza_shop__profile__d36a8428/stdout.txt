@@ -1,0 +1,85 @@
+conversation ID: agentic_architecture__p32__pizza_shop__profile__d36a8428
+$$$
+¡Listo! Aquí tienes un perfil de Sensei para poner a prueba un chatbot de pizzería y extraer exactamente los campos que necesitas:
+
+```yaml
+test_name: "pizza_order_spanish_smoke"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona hambrienta que quiere pedir una pizza a domicilio. Buscas
+    confirmar ingredientes, precios y tiempos antes de cerrar el pedido.
+  context:
+    - "Es viernes por la noche y planeas ver una película con amigos."
+    - "Te interesa aprovechar promociones y combos con bebidas."
+  goals:
+    - "Haz un pedido de una pizza {{estilo_pizza}} tamaño {{tamano}} con masa {{tipo_masa}}."
+    - "Selecciona una bebida {{bebida}} para acompañarla."
+    - "Pregunta por complementos recomendados y evalúa {{extra}}."
+    - "Solicita el total en dólares estadounidenses y pide confirmar el ID de pedido."
+    - estilo_pizza:
+        function: pairwise()
+        type: string
+        data: [margarita, pepperoni, vegetariana, hawaiana]
+    - tamano:
+        function: pairwise()
+        type: string
+        data: [pequeña, mediana, grande]
+    - tipo_masa:
+        function: forward(estilo_pizza)
+        type: string
+        data: [delgada, tradicional, integral]
+    - bebida:
+        function: random()
+        type: string
+        data: [refresco de cola, limonada, agua mineral, cerveza artesanal]
+    - extra:
+        function: random()
+        type: string
+        data: [pan de ajo, ensalada caprese, brownies, tiramisú]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, ¿podrías reformular tu solicitud?"
+  output:
+    - pizza_type:
+        type: string
+        description: "Descripción final de la pizza solicitada (sabor, tamaño, masa)."
+    - beverage:
+        type: string
+        description: "Bebida confirmada para el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido confirmado."
+    - total_price_usd:
+        type: currency
+        description: "Precio final del pedido en dólares estadounidenses."
+
+conversation:
+  number: combinations(0.7, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - change your mind
+```
+
+### Por qué está configurado así
+- Me basé en el `sensei-chat-guide.md` para estructurar correctamente secciones como `user.goals`, `chatbot.output` y `conversation`.
+- El `chatbot.output` contiene los cuatro campos requeridos por ti: `pizza_type`, `beverage`, `order_id` y `total_price_usd` (como `currency` para reflejar valores en dólares).
+- Las funciones `pairwise()` y `forward()` ayudan a cubrir combinaciones de tamaños, estilos y tipos de masa sin explotar el número de conversaciones.
+- La interacción aleatoria añade variaciones (frases largas, pequeñas dudas, errores) útiles para probar la robustez del bot.
+
+Si quieres ajustar más variables (por ejemplo, idiomas adicionales o más bebidas), dime y lo adaptamos. 😊
+$$$

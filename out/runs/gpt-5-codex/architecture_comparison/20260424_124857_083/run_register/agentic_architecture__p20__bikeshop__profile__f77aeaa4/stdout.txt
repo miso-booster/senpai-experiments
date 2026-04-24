@@ -1,0 +1,112 @@
+conversation ID: agentic_architecture__p20__bikeshop__profile__f77aeaa4
+$$$
+Here’s a fresh profile you can drop into `profiles/` to exercise date/time handling for the bike shop scenario:
+
+```yaml
+test_name: "bike_shop_wheel_change_appointments"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a dedicated cyclist trying to schedule an appointment at a neighborhood bike shop
+    to replace both wheels on your bicycle. You are polite but persistent about getting a slot
+    that works with your commute schedule.
+  context:
+    - "You commute to work daily and prefer to ride rather than drive."
+    - "You can visit the shop on your way to or from work if the time fits."
+    - "You want confirmation about how long the wheel change service will take."
+  goals:
+    - "Schedule a wheel change appointment for my {{bike_type}} on {{appointment_date}} around {{appointment_time}}."
+    - "Ask how long the service takes and whether I can wait at the shop."
+    - "If that time is unavailable, check if {{backup_date}} at {{backup_time}} works instead."
+    - bike_type:
+        function: forward()
+        type: string
+        data:
+          - road bike
+          - gravel bike
+          - commuter e-bike
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - "next Monday"
+          - "next Wednesday"
+          - "next Friday"
+          - "the first Saturday of next month"
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - "08:30 AM"
+          - "10:45 AM"
+          - "01:15 PM"
+          - "04:30 PM"
+    - backup_date:
+        function: forward(appointment_date)
+        type: string
+        data:
+          - "later that same week"
+          - "early the following week"
+          - "any weekend morning"
+          - "the soonest cancellation you have"
+    - backup_time:
+        function: forward(appointment_time)
+        type: string
+        data:
+          - "09:15 AM"
+          - "12:00 PM"
+          - "02:45 PM"
+          - "05:30 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you repeat your appointment request?"
+  output:
+    - requested_date:
+        type: string
+        description: "Exact date phrase the user asked for initially."
+    - requested_time:
+        type: string
+        description: "Exact time phrase the user asked for initially."
+    - promised_date:
+        type: date("ISO 8601")
+        description: "Date the chatbot confirmed for the appointment."
+    - promised_time:
+        type: time("hh:mm")
+        description: "Time the chatbot confirmed for the appointment."
+    - service_duration:
+        type: string
+        description: "How long the chatbot said the wheel change will take."
+    - wait_option:
+        type: string
+        description: "Whether the chatbot said the user can wait during the service."
+
+conversation:
+  number: combinations(0.75, pairwise)
+  max_cost: 0.35
+  goal_style:
+    steps: 7
+    max_cost: 0.08
+  interaction_style:
+    - change your mind
+    - long phrases
+    - random:
+      - make spelling mistakes
+      - single questions
+```
+
+### Why this fits your brief
+- **Date & time coverage:** `appointment_date` and `appointment_time` both use `pairwise()` so Sensei explores many combinations when `conversation.number` is set to `combinations(0.75, pairwise)`. The fallback variables (`backup_date`, `backup_time`) nudge the chatbot into rescheduling paths.
+- **Outputs for later rules:** Fields such as `promised_date` and `promised_time` (typed as `date`/`time`) plus the raw `requested_*` strings give you everything you need to validate how the bot handled scheduling later.
+- **User behaviour:** Interaction styles (`change your mind`, `random` extras) encourage the simulator to push for alternate slots, exposing how the bot reacts.
+
+This structure follows the guidance from **`sensei-chat-guide.md`**—especially around aligning `chatbot.output` with future rules and using `pairwise()`/`combinations` for efficient coverage. Happy testing, and let me know if you’d like companion rules or extra variables! 😊
+$$$

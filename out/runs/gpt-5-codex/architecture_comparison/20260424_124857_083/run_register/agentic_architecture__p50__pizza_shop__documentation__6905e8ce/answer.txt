@@ -1,0 +1,18 @@
+Great question! In Sensei-check rules, an **`oracle`** is the boolean expression that decides whether the rule passes or fails for the conversations it inspects. Think of it as the truth test for your rule.
+
+From `sensei-check-doc.md`: every rule can either supply an `oracle:` (a single condition that must evaluate to `True`) or use an `if:`/`then:` pair. When you do provide `oracle:`, you’re writing a Python-style expression that looks at the conversation data—fields exposed by the profile’s `chatbot.output`, helper functions like `extract_float`, `language`, `repeated_answers`, and so on—and returns `True` if everything’s okay, `False` if there’s a violation.
+
+A quick example straight from the doc:
+
+```yaml
+name: small_base_price_floor
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+Here the oracle checks two things for every “small” pizza conversation: the price must be at least \$10, and the currency must be USD. If either part fails, the oracle evaluates to `False` and the rule flags the conversation.
+
+If your rule needs to express a cause → effect relationship (“If X changes, then Y must change”), the guide suggests using `if:`/`then:` instead because it reads more clearly—otherwise, `oracle:` is your one-stop condition.
+
+Hope that helps! Let me know if you want to see more examples or how to combine oracles with helpers 😊

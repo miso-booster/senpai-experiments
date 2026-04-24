@@ -1,0 +1,91 @@
+Hey there! I put together a brand-new Sensei profile that zeroes in on appointment scheduling for a wheel change, with multiple date/time variables so you can really stress-test how the chatbot handles calendar juggling. Feel free to drop it into `profiles/wheel_change_appointment_scheduler.yaml` (or any name you like):
+
+```yaml
+test_name: wheel_change_appointment_scheduler
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a loyal customer trying to get your bike's wheels swapped out before an upcoming ride.
+    You tend to be polite but persistent when it comes to locking in a convenient appointment slot.
+  context:
+    - You recently noticed uneven wear on your wheels and want them changed this week if possible.
+    - You prefer morning appointments but can flex if the shop is booked.
+    - You'd appreciate any prep tips you should follow before dropping off the bike.
+  goals:
+    - "Ask to book a wheel change appointment on {{requested_date}} at {{requested_time}}."
+    - "If that specific slot is unavailable, request an alternative on {{alternate_date}} at {{alternate_time}}."
+    - "Confirm that the wheel change service and appointment details are locked in."
+    - "Ask if the shop can send a reminder or provide prep instructions for the appointment."
+    - requested_date:
+        function: pairwise()
+        type: string
+        data:
+          - this Friday
+          - next Tuesday
+          - April 18, 2025
+          - May 2, 2025
+    - requested_time:
+        function: pairwise()
+        type: string
+        data:
+          - 9:00 AM
+          - 11:30 AM
+          - 2:15 PM
+          - 4:45 PM
+    - alternate_date:
+        function: pairwise()
+        type: string
+        data:
+          - the following Saturday
+          - next Thursday
+          - April 20, 2025
+          - May 6, 2025
+    - alternate_time:
+        function: pairwise()
+        type: string
+        data:
+          - 10:30 AM
+          - 1:00 PM
+          - 3:45 PM
+          - 5:15 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation from the chatbot that the wheel change appointment has been scheduled."
+    - scheduled_date:
+        type: string
+        description: "The date the chatbot confirms for the wheel change appointment."
+    - scheduled_time:
+        type: string
+        description: "The time the chatbot confirms for the wheel change appointment."
+    - prep_guidance:
+        type: string
+        description: "Any preparation instructions or reminders the chatbot provides."
+
+conversation:
+  number: combinations(0.7, pairwise)
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      limit: 14
+  interaction_style:
+    - default
+```
+
+### Why this setup works nicely ✨
+- **Pairwise functions on four variables** give you lots of unique date/time combos without exploding into every single permutation.
+- The goals nudge the bot through the “primary slot → alternative slot → confirmation → prep tips” flow, which is perfect for spotting mishandled reschedules.
+- Output fields capture exactly the bits your rules (or manual review) will care about: did the bot actually lock something in, and what was it?
+
+If you need to tweak the date phrases (e.g., switch to ISO formats or specific calendar dates), just swap the values in the `data` lists. Happy testing, and let me know if you want a companion rule set next! 😊

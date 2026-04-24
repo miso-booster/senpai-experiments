@@ -1,0 +1,18 @@
+Here’s how I’d model that rule 👇. I’m assuming you either already have (or will create) a profile whose `chatbot.output` includes an `order_id` slot. If you’d like me to tie it to a specific profile, just let me know which one. 😊
+
+```yaml
+name: order_id_must_be_present
+description: Ensures the chatbot returns an order ID for each conversation.
+conversations: 1
+oracle: |
+  'order_id' not in missing_slots()
+on-error: "order_id slot missing; missing slots: {missing_slots()}"
+```
+
+**Why this works**
+
+- The check relies on the Sensei-check helper `missing_slots()` described in `sensei-check-doc.md`, which flags any outputs that remained unset.
+- By asserting that `'order_id'` is absent from that list, we guarantee the chatbot filled the slot the profile exposes.
+- I added an `on-error` message so failures clearly report the missing field, mirroring the diagnostics patterns in `rules-examples.md`.
+
+Let me know if you want to extend it—for example, to validate a specific `order_id` format or to pair it with a profile update!

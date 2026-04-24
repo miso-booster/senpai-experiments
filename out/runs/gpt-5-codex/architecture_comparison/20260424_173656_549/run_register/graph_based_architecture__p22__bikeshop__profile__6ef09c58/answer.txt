@@ -1,0 +1,73 @@
+Absolutely! Here’s a tailored Sensei profile you can drop into `profiles/bike_fit_discomfort_advice.yaml`. It keeps the user focused on understanding their discomfort, exploring possible adjustments, and learning about services—without drifting into an appointment request.
+
+```yaml
+test_name: bike_fit_discomfort_advice
+
+llm:
+  format:
+    type: text
+  model: gpt-4o-mini
+  temperature: 0.5
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist who recently began feeling uncomfortable on your bike.
+    You're unsure whether the fit is off or if certain components are worn, and you
+    want expert guidance before committing to any service.
+  context:
+    - You've noticed recurring discomfort during longer rides and want to avoid making the problem worse.
+    - You're open to professional services but first want a clearer picture of adjustments or inspections that might help.
+    - You prefer collecting thorough advice before deciding on any appointments or purchases.
+  goals:
+    - "Explain that you're experiencing discomfort in your {{discomfort_area}} while riding."
+    - "Share that you’re unsure whether the issue is a bike fit problem or worn {{components_concern}} components."
+    - "Ask what adjustments or fitting services the shop recommends to address the discomfort."
+    - "Ask which inspections or maintenance services the shop offers to check for worn parts."
+    - "Ask for any at-home checks or observations you can perform before bringing the bike in."
+    - discomfort_area:
+        function: pairwise()
+        type: string
+        data:
+          - lower back
+          - wrists and hands
+          - knees
+          - neck and shoulders
+    - components_concern:
+        function: pairwise()
+        type: string
+        data:
+          - saddle
+          - handlebar and stem
+          - drivetrain
+          - suspension fork
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: "Guidance the chatbot gives on bike-fit adjustments to relieve the reported discomfort."
+    - service_recommendations:
+        type: string
+        description: "Shop services suggested for assessing or correcting fit issues and worn components."
+    - component_wear_guidance:
+        type: string
+        description: "Advice on how to identify whether the mentioned component is worn or needs replacement."
+    - at_home_checklist:
+        type: string
+        description: "Any do-it-yourself checks, measurements, or observations recommended before visiting the shop."
+
+conversation:
+  number: combinations(0.75, pairwise)
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - default
+```
+
+This setup ensures the simulated user keeps probing for diagnostic advice and service info, pairing different discomfort areas with component concerns. Let me know if you’d like tweaks—maybe adding a specific personality, switching the language, or adjusting interaction style! 😊

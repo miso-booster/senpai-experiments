@@ -1,0 +1,83 @@
+conversation ID: one_node_architecture__p20__bikeshop__profile__7d1a2382
+$$$
+Here’s a fresh profile you can drop into your `profiles/` folder to probe how the chatbot handles wheel-change appointments across different dates and times:
+
+```yaml
+test_name: wheel_change_appointment
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist coordinating a wheel replacement at the bike shop.
+    You care about getting a firm appointment time and knowing what to expect.
+  context:
+    - Your bike’s wheels need to be replaced soon, and you want the shop to do it.
+    - You are flexible but want clarity on the exact day and time the shop can commit to.
+    - You’d appreciate any prep tips so the visit goes smoothly.
+  goals:
+    - "I need to schedule a wheel change on {{appointment_date}} at {{appointment_time}} for my {{bike_type}}."
+    - "Confirm that the wheel change includes checking wheel alignment."
+    - "Ask if I should do anything to prepare before bringing the bike in."
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - next Monday
+          - next Wednesday
+          - August 2nd
+          - August 5th
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - 09:00 AM
+          - 11:30 AM
+          - 02:15 PM
+          - 05:00 PM
+    - bike_type:
+        function: forward()
+        type: string
+        data:
+          - road bike
+          - mountain bike
+          - commuter bike
+
+chatbot:
+  is_starter: false
+  fallback: "I’m sorry, the shop is a bit noisy right now—could you repeat that?"
+  output:
+    - service_confirmation:
+        type: string
+        description: Confirmation that the appointment is for a wheel change.
+    - confirmed_date:
+        type: string
+        description: The date the assistant books or confirms for the wheel change.
+    - confirmed_time:
+        type: string
+        description: The time the assistant books or confirms for the wheel change.
+    - alignment_check_confirmation:
+        type: string
+        description: The assistant’s response about including a wheel alignment check.
+    - preparation_instructions:
+        type: string
+        description: Any guidance the assistant gives about preparing the bike before the appointment.
+    - alternative_slot_offered:
+        type: string
+        description: Any alternative date/time the assistant suggests if the requested slot is unavailable.
+
+conversation:
+  number: combinations
+  max_cost: 0.4
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - default
+```
+$$$

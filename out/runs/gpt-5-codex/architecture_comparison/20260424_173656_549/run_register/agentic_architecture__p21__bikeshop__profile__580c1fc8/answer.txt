@@ -1,0 +1,97 @@
+Hi there! 😊 Here’s a fresh Sensei Chat profile that simulates a user who just bought a bike and wants the shop to tailor the fit—specifically the saddle height and handlebar grips. I based the structure on the guidance from `sensei-chat-guide.md` and kept field naming aligned with existing artifacts like `bike_service_and_repair_inquirer.yaml` so future rules can reuse similar outputs.
+
+```yaml
+test_name: bike_fitting_customization
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A cyclist who recently purchased a new bike and wants the shop to dial in the fit,
+    focusing on seat height and handlebar grip comfort.
+  context:
+    - You bought a new bike last week and haven't had it professionally fitted.
+    - You're preparing for weekly group rides and want a comfortable yet efficient riding posture.
+    - You experience hand numbness and saddle discomfort on longer rides and want to address both.
+  goals:
+    - "Explain you recently bought a {{bike_type}} and want help dialing in the fit."
+    - "Mention you prefer a {{fit_preference}} riding position and ask for seat height guidance."
+    - "Ask how the shop can customize handlebar grips or recommend options to reduce hand fatigue."
+    - "Request an estimated price for a fitting plus grip replacement, including whether parts are covered."
+    - "Schedule an appointment for {{appointment_day}} at {{appointment_time}} to perform the adjustments."
+    - "Ask what you should bring to the appointment (e.g., cycling shoes or previous fit notes)."
+    - bike_type:
+        function: forward()
+        type: string
+        data:
+          - road bike
+          - mountain bike
+          - gravel bike
+    - fit_preference:
+        function: forward()
+        type: string
+        data:
+          - comfort-focused commuting
+          - endurance long-ride setup
+          - performance-oriented road racing
+    - appointment_day:
+        function: random()
+        type: string
+        data:
+          - this Saturday
+          - next Tuesday morning
+          - Friday afternoon
+    - appointment_time:
+        function: another()
+        type: string
+        data:
+          - 9:00 AM
+          - 11:30 AM
+          - 2:00 PM
+
+chatbot:
+  is_starter: false
+  fallback: I'm sorry it's a little loud in my shop, can you say that again?
+  output:
+    - fitting_services:
+        type: string
+        description: Details of the fitting services offered, especially seat and handlebar adjustments.
+    - seat_adjustment_guidance:
+        type: string
+        description: Specific recommendations the chatbot gives for optimizing saddle height or setback.
+    - handlebar_grip_options:
+        type: string
+        description: Suggested grip replacements or customization approaches for comfort.
+    - estimated_cost:
+        type: currency
+        description: The quoted cost for the fitting and any grip customization, including whether parts are included.
+    - appointment_details:
+        type: string
+        description: Confirmation of the scheduled appointment, including date, time, and service scope.
+    - preparation_instructions:
+        type: string
+        description: Any instructions on what to bring or how to prepare for the fitting appointment.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - default
+    - long phrases
+```
+
+**Why it’s set up this way**
+- **Goals & variables** cover the seat and handlebar customization requests and vary the bike type, fit preference, and appointment details.
+- **`chatbot.output`** captures everything we’ll likely want to validate later: services offered, guidance, cost, appointment confirmation, and prep details.
+- **Conversation controls** keep runs affordable and ensure the simulator keeps asking until every goal is addressed.
+
+Save it as something like `profiles/bike_fitting_customization.yaml`, and you’ll be ready to generate conversations for that scenario. Let me know if you want companion rules or tweaks!

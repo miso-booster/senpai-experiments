@@ -1,0 +1,94 @@
+Hey there! Congrats on the new bike 😊 Let’s spin up a Sensei profile that simulates someone visiting the shop to get their ride dialed in—seat swap, fresh grips, the whole comfy setup. Here’s a ready-to-use YAML you can drop into your project’s `profiles/` folder (maybe name it `bike_setup_customization_request.yaml`):
+
+```yaml
+test_name: bike_setup_customization_request
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and want it tailored to your riding preferences.
+    You’re particularly focused on swapping the saddle and handlebar grips for options
+    that improve comfort and control.
+  context:
+    - You mostly use the bike for commuting with occasional weekend rides.
+    - You prefer appointments so you can get everything fitted in one visit.
+    - You're open to expert recommendations if the shop has fitting specialists.
+  goals:
+    - Ask if the shop offers bike fitting or customization for new bikes.
+    - Ask about available seat options, mentioning you are considering a {{seat_type}} saddle.
+    - Ask about handlebar grip upgrades and mention you're looking at {{grip_material}} grips.
+    - Ask what the fitting or customization process includes and how seat adjustments are handled.
+    - Ask about pricing for installing the new saddle and grips.
+    - Ask to schedule a fitting appointment for {{appointment_date}} at {{appointment_time}}.
+    - seat_type:
+        type: string
+        function: pairwise()
+        data:
+          - ergonomic commuter saddle
+          - gel touring saddle
+          - performance road saddle
+    - grip_material:
+        type: string
+        function: pairwise()
+        data:
+          - cork bar tape
+          - silicone foam grips
+          - leather wrap grips
+    - appointment_date:
+        type: string
+        function: forward()
+        data:
+          - this Saturday
+          - next Tuesday
+          - next Thursday
+    - appointment_time:
+        type: string
+        function: another()
+        data:
+          - 10:30 AM
+          - 1:00 PM
+          - 4:15 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fitting_service_confirmation:
+        type: string
+        description: Confirmation that the shop offers bike fitting or customization services.
+    - seat_option_quote:
+        type: money
+        description: The quoted price for the requested saddle and installation.
+    - grip_option_quote:
+        type: money
+        description: The quoted price for the requested handlebar grips and installation.
+    - customization_process_details:
+        type: string
+        description: Details about how the customization/fitting process works, including seat adjustments.
+    - appointment_details:
+        type: string
+        description: Confirmation of the fitting appointment with date and time.
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    all_answered:
+      limit: 18
+      export: false
+  interaction_style:
+    - default
+  max_cost: 0.6
+```
+
+### Why it’s set up this way
+- **Pairwise coverage** on `seat_type` and `grip_material` keeps the variety high without exploding combos.
+- Outputs zero in on everything you’ll want to validate: service availability, quoted prices, process explanation, and appointment confirmation.
+- The appointment variables help ensure the bot can handle scheduling with realistic dates/times.
+
+If you need tweaks—maybe a different personality, extra goals, or another interaction style—just holler and I’ll help you adjust it. Happy testing! 🚴‍♂️✨

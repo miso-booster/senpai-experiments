@@ -1,0 +1,18 @@
+conversation ID: one_node_architecture__p36__pizza_shop__rule__2513e18d
+$$$
+Hey! The rule was firing on **every** pair of conversations where size and drink matched, even when both orders had the same (or fewer) toppings. Because there was no precondition, Sensei-check expected the first conversation to always be more expensive than the second, which isn’t guaranteed.
+
+Add an `if:` clause so the comparison only runs when conversation 0 genuinely has more toppings than conversation 1:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+That way the rule only checks the price relationship when the topping counts differ in the right direction. If `toppings` or `price` aren’t exported by your profile’s `chatbot.output`, make sure to add them there as well. Let me know if you’d like help double-checking that part!
+$$$

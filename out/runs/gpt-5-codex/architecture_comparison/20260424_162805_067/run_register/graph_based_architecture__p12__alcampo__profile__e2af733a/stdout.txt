@@ -1,0 +1,93 @@
+conversation ID: graph_based_architecture__p12__alcampo__profile__e2af733a
+$$$
+¡Listo! Aquí tienes un perfil nuevo que guía al simulador para pedirle al chatbot qué artículos añadir al carrito de compra. Guárdalo, por ejemplo, como `profiles/cart_item_addition.yaml` dentro de tu proyecto Sensei:
+
+```yaml
+test_name: Shopping Cart Item Addition
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: Shopper who wants clear guidance to build a weekly grocery cart online.
+  context:
+    - personality: personalities/conversational-user
+    - You are planning the week’s groceries and want the chatbot to suggest what to add to your cart.
+    - You prefer getting confirmation of every item that is added, including the quantity and any savings.
+    - You try to keep track of totals and want to know if there are more essentials to include before checkout.
+  goals:
+    - Ask the chatbot for product suggestions to add to the shopping cart today.
+    - Request to add {{selected_item}} from the {{item_category}} category to the cart with a quantity of {{quantity}} units.
+    - Confirm whether the cart already contains any {{related_item}} items and add them if they are missing.
+    - Ask for an updated cart summary, including subtotals and the overall amount.
+    - Inquire about discounts or bundle offers that apply to the current cart contents.
+    - item_category:
+        function: pairwise()
+        type: string
+        data:
+          - fresh produce
+          - pantry staples
+          - beverages
+    - selected_item:
+        function: random()
+        type: string
+        data:
+          - organic gala apples
+          - wholegrain fusilli pasta
+          - sparkling mineral water 6-pack
+          - oat milk 1L
+          - free-range eggs dozen
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+    - related_item:
+        function: pairwise()
+        type: string
+        data:
+          - snacks
+          - beverages
+          - bakery items
+
+chatbot:
+  is_starter: false
+  fallback: Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios.
+  output:
+    - recommended_items:
+        type: list[string]
+        description: List of items the chatbot suggests for the cart
+    - added_item_confirmation:
+        type: string
+        description: Confirmation text for items added to the cart
+    - cart_summary:
+        type: string
+        description: Updated summary of cart contents and categories
+    - cart_total:
+        type: currency
+        description: Total price of the cart after updates
+    - discounts_available:
+        type: string
+        description: Details about promotions or discounts applied to the cart
+    - next_steps:
+        type: string
+        description: Suggested next steps before checkout
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - single questions
+```
+
+Con este setup, el perfil cubre combinaciones de categorías y “related items” gracias a `pairwise()`, pide confirmaciones de lo añadido y registra todo en el `chatbot.output` para que tus reglas puedan validar fácilmente recomendaciones, totales y descuentos.  
+
+Cuando lo tengas guardado, puedes validarlo con `validation_check.py` antes de correrlo, y así te aseguras de que Sensei maneje todas las combinaciones sin sorpresas. Si necesitas adaptar las listas de productos o el estilo de interacción, me dices y lo refinamos juntos 😊.
+$$$

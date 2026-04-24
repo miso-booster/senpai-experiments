@@ -1,0 +1,21 @@
+conversation ID: agentic_architecture__p35__pizza_shop__rule__82890557
+$$$
+Hey there! 👋 I dug into the docs (`sensei-check-doc.md`, `rules-examples.md`, and `sensei-chat-guide.md`) and inspected our pizza-related profiles. Here’s what I found:
+
+### Candidate profiles for the rule
+1. **`pizza_order_test_custom.yml`**  
+   - `chatbot.output` fields: `price`, `time`, `order_id`.  
+   - Pros: clean `price` slot we can test.  
+   - Gap: there’s no structured `size` field, so we can’t directly tell when the order was for a small pizza unless we add a new output (e.g., `selected_size`).
+
+2. **`pizza_and_drink_order_placement.yaml`**  
+   - `chatbot.output` fields: `pizza_options`, `drink_options`, `order_summary`, `total_cost`, `estimated_readiness_time`, `pickup_location`, `order_id`.  
+   - Pros: `order_summary` likely mentions the pizza size.  
+   - Gaps: price is stored as `total_cost`, which may include drinks, and we’d still need to parse “small” from a free-form summary string—kinda brittle.
+
+To enforce “small pizzas cost exactly $10” we either:
+- Target `pizza_order_test_custom.yml` and **add** a `selected_size` slot (plus maybe ensure the conversation isolates pizza price), or
+- Pick another profile (or create a new one) that already exposes both `size` and `price` separately.
+
+Could you let me know which profile you want this rule tied to, and whether you’re okay with updating its `chatbot.output` to include the pizza size? 😊
+$$$

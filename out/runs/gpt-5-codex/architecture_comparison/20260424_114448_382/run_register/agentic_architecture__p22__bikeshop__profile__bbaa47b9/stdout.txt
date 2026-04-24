@@ -1,0 +1,92 @@
+conversation ID: agentic_architecture__p22__bikeshop__profile__bbaa47b9
+$$$
+Here’s a profile draft that captures the “discomfort while riding” scenario and keeps the user focused on advice rather than booking:
+
+```yaml
+test_name: "bike_fit_discomfort_advice"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist feeling discomfort during rides and you want guidance on
+    whether the issue comes from bike fit or worn components.
+  context:
+    - "You commute and train several times a week and recently noticed discomfort even on shorter rides."
+    - "You usually maintain your bike at home but rely on a trusted local shop for deeper inspections."
+    - "You are budget-conscious and prefer to understand options before committing to a service."
+  goals:
+    - "Explain that you feel discomfort primarily in your {{pain_area}} after rides."
+    - "Describe your bike as a {{bike_type}} with components that are {{component_age}} and ask if wear could be causing the issue."
+    - "Ask what fit adjustments or assessments the shop recommends to diagnose the discomfort."
+    - "Ask what maintenance or component inspection services the shop offers that address your concerns."
+    - "Ask about expected turnaround time and approximate cost range for those services."
+    - "Clarify that you're seeking advice only right now and not ready to book an appointment."
+    - pain_area:
+        function: random()
+        type: string
+        data:
+          - lower back
+          - right knee
+          - neck and shoulders
+          - wrists and hands
+    - bike_type:
+        function: random()
+        type: string
+        data:
+          - road bike
+          - gravel bike
+          - commuter bike
+    - component_age:
+        function: random()
+        type: string
+        data:
+          - about 1 year old
+          - about 2 years old
+          - recently replaced
+          - more than 3 years old
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you rephrase that so I can help you better?"
+  output:
+    - suggested_fit_adjustments:
+        type: list[string]
+        description: "Recommended bike fit changes or rider adjustments to reduce discomfort."
+    - suggested_service_offers:
+        type: list[string]
+        description: "Services the shop proposes to evaluate bike fit or component wear."
+    - service_time_estimate:
+        type: string
+        description: "Any timing guidance or turnaround mentioned for the services."
+    - estimated_cost_range:
+        type: string
+        description: "Cost guidance provided for adjustments or services, if any."
+    - invitation_to_book:
+        type: string
+        description: "Whether the chatbot pushed for booking despite the user wanting advice only."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - default
+```
+
+### Why these choices?
+- The goals mirror the rider’s uncertainty—one asks about fit, another about worn components, and there’s a clear note that the user isn’t ready to book.
+- Variables (`pain_area`, `bike_type`, `component_age`) keep conversations varied while staying true to the scenario.
+- `chatbot.output` tracks the critical advice we expect: adjustments, services, timing, cost, plus whether the bot pushes for an appointment (useful for future rules).
+
+Reference: I followed the structure and best practices from `sensei-chat-guide.md` to make sure the profile aligns with Sensei Chat expectations.
+
+Let me know if you’d like tweaks to the goals, interaction style, or the outputs!
+$$$

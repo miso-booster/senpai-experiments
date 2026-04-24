@@ -1,0 +1,32 @@
+conversation ID: graph_based_architecture__p36__pizza_shop__rule__4898184c
+$$$
+Hey there! 👋 Thanks for sharing the rule. I can see why it isn’t behaving the way you expect. Right now, the rule only specifies that whenever two conversations have the same `size` and `drink`, `conv[0]` must always cost more than `conv[1]`. But there’s no condition stating *why* `conv[0]` should be more expensive—so Sensei-check treats **every** pair with matching size and drink as if the first one must cost more, even when it actually has fewer toppings. That’s why it’s failing.
+
+To make this metamorphic test meaningful, we need to add an `if:` clause that captures the intended change — i.e., when `conv[0]` has **more toppings** than `conv[1]`. That way, the higher price expectation only kicks in for the right pairs.
+
+Here’s a fixed version you can drop in:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+If you also track the number of pizzas (e.g., `conv[0].number`), it’s a good idea to include that in the `when:` filter to avoid comparing different quantities:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+active: true
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Give that a try, and let me know if Sensei-check still complains—we’ll figure it out together! 😊
+$$$

@@ -1,0 +1,97 @@
+conversation ID: one_node_architecture__p20__bikeshop__profile__249eb4de
+$$$
+Hey there! Here’s a fresh Sensei profile that exercises different day/time combinations while the user tries to book a wheel change appointment. Hope it fits your testing flow! 🚲✨
+
+```yaml
+test_name: wheel_change_appointment
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who needs a wheel change and wants to lock in an appointment
+    at the bike shop. You’re detail-oriented about dates and times and want clear
+    confirmations.
+  context:
+    - You rely on your bike for daily commuting and want both wheels swapped promptly.
+    - You prefer the shop to double-check availability and offer alternatives if needed.
+    - You appreciate reminders so you won’t miss your scheduled service.
+  goals:
+    - "I need to schedule a wheel change for my {{bike_type}} bike on {{appointment_date}} at {{appointment_time}}."
+    - "Confirm the details of the wheel replacement service, including if both wheels are covered."
+    - "If that slot isn’t available, ask to reschedule to {{alternate_date}} at {{alternate_time}}."
+    - "Request a reminder so I don’t forget the appointment."
+    - bike_type:
+        function: forward()
+        type: string
+        data: [road, mountain, commuter, gravel]
+    - appointment_date:
+        function: forward(bike_type)
+        type: string
+        data:
+          - next Monday
+          - next Wednesday
+          - March 12th
+          - April 2nd
+    - appointment_time:
+        function: forward(appointment_date)
+        type: string
+        data:
+          - "09:00"
+          - "14:30"
+          - "11:15"
+          - "16:45"
+    - alternate_date:
+        function: forward(appointment_date)
+        type: string
+        data:
+          - next Thursday
+          - next Friday
+          - March 14th
+          - April 5th
+    - alternate_time:
+        function: forward(alternate_date)
+        type: string
+        data:
+          - "10:30"
+          - "13:00"
+          - "09:45"
+          - "15:15"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - service_confirmation:
+        type: string
+        description: "Confirmation that a wheel change service can be scheduled."
+    - scheduled_date:
+        type: date("month day, year or relative date")
+        description: "The date the chatbot confirms for the wheel change appointment."
+    - scheduled_time:
+        type: time("HH:MM")
+        description: "The time the chatbot confirms for the appointment."
+    - reschedule_outcome:
+        type: string
+        description: "The chatbot's response when the user asks to reschedule."
+    - reminder_confirmation:
+        type: string
+        description: "Acknowledgement or details about sending an appointment reminder."
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+$$$

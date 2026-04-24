@@ -1,0 +1,66 @@
+Here’s the bike shop customer profile you asked for! I leaned on the structure and best practices from `sensei-chat-guide.md` to shape the goals, interaction style, and `chatbot.output` contract so future rules can latch onto the hours, prices, and maintenance advice the bot should deliver.
+
+```yaml
+test_name: "bike_shop_service_info"
+
+llm:
+  temperature: 0.2
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer contacting a local bike shop's virtual assistant to confirm
+    standard information before visiting.
+  context:
+    - "Speak in clear, direct English questions like a typical customer."
+    - "Stay focused on store hours, pricing for standard services, and basic bike care advice."
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery, or other unrelated services."
+  goals:
+    - "Greet the assistant briefly and ask for the shop's opening time and closing time."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Request general advice on how to take care of a bike, emphasizing basic maintenance and good practices."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you please rephrase that?"
+  output:
+    - opening_time:
+        type: string
+        description: "Stated opening time for the bike shop."
+    - closing_time:
+        type: string
+        description: "Stated closing time for the bike shop."
+    - new_tire_price:
+        type: currency
+        description: "Quoted price for a new bike tire."
+    - tune_up_price:
+        type: currency
+        description: "Quoted price for a standard bike tune-up."
+    - new_seat_price:
+        type: currency
+        description: "Quoted price for a new bike seat."
+    - maintenance_advice:
+        type: string
+        description: "Summary of general bike care advice provided."
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      limit: 12
+  interaction_style:
+    - single questions
+```
+
+**What to expect:**
+- The simulated user stays laser-focused on hours, key service prices, and basic maintenance advice—perfect for testing whether the assistant sticks to relevant information and uses proper bike-shop terminology.
+- `interaction_style: single questions` nudges the simulator to ask each item clearly in separate turns, matching the “normal customer” vibe.
+- The output fields capture each required response so you can validate accuracy later (e.g., with a follow-up rule set).
+
+Let me know if you’d like variants (e.g., weekend vs weekday hours) or companion rules next! 🚴‍♀️

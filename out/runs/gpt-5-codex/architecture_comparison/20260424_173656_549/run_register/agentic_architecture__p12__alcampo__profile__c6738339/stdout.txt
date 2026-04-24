@@ -1,0 +1,116 @@
+conversation ID: agentic_architecture__p12__alcampo__profile__c6738339
+$$$
+Here’s a fresh Sensei Chat profile that urges the bot to recommend and add shopping-cart items 🚛🛒
+
+```yaml
+test_name: "shopping_cart_additions_smoke"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a detail-oriented online shopper assembling a cart and making sure
+    everything stays under budget. Ask clear follow-up questions, double-check
+    stock, and push for helpful add-ons.
+  context:
+    - "You are deciding between two major retailers and want the better deal."
+    - "You prefer items that ship within three business days."
+    - "You care about sustainable or compact packaging when possible."
+  goals:
+    - "Ask the assistant to recommend must-have items for a {{shopping_theme}} shopping cart."
+    - "Request that the assistant add {{item_request_one}} x{{qty_one}} and {{item_request_two}} x{{qty_two}} to your cart."
+    - "Make sure the running total stays below {{budget_limit}} and confirm stock availability."
+    - "Ask whether there are extra accessories that pair well with {{shopping_theme}} purchases."
+    - shopping_theme:
+        function: pairwise()
+        type: string
+        data:
+          - home office refresh
+          - kitchen upgrade
+          - gaming setup
+          - fitness starter kit
+    - item_request_one:
+        function: pairwise()
+        type: string
+        data:
+          - ergonomic desk chair
+          - stainless steel cookware set
+          - RGB mechanical keyboard
+          - adjustable dumbbells
+    - item_request_two:
+        function: pairwise()
+        type: string
+        data:
+          - wireless mouse
+          - high-speed blender
+          - noise-cancelling headset
+          - foam yoga mat
+    - qty_one:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+    - qty_two:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+    - budget_limit:
+        function: random()
+        type: string
+        data:
+          - "$150"
+          - "$200"
+          - "$275"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn’t quite catch that. Could you rephrase?"
+  output:
+    - items_added:
+        type: list[string]
+        description: "Items the chatbot confirmed adding to the shopper’s cart."
+    - estimated_total:
+        type: float
+        description: "Bot-provided running total for the cart in the stated currency."
+    - availability_confirmation:
+        type: string
+        description: "Summary of stock or back-order status shared by the bot."
+    - additional_suggestions:
+        type: list[string]
+        description: "Any extra accessories or bundles the bot proposed."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+### Why it fits
+- The user persona keeps pressing for cart additions, budget checks, and complementary items—exactly what you asked for.
+- Pairwise variables (`shopping_theme`, `item_request_one`, `item_request_two`) generate varied cart scenarios while keeping coverage tight.
+- `chatbot.output` captures the essentials future rules might need: which items were added, the running total, stock status, and upsell ideas.
+- Conversation controls limit cost/length and add a bit of realistic friction (long phrases, occasional second thoughts, light randomness).
+
+### Doc tie-in
+I followed the structure and best practices outlined in `sensei-chat-guide.md`, especially for organising `user.goals`, using pairwise coverage, and defining `chatbot.output` so rules can later reference fields like `conv[i].items_added`.
+
+Let me know if you’d like a variant (different language, another interaction style, etc.) and I’ll tweak it!
+$$$

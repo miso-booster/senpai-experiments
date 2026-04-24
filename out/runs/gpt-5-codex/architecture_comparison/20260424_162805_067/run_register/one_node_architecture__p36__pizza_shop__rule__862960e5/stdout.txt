@@ -1,0 +1,16 @@
+conversation ID: one_node_architecture__p36__pizza_shop__rule__862960e5
+$$$
+Hey there! The rule is failing because it now enforces `extract_float(conv[0].price) > extract_float(conv[1].price)` for **every** pair of conversations where `size` and `drink` match. Sensei doesn’t guarantee any ordering of the `conv` list, so sometimes `conv[0]` actually has *fewer* toppings than `conv[1]`, making the inequality flip and the rule fail.
+
+To make it metamorphic again, add back the precondition that checks whether `conv[0]` truly has more toppings than `conv[1]`. That way the price comparison only runs when it should. Here’s the fixed version (remember to keep the field names aligned with your profile’s `chatbot.output`; if you export `total_cost` instead of `price`, update the rule accordingly 😊):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+$$$

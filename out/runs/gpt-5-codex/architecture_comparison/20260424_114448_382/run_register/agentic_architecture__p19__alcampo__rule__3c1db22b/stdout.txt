@@ -1,0 +1,35 @@
+conversation ID: agentic_architecture__p19__alcampo__rule__3c1db22b
+$$$
+Here’s a general Sensei-check rule you can drop into your project to ensure the assistant actually talks about current promotions 😊:
+
+```yaml
+name: chatbot_mentions_current_promotions
+description: Ensures the assistant shares details about current promotions or discounts.
+conversations: 1
+active: true
+oracle: |
+  (
+    bool(chatbot_returns('current promotion')) or
+    bool(chatbot_returns('current promotions')) or
+    bool(chatbot_returns('promotion')) or
+    bool(chatbot_returns('promotions')) or
+    bool(chatbot_returns('discount')) or
+    bool(chatbot_returns('discounts')) or
+    bool(chatbot_returns('deal')) or
+    bool(chatbot_returns('deals')) or
+    bool(chatbot_returns('offer')) or
+    bool(chatbot_returns('offers'))
+  ) and semantic_content(
+    chatbot_phrases,
+    'the assistant provides information about current promotions, discounts, or special offers available right now'
+  )
+on-error: |
+  "No clear mention of current promotions was found in the assistant replies."
+```
+
+### Why this works
+- It stays profile-agnostic (as you requested) by relying only on general helpers like `chatbot_returns` and `semantic_content`, which are documented in **sensei-check-doc.md**.
+- The pattern of checking keyword mentions and semantic alignment mirrors the generic examples shown in **rules-examples.md**, ensuring the rule is robust without depending on any particular `chatbot.output` schema.
+
+Let me know if you’d like to tweak the keyword list or add a different failure message!
+$$$

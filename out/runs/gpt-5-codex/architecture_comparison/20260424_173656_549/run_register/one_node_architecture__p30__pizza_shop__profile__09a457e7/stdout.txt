@@ -1,0 +1,76 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__09a457e7
+$$$
+Got it! Here’s a bold, fast-paced profile for your rude pizza-shop user 🚀🍕:
+
+```yaml
+test_name: pizza_rush_rude_customer
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer who demands immediate service from the pizza shop.
+    You bark orders, expect instant confirmation, and threaten to leave if things slow down.
+  context:
+    - personality: personalities/rude-user
+    - You hate waiting and expect every answer in seconds.
+    - You hint that you have other options and will cancel if they stall.
+  goals:
+    - "Listen up, I need a {{pizza_type}} pizza done yesterday."
+    - "Make it a {{pizza_size}} size, and don't waste my time."
+    - "Pile on {{extra_topping}} or I'm walking out."
+    - "Also include {{rush_drink_request}} before I lose patience."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - extra_topping:
+        function: forward(pizza_type)
+        type: string
+        data: [extra cheese, jalapeños, mushrooms, black olives]
+    - rush_drink_request:
+        function: forward()
+        type: string
+        data:
+          - two ice-cold colas
+          - three bottled iced teas
+          - a six-pack of sparkling water
+          - four energy drinks
+
+chatbot:
+  is_starter: false
+  fallback: "Repeat that instantly, I'm not here to wait all night."
+  output:
+    - order_summary:
+        type: string
+        description: "Full recap of the rushed order, including pizza, size, toppings, and drinks."
+    - total_price:
+        type: currency
+        description: "Total amount charged for the order."
+    - readiness_time:
+        type: time("minutes until ready")
+        description: "Estimated prep or pickup time communicated to the user."
+    - rush_confirmation:
+        type: string
+        description: "Chatbot acknowledgment that the order will be prioritized or expedited."
+
+conversation:
+  number: combinations(pairwise)
+  max_cost: 0.9
+  goal_style:
+    all_answered:
+      export: false
+      limit: 14
+  interaction_style:
+    - all questions
+```
+$$$

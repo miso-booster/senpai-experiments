@@ -1,0 +1,49 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__606f43fa
+$$$
+¡Hola! Tu perfil “Usuarios Nuevos y Admisiones” ya expone un montón de información útil, así que puedes empezar a probarlo con algunas reglas sencillas que verifiquen la calidad de esos datos. Aquí van tres propuestas pensadas específicamente para este perfil:
+
+1. **Los enlaces clave deben ser URLs válidas**  
+   Comprueba que los cuatro recursos principales se devuelvan como enlaces bien formados.
+
+```yaml
+name: admissions_links_are_urls
+description: Verifies key admissions links are valid URLs for usuarios_nuevos_y_admisiones
+conversations: 1
+active: true
+oracle: all(
+  link is not None and link.lower().startswith('http')
+  for link in [
+    admission_to_grados_link,
+    waitlist_info_link,
+    future_students_link,
+    welcome_day_link
+  ]
+)
+```
+
+2. **La tasa de solicitud debe ser positiva**  
+   Si el chatbot proporciona el costo de la solicitud, asegúrate de que sea un valor numérico mayor que cero.
+
+```yaml
+name: application_fee_is_positive
+description: Ensures the application_fee is a positive amount when provided
+conversations: 1
+active: true
+when: application_fee is not None
+oracle: extract_float(application_fee) > 0
+```
+
+3. **Fecha y hora del Welcome Day van juntas**  
+   Si el bot informa la fecha del evento, debería acompañarla con la hora correspondiente.
+
+```yaml
+name: welcome_day_fields_are_paired
+description: Welcome Day must return both date and time when date is present
+conversations: 1
+active: true
+if: welcome_day_date is not None
+then: welcome_day_time is not None
+```
+
+Con estas reglas ya tendrás un buen primer termómetro de tus conversaciones. Pruébalas y, si detectas algún patrón adicional en las respuestas del bot (por ejemplo, formato de contacto, requisitos de admisión, etc.), podemos seguir ampliando la cobertura. ¿Te gustaría que trabajemos en alguna otra verificación más adelante? 😊
+$$$

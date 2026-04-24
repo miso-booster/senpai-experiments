@@ -1,0 +1,26 @@
+Here’s a draft rule you can drop into the `rules/` directory once you have a matching profile. It assumes the future profile will expose `product_name`, `is_lactose_free`, and `availability_status` in its `chatbot.output`.
+
+```yaml
+name: lactose_free_availability_disclosed
+description: Lactose-free products must report a concrete availability status.
+active: true
+conversations: 1
+if: is_lactose_free is True
+then: availability_status not in [None, '', 'unknown']
+on-error: f"Lactose-free product {product_name} is missing a clear availability status (got: {availability_status})"
+```
+
+### How it works
+- **Trigger condition (`if`)**: the conversation is about a lactose-free product.
+- **Expectation (`then`)**: the assistant must surface a meaningful availability status (anything other than `None`, empty, or `unknown` counts as acceptable).
+- **Error message**: surfaces the product name and the status that failed the check for easier debugging.
+
+### What to prepare in your profile
+When you build the corresponding SENSEI Chat profile, make sure its `chatbot.output` includes:
+- `product_name` (string) – the item being discussed.
+- `is_lactose_free` (boolean) – whether the item meets the lactose-free requirement.
+- `availability_status` (string) – values like `in_stock`, `limited_stock`, `out_of_stock`, etc.
+
+Once those slots exist, this rule will validate that lactose-free items always come with a clear availability answer.
+
+*(Reference: `sensei-check-doc.md` for rule structure and rule-first guidance.)* Let me know if you’d like to evolve this into a metamorphic rule or pair it with the profile!

@@ -1,0 +1,43 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__f08072e6
+$$$
+¡Hola! 😊 Esa profile está súper completa, así que vale la pena probarla con reglas que aseguren que los campos críticos se están rellenando y que la información tiene el formato esperado. Aquí tienes algunas reglas sugeridas para empezar:
+
+1. **Cobertura básica**: comprueba que ningún campo del `chatbot.output` se quede vacío.
+```yaml
+name: admissions_outputs_complete
+description: Todos los campos del perfil de admisiones están poblados
+conversations: 1
+oracle: data_collected()
+on-error: f"Faltan campos: {missing_slots()}"
+```
+
+2. **Consistencia del Welcome Day**: si se menciona el evento, debería venir acompañado de detalles clave.
+```yaml
+name: welcome_day_details_consistent
+description: Si hay información del Welcome Day, también debe incluir fecha, hora y ubicación
+conversations: 1
+if: welcome_day_link not in [None, ""]
+then: welcome_day_date is not None and welcome_day_time is not None and event_location not in [None, ""]
+on-error: "Faltan detalles del Welcome Day cuando se proporciona el enlace."
+```
+
+3. **URLs reales**: asegura que los enlaces principales tienen formato de URL.
+```yaml
+name: admissions_links_are_urls
+description: Los enlaces críticos de admisiones deben parecer URLs válidas
+conversations: 1
+oracle: all("http" in link for link in [admission_to_grados_link, waitlist_info_link, future_students_link, welcome_day_link])
+on-error: "Alguno de los enlaces clave no parece una URL."
+```
+
+4. **Tarifa de solicitud sensata**: verifica que el coste de la solicitud tiene importe y moneda extraíbles.
+```yaml
+name: application_fee_has_amount_and_currency
+description: La tarifa de solicitud incluye importe y moneda
+conversations: 1
+oracle: extract_float(application_fee) >= 0 and currency(application_fee) not in [None, ""]
+on-error: "La tarifa de solicitud no tiene importe o moneda correctos."
+```
+
+Con estas reglas puedes validar enseguida si el perfil devuelve información completa, coherente y con el formato esperado. ¿Te gustaría que luego revisemos los resultados juntos?
+$$$

@@ -1,0 +1,20 @@
+A metamorphic rule in Sensei is a validation that compares **multiple conversations at once** instead of judging a single dialogue in isolation. According to *sensei-check-doc.md*, these rules (a) select pairs or tuples of conversations that share some controlled context via a `when:` filter, and then (b) assert how the chatbot’s outputs should relate when certain inputs change (or stay constant). You typically express the relationship with an `if`/`then` implication or a single boolean `oracle`, using expressions like `conv[0].price` or helper functions such as `extract_float` or `language`.
+
+Why use them?
+
+- **Ceteris paribus checks:** Hold key inputs equal and make sure outputs stay consistent (e.g., same pizza size and drink ⇒ same price).
+- **Monotonic relations:** When one input grows, the output should move in the expected direction (e.g., more toppings ⇒ higher price).
+- **Invariance:** Certain style or policy behaviours should not drift between comparable cases (e.g., both answers remain in English).
+
+Example from the docs:  
+
+```yaml
+name: size_monotonicity
+description: small ≤ medium ≤ large (same pizza type & drinks)
+conversations: 2
+when: conv[0].pizza_type == conv[1].pizza_type and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   conv[0].size in ['small','medium'] and conv[1].size in ['medium','large']
+then: extract_float(conv[0].price) <= extract_float(conv[1].price)
+```
+
+Here, two conversations with matching toppings/drinks are compared; the rule enforces that the larger pizza isn’t cheaper. That’s the essence of metamorphic testing in Sensei: define expectations over *relations across conversations* rather than absolute single-case answers.

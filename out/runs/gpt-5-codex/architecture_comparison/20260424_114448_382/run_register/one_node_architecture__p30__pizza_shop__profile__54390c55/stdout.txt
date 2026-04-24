@@ -1,0 +1,79 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__54390c55
+$$$
+You got it! Here’s a fresh profile that captures a super impatient (and quite rude) customer who wants everything handled ASAP. I made sure there are exactly four goals, each tied to its own variable, with two variables using `pairwise()` so the conversation count can rely on the pairwise matrix 🎯.
+
+```yaml
+test_name: fast_rude_pickup
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer who expects the pizza shop
+    to fulfill requests immediately and complains if things are not fast enough.
+  context:
+    - personality: personalities/rude-user
+    - You are in a rush and hate repeating yourself.
+    - If the assistant hesitates, you get snappy right away.
+  goals:
+    - "I'm grabbing a {{pizza_type}} pizza—confirm you can get it started now."
+    - "Make it size {{pizza_size}} because I don't have time for second trips."
+    - "Add {{topping_request}} and don't slow down to ask questions."
+    - "Pack a {{drink_choice}} with it so I can leave immediately."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, BBQ Chicken, Vegetarian, Custom]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - topping_request:
+        function: another()
+        type: string
+        data: [extra pepperoni, double cheese, jalapeños, mushrooms, olives]
+    - drink_choice:
+        function: forward()
+        type: string
+        data: [Cola, Sparkling Water, Iced Tea, Lemonade]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can hurry up with pizza and drink orders."
+  output:
+    - pizza_type:
+        type: string
+        description: Confirmed pizza style the customer demanded.
+    - size:
+        type: string
+        description: Pizza size agreed upon in the order.
+    - toppings:
+        type: list[string]
+        description: List of toppings added to the pizza.
+    - drink:
+        type: string
+        description: Drink that was added to the order.
+    - price:
+        type: currency
+        description: Total price quoted for the rushed order.
+    - pickup_ready_time:
+        type: string
+        description: Estimated time or window when the order will be ready.
+    - order_id:
+        type: string
+        description: Reference number for the order.
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 4
+    max_cost: 0.9
+  interaction_style:
+    - all questions
+```
+$$$

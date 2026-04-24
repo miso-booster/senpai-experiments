@@ -1,0 +1,85 @@
+conversation ID: one_node_architecture__p34__pizza_shop__profile__d2b7de26
+$$$
+Sure thing! Here's a profile tailor-made for that scenario where the user starts with a custom pizza request but pivots to a predefined option halfway through. 🍕✨
+
+```yaml
+test_name: custom_to_predefined_switcher
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.7
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who initially wants a fully custom pizza but tends to second-guess
+    yourself. You start by requesting a custom build and later decide a predefined menu
+    option is easier.
+  context:
+    - You're planning dinner for yourself after a long day and want something tasty but quick.
+    - You usually enjoy experimenting with toppings but worry it might take longer to prepare.
+    - You're picking up the order on your way home.
+  goals:
+    - "I'd like to build a custom pizza with a {{custom_size}} crust and toppings like {{custom_toppings}}."
+    - "Ask for the price or any details about that custom pizza."
+    - "Change your mind and ask if there are predefined pizzas available instead."
+    - "Select the {{predefined_size}} {{predefined_pizza}} pizza from the options the assistant gives."
+    - "Ask the assistant to update the order to that predefined pizza, confirm the total cost, and provide an order confirmation."
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - custom_toppings:
+        function: random()
+        type: string
+        data:
+          - pepperoni and mushrooms
+          - roasted vegetables and olives
+          - grilled chicken and jalapeños
+          - spinach, feta, and tomatoes
+    - predefined_pizza:
+        function: forward()
+        type: string
+        data: [Margherita, Pepperoni, BBQ Chicken, Four Cheese]
+    - predefined_size:
+        function: forward(predefined_pizza)
+        type: string
+        data: [small, medium, large]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can help you customize a pizza or pick one from our menu."
+  output:
+    - custom_pizza_response:
+        type: string
+        description: Assistant's response to the initial custom pizza request, including any questions or confirmation about toppings.
+    - predefined_pizza_options:
+        type: string
+        description: List or description of predefined pizzas offered when the user changes their mind.
+    - final_pizza_selection:
+        type: string
+        description: The predefined pizza and size the assistant confirms as the final choice.
+    - total_cost:
+        type: money
+        description: The total cost of the finalized predefined pizza order.
+    - order_confirmation:
+        type: string
+        description: Confirmation message that the order has been updated to the predefined pizza.
+    - order_id:
+        type: string
+        description: Unique identifier or reference number for the finalized order.
+
+conversation:
+  number: 4
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+$$$

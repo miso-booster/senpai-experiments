@@ -1,0 +1,11 @@
+¡Perfecto! Aquí tienes una regla metamórfica para comprobar que, si dos conversaciones piden exactamente la misma cita, la segunda no quede confirmada:
+
+```yaml
+name: rechaza_cita_duplicada
+description: Si dos conversaciones piden la misma fecha, hora y servicio, la segunda no debe confirmarse.
+conversations: 2
+when: conv[0].ap_date == conv[1].ap_date and conv[0].hour == conv[1].hour and conv[0].service == conv[1].service
+if: conv[0].confirmed_date is not None and conv[0].confirmed_time is not None
+then: conv[1].confirmed_date is None and conv[1].confirmed_time is None
+on-error: f"La segunda conversación confirmó la misma cita: {conv[1].confirmed_date} a las {conv[1].confirmed_time}"
+```

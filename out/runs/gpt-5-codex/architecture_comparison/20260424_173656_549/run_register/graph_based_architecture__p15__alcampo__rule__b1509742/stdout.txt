@@ -1,0 +1,29 @@
+conversation ID: graph_based_architecture__p15__alcampo__rule__b1509742
+$$$
+Here you go! I fixed the typo in `description`, added the missing `then` clause, and tightened the logic so the rule really checks that the contact options include the same customer-service number provided in the second conversation. Feel free to drop this straight into your project:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides consistent contact options and the customer service number.
+conversations: 2
+when: >
+  conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: >
+  bool(conv[0].contact_options) and bool(conv[1].customer_service_number) and
+  len(''.join(filter(str.isdigit, str(conv[1].customer_service_number)))) >= 3
+then: >
+  ''.join(filter(str.isdigit, str(conv[1].customer_service_number))) in
+  ''.join(filter(str.isdigit, (' '.join(conv[0].contact_options) if isinstance(conv[0].contact_options, list) else str(conv[0].contact_options))))
+on-error: >
+  f"Contact options {conv[0].contact_options!r} did not include customer service number {conv[1].customer_service_number!r}"
+```
+
+This version makes sure:
+
+* We only run the check when both conversations match the right requests.
+* Both outputs are present and the customer-service number looks like a real phone number (at least three digits).
+* The digits from the number in conversation 1 are also present in the contact options from conversation 0 (so hyphens/spaces don’t break the match).
+* You get a friendly failure message pointing out the mismatch.
+
+Let me know if you’d like to extend it to validate additional contact channels or handle other formats! 😊
+$$$

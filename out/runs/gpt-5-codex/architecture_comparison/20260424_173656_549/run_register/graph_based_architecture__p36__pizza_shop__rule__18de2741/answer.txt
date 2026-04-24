@@ -1,0 +1,21 @@
+Hey there! 😊
+
+The reason your rule isn’t firing is because it’s missing the trigger that tells Sensei-check *when* to compare the prices. Right now, the rule just says “same size and drink ⇒ conv[0] must be more expensive than conv[1].” But it never specifies that **conv[0] is the order with more toppings**. Without that `if` precondition, Sensei-check can’t understand the “more toppings” scenario—and it will happily pair up conversations that don’t actually have that relationship.
+
+Let’s add the missing piece so the rule runs only when `conv[0]` truly has more toppings than `conv[1]`. I’d also keep the other confounders (size and drink) in the `when:` filter, just like you had.
+
+Here’s the fixed version:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+✳️ With this `if`, Sensei-check now knows it should only enforce the price comparison when the topping count is actually higher. Give it a spin and you should see the rule behaving as expected. If you want to tighten it further (say, matching pizza quantity), you can extend the `when:` clause just like in your existing project rule.
+
+Let me know if you’d like help adding extra filters or crafting metamorphic companions for other pricing scenarios! 🍕

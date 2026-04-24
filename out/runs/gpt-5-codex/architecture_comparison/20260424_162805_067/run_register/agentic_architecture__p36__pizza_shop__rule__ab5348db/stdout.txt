@@ -1,0 +1,18 @@
+conversation ID: agentic_architecture__p36__pizza_shop__rule__ab5348db
+$$$
+Hi! The rule is failing because it declares a `then` clause without the matching `if`. Per the syntax shown in `sensei-check-doc.md` (and the working example in `rules-examples.md`), `then` must always be paired with an `if` predicate that narrows the cases you want to enforce. Without it, Sensei-check evaluates the price inequality for every pair that passes the `when`, even if the first conversation doesn’t actually have more toppings—so the comparison breaks (and some implementations even flag the missing `if` as invalid).
+
+Here’s the corrected version that reinstates the precondition:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+👀 One more thing: this rule expects the underlying profile to expose `size`, `drink`, `toppings`, and `price` in its `chatbot.output`. I skimmed profiles like `pizza_order_test_custom.yml` and `pizza_and_drink_order_placement.yaml` and didn’t see all of those fields, so please confirm which profile you’re targeting or adjust the profile outputs accordingly. Let me know if you’d like help aligning the profile and rule!
+$$$

@@ -1,0 +1,27 @@
+conversation ID: graph_based_architecture__p39__pizza_shop__rule__06d56170
+$$$
+Aquí tienes, sensei 👇😊
+
+```yaml
+name: drink
+description: Adding a drink increases the total by exactly $2 for the same pizza configuration
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].number == conv[1].number and sorted(conv[0].toppings or []) == sorted(conv[1].toppings or [])
+if: >
+  (str(conv[0].drink or '').strip().lower() in ['', 'none', 'no drink']) !=
+  (str(conv[1].drink or '').strip().lower() in ['', 'none', 'no drink'])
+then: >
+  (
+    (str(conv[0].drink or '').strip().lower() in ['', 'none', 'no drink'] and
+     str(conv[1].drink or '').strip().lower() not in ['', 'none', 'no drink'] and
+     abs(extract_float(conv[1].price) - extract_float(conv[0].price) - 2) <= 0.01)
+    or
+    (str(conv[1].drink or '').strip().lower() in ['', 'none', 'no drink'] and
+     str(conv[0].drink or '').strip().lower() not in ['', 'none', 'no drink'] and
+     abs(extract_float(conv[0].price) - extract_float(conv[1].price) - 2) <= 0.01)
+  )
+```
+
+✨ Esta regla compara pares de conversaciones con la misma pizza (mismo tamaño, cantidad y toppings). Cuando solo una de ellas incluye bebida (diferenciando “sin bebida” mediante valores como `''`, `none` o `no drink`), verifica que el precio con bebida sea exactamente 2 dólares mayor. Si tu perfil usa otra convención para representar “sin bebida”, ajusta la lista de valores en el `if` y en el `then`. ¡Listo para detectar cualquier desvío en el recargo por bebida! 🍹
+$$$

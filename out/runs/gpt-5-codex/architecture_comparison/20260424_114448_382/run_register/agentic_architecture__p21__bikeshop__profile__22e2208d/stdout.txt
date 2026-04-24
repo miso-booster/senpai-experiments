@@ -1,0 +1,105 @@
+conversation ID: agentic_architecture__p21__bikeshop__profile__22e2208d
+$$$
+Aquí tienes un perfil nuevo para simular al cliente del taller de bicicletas que busca personalizar su bici. Lo diseñé siguiendo las pautas de `sensei-chat-guide.md`.
+
+```yaml
+test_name: "bikeshop_custom_setup"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who just bought a new bike and wants the shop to dial in
+    the fit. Ask the staff to adjust the saddle and swap the handlebar grips
+    so the setup matches your preferred riding style.
+  context:
+    - "You care about comfort on longer rides and want a professional fitting."
+    - "You are happy to discuss gear preferences but you need clear next steps."
+  goals:
+    - "I recently bought a {{bike_model}} and need the shop to dial in the saddle height and angle."
+    - "I'd like to replace the current handlebar grips with {{grip_preference}} options."
+    - "Can we schedule a fitting on {{preferred_date}} during the {{preferred_time_slot}}?"
+    - "Please share the estimated cost and how long the full setup will take."
+    - "Reach me via {{contact_method}} if anything changes before the appointment."
+    - bike_model:
+        function: pairwise()
+        type: string
+        data:
+          - commuter hybrid
+          - road bike
+          - mountain bike
+          - gravel bike
+    - grip_preference:
+        function: pairwise()
+        type: string
+        data:
+          - ergonomic gel grips
+          - cork tape
+          - leather wrap
+          - foam lock-on grips
+    - preferred_date:
+        function: another()
+        type: string
+        data:
+          - any(3 dates within the next two weeks)
+    - preferred_time_slot:
+        function: forward(preferred_date)
+        type: string
+        data:
+          - morning
+          - afternoon
+          - early evening
+    - contact_method:
+        function: random()
+        type: string
+        data:
+          - email
+          - phone call
+          - text message
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn’t catch that. Could you rephrase your request?"
+  output:
+    - appointment_date:
+        type: date("yyyy-mm-dd")
+        description: "Scheduled date for the bike fitting or setup service"
+    - appointment_time_slot:
+        type: string
+        description: "Time window agreed for the appointment"
+    - services_requested:
+        type: list[string]
+        description: "List of setup tasks the shop confirms (seat adjustments, grip swap, etc.)"
+    - estimated_cost:
+        type: currency
+        description: "Quoted price for the fitting and grip replacement"
+    - follow_up_contact:
+        type: string
+        description: "How the shop will get back to the customer before the visit"
+    - recommendations:
+        type: string
+        description: "Any prep steps or gear advice the shop provides"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+✅ Qué cubre:
+- Variables y funciones (`pairwise()`, `another()`, `forward()`, `random()`) inspiradas en el ejemplo integral de `sensei-chat-guide.md`.
+- `chatbot.output` con campos pensados para futuras reglas: fecha/hora, servicios, coste estimado, forma de contacto y recomendaciones.
+
+Si prefieres otro idioma, más/menos combinaciones o campos distintos en `chatbot.output`, dime y lo ajustamos.
+$$$

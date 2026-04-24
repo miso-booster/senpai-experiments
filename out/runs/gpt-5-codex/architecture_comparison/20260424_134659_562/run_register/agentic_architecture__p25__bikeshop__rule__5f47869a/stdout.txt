@@ -1,0 +1,30 @@
+conversation ID: agentic_architecture__p25__bikeshop__rule__5f47869a
+$$$
+Here’s a rule you can drop into your `rules/` folder to make sure each bike-shop conversation returns the expected schedule and prices:
+
+```yaml
+name: bike_shop_expected_prices
+description: Verifies the bike shop profile returns the right opening hours and price slots.
+active: true
+conversations: 1
+oracle: |
+  data_collected() and
+  semantic_content(opening_and_closing, "The bike shop opens at 10 and closes at 20") and
+  extract_float(tire) == 20 and
+  extract_float(tune_up) == 50 and
+  extract_float(seat_price) == 20
+on-error: >-
+  f"Got opening_and_closing='{opening_and_closing}', tire='{tire}', tune_up='{tune_up}', seat_price='{seat_price}'"
+```
+
+### How this lines up
+- Based on `sensei-check-doc.md`, the rule is a single-conversation oracle that reads the outputs exposed by your profile (`opening_and_closing`, `tire`, `tune_up`, `seat_price`) and combines helper functions (`data_collected`, `semantic_content`, `extract_float`) in one boolean expression.
+- `sensei-chat-guide.md` reminds us those fields come straight from the profile’s `chatbot.output`, so the rule assumes the profile you shared (bike-shop assistant) is the one under test.
+
+### Notes & tweaks
+- If the assistant ever spells out a price (“twenty dollars”), you might extend the checks with an extra `semantic_content` clause or relax the numeric comparison.
+- `data_collected()` ensures none of the slots are left `None` before the value checks kick in.
+- Feel free to rename the rule or adjust the description to match your project conventions.
+
+Let me know if you’d like a companion rule for the `care_bike` advice or a metamorphic check comparing multiple conversations 😊.
+$$$

@@ -1,0 +1,18 @@
+conversation ID: one_node_architecture__p27__bikeshop__rule__87b54a92
+$$$
+¡Perfecto! Para poder validar ese comportamiento necesitas capturar en el perfil la respuesta del bot cuando rechaza la segunda petición con la misma fecha (por ejemplo, añadiendo un slot `duplicate_date_denial` dentro de `chatbot.output`). Una vez expuesto ese campo, puedes usar la siguiente regla en Sensei-check:
+
+```yaml
+name: rechaza_fecha_repetida
+description: Verifica que el asistente rechaza una segunda solicitud con la misma fecha
+conversations: 1
+when: duplicate_date_denial not in [None, ""]
+oracle: semantic_content(
+  duplicate_date_denial,
+  'mensaje donde el asistente indica que no puede aceptar nuevamente la misma fecha solicitada por el usuario'
+)
+on-error: f"El asistente no negó la segunda petición para la fecha repetida: {duplicate_date_denial}"
+```
+
+Esta regla queda activa únicamente cuando el slot `duplicate_date_denial` tiene contenido y comprueba, con ayuda de `semantic_content`, que realmente comunica la negativa a aceptar la segunda cita con la misma fecha. Ajusta la descripción semántica si necesitas una formulación más específica. 😊
+$$$

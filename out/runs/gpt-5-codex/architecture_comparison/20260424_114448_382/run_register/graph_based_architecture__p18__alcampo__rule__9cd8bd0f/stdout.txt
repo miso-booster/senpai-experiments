@@ -1,0 +1,52 @@
+conversation ID: graph_based_architecture__p18__alcampo__rule__9cd8bd0f
+$$$
+¡Hola! 😊 Para comprobar que el chatbot entrega una lista de juguetes eco-friendly, primero asegúrate de que tu perfil de Sensei Chat exponga ese dato en `chatbot.output`. Un ejemplo mínimo sería:
+
+```yaml
+test_name: eco_friendly_toys_profile
+
+user:
+  language: Spanish
+  role: "Eres una persona que busca opciones de juguetes sostenibles para regalar."
+  context:
+    - "Valoras los materiales reciclados y la fabricación responsable."
+  goals:
+    - "Solicitar recomendaciones de juguetes ecológicos para niños de distintas edades."
+    - "Preguntar por las ventajas ecológicas de cada opción sugerida."
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu petición. ¿Podrías reformularla?"
+  output:
+    - eco_friendly_toys:
+        type: list[string]
+        description: Listado de juguetes ecológicos sugeridos por el bot
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+Una vez que el perfil tenga ese slot, puedes añadir esta regla en Sensei-check para validar cada conversación:
+
+```yaml
+name: eco_friendly_toys_list_present
+description: Verifica que el bot devuelva una lista de juguetes eco-friendly
+conversations: 1
+oracle: |
+  isinstance(eco_friendly_toys, list)
+  and len(eco_friendly_toys) > 0
+  and all(isinstance(item, str) for item in eco_friendly_toys)
+```
+
+¿Qué hace esta regla?
+
+* Confirma que `eco_friendly_toys` sea realmente una lista.
+* Exige que la lista tenga, al menos, un elemento.
+* Comprueba que todos los elementos sean cadenas de texto (nombres de juguetes).
+
+Si necesitas criterios más estrictos (por ejemplo, un mínimo de ítems o cierto formato en los nombres), dime y lo ajustamos juntos. ¡Listo para ayudarte en lo que venga! ✨
+$$$

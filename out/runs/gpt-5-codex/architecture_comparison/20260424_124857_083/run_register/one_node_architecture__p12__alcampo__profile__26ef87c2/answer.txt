@@ -1,0 +1,87 @@
+Here’s a cart-focused profile you can plug into your project 😊
+
+```yaml
+test_name: "shopping_cart_item_collection"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are planning an online grocery run and want the assistant to help you pick
+    and add the right products to your shopping cart while staying on budget.
+  context:
+    - You want clear guidance for adding items directly into the cart.
+    - You need confirmation about prices and availability before finalizing each item.
+    - You prefer options that keep the overall spend within your planned budget.
+  goals:
+    - "Ask the chatbot to recommend {{category}} you should consider adding to the cart."
+    - "Request step-by-step guidance to add {{priority_item}} to the shopping cart."
+    - "Confirm the availability and price of {{secondary_item}} before adding it."
+    - "Ask if the current cart total stays within {{budget_range}}."
+    - "Request a final cart summary including delivery or pickup options."
+    - category:
+        function: random()
+        type: string
+        data: [fresh produce, pantry staples, household essentials, beverages, organic snacks]
+    - priority_item:
+        function: random()
+        type: string
+        data:
+          - organic gala apples
+          - whole grain pasta
+          - eco-friendly laundry detergent
+          - sparkling water pack
+          - free-range chicken breasts
+    - secondary_item:
+        function: random()
+        type: string
+        data:
+          - almond milk 1L
+          - canned chickpeas pack
+          - reusable shopping bags
+          - fair trade coffee beans
+          - gluten-free sandwich bread
+    - budget_range:
+        function: random()
+        type: string
+        data: ["30 euros", "50 euros", "75 euros"]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recommended_items:
+        type: list[string]
+        description: List of product suggestions suitable for the cart
+    - priority_item_steps:
+        type: string
+        description: Instructions provided to add the priority item to the cart
+    - priority_item_price:
+        type: money
+        description: Price quoted for the priority item
+    - secondary_item_status:
+        type: string
+        description: Availability confirmation for the secondary item
+    - cart_total_estimate:
+        type: money
+        description: Estimated total cost of the cart after additions
+    - budget_check:
+        type: string
+        description: Assistant feedback on whether the cart stays within budget
+    - fulfillment_options:
+        type: string
+        description: Delivery or pickup options suggested for the cart
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 24
+  interaction_style:
+    - change your mind
+    - single questions
+```

@@ -1,0 +1,27 @@
+conversation ID: agentic_architecture__p47__pizza_shop__documentation__cafdaeef
+$$$
+¡Hola! 😊 En Sensei-check, una **regla metamórfica** es un tipo de regla que no se limita a revisar una sola conversación, sino que compara **dos o más conversaciones** que comparten ciertas condiciones para verificar que el chatbot mantenga relaciones lógicas entre ellas.
+
+### ¿Cómo funcionan?
+1. **Seleccionan un grupo de conversaciones** mediante un filtro (`when:`) que garantiza que sean comparables (por ejemplo, mismo producto, misma cantidad, etc.).
+2. **Formulan una relación esperada** entre esas conversaciones, ya sea con un simple `oracle:` (una condición booleana) o con la estructura `if:` / `then:` para expresar implicaciones.
+3. **Evaluan la coherencia**: si al cambiar un elemento de la entrada (por ejemplo, número de toppings) se espera que otro elemento cambie (como el precio), la regla verifica que eso suceda en las respuestas del chatbot.
+
+### ¿Por qué son útiles?
+- Permiten comprobar **comportamientos relativos** o invariantes (monotonicidades, consistencia en el idioma, coherencia de precios, etc.).
+- Ayudan a detectar fallos sutiles que una regla de una sola conversación no vería.
+
+### Ejemplo simple (resumido)
+Si tenemos dos conversaciones con la misma pizza y bebida, pero la primera tiene más toppings, una regla metamórfica podría exigir que la primera también tenga un precio mayor. En YAML:
+
+```yaml
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Este enfoque está descrito en detalle en el documento `sensei-check-doc.md`, sección “What is a metamorphic rule in Sensei-check?”.
+
+¿Te gustaría ver más ejemplos o saber cómo escribir uno para tu proyecto?
+$$$

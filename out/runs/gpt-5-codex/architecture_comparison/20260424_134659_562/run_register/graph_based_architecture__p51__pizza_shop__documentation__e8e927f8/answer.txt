@@ -1,0 +1,83 @@
+Hey there! 👋 Great question. Let me break it down for you 😊
+
+### 🌐 What are Sensei connectors for?
+
+Connectors are little YAML “bridges” that tell Sensei how to talk to your chatbot’s API. Instead of writing Python code, you describe:
+
+1. **Where** to send the user’s message,
+2. **How** to package the request (headers, payload, etc.),
+3. **Where** to grab the chatbot’s reply in the response.
+
+That way, Sensei can simulate conversations against *any* bot endpoint you point it at.
+
+---
+
+### 🧩 Essential connector fields
+
+Here’s what each connector file usually contains:
+
+| Field | Purpose | Required? |
+|-------|---------|-----------|
+| `name` | A friendly label for the connector (helps you identify it). | Optional |
+| `base_url` | The root URL of your chatbot’s API. | ✅ Yes |
+| `send_message.path` | Endpoint path appended to `base_url`. | ✅ Yes |
+| `send_message.method` | HTTP verb (`POST`, `GET`, etc.). Defaults to `POST` if omitted. | Optional |
+| `send_message.headers` | Any headers your API needs (Authorization, Content-Type…). | Optional |
+| `send_message.payload_template` | The JSON payload template. Use `{user_msg}` wherever the user’s text should go. | ✅ Yes |
+| `response_path` | Dot notation to pick the chatbot’s reply from the JSON response. | ✅ Yes |
+
+> Tip: `response_path` works like walking a JSON dictionary—`messages.0.content` means `response["messages"][0]["content"]`.
+
+---
+
+### 🔍 Real examples (from your project)
+
+You’ve already got a few set up! For instance:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+And a richer one with headers:
+
+```yaml
+name: "Metro Madrid"
+base_url: "https://kdcaapi.metromadrid.es"
+send_message:
+  path: "/api/KDCA/WidgetMessage"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Origin: "https://www.metromadrid.es"
+    Referer: "https://www.metromadrid.es/"
+    User-Agent: "Mozilla/5.0 ..."
+  payload_template:
+    idProject: "Mzpv0w4t71t"
+    idClient: "0"
+    data:
+      type: "text"
+      content: "{user_msg}"
+      ...
+response_path: "messages.0.content"
+```
+
+---
+
+### ✅ Putting it all together
+
+So, connectors help Sensei:
+
+- Send the user’s simulated utterance to your bot,
+- Handle authentication or special headers if needed,
+- Pull out the bot’s reply so the conversation can continue.
+
+Everything is pure YAML, which keeps things readable and easy to tweak. If you ever need a new connector, just copy one of your existing files and adjust the fields to match the new API.
+
+Let me know if you’d like help assembling one from scratch or testing these—happy to walk you through it! 😊

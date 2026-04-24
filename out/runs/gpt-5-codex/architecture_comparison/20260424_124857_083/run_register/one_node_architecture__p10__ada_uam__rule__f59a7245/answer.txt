@@ -1,0 +1,28 @@
+¡Hola! 😊 Este perfil tiene un buen conjunto de campos enfocados en admisiones, así que aquí van tres reglas sencillas para empezar a validarlo. Cada una comprueba algo distinto: enlaces, datos del Welcome Day y la tasa de solicitud.
+
+```yaml
+name: admission_links_are_urls
+description: Los enlaces clave de admisiones deberían apuntar a URLs reales
+conversations: 1
+oracle: all(field and field.startswith('http') for field in [admission_to_grados_link, waitlist_info_link, future_students_link, welcome_day_link])
+on-error: f"Alguno de los enlaces no parece válido: {admission_to_grados_link}, {waitlist_info_link}, {future_students_link}, {welcome_day_link}"
+```
+
+```yaml
+name: welcome_day_details_completed
+description: Cuando se comparte el enlace del Welcome Day, también deben venir fecha, hora y ubicación
+conversations: 1
+if: welcome_day_link and welcome_day_link.startswith('http')
+then: welcome_day_date is not None and welcome_day_time is not None and event_location not in [None, ""]
+on-error: f"Faltan detalles del Welcome Day: fecha={welcome_day_date}, hora={welcome_day_time}, ubicación={event_location}"
+```
+
+```yaml
+name: admission_fee_is_numeric
+description: La tasa de solicitud debe incluir un importe numérico
+conversations: 1
+oracle: application_fee is not None and extract_float(application_fee) >= 0
+on-error: f"application_fee no tiene un importe numérico reconocible: {application_fee}"
+```
+
+Cuando tengas un lote de conversaciones generado, prueba estas reglas con Sensei-check y podrás ver rápidamente si el bot devuelve la información clave. Si necesitas métricas más específicas (por ejemplo, comparar salidas entre combinaciones de grados/cursos), dímelo y lo diseñamos juntas. 💪✨

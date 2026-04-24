@@ -1,0 +1,12 @@
+Hey! Here’s a metamorphic rule that enforces the $2 surcharge when one extra drink is added (assuming your profile exposes `drink`, `price`, `size`, `number`, and `toppings` in `chatbot.output`). Let me know if you need it tweaked! 😊
+
+```yaml
+name: drink
+description: Adding one extra drink increases the price by exactly $2 when the pizza configuration stays the same.
+active: true
+conversations: 2
+when: conv[0].pizza_type == conv[1].pizza_type and conv[0].size == conv[1].size and conv[0].number == conv[1].number and conv[0].toppings is not None and conv[1].toppings is not None and sorted(conv[0].toppings) == sorted(conv[1].toppings)
+if: conv[0].drink is not None and conv[1].drink is not None and len(conv[0].drink) == len(conv[1].drink) + 1
+then: abs(extract_float(conv[0].price) - extract_float(conv[1].price) - 2) <= 0.01
+on-error: f"Expected a $2 surcharge for the extra drink but got {conv[0].price} vs {conv[1].price} (drinks {conv[0].drink} vs {conv[1].drink})."
+```

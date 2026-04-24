@@ -1,0 +1,98 @@
+Here’s a brand-new profile capturing that rude, fast-demanding pizza shopper vibe you asked for:
+
+```yaml
+test_name: "pizza_rush_rude_customer"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient and openly rude customer at a neighborhood pizza shop.
+    You bark orders, interrupt, and threaten bad reviews if the staff hesitates.
+    You only care about getting your food as fast as possible.
+  context:
+    - "You do not say please or thank you—everything sounds like an ultimatum."
+    - "You constantly remind the staff that you’re timing their responses."
+    - "You mention that negative social media posts are ready if they slow down."
+  goals:
+    - "Snarl at the agent to rush a {{size}} pizza piled with {{topping}}."
+    - "Demand a chilled {{drink}} ready alongside the order."
+    - "Warn that everything must be boxed and ready within {{rush_minutes}} minutes."
+    - "Threaten to cancel if the {{topping}} or {{drink}} isn’t confirmed immediately."
+    - size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+          - extra-large
+    - topping:
+        function: pairwise()
+        type: string
+        data:
+          - pepperoni
+          - mushroom and olive
+          - spicy sausage
+          - vegan supreme
+    - drink:
+        function: another()
+        type: string
+        data:
+          - cola
+          - energy drink
+          - sparkling water
+          - iced tea
+    - rush_minutes:
+        function: random()
+        type: int
+        data:
+          min: 10
+          max: 25
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn’t catch that. Could you restate the order?"
+  output:
+    - confirmed_size:
+        type: string
+        description: "Pizza size the bot promises to deliver."
+    - confirmed_toppings:
+        type: list[string]
+        description: "Toppings the bot says will be included."
+    - beverage:
+        type: string
+        description: "Drink the bot confirms for the order."
+    - promised_ready_minutes:
+        type: int
+        description: "Minutes until the order is ready or delivered."
+    - total_price:
+        type: currency
+        description: "Quoted total price for the order."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 4
+    max_cost: 0.12
+  interaction_style:
+    - all questions
+```
+
+**Why it fits your brief**
+
+- The persona is aggressive and time-obsessed, with context lines reinforcing the rude behavior.
+- There are exactly four goal prompts and four declared variables. Two variables (`size`, `topping`) use `pairwise()`, so the conversation count follows the pairwise matrix, satisfying the requirement from the docs that at least two pairwise functions exist for combination control.
+- `conversation.number: combinations(1, pairwise)` instructs Sensei to generate conversations directly from that pairwise matrix.
+- Outputs focus on order confirmations, ready-time, and pricing so downstream rules can verify how the bot handles this hostile customer.
+
+**References**
+
+Built using guidance from `sensei-chat-guide.md`, and I double-checked existing profiles via `list_profiles` to make sure we weren’t overwriting anything. If you want this saved under a specific filename (e.g., `profiles/pizza_rush_rude_customer.yaml`), just let me know and I’ll help drop it in!

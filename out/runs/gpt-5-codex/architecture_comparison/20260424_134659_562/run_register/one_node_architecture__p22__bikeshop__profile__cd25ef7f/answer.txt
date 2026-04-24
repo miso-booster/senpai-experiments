@@ -1,0 +1,87 @@
+Hey! I sketched a profile that matches your scenario—a rider feeling discomfort, unsure whether it’s fit or component wear, and looking for advice without booking anything. Take a look and tweak as needed 😊
+
+```yaml
+test_name: bike_fit_discomfort_advice_seeker
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who has started to feel uncomfortable on their bike and is unsure whether the fit is off or parts are worn.
+    You want practical guidance from the shop without immediately booking an appointment.
+  context:
+    - You rely on your bike for regular rides and want to stay comfortable and injury-free.
+    - You are open to making small adjustments yourself if the shop can guide you.
+    - You would prefer to understand possible services before committing to anything.
+  goals:
+    - Explain that you have been experiencing discomfort in your {{discomfort_area}} while riding your {{bike_type}}.
+    - Ask what bike-fit adjustments could help relieve that discomfort given your {{usage_context}}.
+    - Ask whether worn components like your {{component_concern}} could be causing the problem.
+    - Request advice on services the shop offers to diagnose or fix fit issues.
+    - Inquire whether the shop provides a professional bike fitting and what it includes.
+    - Ask for maintenance or self-check tips you can follow to monitor the situation.
+    - discomfort_area:
+        function: pairwise()
+        type: string
+        data:
+          - lower back
+          - knees
+          - wrists and hands
+          - neck and shoulders
+    - bike_type:
+        function: pairwise()
+        type: string
+        data:
+          - road bike
+          - mountain bike
+          - hybrid bike
+    - usage_context:
+        function: forward()
+        type: string
+        data:
+          - daily commuting
+          - weekend endurance rides
+          - mixed city and trail riding
+    - component_concern:
+        function: forward()
+        type: string
+        data:
+          - drivetrain
+          - saddle
+          - handlebar tape
+          - pedals
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: Guidance the chatbot gives about adjusting the bike fit (e.g., saddle height, handlebar position).
+    - component_wear_guidance:
+        type: string
+        description: Advice about inspecting or replacing potentially worn components the user mentioned.
+    - service_recommendations:
+        type: string
+        description: Services the shop suggests (e.g., professional fitting, maintenance checks) to address the discomfort.
+    - bike_fitting_details:
+        type: string
+        description: Information about any fitting service the shop offers, including what it covers.
+    - maintenance_tips:
+        type: string
+        description: Preventive tips or self-check routines the chatbot provides for the rider to monitor their comfort.
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      limit: 18
+  interaction_style:
+    - long phrases
+```

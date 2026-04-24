@@ -1,0 +1,90 @@
+Absolutely! I’ve put together a Sensei profile tailored for a rider who’s feeling discomfort and wants advice on bike fitting and component wear, without jumping straight into booking an appointment. Here’s a quick rundown before the full YAML:
+
+- **User persona:** A concerned cyclist looking for expert guidance before taking action.
+- **Goals covered:** Asking about fit assessments, adjustment suggestions, spotting worn parts, relevant services, and potential costs.
+- **Variables:** Rotating discomfort areas, bike types, and components to keep the scenarios varied.
+- **Outputs:** Capture the assistant’s guidance on fit services, adjustment tips, wear indicators, service options, and pricing.
+
+You can drop this file into `profiles/bike_fit_discomfort_advice_seeker.yaml` within your project:
+
+```yaml
+test_name: bike_fit_discomfort_advice_seeker
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rider who feels uncomfortable on your bike and wants expert guidance
+    on whether the issue is related to bike fit or worn components.
+  context:
+    - You've recently noticed aches during rides and want to resolve them before your next long outing.
+    - You'd prefer to understand your options before committing to any service appointments.
+    - You rely on your bike for regular commutes and weekend rides.
+  goals:
+    - "Mention that you experience {{discomfort_area}} on your {{bike_type}} and ask if the shop offers bike fitting assessments."
+    - "Ask what adjustments might help relieve the discomfort, such as saddle height, handlebar reach, or cleat alignment."
+    - "Ask how to tell if the {{component_of_concern}} might be worn and due for replacement."
+    - "Ask about services the shop offers to diagnose or adjust bikes for comfort issues."
+    - "Ask about the typical cost of a professional bike fitting or adjustment session."
+    - discomfort_area:
+        function: pairwise()
+        type: string
+        data:
+          - knee pain
+          - lower back stiffness
+          - wrist numbness
+          - neck strain
+    - component_of_concern:
+        function: pairwise()
+        type: string
+        data:
+          - saddle padding
+          - handlebar tape
+          - drivetrain
+          - pedal cleats
+    - bike_type:
+        function: forward(discomfort_area)
+        type: string
+        data:
+          - road bike
+          - mountain bike
+          - commuter bike
+          - gravel bike
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_assessment_availability:
+        type: string
+        description: Confirmation or denial that the shop offers bike fitting or comfort assessment services.
+    - adjustment_recommendations:
+        type: string
+        description: The specific adjustments suggested by the chatbot to address the rider's discomfort.
+    - component_wear_guidance:
+        type: string
+        description: Guidance on how to identify wear on the mentioned component and whether it needs replacement.
+    - service_options:
+        type: string
+        description: A summary of the services the shop offers for diagnosing fit issues or worn components.
+    - fit_service_price:
+        type: money
+        description: The quoted price (or price range) for a fitting or adjustment service.
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - single questions
+```
+
+Feel free to tweak the goal wording or variable lists if you want even more variety. Let me know if you’d like matching Sensei-check rules or connector tips next! 😊

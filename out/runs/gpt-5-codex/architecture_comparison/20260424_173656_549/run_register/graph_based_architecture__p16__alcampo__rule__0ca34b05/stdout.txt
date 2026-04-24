@@ -1,0 +1,27 @@
+conversation ID: graph_based_architecture__p16__alcampo__rule__0ca34b05
+$$$
+Sure thing! Here’s a draft rule you can plug into Sensei-check. Since the profile isn’t ready yet, I’ve treated this as a **rule-first design** and listed the fields the future profile should expose (adjust names as needed once you implement it):
+
+```yaml
+name: lactose_free_availability
+description: >
+  Rule-first guard: when a shopper requests lactose-free products, the assistant must
+  surface an explicit availability status. Requires the future profile to expose
+  `dietary_requirement`, `product_name`, `lactose_free_available`, and `availability_message`.
+conversations: 1
+when: dietary_requirement == 'lactose_free'
+if: "True"
+then: lactose_free_available in ['available', 'unavailable'] and 'lactose-free' in availability_message.lower()
+on-error: >
+  Expected an availability status for lactose-free request on "{product_name}", but got
+  lactose_free_available={lactose_free_available} and message="{availability_message}".
+```
+
+### What this rule expects later on
+- **`dietary_requirement`** – marks the shopper’s request (e.g., `"lactose_free"`).
+- **`product_name`** – whichever item they’re asking about.
+- **`lactose_free_available`** – a simple flag like `"available"` / `"unavailable"`.
+- **`availability_message`** – whatever the assistant tells the user (ensuring “lactose-free” is explicitly mentioned).
+
+Once your Sensei profile exposes those slots in `chatbot.output`, the rule will lock in and make sure lactose-free availability is always stated clearly. Let me know if you’d like to tweak the slot names or add extra checks (like stock counts or alternatives)!
+$$$

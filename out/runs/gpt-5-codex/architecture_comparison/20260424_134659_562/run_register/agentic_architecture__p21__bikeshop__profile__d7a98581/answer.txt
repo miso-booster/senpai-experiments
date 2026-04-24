@@ -1,0 +1,118 @@
+Hey! I put together a fresh Sensei profile for your bike shop fitting scenario. It captures a user who just bought a new bike and wants the seat and handlebar grips tailored to their preferences.
+
+```yaml
+test_name: "bike_shop_custom_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist who just purchased a new bike and are visiting a bike
+    shop to get it professionally fitted. You are attentive to comfort and how the
+    bike feels on long rides, and you expect the mechanic to guide you through
+    the adjustments.
+  context:
+    - "You want the seat height and angle adjusted so you can ride longer without discomfort."
+    - "You are picky about handlebar grip feel because you ride several hours each week."
+    - "You hope the shop can make the changes while you wait or suggest the fastest option."
+  goals:
+    - "Explain that you recently bought a new {{bike_type}} and want a professional setup session."
+    - "Ask the mechanic to adjust the seat to prioritize {{seat_priority}}."
+    - "Request new handlebar grips made of {{grip_material}} because you care about {{grip_focus}}."
+    - "Confirm whether they can schedule the fitting on {{appointment_day}} around {{appointment_time}}."
+    - "Ask for an estimated cost and how long the adjustments will take."
+    - bike_type:
+        function: random()
+        type: string
+        data:
+          - road bike
+          - gravel bike
+          - commuter bike
+          - mountain bike
+    - seat_priority:
+        function: pairwise()
+        type: string
+        data:
+          - maximum comfort on longer rides
+          - efficient power transfer for racing
+          - upright posture for city riding
+          - better support for lower back
+    - grip_material:
+        function: pairwise()
+        type: string
+        data:
+          - cork tape with gel padding
+          - ergonomic rubber grips
+          - leather wrap
+          - foam grips with extra cushioning
+    - grip_focus:
+        function: random()
+        type: string
+        data:
+          - vibration damping
+          - sweat control
+          - extra grip in wet conditions
+          - durability over time
+    - appointment_day:
+        function: random()
+        type: string
+        data:
+          - Saturday morning
+          - Thursday afternoon
+          - Sunday
+          - Weekday evening
+    - appointment_time:
+        function: random()
+        type: string
+        data:
+          - "10:00 AM"
+          - "1:30 PM"
+          - "4:00 PM"
+          - "6:15 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you say it again?"
+  output:
+    - fitting_date:
+        type: string
+        description: "Scheduled day or window promised for the bike fitting"
+    - fitting_time:
+        type: string
+        description: "Time or timeframe confirmed for the fitting"
+    - seat_adjustments:
+        type: list[string]
+        description: "Summary of seat changes the mechanic will perform"
+    - grip_recommendation:
+        type: string
+        description: "Handlebar grip option the shop recommends or agrees to install"
+    - service_quote:
+        type: currency
+        description: "Estimated price covering the fitting and parts"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.08
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change your mind
+```
+
+**Highlights & assumptions**
+
+- Built following the structure and helper guidance from `sensei-chat-guide.md`.
+- Uses two `pairwise()` variables (`seat_priority`, `grip_material`) so the `combinations(0.6, pairwise)` conversation scheduling works as expected.
+- Output fields capture the essentials you’ll probably validate later (appointment details, recommended adjustments, pricing).
+- I assumed English for the simulated user; shout if you’d prefer another language or different interaction quirks.
+
+Let me know if you’d like extra context, different goal phrasing, or additional outputs. Happy to tweak it! 🚴‍♂️

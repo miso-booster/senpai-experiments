@@ -1,0 +1,77 @@
+¡Perfecto! Te dejo un perfil listo para simular a una persona usuaria de la UAM que contacta al CAU para recopilar todos los datos de contacto. Lo he construido siguiendo las pautas de `sensei-chat-guide.md` 😊.
+
+```yaml
+test_name: "uam_cau_contact_info"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona usuaria de la Universidad Autónoma de Madrid que contacta
+    al Centro de Atención a Usuarios (CAU) para resolver un incidente técnico.
+    Te expresas con educación y prioridad por obtener información concreta.
+  context:
+    - "Ya consultaste la web del CAU pero necesitas confirmar los datos de contacto."
+    - "Quieres recibir soporte con rapidez y agradeces respuestas concisas."
+  goals:
+    - "Preséntate como {{user_type}} de la UAM con un problema relacionado con {{issue_type}} y pide el número de teléfono del CAU."
+    - "Solicita el correo electrónico de contacto del CAU."
+    - "Pregunta cuál es la dirección física donde atienden en el CAU."
+    - "Confirma los horarios de atención del CAU y si tienen un horario especial en vacaciones."
+    - user_type:
+        function: pairwise()
+        type: string
+        data:
+          - estudiante de grado
+          - estudiante de posgrado
+          - personal docente
+          - personal de administración y servicios
+    - issue_type:
+        function: pairwise()
+        type: string
+        data:
+          - el acceso al portal SIGMA
+          - la recuperación de contraseña corporativa
+          - la red wifi de la UAM
+          - la cuenta de correo institucional
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu solicitud. ¿Podrías reformularla?"
+  output:
+    - cau_phone:
+        type: string
+        description: "Número de teléfono del Centro de Atención a Usuarios de la UAM"
+    - cau_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - cau_address:
+        type: string
+        description: "Dirección física donde presta servicio el CAU"
+    - cau_hours:
+        type: string
+        description: "Horarios de atención al público del CAU"
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+### Cómo utilizarlo
+- El perfil genera combinaciones pairwise entre el tipo de persona y el incidente, lo que da cobertura a distintos escenarios con una sola definición.
+- `chatbot.output` extrae justo los cuatro datos críticos para tus reglas de validación: teléfono, email, dirección y horarios.
+
+Si quieres afinar la personalidad, añadir más variables (por ejemplo, campus o canal preferido) o ajustar los estilos de interacción, dime y lo adaptamos. ¿Te gustaría que preparemos reglas de validación para estos campos a continuación?

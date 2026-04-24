@@ -1,0 +1,115 @@
+conversation ID: graph_based_architecture__p14__alcampo__profile__5785a50e
+$$$
+¡Qué buena idea poner a prueba al bot con recetas y menús! 🥗✨ Aquí tienes un perfil Sensei listo para crear conversaciones donde el usuario pida recomendaciones culinarias y planificación semanal. Puedes guardarlo como `profiles/recipe_and_menu_planning_support.yaml`.
+
+```yaml
+test_name: "Recipe and Menu Planning Support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Cliente entusiasta de la cocina casera que busca inspiración para organizar sus
+    comidas y optimizar el tiempo en la cocina.
+  context:
+    - "personality: personalities/conversational-user"
+    - "Te interesa sacar partido a los productos frescos y de temporada disponibles en Alcampo."
+    - "Quieres equilibrar sabor, nutrición y presupuesto en tus menús semanales."
+  goals:
+    - "Pide recomendaciones de recetas para {{meal_plan_focus}} que encajen con una dieta {{dietary_preference}}."
+    - "Solicita un menú semanal equilibrado para {{number_of_people}} personas aprovechando productos de temporada."
+    - "Pregunta por una lista detallada de ingredientes y cantidades para las recetas sugeridas."
+    - "Consulta alternativas o sustituciones cuando falte un ingrediente clave."
+    - "Solicita ideas para optimizar el tiempo de cocina los días {{busy_day}}."
+    - "Pide opciones que se ajusten a un presupuesto de {{budget_range}} por semana."
+    - meal_plan_focus:
+        function: forward()
+        type: string
+        data:
+          - cenas entre semana
+          - desayunos energéticos
+          - menús familiares para el fin de semana
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data:
+          - vegetariana
+          - mediterránea
+          - sin gluten
+          - alta en proteínas
+    - number_of_people:
+        function: forward(meal_plan_focus)
+        type: int
+        data:
+          min: 2
+          max: 6
+          step: 1
+    - busy_day:
+        function: another()
+        type: string
+        data:
+          - lunes
+          - miércoles
+          - viernes
+          - domingo
+    - budget_range:
+        function: pairwise()
+        type: string
+        data:
+          - 40€-60€
+          - 60€-80€
+          - 80€-100€
+          - más de 100€
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para inspirarte con recetas y planificar tus menús."
+  output:
+    - recommended_recipes:
+        type: list[string]
+        description: "Recetas propuestas por el chatbot"
+    - weekly_menu_plan:
+        type: string
+        description: "Resumen del menú semanal sugerido"
+    - ingredient_list:
+        type: list[string]
+        description: "Ingredientes y cantidades recomendadas"
+    - substitutions:
+        type: string
+        description: "Sustituciones sugeridas para ingredientes faltantes"
+    - time_management_tips:
+        type: string
+        description: "Consejos para optimizar la preparación de las comidas"
+    - budget_guidance:
+        type: string
+        description: "Recomendaciones adaptadas al presupuesto indicado"
+    - nutritional_highlights:
+        type: string
+        description: "Notas nutricionales relevantes del plan propuesto"
+
+conversation:
+  number: 4
+  max_cost: 0.5
+  goal_style:
+    steps: 24
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change language:
+            - Español
+            - Inglés
+```
+
+### Siguientes pasos recomendados
+1. **Guardar el archivo** dentro de la carpeta `profiles/`.
+2. **Validar el YAML** con `validation_check.py` para asegurarte de que las funciones `forward()` y `pairwise()` combinan bien los valores.
+3. **Ejecutar Sensei Chat** apuntando a este perfil y revisar los campos de `chatbot.output` para verificar que el bot entrega recetas, menús, sustituciones y consejos tal como esperas.
+
+Si quieres ajustar el tono del usuario, añadir más restricciones dietéticas o ampliar los campos de extracción, dime y lo pulimos juntos 😊.
+$$$

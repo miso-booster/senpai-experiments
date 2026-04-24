@@ -1,0 +1,101 @@
+conversation ID: one_node_architecture__p12__alcampo__profile__56d1ff6a
+$$$
+Hey there! I put together a fresh profile you can drop into `profiles/` to have Sensei request shopping cart items step by step. Let me know if you’d like different categories or output fields 😊.
+
+```yaml
+test_name: Shopping Cart Item Builder
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A busy home chef planning the weekly shop and checking with the chatbot before adding items to the cart.
+  context:
+    - personality: personalities/conversational-user
+    - You want the chatbot to double-check availability and packaging details before you confirm each cart addition.
+    - You prefer to keep the total under a set budget while still covering meals, snacks, and household basics.
+  goals:
+    - "Ask the chatbot to suggest three must-have {{primary_category}} items to add to my cart."
+    - "Request complementary items from the {{secondary_category}} section that pair well with the primary selections."
+    - "Confirm availability, packaging size, and substitute options for {{bulk_item}} before adding it."
+    - "Ask for any current promotions or bundle deals that could keep the cart under {{budget_limit}}."
+    - "Summarize the cart with final item names, quantities, and any substitutes the chatbot recommends."
+    - primary_category:
+        function: pairwise()
+        type: string
+        data:
+          - fresh produce
+          - pantry staples
+          - ready-made meals
+          - beverages
+    - secondary_category:
+        function: pairwise()
+        type: string
+        data:
+          - dairy and eggs
+          - bakery
+          - snacks
+          - household care
+    - bulk_item:
+        function: forward(primary_category)
+        type: string
+        data:
+          - family-pack chicken breasts
+          - 5 kg wholegrain rice sack
+          - mixed salad greens family pack
+          - large bottled water case
+    - budget_limit:
+        function: random()
+        type: string
+        data:
+          - 60 euros
+          - 75 euros
+          - 85 euros
+          - 100 euros
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo 😊. ¿En qué puedo ayudarte hoy respecto a tu compra?"
+  output:
+    - recommended_primary_items:
+        type: list[string]
+        description: Primary category items suggested for the cart
+    - recommended_add_on_items:
+        type: list[string]
+        description: Complementary items proposed from the secondary category
+    - bulk_item_details:
+        type: string
+        description: Availability and packaging information for the selected bulk item
+    - promotion_summary:
+        type: string
+        description: Promotions or bundle deals that affect the current cart
+    - estimated_total:
+        type: money
+        description: Estimated total cost after promotions
+    - budget_status:
+        type: string
+        description: Whether the cart stays within the declared budget
+    - final_cart_items:
+        type: list[string]
+        description: Final list of items to add to the shopping cart
+    - delivery_slot_recommendation:
+        type: time
+        description: Suggested delivery or pickup time slot for the cart
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - single questions
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+$$$

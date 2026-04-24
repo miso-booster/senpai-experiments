@@ -1,0 +1,26 @@
+conversation ID: graph_based_architecture__p7__ada_uam__rule__1b67a6fe
+$$$
+¡Perfecto! Aquí tienes una regla de Sensei-check que comprueba que el perfil de **ada uam** devuelve exactamente los datos oficiales del CAU. Incluye el email, el teléfono (aceptando que venga con o sin prefijo internacional) y valida la dirección completa mediante una comprobación semántica por si cambia levemente el formato 😊.
+
+```yaml
+name: cau_contact_details_are_complete
+description: Ada UAM must return the official CAU contact email, phone, and address.
+conversations: 1
+oracle: |
+  data_collected() is True and
+  contact_email.strip().lower() == 'cau@uam.es' and
+  ''.join(ch for ch in contact_phone if ch.isdigit()).endswith('914974029') and
+  semantic_content(
+    physical_address,
+    "Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107"
+  )
+```
+
+Un par de notas rápidas:
+
+- `data_collected()` asegura que todos los slots definidos en `chatbot.output` (incluyendo `contact_email`, `contact_phone`, `physical_address`) tengan contenido.
+- Para el teléfono usamos `endswith('914974029')` después de extraer solo los dígitos, así cubrimos variantes como “+34 91 497 4029”.
+- `semantic_content` permite pequeñas variaciones en la redacción de la dirección, siempre que la información sea la correcta.
+
+Si necesitas ajustar alguna condición —por ejemplo, permitir direcciones abreviadas— dime y lo adaptamos sin problema. ¿Quieres que te ayude a integrarlo en tu proyecto o a crear tests adicionales?
+$$$

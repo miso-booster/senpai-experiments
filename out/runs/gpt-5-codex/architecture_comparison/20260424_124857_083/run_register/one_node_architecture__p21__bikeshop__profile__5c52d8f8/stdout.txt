@@ -1,0 +1,90 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__5c52d8f8
+$$$
+Sure thing! I put together a fresh Sensei profile that simulates a customer who just bought a new bike and wants the shop to tailor it—adjusting the seat height, upgrading the saddle, swapping handlebar grips, and locking in a fitting appointment. Take a look:
+
+```yaml
+test_name: bike_setup_customization_user
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently purchased a new bike and want the shop to tailor it to your riding preferences,
+    including seat adjustments, a saddle upgrade, and new handlebar grips.
+  context:
+    - You are excited about making the bike feel perfect for longer rides.
+    - Your priority is comfort first, followed closely by aesthetics.
+    - You plan to visit the shop soon and would like everything ready in one appointment.
+  goals:
+    - "Explain that you have a new bike and want it tailored to your preferences."
+    - "Ask if the shop can adjust the seat to match your preferred {{seat_position}} riding posture."
+    - "Ask for recommendations on a {{seat_type}} saddle upgrade that suits your needs."
+    - "Request new handlebar grips in a {{grip_style}} style and ask whether installation is included."
+    - "Ask about the total cost and estimated time for the seat and grip adjustments."
+    - "Schedule a fitting appointment on {{appointment_date}} at {{appointment_time}} to get everything installed."
+    - seat_position:
+        function: forward()
+        type: string
+        data: ["upright comfort", "neutral endurance", "forward-lean performance"]
+    - seat_type:
+        function: forward()
+        type: string
+        data: ["gel comfort saddle", "memory foam saddle", "performance saddle"]
+    - grip_style:
+        function: forward()
+        type: string
+        data: ["ergonomic", "cork wrap", "leather wrap"]
+    - appointment_date:
+        function: forward()
+        type: string
+        data: ["this Saturday", "next Tuesday", "next Friday"]
+    - appointment_time:
+        function: another()
+        type: string
+        data: ["10:00 AM", "1:30 PM", "4:00 PM"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_adjustment_capability:
+        type: string
+        description: Confirmation describing whether the shop can adjust the seat and how they approach it.
+    - saddle_recommendation:
+        type: string
+        description: Recommended saddle option tailored to the user's request.
+    - seat_service_price:
+        type: money
+        description: Quoted price for the seat adjustment and saddle upgrade.
+    - grip_service_details:
+        type: string
+        description: Information about available handlebar grip options and whether installation is included.
+    - grip_service_price:
+        type: money
+        description: Quoted price for the handlebar grip change, including installation if provided.
+    - service_duration:
+        type: string
+        description: Estimated time needed to complete the seat and grip adjustments.
+    - fitting_appointment_confirmation:
+        type: string
+        description: Confirmation message for the scheduled fitting appointment with date and time.
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - default
+```
+
+Feel free to tweak any of the variable lists or outputs if you want to target specific models or add more custom-fitting questions. Let me know if you’d like a paired Sensei-check rule to go with it!
+$$$

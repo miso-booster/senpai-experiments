@@ -1,0 +1,25 @@
+conversation ID: one_node_architecture__p8__ada_uam__rule__8a891f31
+$$$
+Hola 👋, gracias por compartir la regla. Había un par de cositas que ajustar:
+
+1. Para reglas de **1 conversación** no se usa `conv[0]`. Los campos se leen directamente (`contact_email`, `contact_phone`, …).
+2. La condición en `when` repetía exactamente lo que comprobaba el `oracle`, así que nunca iba a fallar. Mejor usar `when` solo como filtro de “datos presentes” y dejar la verificación en `oracle`.
+3. Aproveché para normalizar el teléfono (quitando espacios/dígitos no numéricos), así evitamos falsos negativos si el bot devuelve el mismo número con un formato ligeramente distinto.
+
+Aquí tienes la versión corregida:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+active: true
+conversations: 1
+when: contact_email is not None and contact_phone is not None and physical_address is not None
+oracle: (
+  contact_email.strip().lower() == 'cau@uam.es'
+  and ''.join(ch for ch in contact_phone if ch.isdigit()) == '914974029'
+  and physical_address.strip() == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+)
+```
+
+Con esto la regla queda lista para validar que el bot entregue los datos oficiales del CAU. Si necesitas que sea más permisiva (por ejemplo aceptar traducciones de la dirección), me dices y lo adaptamos 😊
+$$$

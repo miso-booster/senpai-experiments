@@ -1,0 +1,21 @@
+conversation ID: one_node_architecture__p8__ada_uam__rule__5234f4c2
+$$$
+¡Hola! Gracias por compartir la regla 😊. Encontré un par de cositas:
+
+1. **Uso de `conv[0]`**: Solo se utiliza en reglas metamórficas (conversations > 1). Para una conversación basta con los nombres de campo directamente.
+2. **`when` duplica el `oracle`**: Tal como estaba, si los valores eran incorrectos la condición del `when` no se cumplía y la regla ni siquiera se evaluaba, por lo que nunca fallaba.
+
+Aquí tienes la versión corregida, lista para detectar cualquier desviación en los datos de contacto del CAU:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: |
+  contact_email == 'cau@uam.es' and
+  contact_phone == '91 497 4029' and
+  physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+Ahora la regla verifica directamente los tres campos en cada conversación: si el bot devuelve algo distinto (o deja un campo vacío), la regla fallará como corresponde. ¡Avísame si quieres añadir tolerancias o formatos alternativos!
+$$$

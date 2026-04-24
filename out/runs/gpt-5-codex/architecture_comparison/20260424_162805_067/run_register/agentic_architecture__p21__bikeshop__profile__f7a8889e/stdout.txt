@@ -1,0 +1,112 @@
+conversation ID: agentic_architecture__p21__bikeshop__profile__f7a8889e
+$$$
+Hey there! 😊 I put together a fresh profile you can drop into `profiles/bike_custom_fit_setup.yaml` for that new-bike customer who wants a tailor-made fit.
+
+```yaml
+test_name: "bike_custom_fit_setup"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a new bike owner visiting the shop for a professional fitting session.
+    You care about comfort, proper biomechanics, and want guidance on upgrades that
+    will make the bike feel perfect before your first group ride.
+  context:
+    - "You bought the bike within the last week and have not ridden it yet."
+    - "You want the shop to tailor the bike to your body measurements and riding style."
+    - "You are open to paying for extra services if they improve comfort and control."
+  goals:
+    - "Mention you recently bought a {{bike_type}} and need a comprehensive fitting session."
+    - "Ask for help adjusting the saddle to {{seat_height_preference}} with a {{seat_angle_preference}} tilt."
+    - "Request changing the handlebar grips to {{grip_preference}} and ask about available options."
+    - "Ask for appointment availability on {{preferred_date}} in the {{preferred_time_period}}."
+    - "Request an estimated cost breakdown and confirm what the session includes."
+    - bike_type:
+        function: forward()
+        type: string
+        data:
+          - road bike
+          - mountain bike
+          - commuter bike
+    - seat_height_preference:
+        function: pairwise()
+        type: string
+        data:
+          - a slightly higher saddle
+          - bringing the saddle a bit lower
+          - keeping the height but fine-tuning it
+    - seat_angle_preference:
+        function: pairwise()
+        type: string
+        data:
+          - a mild nose-down tilt
+          - a neutral angle
+          - a slight nose-up tilt
+    - grip_preference:
+        function: random()
+        type: string
+        data:
+          - ergonomic memory-foam grips
+          - cushioned bar tape with gel pads
+          - locking rubber grips with end caps
+    - preferred_date:
+        function: another()
+        type: string
+        data:
+          - any(3 dates within the next two weeks)
+    - preferred_time_period:
+        function: random()
+        type: string
+        data:
+          - morning
+          - early afternoon
+          - late afternoon
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you rephrase that for me?"
+  output:
+    - appointment_date:
+        type: string
+        description: "Date the shop offers for the fitting session"
+    - appointment_time:
+        type: string
+        description: "Time slot suggested for the appointment"
+    - service_package:
+        type: string
+        description: "Name or description of the recommended service package"
+    - quoted_price:
+        type: currency
+        description: "Estimated cost for the fitting and grip change"
+    - preparation_notes:
+        type: string
+        description: "Instructions or preparation steps the shop provides"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.12
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change your mind
+```
+
+### Why this fits
+- Built exactly following the structure from `sensei-chat-guide.md` (our profile bible 😄).
+- Persona highlights the “just-bought bike, wants adjustments” story you described.
+- Goals cover saddle height, tilt, grip change, scheduling, and price—all the must-hit points.
+- `conversation.number` uses the pairwise variables (`seat_height_preference`, `seat_angle_preference`) to explore fitting combinations without exploding the run size.
+- Outputs capture appointment logistics plus a quoted price and any prep notes, so future rules can validate what the shop promises.
+
+Shout if you want different interaction styles, more variables (e.g., bring-your-own saddle), or a different fallback line. Happy to tweak! 🚴‍♂️💬
+$$$

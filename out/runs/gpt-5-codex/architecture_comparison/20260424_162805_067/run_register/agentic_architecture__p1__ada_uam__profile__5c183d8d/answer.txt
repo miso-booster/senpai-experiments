@@ -1,0 +1,97 @@
+Here’s a ready-to-use Sensei profile for your eduroam troubleshooting scenario 😊. I followed the structure and best practices from `sensei-chat-guide.md`, especially around variable declarations, `pairwise()` coverage, and `chatbot.output` design.
+
+**What’s inside**
+- The goals include variables `primary_attempt` and `secondary_attempt` so the simulator cycles through different setup methods the student has already tried.
+- Device context (`device_type`, `operating_system`) stays aligned via `forward()`/`forward(device_type)`.
+- Outputs capture whether the bot resolves or escalates the issue, plus any steps or follow-up instructions.
+
+```yaml
+test_name: "eduroam_setup_assistance"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who cannot get the eduroam Wi-Fi network to work on your device.
+    You are polite but increasingly frustrated, and you want clear, step-by-step help.
+  context:
+    - "You rely on eduroam for coursework and remote labs."
+    - "You are comfortable following instructions but are unsure about certificates and security settings."
+  goals:
+    - "Explain that you already tried to connect by {{primary_attempt}} but the device still refuses to join eduroam."
+    - "Mention that you also considered {{secondary_attempt}}, yet the network still fails to authenticate."
+    - "Ask for precise guidance tailored to a {{device_type}} running {{operating_system}}."
+    - "Provide the exact error message you see: {{error_message}}."
+    - primary_attempt:
+        function: pairwise()
+        type: string
+        data:
+          - downloading and running the eduroam CAT installer
+          - adding eduroam manually through the Wi-Fi settings wizard
+          - importing the university-provided mobileconfig profile
+          - following the campus knowledge base instructions step by step
+    - secondary_attempt:
+        function: pairwise()
+        type: string
+        data:
+          - forgetting the network and re-entering my credentials
+          - installing the root certificate from the IT portal
+          - connecting to the onboarding SSID before switching to eduroam
+          - updating my network adapter drivers and rebooting
+    - device_type:
+        function: forward()
+        type: string
+        data:
+          - Windows laptop
+          - MacBook
+          - Android phone
+          - iPhone
+    - operating_system:
+        function: forward(device_type)
+        type: string
+        data:
+          - Windows 11
+          - macOS Sonoma
+          - Android 14
+          - iOS 17
+    - error_message:
+        function: random()
+        type: string
+        data:
+          - "Unable to connect to this network."
+          - "Authentication failed. Please check your credentials."
+          - "Cannot verify the server's identity."
+          - "EAP authentication timed out."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, but I can't help with that request. Please contact the IT help desk."
+  output:
+    - resolution_status:
+        type: string
+        description: "Whether the chatbot reports the issue as resolved, pending, or escalated."
+    - troubleshooting_steps:
+        type: list[string]
+        description: "The ordered steps the chatbot instructs the student to follow."
+    - follow_up_action:
+        type: string
+        description: "Any required follow-up such as ticket creation, in-person visit, or confirmation."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.12
+  interaction_style:
+    - change your mind
+    - long phrases
+    - make spelling mistakes
+```
+
+If you’d like to tweak the list of attempted methods or capture extra outputs (e.g., ticket IDs), just let me know!

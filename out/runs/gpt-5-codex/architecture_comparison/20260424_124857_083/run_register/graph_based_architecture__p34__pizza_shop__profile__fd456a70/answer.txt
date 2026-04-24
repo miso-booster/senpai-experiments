@@ -1,0 +1,97 @@
+Hey there! 😊 I put together a Sensei profile that captures exactly what you described: the user starts building a custom pizza, but mid-conversation they change their mind and switch to one of the shop’s signature pizzas. Here’s a ready-to-use profile you can drop into `profiles/`—I named it `custom_to_predefined_switcher.yaml` for clarity:
+
+```yaml
+test_name: custom_to_predefined_switcher
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You’re ordering dinner for yourself and a friend.
+    You start by requesting a custom pizza, but halfway through you decide it would be safer to stick with one
+    of the shop’s signature pizzas instead.
+  context:
+    - You’re fairly polite but a little indecisive.
+    - You want to pick the order up within the next hour.
+  goals:
+    - I'd like to build a custom pizza with a {{custom_size}} crust and toppings like {{custom_toppings}}. Can you help me with that?
+    - How much would that custom pizza cost?
+    - Actually, I think I'll switch plans—what signature pizzas do you have?
+    - Please change my order to a {{predefined_size}} {{predefined_pizza}} pizza instead.
+    - I'd also like {{drink_quantity}} {{drink_type}} with the order.
+    - Could you confirm the total price and the estimated pickup time?
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - custom_toppings:
+        function: another()
+        type: string
+        data:
+          - mushrooms and olives
+          - pepperoni and jalapeños
+          - artichokes and spinach
+          - extra cheese and basil
+    - predefined_pizza:
+        function: forward()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken, Four Cheese]
+    - predefined_size:
+        function: forward(predefined_pizza)
+        type: string
+        data: [small, medium, large]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Sparkling Water, Cola, Lemon Tea, Orange Soda]
+    - drink_quantity:
+        function: forward(drink_type)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - custom_request_response:
+        type: string
+        description: "How the chatbot handled the initial custom pizza request."
+    - final_order_summary:
+        type: string
+        description: "Confirmation of the final predefined pizza and drink order."
+    - total_price:
+        type: currency
+        description: "Total amount for the finalized order, including drinks."
+    - estimated_ready_time:
+        type: time
+        description: "Estimated time until the order is ready for pickup."
+    - order_id:
+        type: string
+        description: "Unique identifier or confirmation code for the final order."
+
+conversation:
+  number: 4
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      limit: 20
+  interaction_style:
+    - long phrases
+    - change your mind
+```
+
+### Why this setup works
+
+- **Behavioral switch baked in:** The `change your mind` interaction style plus the goal sequence forces the simulated user to pivot from custom to predefined mid-conversation.
+- **Variable coverage:** `custom_*` variables handle the first half, while `predefined_*` plus the drink info wrap up the final order. Using `forward()` and `pairwise()` keeps coverage manageable without exploding combinations.
+- **Outputs ready for rules:** The extraction schema captures both the bot’s reaction to the custom request and the confirmed predefined order—perfect if you want to validate that the bot actually pivoted and summarized the final order correctly.
+
+Feel free to tweak the values, the number of conversations, or the bot outputs depending on your test focus. If you need help wiring this into a `run.yml` or adjusting the interaction style, just let me know! 🍕

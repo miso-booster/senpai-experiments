@@ -1,0 +1,59 @@
+¡Hola! Qué gusto ver que ya tienes un perfil tan completo 😊. Para probarlo de forma efectiva con Sensei-check, te recomiendo empezar con un conjunto de reglas que verifiquen los elementos críticos que el bot promete devolver: enlaces, detalles del Welcome Day, consistencia del idioma y la coherencia entre texto y enlaces. Aquí tienes cuatro reglas sugeridas listas para pegar y adaptar:
+
+---
+
+### 1. Enlaces esenciales de admisión siempre presentes
+Comprueba que el asistente no se olvida de los tres enlaces clave cuando responde a un estudiante potencial.
+
+```yaml
+name: admission_links_available
+description: El bot debe compartir los enlaces principales de admisión, lista de espera y recursos para futuros estudiantes.
+conversations: 1
+oracle: all(link and link.strip() for link in [admission_to_grados_link, waitlist_info_link, future_students_link])
+```
+
+---
+
+### 2. El detalle de la lista de espera viene con su enlace
+Si el bot explica procedimientos de lista de espera, también debe entregar la URL correspondiente.
+
+```yaml
+name: waitlist_details_consistent
+description: Cuando describe procesos de lista de espera, también incluye el enlace oficial.
+conversations: 1
+if: waitlist_procedures and waitlist_procedures.strip()
+then: waitlist_info_link and waitlist_info_link.strip()
+```
+
+---
+
+### 3. Información completa del Welcome Day
+Verifica que, cuando aparezcan fecha u hora, el bot entregue los tres datos esenciales del evento.
+
+```yaml
+name: welcome_day_complete_details
+description: Si menciona el Welcome Day, la fecha, hora y ubicación deben estar presentes.
+conversations: 1
+if: welcome_day_date is not None or welcome_day_time is not None
+then: (welcome_day_date is not None and welcome_day_time is not None and event_location and event_location.strip())
+```
+
+---
+
+### 4. Respuestas consistentes en español
+Dado que el usuario simulado habla en español, es ideal asegurarse de que las respuestas del bot no cambien de idioma.
+
+```yaml
+name: respuestas_en_espanol
+description: El asistente debe contestar en español para este perfil orientado a estudiantes hispanohablantes.
+conversations: 1
+oracle: language(chatbot_phrases) == 'ESP'
+```
+
+---
+
+#### Consejos finales
+- Después de correr estas reglas, revisa cuáles slots quedan en `missing_slots()`; te dará pistas para nuevas reglas de completitud.
+- ¿Quieres algo metamórfico? Cuando tengas varias conversaciones generadas (recuerda que usas `forward()` para `cursos` y `grados`), puedes añadir reglas que comparen cómo cambia la respuesta al variar el grado solicitado, por ejemplo usando `semantic_content` para asegurarte de que se menciona el programa correcto.
+
+Si necesitas ayuda ajustando alguna regla o creando otras (por ejemplo, para el campo `application_fee` o los requisitos de admisión), dime y lo vemos junt@s. ¡Ánimo con esas pruebas, tu perfil va por muy buen camino! 🚀

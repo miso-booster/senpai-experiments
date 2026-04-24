@@ -1,0 +1,102 @@
+Here’s a fresh Sensei profile capturing a frustrated student who keeps failing to configure eduroam and varies the setup methods via goal variables:
+
+```yaml
+test_name: "eduroam_setup_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student trying to connect to the campus eduroam Wi‑Fi.
+    You are fairly tech-savvy but keep running into authentication errors and want clear,
+    step-by-step help from IT support.
+  context:
+    - "You are on campus for the first week of classes and urgently need Wi‑Fi."
+    - "You already searched the university knowledge base but it did not solve your issue."
+    - "You are willing to follow detailed technical steps if they are explained clearly."
+  goals:
+    - "Explain that you have already tried {{initial_method}} and {{follow_up_method}} to configure eduroam on your {{device_context}}, but authentication keeps failing."
+    - "Ask the assistant to review whether your {{configuration_focus}} settings are correct or need to be reset."
+    - "Mention that you already consulted {{resource_checked}} but the guidance did not resolve the issue."
+    - "Request a clear step-by-step plan and clarify if you should collect diagnostic logs before visiting the IT help desk."
+    - initial_method:
+        function: pairwise()
+        type: string
+        data:
+          - "the eduroam Configuration Assistant Tool (CAT)"
+          - "installing the university's onboarding installer"
+          - "using the built-in 802.1X setup wizard"
+    - follow_up_method:
+        function: pairwise()
+        type: string
+        data:
+          - "manually importing the security certificates"
+          - "resetting network settings and re-adding eduroam"
+          - "configuring eduroam through the mobile device management profile"
+    - device_context:
+        function: another()
+        type: string
+        data:
+          - "Windows 11 laptop"
+          - "macOS Sonoma MacBook"
+          - "Android 13 smartphone"
+          - "iOS 17 iPhone"
+          - "Ubuntu 22.04 laptop"
+    - configuration_focus:
+        function: random()
+        type: string
+        data:
+          - "EAP method and inner authentication settings"
+          - "anonymous identity and user identity fields"
+          - "server certificate validation options"
+          - "802.1X credentials stored in the keychain"
+    - resource_checked:
+        function: random()
+        type: string
+        data:
+          - "the university's official eduroam quick-start PDF"
+          - "a community forum thread about eduroam troubleshooting"
+          - "the eduroam CAT instructions for your campus"
+          - "the IT department's mobile device configuration guide"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you describe your eduroam setup issue again?"
+  output:
+    - resolution_status:
+        type: string
+        description: "Summary of whether the chatbot provided a working eduroam solution"
+    - troubleshooting_steps:
+        type: list[string]
+        description: "Ordered steps the chatbot recommends to resolve the eduroam connection failure"
+    - credential_guidance:
+        type: string
+        description: "Instructions about username, password, or certificate requirements for eduroam"
+    - escalation_channel:
+        type: string
+        description: "Where the user should escalate if the issue persists (e.g., IT desk, ticket link)"
+
+conversation:
+  number: combinations(0.7, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.2
+  interaction_style:
+    - long phrases
+    - change your mind
+    - make spelling mistakes
+```
+
+**Why this fits**
+- The `initial_method` and `follow_up_method` variables capture the different setup approaches the user has already attempted, as you requested.
+- `device_context`, `configuration_focus`, and `resource_checked` give the chatbot enough context to tailor guidance while still varying scenarios across conversations.
+- `conversation.number` leverages `combinations(0.7, pairwise)` so the two method variables get broad pairwise coverage without exploding the run size.
+- `chatbot.output` fields focus on actionable outcomes (status, steps, credential advice, escalation path) that future Sensei rules can validate.
+
+Reference: the structure and function choices follow the guidance in **sensei-chat-guide.md** (sections on goals, variables, and conversation controls). If you’d like different languages, interaction styles, or output slots, just let me know and I can tweak it! 😊

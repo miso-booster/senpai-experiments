@@ -1,0 +1,27 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__39dac344
+$$$
+Hey there! Thanks for sharing the rule 😊 I took a close look, and there are two issues we should fix to make it actually verify the CAU contact details:
+
+### What’s not okay right now
+1. **The `when` clause makes the rule vacuously true.**  
+   It only applies when the conversation already has the correct email, phone, and address—so it never catches incorrect data. If those values are wrong, the rule just skips the conversation entirely.
+
+2. **`conv[0]` shouldn’t be used in single-conversation rules.**  
+   When `conversations: 1`, Sensei-check exposes the profile fields directly, so you can refer to `contact_email`, `contact_phone`, etc., without the `conv[0]` prefix.
+
+### Fixed version
+Here’s the cleaned-up rule you can drop back into `conversation_lengths.yaml` (or wherever you’re keeping it):
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the official contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works
+- **No filter needed:** The rule now runs on every conversation generated from the profile. If the chatbot outputs incorrect contact data, the `oracle` fails and you get a clear violation report.
+- **Direct field access:** `contact_email`, `contact_phone`, and `physical_address` are the exact field names exposed by the SENSEI profile, so referencing them directly is the recommended pattern in the Sensei-check docs.
+
+If you expect minor variations in formatting (like extra spaces or accents), we could swap in `semantic_content` for the address to make it more forgiving. Just let me know and I’ll help you tune it!
+$$$

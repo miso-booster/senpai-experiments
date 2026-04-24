@@ -1,0 +1,75 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__16a88f3f
+$$$
+Here you go! I built a new Sensei Chat profile that captures a frustrated student trying multiple eduroam setup methods, with those methods modeled as a variable so the simulator can cycle through them.
+
+### Summary
+- Simulates a university student who keeps failing to configure eduroam and asks for thorough troubleshooting guidance.
+- Uses `setup_method` as the rotating variable to cover different installation paths (installer, manual OS config, mobile profile, Linux script, CAT app).
+- Extracts key chatbot outputs for later validation: overall resolution status, required artifacts, ordered troubleshooting steps, and escalation guidance.
+- Crafted following the structure and best practices from `sensei-chat-guide.md`.
+
+### Profile YAML
+```yaml
+test_name: "eduroam_setup_guidance"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who urgently needs to connect to the campus eduroam Wi-Fi
+    network. You are fairly tech-savvy but every attempt ends in an error, and you are
+    anxious about missing deadlines.
+  context:
+    - "You have correct university credentials but cannot complete the eduroam setup."
+    - "You have already read the basic FAQ and want deeper troubleshooting."
+    - "Describe errors you see and ask for precise, actionable fixes."
+  goals:
+    - "Explain why {{setup_method}} might be failing for me."
+    - "Provide a detailed, step-by-step checklist to configure eduroam using {{setup_method}}."
+    - "List every certificate, profile, or setting I must prepare before trying again."
+    - setup_method:
+        function: forward()
+        type: string
+        data:
+          - using the university's eduroam installer tool
+          - configuring Wi-Fi manually in the operating system network settings
+          - installing a mobileconfig profile from the campus portal
+          - setting up NetworkManager on Linux with the official eduroam script
+          - connecting through the eduroam CAT mobile application
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, please contact the IT help desk if these steps do not work."
+  output:
+    - resolution_status:
+        type: string
+        description: "Whether the bot believes the user will succeed after following the advice."
+    - required_artifacts:
+        type: list[string]
+        description: "Files, credentials, or certificates the user must gather."
+    - troubleshooting_steps:
+        type: list[string]
+        description: "Ordered steps the bot provided to fix the eduroam setup issues."
+    - escalation_contact:
+        type: string
+        description: "Who to reach out to if the configuration still fails."
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+    - change your mind
+    - make spelling mistakes
+```
+
+Feel free to tweak the context or outputs if you want to capture additional signals (e.g., device types or error codes). Let me know if you’d like rules to validate these conversations next! 😊
+$$$

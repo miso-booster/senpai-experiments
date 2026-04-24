@@ -1,0 +1,24 @@
+Hey there! Thanks for sharing your rule 😊 I spotted a couple of things we can tidy up so it actually enforces what you want:
+
+### What’s off in the current rule?
+1. **Access pattern:** For single-conversation rules (`conversations: 1`), Sensei-check lets you refer to fields directly. Using `conv[0].contact_email` isn’t necessary and can cause confusion.
+2. **Redundant condition:** Your `when` clause is *identical* to the `oracle`, so once a conversation matches `when`, the rule will always pass. In other words, the rule never really checks anything—it just filters.
+
+### Polished version
+Here’s a cleaned-up YAML block you can use:
+
+```yaml
+name: check_cau_information
+description: Ensures the CAU contact details match the official reference.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' \
+  and contact_phone == '91 497 4029' \
+  and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works better
+* The rule now runs on every conversation (no redundant `when`) and **fails whenever any field deviates** from the authoritative info.
+* Using the direct field names keeps things aligned with Sensei-check’s single-conversation style.
+* If you ever need to apply the rule only when the bot is supposed to provide those details, you can add a narrower `when:` (e.g., checking the user intent) rather than repeating the same checks.
+
+Let me know if you want to add a helpful `on-error` message or tailor the filter more!

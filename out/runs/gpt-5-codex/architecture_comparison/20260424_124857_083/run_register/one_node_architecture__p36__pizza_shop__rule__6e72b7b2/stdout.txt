@@ -1,0 +1,18 @@
+conversation ID: one_node_architecture__p36__pizza_shop__rule__6e72b7b2
+$$$
+Hey there! 😊 The rule was failing because it jumped straight to comparing prices without first checking that conversation 0 actually has *more toppings* than conversation 1. Without that precondition, Sensei-check expects `conv[0].price` to be higher for **every** pair that matches the `when:` filter—even when `conv[0]` has the *same or fewer* toppings.
+
+Here’s the repaired version with the missing `if:` clause restored:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Double-check that the profile you’re targeting exposes `size`, `drink`, `toppings`, and `price` in its `chatbot.output`; otherwise the rule won’t find the fields it needs. Let me know if you want help aligning the profile schema too! 🍕
+$$$

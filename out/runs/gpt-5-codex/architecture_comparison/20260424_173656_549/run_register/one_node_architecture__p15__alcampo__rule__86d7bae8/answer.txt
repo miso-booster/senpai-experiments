@@ -1,0 +1,14 @@
+Hey! 😊 I noticed the original rule was referencing `user_request`, but that field isn’t exposed by your `chatbot.output`, so Sensei-check can’t use it to filter conversations. I rewrote the rule to focus directly on the two outputs that matter for your customer service scenario. Here’s a working version:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and a customer service number.
+conversations: 1
+oracle: (
+  contact_options not in [None, ""] and
+  customer_service_number not in [None, ""]
+)
+on-error: f"Missing info → contact_options={contact_options}, customer_service_number={customer_service_number}"
+```
+
+This way, every conversation must surface both `contact_options` and `customer_service_number`, and if either is absent you’ll get a clear error message. Let me know if you’d like to expand it with additional checks or keep it as part of a metamorphic rule!

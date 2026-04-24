@@ -1,0 +1,123 @@
+conversation ID: agentic_architecture__p34__pizza_shop__profile__2d37243c
+$$$
+Hey there! I put together a fresh Sensei profile that walks the simulator through ordering a custom pizza, then switching to a house special mid-conversation—exactly what you described 😊. I relied on `sensei-chat-guide.md` to structure the profile (goals, interaction styles, and chatbot outputs) and to make sure the schema lines up with future rules.
+
+### Highlights
+- User starts in *“build-your-own-pizza”* mode (size, crust, sauce, toppings) and explicitly asks for price & prep time.
+- Interaction style includes `change your mind`, so the simulator will naturally flip to a predefined menu pizza.
+- Final outputs capture the pizza the bot confirms (name, size, crust, toppings), plus price, readiness time, and order reference—ideal for downstream rules.
+
+```yaml
+test_name: "custom_to_predefined_pizza_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a foodie planning dinner for friends. You usually love to build
+    elaborate custom pizzas, but you can be swayed by house specials if they sound
+    tasty or convenient.
+  context:
+    - "You want dinner ready within the next hour."
+    - "You are sensitive to spicy toppings and prefer a balanced flavour."
+    - "You are price conscious but willing to pay a little extra for a signature pizza."
+    - "If the restaurant seems confident about a menu pizza, you tend to trust their recommendation."
+  goals:
+    - "Open by requesting a custom pizza: ask for a {{size}} pizza with a {{crust}} crust, {{sauce}} sauce, and toppings {{first_topping}} and {{second_topping}}."
+    - "Ask for the price and estimated prep or delivery time for that custom pizza."
+    - "A few turns in, change your mind and say you'd rather order the predefined {{predefined_pizza}} pizza from the menu instead. Make the switch explicit."
+    - "Confirm the ingredients of the {{predefined_pizza}} pizza and whether you can add {{extra_item}} to the order."
+    - "Request the final total price and ask for an order confirmation or reference number."
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - crust:
+        function: random()
+        type: string
+        data: [thin, stuffed, gluten-free]
+    - sauce:
+        function: random()
+        type: string
+        data: [tomato basil, white garlic, spicy marinara]
+    - first_topping:
+        function: random()
+        type: string
+        data:
+          - pepperoni
+          - mushrooms
+          - roasted peppers
+          - grilled chicken
+          - olives
+    - second_topping:
+        function: random()
+        type: string
+        data:
+          - artichokes
+          - jalapeños
+          - caramelized onions
+          - sun-dried tomatoes
+          - bacon
+    - predefined_pizza:
+        function: random()
+        type: string
+        data:
+          - Chef's Special
+          - Margherita Deluxe
+          - BBQ Blast
+          - Veggie Supreme
+    - extra_item:
+        function: random()
+        type: string
+        data:
+          - garlic knots
+          - buffalo wings
+          - caesar salad
+          - bottled soda
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase your request?"
+  output:
+    - final_order_type:
+        type: string
+        description: "Whether the chatbot finalised a custom pizza or a predefined menu pizza"
+    - final_pizza_name:
+        type: string
+        description: "Name of the pizza confirmed for the order"
+    - final_size:
+        type: string
+        description: "Size of the final pizza selection"
+    - final_crust:
+        type: string
+        description: "Crust used for the final pizza selection"
+    - final_toppings:
+        type: list[string]
+        description: "Toppings included in the confirmed order"
+    - total_price:
+        type: currency
+        description: "Quoted total price for the confirmed order"
+    - ready_time:
+        type: time("hh:mm")
+        description: "Estimated pickup or delivery time provided by the chatbot"
+    - order_reference:
+        type: string
+        description: "Order confirmation number or reference code"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 8
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+Let me know if you’d like different variables, more conversations, or tweaks to those outputs!
+$$$

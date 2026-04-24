@@ -1,0 +1,74 @@
+conversation ID: agentic_architecture__p4__ada_uam__profile__0c87438e
+$$$
+¡Hola! 😊 Encantado de ayudarte con el perfil para el chatbot del CAU de la UAM. Me basé en las pautas de `sensei-chat-guide.md` para estructurarlo (secciones `user`, `chatbot`, `conversation` y el contrato `chatbot.output`). Aquí tienes un primer borrador que puedes ajustar según la personalidad real del bot o el conector que uses:
+
+```yaml
+test_name: "uam_cau_contact_info"
+
+llm:
+  temperature: 0.2
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona de la comunidad universitaria de la UAM que necesita soporte
+    del Centro de Atención a Usuarios (CAU) porque tiene un problema con un servicio digital.
+    Tu tono es cordial y profesional, pero quieres resolver tu incidencia cuanto antes.
+  context:
+    - "Te diriges al CAU para obtener información de contacto fiable."
+    - "Agradeces la ayuda y pides confirmaciones si las respuestas no son claras."
+  goals:
+    - "Preséntate como {{relacion_con_uam}} de la UAM con una incidencia tecnológica y solicita ayuda del CAU."
+    - "Pregunta cuál es el número de teléfono del CAU."
+    - "Solicita el correo electrónico de soporte del CAU."
+    - "Pregunta por la dirección física del CAU para atención presencial."
+    - "Pide el horario de atención disponible."
+    - relacion_con_uam:
+        function: another()
+        type: string
+        data:
+          - estudiante
+          - profesor
+          - investigadora
+          - personal administrativo
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no tengo esa información en este momento. ¿Podrías reformular tu consulta?"
+  output:
+    - telefono_cau:
+        type: string
+        description: "Número de teléfono facilitado para contactar con el CAU."
+    - correo_cau:
+        type: string
+        description: "Correo electrónico de soporte del CAU."
+    - direccion_cau:
+        type: string
+        description: "Dirección física del CAU para atención presencial."
+    - horario_cau:
+        type: string
+        description: "Horario de atención que proporciona el chatbot."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 12
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+```
+
+### Por qué está armado así
+- **Objetivos del usuario**: cada meta fuerza al bot a entregar teléfono, email, dirección y horarios. La variable `relacion_con_uam` (función `another()`) introduce diversidad sin complicar demasiado el set de conversaciones, cumpliendo lo sugerido en la guía sobre variabilidad controlada.
+- **`chatbot.output`**: definí los cuatro campos que luego podrás validar con reglas (`conv[i].telefono_cau`, etc.). Están tipados como `string`, tal como permite el doc, aunque puedes migrar a tipos personalizados si luego quieres validar formatos (teléfono, email…).
+- **`conversation.goal_style`**: uso `all_answered` para asegurar que la simulación se mantenga hasta que todos los objetivos hayan sido cubiertos (tal y como recomienda la guía cuando necesitamos respuestas completas).
+- **`interaction_style`**: añadí `long phrases` y `make spelling mistakes` para estresar un poco al bot. Puedes quitarlos o sumar otros estilos si necesitas pruebas más limpias.
+
+Si quieres añadir más variaciones (por ejemplo, distintos canales de contacto o preguntas de seguimiento) dímelo y lo extendemos. ¿Te gustaría que el perfil exporte algún otro dato o incluya escenarios donde el bot no conoce la información?
+$$$

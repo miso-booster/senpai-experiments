@@ -1,0 +1,24 @@
+Sure thing! Based on the profile you shared, here’s a single-conversation Sensei-check rule that verifies the bike shop assistant returns the exact opening hours and prices you expect, plus ensures the care tips aren’t left blank. 😊
+
+```yaml
+name: bike_shop_expected_outputs
+description: Bike shop assistant returns the canonical hours and prices
+conversations: 1
+oracle: >
+  semantic_content(opening_and_closing, 'The bike shop opens at 10 and closes at 20') and
+  extract_float(tire) == 20 and
+  extract_float(tune_up) == 50 and
+  extract_float(seat_price) == 20 and
+  care_bike is not None and care_bike.strip() != ''
+on-error: >
+  Expected hours 10-20 with prices tire=$20, tune-up=$50, seat=$20 and non-empty care advice,
+  but got opening_and_closing={opening_and_closing}, tire={tire}, tune_up={tune_up},
+  seat_price={seat_price}, care_bike={care_bike}
+```
+
+**How it works:**
+- `semantic_content` keeps the hours check flexible (e.g., “10:00 to 20:00” still passes).
+- `extract_float` gives you clean numeric comparisons even if the assistant uses currency symbols or words.
+- The last bit makes sure the assistant actually shares some bike-care advice instead of returning an empty field.
+
+Let me know if you’d like to tweak the wording, add more guards (like currency codes), or extend this into a metamorphic rule later on! 🚴‍♂️💬

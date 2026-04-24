@@ -1,0 +1,107 @@
+conversation ID: agentic_architecture__p20__bikeshop__profile__3a4fcd48
+$$$
+Here’s a fresh profile you can drop into `profiles/bike_shop_wheel_change_scheduler.yaml` to exercise the chatbot’s handling of date and time variations for wheel-change appointments:
+
+```yaml
+test_name: "bike_shop_wheel_change_scheduler"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a commuter cyclist scheduling a wheel change at a neighborhood bike shop.
+    You care about getting the bike back before your next ride and double-check every time option the shop mentions.
+  context:
+    - "You rely on your bike to commute daily."
+    - "Both wheels feel worn, so you want them replaced as soon as possible."
+    - "You prefer morning appointments but can flex if the shop suggests alternatives."
+  goals:
+    - "Schedule a wheel change appointment on {{preferred_date}} at {{preferred_time}}."
+    - "Confirm how long the service will take and whether same-day pickup is possible."
+    - "If that slot is unavailable, ask about {{alternate_date}} at {{alternate_time}} instead."
+    - "Explain that you need the bike back before {{commute_deadline}}."
+    - preferred_date:
+        function: pairwise()
+        type: string
+        data:
+          - Tuesday, July 2
+          - Wednesday, July 3
+          - Friday, July 5
+          - Saturday, July 6
+    - preferred_time:
+        function: pairwise()
+        type: string
+        data:
+          - 9:00 AM
+          - 11:30 AM
+          - 2:15 PM
+          - 4:45 PM
+    - alternate_date:
+        function: forward()
+        type: string
+        data:
+          - Monday, July 8
+          - Thursday, July 11
+          - Saturday, July 13
+    - alternate_time:
+        function: random()
+        type: string
+        data:
+          - 8:30 AM
+          - 12:45 PM
+          - 5:30 PM
+    - commute_deadline:
+        function: random()
+        type: string
+        data:
+          - a group ride on Sunday morning
+          - commuting early Monday morning
+          - a training session on Saturday afternoon
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn’t catch the timing—could you restate your appointment request?"
+  output:
+    - appointment_date:
+        type: date("mm/dd/yyyy")
+        description: "Date the chatbot ultimately confirms for the wheel change service"
+    - appointment_time:
+        type: time("hh:mm am/pm")
+        description: "Time the chatbot confirms for the appointment"
+    - duration_estimate:
+        type: string
+        description: "Estimated service duration or turnaround promised by the chatbot"
+    - confirmation_reference:
+        type: string
+        description: "Any booking or confirmation identifier provided"
+    - follow_up_notes:
+        type: string
+        description: "Extra instructions (drop-off, reminders, deposits, etc.) shared with the user"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      limit: 8
+    max_cost: 0.12
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+**Why it’s set up this way**
+
+- The paired `preferred_date` / `preferred_time` variables (declared with `pairwise()`) and the alternate slots give you broad coverage over different scheduling combinations, just like the approach recommended in `sensei-chat-guide.md`.
+- `conversation.number` uses the pairwise matrix to run through every day/time pair without exploding into a full Cartesian grid.
+- `chatbot.output` captures the confirmed date, time, any turnaround promises, and references so future rules can validate how the bot handled scheduling details.
+
+Feel free to tweak the lists if you want other days or time windows, but this should give the chatbot a solid workout on juggling availability. Let me know if you’d like matching rules to validate the extracted outputs!
+$$$

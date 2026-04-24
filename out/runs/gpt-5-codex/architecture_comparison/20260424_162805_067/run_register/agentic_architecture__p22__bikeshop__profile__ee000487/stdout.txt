@@ -1,0 +1,85 @@
+conversation ID: agentic_architecture__p22__bikeshop__profile__ee000487
+$$$
+Here’s a fresh profile tailored to that discomfort scenario 😊 I followed the guidance from **`sensei-chat-guide.md`** and double-checked existing bike profiles so this one focuses purely on advice and services without pushing for an appointment.
+
+**Highlights**
+- Simulated user is an English-speaking cyclist who feels discomfort and wants to know if fit adjustments or worn components are to blame.
+- Goals prompt the chatbot for fitting advice, component inspection guidance, and shop services—while explicitly noting they’re not ready to book.
+- `chatbot.output` captures the key responses you’ll likely validate later (adjustment advice, service suggestions, inspection guidance, and how the bot handles the “no appointment yet” message).
+
+```yaml
+test_name: bike_fit_discomfort_inquirer
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who has started to feel uncomfortable on your bike.
+    You are uncertain whether the issue comes from an improper bike fit or
+    from components that may be worn out.
+  context:
+    - You ride your bike for commuting and longer weekend outings.
+    - You experience numbness and soreness during longer rides and want to pinpoint the cause.
+    - You want practical advice on adjustments or services before deciding whether to schedule anything.
+  goals:
+    - "Explain that you feel discomfort in your {{discomfort_area}} during {{ride_type}} and ask whether it comes from poor bike fit or worn parts."
+    - "Ask what fit adjustments or assessments the shop can perform to improve your comfort."
+    - "Ask about services the shop offers to inspect or replace your {{component_concern}}."
+    - "Request self-check tips or interim steps you can take before scheduling service."
+    - "Clarify that you are not ready to book an appointment yet but want to understand your options."
+    - discomfort_area:
+        function: another()
+        type: string
+        data:
+          - lower back
+          - knees
+          - neck and shoulders
+          - wrists
+    - ride_type:
+        function: another()
+        type: string
+        data:
+          - daily commuting
+          - weekend endurance rides
+          - hill training sessions
+          - casual neighborhood rides
+    - component_concern:
+        function: random()
+        type: string
+        data:
+          - saddle
+          - handlebars
+          - drivetrain
+          - wheelset
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you repeat that? I want to make sure I understand your bike issue."
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: Guidance the chatbot provides on bike fit adjustments to improve comfort.
+    - service_recommendations:
+        type: string
+        description: Shop services or packages suggested to address the user’s discomfort.
+    - component_inspection_guidance:
+        type: string
+        description: Advice on checking or servicing the components the user is worried about.
+    - appointment_acknowledgement:
+        type: string
+        description: How the chatbot responds to the user mentioning they are not ready to book yet.
+
+conversation:
+  number: 3
+  max_cost: 0.4
+  goal_style:
+    steps: 6
+```
+
+Let me know if you’d like variants in another language, more variables (e.g., bike type), or matching rules to validate the outputs!
+$$$

@@ -1,0 +1,97 @@
+conversation ID: graph_based_architecture__p14__alcampo__profile__c06f622f
+$$$
+¡Hola! 😊 Me encanta la idea de poner a prueba al chatbot de Alcampo con recetas y planificación de menús. Aquí tienes un perfil Sensei completo que se enfoca justo en eso. Incluí objetivos para pedir menús equilibrados, recomendaciones específicas y hasta listas de la compra, de modo que puedas validar si el bot cubre bien cada necesidad.
+
+```yaml
+test_name: Recipe and Menu Planning Advisor
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona organizada que quiere planificar sus comidas de la semana.
+    Buscas recetas variadas, equilibradas y fáciles de preparar, y necesitas que
+    el chatbot te ayude a crear menús completos y listas de la compra.
+  context:
+    - "Quieres aprovechar ingredientes de temporada y evitar desperdicios."
+    - "Prefieres recetas con instrucciones claras y tiempos estimados de preparación."
+    - "Necesitas opciones que puedan adaptarse a diferentes tipos de dieta en tu hogar."
+  goals:
+    - "Pide un menú semanal equilibrado que respete {{dietary_preference}}."
+    - "Solicita dos recetas para la comida del lunes que incluyan {{key_ingredient}}."
+    - "Pregunta por opciones de desayuno rápidas y saludables para toda la semana."
+    - "Pide una lista de la compra agrupada por categorías según el menú sugerido."
+    - "Pregunta cómo adaptar una de las recetas para cubrir {{allergy_or_intolerance}}."
+    - dietary_preference:
+        function: forward()
+        type: string
+        data:
+          - "opciones vegetarianas"
+          - "platos ricos en proteínas"
+          - "recetas aptas para niños"
+    - key_ingredient:
+        function: another()
+        type: string
+        data:
+          - "calabacín"
+          - "garbanzos"
+          - "salmón"
+          - "quinoa"
+    - allergy_or_intolerance:
+        function: random()
+        type: string
+        data:
+          - "intolerancia a la lactosa"
+          - "alergia a los frutos secos"
+          - "celiaquía"
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - weekly_menu_overview:
+        type: string
+        description: "Resumen del menú semanal recomendado"
+    - recipe_suggestions:
+        type: list[string]
+        description: "Listado de recetas sugeridas para los distintos días"
+    - ingredient_shopping_list:
+        type: list[string]
+        description: "Lista de la compra agrupada o priorizada"
+    - preparation_time_guidance:
+        type: string
+        description: "Tiempos aproximados de preparación o cocción por receta"
+    - dietary_adjustments:
+        type: string
+        description: "Consejos para adaptar recetas a preferencias o alergias"
+    - cooking_tips:
+        type: string
+        description: "Trucos o recomendaciones adicionales del chatbot"
+
+conversation:
+  number: 3
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - single questions
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+### ¿Por qué funciona bien este perfil?
+
+- **Cobertura completa del menú semanal**: el bot tiene que proponer un menú equilibrado y detallar recetas para días específicos.
+- **Enfoque en personalización**: con las variables de dieta y alergias, verificas si sabe adaptar sus sugerencias.
+- **Validación clara**: los campos en `chatbot.output` te permiten comprobar si el bot entregó menú, recetas, tiempos y lista de compra.
+- **Conversación rica**: el usuario hace preguntas por separado (gracias a `single questions`) y, de forma aleatoria, puede usar frases largas o con pequeños errores, simulando casos reales.
+
+Si necesitas ajustar algo (por ejemplo, añadir más tipos de alergias o controlar el número de recetas sugeridas), dime y lo pulimos juntos. ¡Vamos a hacer que ese chatbot brille en la cocina! 🍽️✨
+$$$

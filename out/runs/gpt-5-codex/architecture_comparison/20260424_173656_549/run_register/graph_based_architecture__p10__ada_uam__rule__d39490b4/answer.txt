@@ -1,0 +1,48 @@
+¡Hola! Gracias por compartir tu perfil 😊. Tiene un montón de slots interesantes, así que es perfecto para montar varias reglas y asegurarnos de que el bot entregue información clave a los futuros estudiantes. Aquí tienes algunas ideas listas para pegar en tu carpeta de **rules/** (recuerda activar `active: true` cuando quieras ejecutarlas con Sensei-check):
+
+```yaml
+name: main_links_are_provided
+description: El bot devuelve los enlaces esenciales de admisiones y recursos para nuevos estudiantes.
+conversations: 1
+oracle: >
+  admission_to_grados_link not in [None, ''] and
+  future_students_link not in [None, ''] and
+  welcome_day_link not in [None, '']
+```
+
+```yaml
+name: waitlist_info_consistency
+description: Si explica procedimientos de lista de espera, también comparte el enlace correspondiente.
+conversations: 1
+if: waitlist_procedures not in [None, '']
+then: waitlist_info_link not in [None, '']
+```
+
+```yaml
+name: welcome_day_complete_slot
+description: Cuando se menciona el Welcome Day, se entregan fecha, hora y ubicación.
+conversations: 1
+if: welcome_day_link not in [None, '']
+then: welcome_day_date is not None and welcome_day_time is not None and event_location not in [None, '']
+```
+
+```yaml
+name: admission_guidance_complete
+description: Al ofrecer requisitos de admisión, también detalla el proceso y un contacto.
+conversations: 1
+if: admission_requirements not in [None, '']
+then: enrollment_process not in [None, ''] and contact_admissions not in [None, '']
+```
+
+Y si quieres vigilar el tono idiomático (dado que el usuario es hispanohablante), puedes añadir este chequeo estilístico:
+
+```yaml
+name: respuestas_en_espanol
+description: El asistente mantiene sus respuestas en español.
+conversations: 1
+oracle: language(chatbot_phrases) == 'SPA'
+```
+
+Estas reglas se enfocan en los campos más críticos de tu `chatbot.output` y en la consistencia de la información que el perfil promete. Si notas que alguno de los slots no siempre debería llenarse, puedes envolver las condiciones con un `if:` para que solo apliquen cuando el tema aparezca en la conversación.
+
+¿Quieres que revisemos alguna otra variación o que armemos reglas metamórficas comparando conversaciones? ¡Dímelo y seguimos! 💪

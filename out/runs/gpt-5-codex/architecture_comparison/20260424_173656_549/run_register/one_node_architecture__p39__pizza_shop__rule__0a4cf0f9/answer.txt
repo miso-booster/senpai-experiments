@@ -1,0 +1,14 @@
+Hey! Here’s a metamorphic rule you can drop into `rules/` once the relevant profile exposes the `drink`, `pizza_type`, `pizza_size`, `toppings`, and `total_cost` fields in `chatbot.output`. It checks that adding exactly one more drink bumps the total by \$2 while the pizza itself stays the same. 🥤🍕
+
+```yaml
+name: drink_adds_two_dollars
+description: Adding one drink increases the total price by $2 when the pizza configuration stays the same
+conversations: 2
+when: conv[0].pizza_type == conv[1].pizza_type and conv[0].pizza_size == conv[1].pizza_size and conv[0].toppings == conv[1].toppings
+if: extract_float(conv[1].drink) == extract_float(conv[0].drink) + 1
+then: extract_float(conv[1].total_cost) == extract_float(conv[0].total_cost) + 2
+on-error: >
+  f"Expected a $2 increment for one extra drink, but prices were {conv[0].total_cost} and {conv[1].total_cost}."
+```
+
+Feel free to tweak the field names if your profile uses different ones. Let me know if you’d like help aligning the profile outputs!

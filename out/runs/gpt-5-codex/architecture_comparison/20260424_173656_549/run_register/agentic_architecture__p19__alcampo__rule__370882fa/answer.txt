@@ -1,0 +1,16 @@
+Here’s a profile-agnostic rule that flags conversations where the assistant never mentions any current promotions or deals:
+
+```yaml
+name: promotions_information_provided
+description: Ensures the assistant mentions current promotions, discounts, or special offers somewhere in the conversation.
+conversations: 1
+active: true
+oracle: any(len(chatbot_returns(keyword)) > 0 for keyword in ['promotion', 'promotions', 'discount', 'discounts', 'offer', 'offers', 'deal', 'deals', 'special offer', 'special offers'])
+on-error: "Assistant never referenced promotions, discounts, offers, or deals in this conversation."
+```
+
+**Why this works**
+
+- Uses the general helper `chatbot_returns` (see `sensei-check-doc.md` and examples in `rules-examples.md`) to scan assistant turns for relevant keywords.  
+- Stays profile-agnostic: it doesn’t rely on any `chatbot.output` fields, so it can run against any conversation batch.  
+- You can tweak the keyword list if your bot uses different wording (e.g., “campaign,” “sale,” etc.).

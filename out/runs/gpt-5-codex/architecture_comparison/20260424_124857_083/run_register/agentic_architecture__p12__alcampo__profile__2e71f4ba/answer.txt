@@ -1,0 +1,109 @@
+Here’s a ready-to-run profile that coaches the simulator to press the chatbot for cart additions and a confirmation summary 🛒✨
+
+**What’s inside**
+- Simulated shopper in English who’s stocking up for different events.
+- Goals cover requesting two core items, handling substitutions, checking promos, and getting a final cart recap.
+- Structured outputs capture the requested/confirmed items, total cost, promo info, availability notes, and the summary you can validate later.
+
+```yaml
+test_name: Shopping Cart Item Addition
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: Home cook organizing groceries for upcoming meals and relying on the chatbot for cart management
+  context:
+    - You're planning meals for the week and want the chatbot to add specific products to your online cart.
+    - You care about staying within budget and want to know about any savings opportunities.
+    - If an item is unavailable, you expect the chatbot to suggest a similar alternative.
+  goals:
+    - "Greet the chatbot and mention you're preparing for a {{event_type}} and need to stock your online cart."
+    - "Ask the chatbot to add {{primary_item}} and {{secondary_item}} to the cart and confirm stock availability."
+    - "Request the running total so it stays close to {{budget_target}} euros and ask about any promotions or bundle deals."
+    - "If something is unavailable, ask for substitutes and consider adding {{extra_item}} instead."
+    - "Before ending, request a clear summary of items in the cart along with the final total and next steps."
+    - event_type:
+        function: random()
+        type: string
+        data:
+          - weeknight dinner
+          - family gathering
+          - meal prep session
+          - small party
+    - primary_item:
+        function: pairwise()
+        type: string
+        data:
+          - fresh salmon fillets
+          - organic chicken breasts
+          - plant-based protein burgers
+          - marinated tofu cubes
+    - secondary_item:
+        function: pairwise()
+        type: string
+        data:
+          - broccoli florets
+          - mixed vegetable medley
+          - sweet potato wedges
+          - asparagus bundle
+    - extra_item:
+        function: random()
+        type: string
+        data:
+          - garlic knots
+          - caesar salad kit
+          - whole grain dinner rolls
+          - sparkling water pack
+    - budget_target:
+        function: random()
+        type: int
+        data:
+          min: 25
+          max: 60
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you let me know which items you'd like to add to your cart?"
+  output:
+    - requested_items:
+        type: list[string]
+        description: Items the user asked to add to the cart
+    - confirmed_cart_items:
+        type: list[string]
+        description: Items the chatbot confirmed adding or reserving
+    - cart_total:
+        type: currency
+        description: Total cost after adding the requested items
+    - promotions_discussed:
+        type: string
+        description: Promotions or savings mentioned for the cart
+    - availability_notes:
+        type: string
+        description: Availability updates or substitution suggestions
+    - confirmation_summary:
+        type: string
+        description: Final summary or next steps provided before checkout
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.5
+  goal_style:
+    steps: 8
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+**Notes**
+- The pairwise functions on `primary_item` and `secondary_item` allow varied combinations while `combinations(0.6, pairwise)` keeps runs manageable (as recommended in `sensei-chat-guide.md`).
+- Outputs align with the same guide’s advice to expose the fields you’ll want to validate later (requested vs. confirmed items, totals, promos, etc.).
+
+Let me know if you’d like tweaks to the persona, variable pools, or outputs!

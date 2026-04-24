@@ -1,0 +1,91 @@
+Here’s a profile tailored to that “bike discomfort, not sure if fit or wear” scenario. I leaned on `sensei-chat-guide.md` for the structure and cross-checked `bike_service_and_repair_inquirer.yaml` to keep naming consistent but avoided overlap.
+
+```yaml
+test_name: bike_fit_discomfort_information
+
+llm:
+  temperature: 0.35
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a dedicated cyclist who recently started feeling discomfort while riding.
+    You want to figure out whether it comes from bike fit issues or worn components,
+    and you’re gathering advice before committing to any service.
+  context:
+    - "You ride your bike almost daily for commuting and longer weekend endurance rides."
+    - "You are unsure whether poor fit or worn components are causing the discomfort."
+    - "You prefer to evaluate recommendations first instead of booking an appointment right away."
+    - "You take detailed notes so you can compare suggestions later."
+  goals:
+    - "Explain that you're experiencing discomfort in your {{discomfort_area}} while riding your {{bike_type}}."
+    - "Mention that you recently {{recent_change}} and are unsure whether the issue is a fit problem or worn components."
+    - "Ask for specific bike fit adjustments or positioning tips you can try at home to relieve the discomfort."
+    - "Ask how to check whether any components might be worn or causing the discomfort."
+    - "Ask which diagnostic services or evaluations the shop offers to help identify fit or component issues."
+    - "Ask about typical pricing or turnaround time for those services, clarifying that you're not ready to book yet."
+    - discomfort_area:
+        function: pairwise()
+        type: string
+        data:
+          - lower back
+          - knees
+          - wrists
+          - neck
+          - shoulders
+    - bike_type:
+        function: pairwise()
+        type: string
+        data:
+          - road bike
+          - mountain bike
+          - gravel bike
+          - commuter bike
+    - recent_change:
+        function: forward()
+        type: string
+        data:
+          - installed a new saddle
+          - raised the handlebar height
+          - started longer training rides
+          - swapped to a stiffer wheelset
+          - haven't changed anything recently
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that—could you say that again?"
+  output:
+    - fit_adjustments:
+        type: list[string]
+        description: "Bike fit adjustments or positioning tips suggested to relieve discomfort."
+    - component_checks:
+        type: list[string]
+        description: "Inspection steps or signs of wear the chatbot recommends checking."
+    - service_recommendations:
+        type: list[string]
+        description: "Shop services or assessments proposed to diagnose fit or component problems."
+    - service_pricing:
+        type: string
+        description: "Any pricing details or cost ranges provided for those services."
+    - service_timeframe:
+        type: string
+        description: "Expected timeframe or turnaround mentioned for the recommended services."
+    - follow_up_guidance:
+        type: string
+        description: "Advice on next steps the rider can take without booking yet."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 25
+  interaction_style:
+    - long phrases
+```
+
+Feel free to save it as something like `bike_fit_discomfort_information.yaml`. It’s ready for downstream rules that check the `fit_adjustments`, `component_checks`, or `service_recommendations` the bot returns. Let me know if you’d like tweaks (e.g., different interaction style or extra outputs)! 😊

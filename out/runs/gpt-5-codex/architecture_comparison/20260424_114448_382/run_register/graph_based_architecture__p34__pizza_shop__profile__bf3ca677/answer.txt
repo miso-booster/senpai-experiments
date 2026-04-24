@@ -1,0 +1,99 @@
+Hey hey! I put together a brand-new Sensei profile that walks the user through ordering a custom pizza, then switching gears mid-conversation to grab one of the shop’s predefined pies instead 🍕➡️🍕. It’s built to highlight that “change of heart” moment using the `change your mind` interaction style, and it captures the key outputs you’d typically want for rules or reporting.
+
+---
+
+### 📄 Suggested file path
+`profiles/custom_to_predefined_switch.yml`
+
+---
+
+```yaml
+test_name: custom_to_predefined_switch
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A customer who starts out designing a custom pizza but tends to second-guess
+    their choices and ends up choosing a predefined option instead.
+  context:
+    - You're ordering dinner for a small game night with friends.
+    - You like experimenting with toppings but often worry the combo might be too much.
+    - You want to keep the process friendly and conversational.
+  goals:
+    - "I'd like to build a {{initial_size}} custom pizza with {{initial_toppings}}."
+    - "Can you tell me the price and prep time for that custom pizza?"
+    - "Actually, I've changed my mind—I'll take your {{final_size}} {{predefined_pizza}} instead."
+    - "Please add {{drink_qty}} {{drink_choice}} to the order."
+    - "Could you confirm the final order details for me?"
+    - initial_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - initial_toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, olives, jalapeños, extra cheese]
+    - final_size:
+        function: forward(initial_size)
+        type: string
+        data: [small, medium, large]
+    - predefined_pizza:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Vegetarian, BBQ Chicken, Hawaiian]
+    - drink_choice:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Iced Tea]
+    - drink_qty:
+        function: forward(drink_choice)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - custom_pizza_details:
+        type: string
+        description: "How the chatbot responded to the initial custom pizza request (toppings, size, pricing steps, etc.)."
+    - final_order_summary:
+        type: string
+        description: "Consolidated summary after the user switches to a predefined pizza and adds drinks."
+    - total_cost:
+        type: currency
+        description: "Total amount due for the final order."
+    - readiness_estimate:
+        type: time
+        description: "Estimated time until the order is ready."
+    - drink_confirmation:
+        type: string
+        description: "Chatbot confirmation about the drink choice and quantity."
+    - order_id:
+        type: string
+        description: "Any confirmation or order identifier shared by the chatbot."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.9
+  goal_style:
+    steps: 6
+  interaction_style:
+    - change your mind
+    - long phrases
+    - random:
+        - make spelling mistakes
+```
+
+---
+
+Let me know if you’d like to tweak the tone, add more goals, or line it up with a specific rule set. Happy to keep iterating! 😊

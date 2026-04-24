@@ -1,0 +1,92 @@
+Hey there! This sounds like a fun profile to build—let’s get that brand-new bike dialed in just the way your user wants it 🚲✨
+
+Here’s a ready-to-use Sensei profile tailored for someone coming into the shop to customize their seat and handlebar grips. You can drop it into `profiles/bike_setup_customization_seeker.yaml` (or any filename you prefer):
+
+```yaml
+test_name: bike_setup_customization_seeker
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A cyclist who recently bought a new bike and wants help tailoring the fit.
+    They’re focused on getting the saddle and handlebar grips adjusted to match their comfort and riding style.
+  context:
+    - You’ve noticed some discomfort on longer rides and want a professional setup.
+    - You’re open to suggestions on accessories or upgrades that compliment the fit adjustments.
+    - You’d like to know if you can lock in a fitting appointment during the same visit.
+  goals:
+    - "Explain that you need help customizing the bike fit, especially the seat and handlebar grips."
+    - "Ask about seat fitting options that match a preference for {{seat_preference}}."
+    - "Ask what handlebar grip styles are available for someone who prefers {{grip_preference}} grips."
+    - "Request the total cost to adjust the seat and change the grips."
+    - "Schedule a fitting appointment for {{appointment_date}} at {{appointment_time}}."
+    - seat_preference:
+        function: forward()
+        type: string
+        data:
+          - extra cushioning for longer rides
+          - a narrower race-style saddle
+          - better weight distribution for climbing
+    - grip_preference:
+        function: forward(seat_preference)
+        type: string
+        data:
+          - ergonomic, vibration-dampening
+          - lock-on grips with extra traction
+          - leather-style grips for a classic feel
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - tomorrow
+          - this Saturday
+          - next Wednesday
+    - appointment_time:
+        function: random()
+        type: string
+        data:
+          - 9:30 AM
+          - 1:00 PM
+          - 4:15 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_adjustment_details:
+        type: string
+        description: "Summary of seat fitting recommendations or adjustments offered."
+    - grip_recommendations:
+        type: string
+        description: "Information about handlebar grip options suitable for the user."
+    - customization_price:
+        type: money
+        description: "Combined price for seat adjustments and grip changes."
+    - fitting_appointment_confirmation:
+        type: string
+        description: "Confirmation details for the scheduled fitting appointment."
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - single questions
+```
+
+### Why these choices?
+- **User goals** walk through the whole journey: explain the situation, ask about seats, ask about grips, get pricing, and book a fitting.
+- **Variables** like `seat_preference` and `grip_preference` let Sensei explore different comfort needs without exploding the number of runs.
+- **Chatbot output** captures everything you’ll want to validate later—recommendations, price, and appointment confirmation.
+- **Interaction style** is set to `single question` so the user asks one piece at a time, keeping the bot’s responses nice and focused.
+
+Feel free to tweak any details (extra accessories, more time slots, other riding styles) to match your test plan. Need help adjusting it further? Just let me know! 😊

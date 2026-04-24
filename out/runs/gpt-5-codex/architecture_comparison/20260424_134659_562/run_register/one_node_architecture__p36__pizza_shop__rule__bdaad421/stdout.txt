@@ -1,0 +1,18 @@
+conversation ID: one_node_architecture__p36__pizza_shop__rule__bdaad421
+$$$
+Hey there! The rule is failing because `then:` can only be used together with an `if:` clause in Sensei-check. Without that precondition, the DSL doesn’t know when to enforce the comparison, so the rule won’t even load properly.
+
+Here’s the corrected version (I also renamed the rule to snake_case to match the file you already have):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+One extra heads-up: make sure the profile you’re targeting exposes the fields `size`, `drink`, `toppings`, and `price` in its `chatbot.output`, otherwise Sensei-check will keep seeing `None` (or throw extraction errors) and the rule won’t behave as expected. If those slots aren’t there yet, add them to the relevant profile and you’ll be good to go. 😊
+$$$

@@ -1,0 +1,19 @@
+¡Listo! 😊 Basándome en la guía de reglas (`sensei-check-doc.md`) y en el perfil `préstamos_y_recursos_de_la_biblioteca.yaml` (con la estructura descrita en `sensei-chat-guide.md`), preparé una regla que valida que el campo `library_hours` indique el horario esperado de 9:00 a 20:00.
+
+Puedes guardarla, por ejemplo, en `rules/biblioteca_horario_9_a_20.yaml`:
+
+```yaml
+name: biblioteca_horario_9_a_20
+description: Verifica que el perfil «Préstamos y Recursos de la Biblioteca» informe el horario de 9:00 a 20:00.
+conversations: 1
+when: library_hours is not None
+oracle: semantic_content(library_hours, 'El horario de la biblioteca es de 9:00 a 20:00')
+on-error: f"Horario reportado: {library_hours}"
+```
+
+🔍 Notas rápidas:
+- `semantic_content` (documentado en `sensei-check-doc.md`) permite comprobar la coincidencia semántica aunque el bot exprese el horario con ligeras variaciones.
+- Si el bot no devuelve nada en `library_hours`, el `when` impide aplicar la comprobación, por lo que te conviene combinar esta regla con otra de completitud (p. ej., `data_collected()`).
+- Ajusta el mensaje del `oracle` si quieres permitir variantes como “de 9 a 20 h” sin los ceros.
+
+¿Necesitas que también preparemos una regla para el resto de campos del perfil o alguna verificación adicional? ¡Dímelo y lo hacemos!

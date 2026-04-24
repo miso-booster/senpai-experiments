@@ -1,0 +1,84 @@
+conversation ID: one_node_architecture__p14__alcampo__profile__fc553ace
+$$$
+¡Perfecto! Aquí tienes un perfil listo para poner a prueba las recomendaciones de recetas y la planificación de menús del chatbot de Alcampo 😊.
+
+```yaml
+test_name: "Recipe and Menu Planning Advisor"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Cliente que busca inspiración culinaria y organización de menús semanales."
+  context:
+    - "personality: personalities/conversational-user"
+    - "Últimamente quieres variar tus comidas y aprovechar productos frescos de temporada de Alcampo."
+    - "Te interesa equilibrar nutrición, presupuesto y ahorro de tiempo en la cocina."
+  goals:
+    - "Pide al chatbot sugerencias de recetas para {{meal_type}} que se adapten a una dieta {{dietary_preference}}."
+    - "Solicita un plan de menú de {{planning_horizon}} días que priorice {{menu_goal}}."
+    - "Pregunta por una lista de la compra organizada por secciones del supermercado."
+    - "Consulta consejos de preparación anticipada para optimizar el tiempo en la cocina."
+    - "Pide recomendaciones sobre cómo reutilizar sobras de recetas propuestas para evitar desperdicios."
+    - meal_type:
+        function: pairwise()
+        type: string
+        data: [desayuno, comida, cena, snacks]
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data: [vegetariana, "sin gluten", "alta en proteínas", "baja en carbohidratos"]
+    - planning_horizon:
+        function: forward()
+        type: int
+        data:
+          min: 3
+          max: 5
+          step: 1
+    - menu_goal:
+        function: another()
+        type: string
+        data: ["balance energético", "control de calorías", "cocina rápida", "ingredientes de temporada", "recetas familiares"]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no está relacionado con Alcampo. 😊 ¿En qué puedo ayudarte hoy con tus recetas y menús?"
+  output:
+    - recommended_recipes:
+        type: list[string]
+        description: "Lista de recetas sugeridas por el chatbot"
+    - menu_plan_summary:
+        type: string
+        description: "Resumen del plan de menú propuesto"
+    - grocery_sections_list:
+        type: list[string]
+        description: "Secciones del supermercado sugeridas para la lista de la compra"
+    - prep_ahead_tips:
+        type: string
+        description: "Consejos de preparación anticipada ofrecidos por el chatbot"
+    - leftover_reuse_ideas:
+        type: string
+        description: "Ideas para reutilizar sobras y reducir desperdicios"
+    - nutritional_focus_notes:
+        type: string
+        description: "Notas sobre el enfoque nutricional indicado por el chatbot"
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 9
+    max_cost: 0.3
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change language:
+            - English
+            - Catalan
+```
+$$$

@@ -1,0 +1,94 @@
+Sure thing! Here’s a brand-new Sensei profile that guides the simulated user to ask the chatbot for items to add to their shopping cart. I packed it with clear goals, handy variables, and a tidy output schema so you can plug it into your project right away 😊
+
+---
+
+### 📄 New profile suggestion  
+**File path:** `profiles/shopping_cart_item_requests.yaml`
+
+```yaml
+test_name: Shopping Cart Item Requests
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are planning a weekly grocery run and want to build your shopping cart with help from the chatbot.
+    You expect the assistant to confirm availability, mention pricing if possible, and make sure the right quantity is added.
+  context:
+    - "You prefer organic and store-brand alternatives when they’re available."
+    - "You’re balancing convenience with budget-friendly choices."
+    - "You will ask for items one by one to keep things organized."
+  goals:
+    - "Ask the chatbot to add {{produce_item}} to your cart and confirm it is available."
+    - "Request to add {{pantry_item}} with any current price or promotion details."
+    - "Ask the chatbot to place {{household_item}} in the cart and confirm you can get {{quantity}} units."
+    - produce_item:
+        function: forward()
+        type: string
+        data:
+          - organic bananas
+          - baby spinach
+          - cherries 500g
+    - pantry_item:
+        function: forward(produce_item)
+        type: string
+        data:
+          - whole grain pasta
+          - canned chickpeas
+          - extra virgin olive oil
+    - household_item:
+        function: forward(pantry_item)
+        type: string
+        data:
+          - recycled paper towels
+          - eco dish soap
+          - biodegradable trash bags
+    - quantity:
+        function: forward(household_item)
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - cart_items_added:
+        type: list[string]
+        description: Items the chatbot confirms were added to the cart
+    - availability_notes:
+        type: string
+        description: Availability or substitution details provided by the chatbot
+    - price_or_promo_details:
+        type: string
+        description: Any price, promotion, or savings information mentioned
+    - quantity_confirmation:
+        type: string
+        description: Confirmation of quantities requested for cart additions
+
+conversation:
+  number: combinations
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - single questions
+```
+
+---
+
+### ✅ Why this profile works
+
+- **Focused goals:** Each message drives toward adding specific items to the cart and checking availability, price, and quantities.
+- **Structured variables:** Using `forward()` chaining across `produce_item`, `pantry_item`, `household_item`, and `quantity` gives you deterministic coverage without exploding combinations.
+- **Outputs ready for Sensei-check:** The fields in `chatbot.output` let you validate that the assistant actually confirmed items and shared the right extra info (availability, promos, quantities).
+- **Single-question flow:** Keeps each interaction clean so you can inspect how the bot reacts to a simple cart-add request.
+
+Feel free to tweak the item lists or personality snippets to match your exact testing scenario. Let me know if you’d like a version with randomization, multilingual twists, or different interaction styles!

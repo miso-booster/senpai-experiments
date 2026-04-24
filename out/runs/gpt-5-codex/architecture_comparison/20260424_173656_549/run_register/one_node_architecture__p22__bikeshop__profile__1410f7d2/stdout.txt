@@ -1,0 +1,81 @@
+conversation ID: one_node_architecture__p22__bikeshop__profile__1410f7d2
+$$$
+Here’s a fresh profile capturing that “something’s off with my bike fit” vibe while keeping the user in advice-only mode (no booking requests):
+
+```yaml
+test_name: bike_fit_discomfort_seeker
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist who has started feeling uncomfortable on rides.
+    You want expert guidance on whether the discomfort comes from bike fit issues
+    or worn components, and what adjustments or services could help.
+    You are seeking advice only and are not ready to book an appointment.
+  context:
+    - You rely on your bike for regular commuting and weekend rides.
+    - You have noticed persistent discomfort and want to resolve it proactively.
+    - You are budget-conscious and hope to address the issue efficiently.
+  goals:
+    - "Explain that you're experiencing {{discomfort_type}} while riding and ask what might be causing it."
+    - "Ask whether the issue could be related to bike fit or worn {{component_focus}}."
+    - "Request suggestions for adjustments you can try to improve comfort."
+    - "Ask what evaluation or fitting services the shop offers to diagnose bike fit problems."
+    - "Request advice on how to check for wear on the {{component_focus}} yourself."
+    - "Let the assistant know you're gathering information for now and prefer not to book an appointment yet."
+    - discomfort_type:
+        type: string
+        function: forward()
+        data:
+          - lower back pain
+          - numb hands
+          - knee soreness
+          - saddle soreness
+          - neck stiffness
+    - component_focus:
+        type: string
+        function: forward(discomfort_type)
+        data:
+          - saddle and seatpost
+          - handlebar tape and grips
+          - drivetrain parts
+          - pedals and cleats
+          - stem and handlebars
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_issue_assessment:
+        type: string
+        description: The chatbot's assessment of whether the discomfort stems from bike fit, worn components, or both.
+    - adjustment_recommendations:
+        type: string
+        description: Suggested adjustments or setup changes to improve rider comfort.
+    - component_inspection_advice:
+        type: string
+        description: Guidance on how to check the highlighted components for wear or damage.
+    - service_options:
+        type: string
+        description: Information about fitting, maintenance, or diagnostic services the shop offers for this issue.
+    - appointment_follow_up:
+        type: string
+        description: The chatbot's response regarding scheduling, ideally acknowledging that the user is only seeking advice for now.
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  interaction_style:
+    - default
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+```
+$$$

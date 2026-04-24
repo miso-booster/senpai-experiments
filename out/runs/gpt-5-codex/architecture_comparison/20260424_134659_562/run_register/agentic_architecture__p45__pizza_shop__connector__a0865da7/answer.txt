@@ -1,0 +1,30 @@
+Here’s the connector configuration that mirrors the supplied request/response while keeping the headers minimal and stripping HTML from the bot reply:
+
+```yaml
+name: "1MillionBot Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+response_transform:
+  - strip_html
+```
+
+**Why these choices?**
+- The structure follows the patterns outlined in `custom-connector-guide.md` and `connector-examples.md`.
+- Only the essential headers (`Content-Type` and `Authorization`) are kept, as requested.
+- The payload mirrors the observed request fields, with `{user_msg}` inserted for the outgoing user text.
+- `response_transform: strip_html` ensures that any HTML tags in `response.0.text` are removed so the connector returns plain text. Give it a quick test; if your environment handles transforms differently, let me know and we can adjust.

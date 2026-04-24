@@ -1,0 +1,99 @@
+conversation ID: one_node_architecture__p34__pizza_shop__profile__a97bd435
+$$$
+Here you go! I put together a profile that guides the user through ordering a custom pizza, then switching to a predefined option mid-conversation. Let me know if you’d like tweaks to the variables or interaction style 😊
+
+```yaml
+test_name: custom_to_predefined_switch
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are planning dinner with friends and want to make sure the pizza order is perfect.
+    Begin confidently building a custom pizza, but halfway through decide it will be easier
+    to switch to one of the shop's predefined pizzas.
+  context:
+    - You're coordinating dinner for a small group with different tastes.
+    - You like to double-check prices and pickup details before confirming an order.
+  goals:
+    - "Start by telling the assistant you want to build a custom pizza with a {{custom_size}} crust and toppings like {{custom_topping_1}} and {{custom_topping_2}}."
+    - "Ask to add {{drink_quantity}} {{drink_type}} to go with the pizza."
+    - "Confirm the price and estimated pickup time for that custom pizza."
+    - "Halfway through, let the assistant know you've changed your mind and now want the predefined {{predefined_pizza}} pizza instead of the custom order."
+    - "Ask the assistant to update the order summary, total cost, and pickup details for the predefined pizza plus the drinks."
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - custom_topping_1:
+        function: pairwise()
+        type: string
+        data: [mushrooms, pepperoni, olives, onions, spinach]
+    - custom_topping_2:
+        function: pairwise()
+        type: string
+        data: [artichokes, sausage, jalapeños, extra cheese, basil]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Iced Tea, Sparkling Water]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - predefined_pizza:
+        function: forward()
+        type: string
+        data: [Margherita, Pepperoni, Four Cheese, BBQ Chicken, Vegetarian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can help you with custom or predefined pizzas, plus drinks."
+  output:
+    - pizza_type:
+        type: string
+        description: "The final pizza selection after the user changes their mind (custom or predefined)."
+    - size:
+        type: string
+        description: "The pizza size associated with the final order."
+    - toppings:
+        type: list[string]
+        description: "List of toppings included in the final pizza order."
+    - drink:
+        type: string
+        description: "The type of drink included in the order."
+    - number_of_drinks:
+        type: int
+        description: "How many drinks are included in the order."
+    - price:
+        type: currency
+        description: "Total price quoted for the final order."
+    - estimated_ready_time:
+        type: time
+        description: "Estimated time until the order is ready for pickup."
+    - order_id:
+        type: string
+        description: "Any confirmation or order identifier provided by the chatbot."
+
+conversation:
+  number: 6
+  max_cost: 1.0
+  goal_style:
+    all_answered:
+      limit: 18
+      export: false
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+$$$

@@ -1,0 +1,102 @@
+Here’s a profile that captures that “custom pizza → preset pizza” switch you described 😊
+
+```yaml
+test_name: "custom_to_preset_pizza_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an indecisive customer ordering pizza online. You begin by building a
+    very specific custom pizza order but you are easily swayed by convenient preset
+    menu options.
+  context:
+    - "You love experimenting with toppings but get anxious about making the wrong choice."
+    - "You are watching a game night with friends and need food quickly."
+  goals:
+    - "Begin by asking to build a custom {{size}} pizza with a {{crust}} crust, toppings {{topping_list}}, and ask about adding {{extras}}."
+    - "Once the assistant confirms details or price, change your mind and instead request the predefined {{preset_pizza}} pizza."
+    - "Double-check whether the {{preset_pizza}} includes {{preset_concern}} and if you can add {{drink}}."
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - crust:
+        function: random()
+        type: string
+        data: [thin, hand-tossed, stuffed, gluten-free]
+    - topping_list:
+        function: random()
+        type: string
+        data:
+          - pepperoni and mushrooms
+          - spinach and feta
+          - sausage, onions, and peppers
+          - roasted veggies and goat cheese
+    - extras:
+        function: random()
+        type: string
+        data: [garlic knots, buffalo wings, cheesy breadsticks, a brownie]
+    - preset_pizza:
+        function: pairwise()
+        type: string
+        data: [Margherita Classic, BBQ Chicken Feast, Veggie Supreme, Meat Lover's Deluxe]
+    - preset_concern:
+        function: random()
+        type: string
+        data: [extra mozzarella, gluten-free crust, spicy sauce, vegan cheese]
+    - drink:
+        function: random()
+        type: string
+        data: [a 2-liter cola, sparkling water, iced tea, lemonade]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase your order?"
+  output:
+    - order_flow_status:
+        type: string
+        description: "Narrative of the order flow, emphasizing the change from custom to preset."
+    - initial_custom_order:
+        type: string
+        description: "Details of the user's initial custom pizza request."
+    - final_pizza_name:
+        type: string
+        description: "Name of the predefined pizza ultimately ordered."
+    - final_order_type:
+        type: string
+        description: "Indicates whether the final order is preset or custom."
+    - final_price:
+        type: currency
+        description: "Total quoted price for the final order."
+    - included_items:
+        type: list[string]
+        description: "Sides, drinks, or extras included in the final order."
+    - order_id:
+        type: string
+        description: "Final confirmation or order identifier supplied by the chatbot."
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 7
+    max_cost: 0.12
+  interaction_style:
+    - change your mind
+    - long phrases
+    - make spelling mistakes
+```
+
+### Why it fits
+- The first goal teaches the simulator to pursue a fully custom pizza; the second explicitly tells it to switch to a preset selection midway.
+- `interaction_style: change your mind` reinforces the mid-conversation pivot described in the goals. (See the change-style guidance in **`sensei-chat-guide.md`**.)
+- Pairwise coverage on `size` and `preset_pizza` gives you a nice spread of custom/preset combinations without exploding the run count (again, per the combination/goal-style tips in `sensei-chat-guide.md`).
+- The `chatbot.output` fields document both the initial request and the final preset outcome so downstream rules can confirm that the bot handled the switch correctly.
+
+Feel free to tweak any variables (e.g., preset names or extras) to match your menu. If you’d like matching validation rules or additional profiles, just let me know!

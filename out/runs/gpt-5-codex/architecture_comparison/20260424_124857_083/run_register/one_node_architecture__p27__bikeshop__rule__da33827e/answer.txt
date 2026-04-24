@@ -1,0 +1,13 @@
+¡Listo! Aquí tienes una regla metamórfica pensada para el perfil `appointment` que comprueba que el asistente no confirme dos veces la misma fecha y hora (es decir, rechaza la segunda solicitud cuando intenta reservar el mismo hueco):
+
+```yaml
+name: evita_doble_confirmacion_cita
+description: Evita que se confirmen dos citas con la misma fecha y hora en el perfil appointment.
+conversations: 2
+when: conv[0].confirmed_date is not None and conv[0].confirmed_time is not None and conv[1].confirmed_date is not None and conv[1].confirmed_time is not None
+oracle: (conv[0].confirmed_date, conv[0].confirmed_time) != (conv[1].confirmed_date, conv[1].confirmed_time)
+on-error: |
+  f"Se confirmaron dos citas idénticas: {conv[0].confirmed_date} {conv[0].confirmed_time} y {conv[1].confirmed_date} {conv[1].confirmed_time}"
+```
+
+Esta regla falla si detecta dos conversaciones que terminan confirmando exactamente el mismo hueco, lo que nos ayuda a garantizar que el asistente rechaza la segunda petición.

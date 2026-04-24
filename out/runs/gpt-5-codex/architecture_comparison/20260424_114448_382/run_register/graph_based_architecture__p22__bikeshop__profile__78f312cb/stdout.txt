@@ -1,0 +1,92 @@
+conversation ID: graph_based_architecture__p22__bikeshop__profile__78f312cb
+$$$
+Absolutely, I’ve got you! Here’s a ready-to-use Sensei profile that captures a rider dealing with discomfort, unsure whether it’s a fit issue or worn components, and looking for guidance—without directly asking to schedule anything.
+
+> 📁 Save it as `profiles/bike_fit_discomfort_advice_seeker.yaml` (or any name you like in your `profiles/` folder).
+
+```yaml
+test_name: bike_fit_discomfort_advice_seeker
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist feeling uncomfortable on your current bike setup.
+    You’re trying to understand whether the discomfort comes from an improper fit
+    or worn components, and you want professional advice without committing to an appointment.
+  context:
+    - You rely on your bike for regular rides and would like to stay comfortable and safe.
+    - You are open to trying small adjustments yourself if the shop suggests them.
+    - You want to know what services the shop offers that could diagnose or resolve the issue.
+  goals:
+    - "Mention that your {{discomfort_area}} has been hurting during rides and ask whether it might be due to bike fit or worn components."
+    - "Ask what adjustments or quick checks you can try right now to improve comfort."
+    - "Ask what services the shop offers to assess fit, inspect components, or tune the bike without booking anything yet."
+    - "Ask how to tell if your {{component_concern}} might need to be repaired or replaced."
+    - "Request preventive maintenance tips that could help keep the bike comfortable going forward."
+    - discomfort_area:
+        type: string
+        function: another()
+        data:
+          - lower back
+          - knees
+          - wrists
+          - neck
+    - component_concern:
+        type: string
+        function: random()
+        data:
+          - saddle
+          - handlebars
+          - drivetrain
+          - pedals
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_cause_analysis:
+        type: string
+        description: >
+          The chatbot's explanation about whether the discomfort is likely due to bike fit,
+          component wear, or another cause.
+    - adjustment_recommendations:
+        type: string
+        description: >
+          Specific adjustments or at-home checks the chatbot suggests to improve comfort.
+    - service_options:
+        type: string
+        description: >
+          The services the shop offers for bike fit assessments, component inspections, or related support.
+    - component_guidance:
+        type: string
+        description: >
+          Advice on evaluating the mentioned component for wear and determining if replacement is needed.
+    - preventive_tips:
+        type: string
+        description: >
+          Preventive maintenance or care tips that can help keep the ride comfortable over time.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - single questions
+```
+
+### Why this setup works
+- **Clear goals:** The user stays focused on discomfort, fit vs. component issues, services, and preventive tips—no accidental appointment requests.
+- **Dynamic realism:** `discomfort_area` and `component_concern` rotate, so conversations won’t feel repetitive.
+- **Structured outputs:** Five fields capture the exact info you’ll want to validate or write Sensei-check rules against.
+
+If you’d like tweaks—more variations, different interaction styles, or integration with existing rules—just let me know. Happy profiling! 🚲✨
+$$$

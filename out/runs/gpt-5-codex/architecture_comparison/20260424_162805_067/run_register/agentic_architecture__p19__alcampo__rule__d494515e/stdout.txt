@@ -1,0 +1,40 @@
+conversation ID: agentic_architecture__p19__alcampo__rule__d494515e
+$$$
+Here you go! This is a profile-agnostic Sensei-check rule that flags conversations where the user asks about promotions but the assistant never follows up with any promotion-related info:
+
+```yaml
+name: promotion_information_provided
+description: Chatbot shares details about current promotions whenever the user asks for them
+conversations: 1
+if: |
+  (
+    utterance_index('user', 'current promotion') >= 0 or
+    utterance_index('user', 'current promotions') >= 0 or
+    utterance_index('user', 'promotion') >= 0 or
+    utterance_index('user', 'discount') >= 0 or
+    utterance_index('user', 'offer') >= 0 or
+    utterance_index('user', 'deal') >= 0
+  )
+then: |
+  any(
+    len(chatbot_returns(keyword)) > 0
+    for keyword in [
+      'current promotion',
+      'current promotions',
+      'promotion',
+      'discount',
+      'offer',
+      'deal'
+    ]
+  )
+on-error: "Assistant never mentioned any current promotions or related offers after the user asked."
+```
+
+### How it works (and how to tweak it)
+- **Scope**: This rule is intentionally global—it doesn’t rely on any `chatbot.output` slots, just on the actual conversation text, so it can be reused across profiles.  
+- **Trigger** (`if`): It activates only if the user has mentioned promotions (matching several common keywords).  
+- **Expectation** (`then`): Checks that the assistant mentions one of those promotion-related keywords in return. Feel free to expand the keyword list to fit your domain (e.g., “coupon,” “special,” etc.).  
+- **Error message**: Gives a clear failure note when the assistant stays silent about promotions.
+
+I relied on `sensei-check-doc.md` for the rule structure, helper functions like `utterance_index` and `chatbot_returns`, and the global-rule guidance, plus `rules-examples.md` for practical patterns with those helpers. Let me know if you’d like variations (e.g., enforcing mention of specific promotion details) or if we should adapt this to a particular profile! 😊
+$$$

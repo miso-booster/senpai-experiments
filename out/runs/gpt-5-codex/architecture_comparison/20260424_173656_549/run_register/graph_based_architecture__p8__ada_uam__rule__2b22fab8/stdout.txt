@@ -1,0 +1,25 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__2b22fab8
+$$$
+Hey there! Thanks for sharing the rule 😊 Let’s walk through it together.
+
+### What needed fixing
+1. **Single-conversation syntax**: When `conversations: 1`, Sensei-check expects you to reference fields directly (e.g., `contact_email`) rather than with `conv[0]`. The `conv[...]` notation is only for multi-conversation rules.
+2. **Redundant `when` clause**: Your `when` condition exactly matched the `oracle`. That means the rule would only run when the details were already correct—so it would never actually catch incorrect info. Removing the `when` clause lets the rule fail whenever the contact details differ from what you expect.
+
+### Updated rule
+Here’s the cleaned-up version:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the expected contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works better
+- It directly compares the chatbot’s outputs against the expected values.
+- It's active for every conversation using the profile, so it can flag any mismatch.
+- It uses Sensei-check’s preferred syntax for single-conversation rules.
+
+Let me know if you’d like to add an error message or combine this with other validations!
+$$$

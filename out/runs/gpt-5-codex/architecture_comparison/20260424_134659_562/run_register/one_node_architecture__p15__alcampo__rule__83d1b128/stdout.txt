@@ -1,0 +1,20 @@
+conversation ID: one_node_architecture__p15__alcampo__rule__83d1b128
+$$$
+Hey! I spotted the issue: the rule was referencing `user_request`, which isn’t part of your profile’s `chatbot.output`. I rewired the filter so it keys off the actual fields (`contact_options` and `customer_service_number`) and added a simple sanity check to make sure they’re truly populated. Here’s the fixed rule:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and the customer service number for customer service inquiries.
+conversations: 2
+when: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+oracle: |
+  (
+    conv[0].contact_options.strip() != ''
+    and conv[1].customer_service_number.strip() != ''
+    and any(keyword in conv[0].contact_options.lower() for keyword in ['phone', 'tel', 'correo', 'email', 'formulario', 'chat'])
+    and any(char.isdigit() for char in conv[1].customer_service_number)
+  )
+```
+
+This should now validate that one conversation offers concrete contact options while the other returns a proper customer service number. Let me know if you’d like to tighten the keyword list or check additional fields! 😊
+$$$

@@ -1,0 +1,141 @@
+conversation ID: agentic_architecture__p34__pizza_shop__profile__f541763d
+$$$
+Hey there! Here’s a fresh profile that walks the user through building a custom pizza, then changing their mind halfway and opting for a predefined option instead. I leaned on the guidance from `sensei-chat-guide.md` and took cues from the existing `pizza_and_drink_order_placement.yaml` so the outputs stay compatible with your other pizza scenarios.
+
+```yaml
+test_name: pizza_custom_to_predefined_switch
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a detail-focused foodie ordering pizza for a friend's movie night. You love
+    crafting custom pies but are easily persuaded by chef recommendations. Start by
+    pursuing a fully custom build, then let yourself be convinced to pick a signature pizza.
+  context:
+    - "You promised to keep the order within a reasonable budget but still want it to feel special."
+    - "A friend keeps telling you their signature pies are unbeatable."
+    - "You will pick up the order on your way to the movie night."
+  goals:
+    - "Ask if you can build a custom pizza with a {{custom_size}} base, {{crust_style}} crust, {{sauce_choice}} sauce, and toppings like {{custom_toppings}}."
+    - "Check whether extras such as {{custom_extras}} can be added to that custom pizza."
+    - "Ask the chatbot to list their signature or predefined pizzas before you decide."
+    - "After hearing those options, change your mind and order the predefined {{predefined_pizza}} pizza instead of the custom build."
+    - "Ask what drink options are available and choose {{drink_choice}}."
+    - "Confirm the final order of the {{predefined_pizza}} pizza ({{final_size_predefined}}) with the {{drink_choice}}, and request the total cost plus pickup details."
+    - custom_size:
+        function: forward()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+    - crust_style:
+        function: forward()
+        type: string
+        data:
+          - thin crust
+          - hand-tossed
+          - deep dish
+    - sauce_choice:
+        function: random()
+        type: string
+        data:
+          - classic tomato
+          - spicy arrabbiata
+          - creamy garlic parmesan
+          - basil pesto
+    - custom_toppings:
+        function: random()
+        type: string
+        data:
+          - roasted peppers, mushrooms, caramelized onions
+          - pepperoni, jalapeños, extra mozzarella
+          - artichoke hearts, spinach, sun-dried tomatoes
+          - grilled chicken, bacon, red onions
+    - custom_extras:
+        function: random()
+        type: string
+        data:
+          - stuffed crust upgrade
+          - vegan cheese
+          - gluten-free dough swap
+          - garlic dipping sauces
+    - predefined_pizza:
+        function: forward()
+        type: string
+        data:
+          - House Supreme
+          - Smoky BBQ Chicken
+          - Truffle Forest
+          - Classic Pepperoni
+    - final_size_predefined:
+        function: random()
+        type: string
+        data:
+          - medium
+          - large
+    - drink_choice:
+        function: random()
+        type: string
+        data:
+          - sparkling water
+          - craft root beer
+          - peach iced tea
+          - lemonade
+
+chatbot:
+  is_starter: false
+  fallback: I'm sorry, I didn't catch that. I can help you build a custom pizza or pick one of our signature pies.
+  output:
+    - pizza_options:
+        type: string
+        description: The list of signature or predefined pizzas the chatbot provides when asked (e.g., "Our signature pies include...").
+    - custom_request_outcome:
+        type: string
+        description: How the chatbot responds to the initial custom pizza request, including any limitations or confirmations.
+    - final_pizza_choice:
+        type: string
+        description: The predefined pizza the chatbot confirms after the user switches away from the custom build.
+    - drink_options:
+        type: string
+        description: The drink selections the chatbot offers before the user chooses one.
+    - order_summary:
+        type: string
+        description: A recap of the final order with pizza choice, size, drinks, and any extras.
+    - total_cost:
+        type: money
+        description: The total price quoted for the final order.
+    - estimated_readiness_time:
+        type: time
+        description: The quoted time until the order will be ready for pickup.
+    - pickup_location:
+        type: string
+        description: The address or pickup instructions provided by the chatbot.
+    - order_id:
+        type: string
+        description: Any confirmation number or identifier associated with the order.
+
+conversation:
+  number: 6
+  max_cost: 1.0
+  goal_style:
+    steps: 7
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+**Why it fits the docs**
+
+- Follows the profile anatomy from `sensei-chat-guide.md`, with clear sections for `user`, `chatbot`, and `conversation`.
+- Uses `interaction_style: change your mind` to enforce the mid-conversation switch the guide recommends for this kind of behavior.
+- Keeps `chatbot.output` aligned with your other pizza profiles (`pizza_options`, `order_summary`, `total_cost`, etc.) while adding focused fields (`custom_request_outcome`, `final_pizza_choice`) so future rules can verify the switch actually happened.
+
+Save it as something like `profiles/pizza_custom_to_predefined_switch.yaml` and you’re ready to run. Let me know if you’d like tweaks—maybe tighter goal coverage or different drink/pizza lists!
+$$$

@@ -1,0 +1,83 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__c63f25df
+$$$
+Here you go! Let me know if you’d like any tweaks 😊
+
+```yaml
+test_name: "rude_rush_pizza_order"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer who demands everything be done immediately.
+    You snap at the staff, complain about delays, and insist they hurry up.
+  context:
+    - personality: personalities/rude-user
+    - You are starving and want the order finished as fast as humanly possible.
+    - You threaten to leave a terrible review if they waste your time.
+  goals:
+    - "Listen, give me the price for a {{pizza_size}} {{pizza_type}} immediately."
+    - "Promise it'll be ready in {{pickup_time_window}} minutes or less."
+    - "Throw in {{drink_option}} without any fuss."
+    - "Repeat the full order and confirm the prep time stays under {{pickup_time_window}} minutes."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data:
+          - Pepperoni
+          - Four Cheese
+          - BBQ Chicken
+          - Vegetarian
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+    - pickup_time_window:
+        function: forward()
+        type: int
+        data:
+          min: 10
+          max: 30
+          step: 5
+    - drink_option:
+        function: random()
+        type: string
+        data:
+          - Two colas
+          - A six-pack of sparkling water
+          - Four iced teas
+          - A liter of orange soda
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you repeat that? I can help you place fast pizza and drink orders."
+  output:
+    - price_quote:
+        type: currency
+        description: "Quoted price for the requested pizza order."
+    - prep_time_commitment:
+        type: string
+        description: "Chatbot's stated prep or ready time promise."
+    - order_summary:
+        type: string
+        description: "Full summary of the confirmed order details."
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - all questions
+    - make spelling mistakes
+```
+$$$

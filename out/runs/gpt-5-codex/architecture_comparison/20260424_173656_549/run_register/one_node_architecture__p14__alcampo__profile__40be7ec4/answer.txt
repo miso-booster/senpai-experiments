@@ -1,0 +1,71 @@
+¡Genial idea! Aquí tienes un perfil listo para poner a prueba las recomendaciones de recetas y la planificación de menús del chatbot de Alcampo 😊👇
+
+```yaml
+test_name: Menu Planning and Recipe Recommendations
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona que quiere organizar sus comidas semanales
+    combinando recetas equilibradas y sugerencias prácticas para aprovechar el tiempo en la cocina.
+  context:
+    - Te interesa planificar un menú saludable para toda la semana sin complicarte demasiado.
+    - Deseas que el chatbot tenga en cuenta preferencias alimentarias y posibles restricciones.
+    - Quieres aprovechar ingredientes disponibles y evitar desperdicios.
+    - Necesitas consejos para preparar listas de la compra eficientes y ahorro de tiempo.
+  goals:
+    - "Pídele al chatbot que proponga un menú semanal equilibrado con desayunos, comidas y cenas."
+    - "Solicita recomendaciones de recetas detalladas para cada día, incluyendo tiempos de preparación."
+    - "Pregunta cómo adaptar las recetas a una dieta sin gluten o baja en lactosa."
+    - "Pide sugerencias para reutilizar sobras y convertirlas en nuevas comidas."
+    - "Solicita una lista de la compra organizada por categorías para el menú propuesto."
+    - "Pregunta por consejos para cocinar por lotes (batch cooking) y ahorrar tiempo entre semana."
+    - dietary_focus:
+        function: forward()
+        type: string
+        data: [sin gluten, baja en lactosa, vegetariana, alta en proteínas]
+    - leftover_preference:
+        function: random()
+        type: string
+        data: [almuerzos rápidos, cenas ligeras, snacks saludables]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - weekly_menu_plan:
+        type: string
+        description: Resumen del menú semanal propuesto con estructuras de comidas diarias
+    - recipe_recommendations:
+        type: list[string]
+        description: Lista de recetas sugeridas con breve descripción
+    - prep_time_summary:
+        type: string
+        description: Información sobre tiempos de preparación y cocción
+    - dietary_adjustments:
+        type: string
+        description: Ajustes sugeridos según la preferencia dietética indicada
+    - leftover_ideas:
+        type: string
+        description: Ideas para aprovechar sobras y crear nuevas comidas
+    - shopping_list:
+        type: list[string]
+        description: Lista de compra agrupada por categorías o secciones
+
+conversation:
+  number: 3
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - long phrases
+    - random:
+      - change your mind
+      - make spelling mistakes
+```

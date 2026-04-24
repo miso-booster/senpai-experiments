@@ -1,0 +1,27 @@
+conversation ID: agentic_architecture__p6__ada_uam__rule__b6e2a982
+$$$
+Listo 😊. Me basé en la guía de reglas (`sensei-check-doc.md`, `rules-examples.md`) y en la guía de perfiles (`sensei-chat-guide.md`). El rule apunta al perfil `consultante_de_servicios_y_asistencia_del_cau.yaml`, que ya expone los campos `contact_email`, `contact_phone` y `physical_address` que mencionaste. 
+
+### Qué hace la regla
+- Valida cada conversación individual (scope de 1 conversación).
+- Comprueba que correo, teléfono y dirección física no estén vacíos ni en blanco.
+- Si alguno falta, la salida (`yields`) enumera cuáles son los campos faltantes para facilitar el debug.
+
+Aquí tienes el YAML listo para pegar en `rules/` (puedes llamarlo, por ejemplo, `cau_contact_details_complete.yaml`):
+
+```yaml
+name: cau_contact_details_complete
+description: Verifica que el bot del CAU entregue correo, teléfono y dirección física completos.
+conversations: 1
+active: true
+oracle: |
+  all(
+    slot is not None and slot.strip() != ''
+    for slot in [contact_email, contact_phone, physical_address]
+  )
+yields: |
+  f"Información faltante del CAU: {[label for slot, label in [(contact_email, 'contact_email'), (contact_phone, 'contact_phone'), (physical_address, 'physical_address')] if slot is None or slot.strip() == '']}"
+```
+
+Si necesitas ampliar la verificación para otros campos del perfil (por ejemplo `service_hours` o enlaces), dime y lo ajustamos.
+$$$

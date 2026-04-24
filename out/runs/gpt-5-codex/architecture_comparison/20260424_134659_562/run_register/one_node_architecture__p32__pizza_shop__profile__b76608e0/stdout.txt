@@ -1,0 +1,71 @@
+conversation ID: one_node_architecture__p32__pizza_shop__profile__b76608e0
+$$$
+¡Con gusto! Aquí tienes un perfil listo para que Sensei simule a un cliente y el chatbot devuelva exactamente los campos que necesitas 😊.
+
+```yaml
+test_name: "pizza_order_output_check"
+
+llm:
+  model: gpt-4o-mini
+  model_prov: openai
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente que quiere pedir una pizza y una bebida,
+    y deseas asegurarte de conocer el precio final en dólares y el identificador del pedido.
+  context:
+    - "Planeas pasar por la pizzería después del trabajo y quieres que todo quede claro antes de salir."
+    - "Te interesa que el chatbot confirme los detalles del pedido de forma precisa."
+  goals:
+    - "Saluda y pregunta por las pizzas disponibles."
+    - "Elige la pizza {{pizza_type}} en tamaño {{pizza_size}}."
+    - "Añade la bebida {{drink_type}} a tu pedido."
+    - "Pide el precio final del pedido en dólares estadounidenses."
+    - "Solicita el ID del pedido antes de terminar."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margherita, Pepperoni, Cuatro Quesos, Vegetariana]
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data: [pequeña, mediana, grande]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Refresco, Agua, Té helado, Jugo natural]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu mensaje. Puedo ayudarte a pedir pizzas y bebidas."
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmado por el chatbot."
+    - drink_type:
+        type: string
+        description: "Tipo de bebida confirmada por el chatbot."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido."
+    - total_price_usd:
+        type: currency
+        description: "Precio final del pedido en USD (incluyendo símbolo o código de moneda)."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - all questions
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+$$$

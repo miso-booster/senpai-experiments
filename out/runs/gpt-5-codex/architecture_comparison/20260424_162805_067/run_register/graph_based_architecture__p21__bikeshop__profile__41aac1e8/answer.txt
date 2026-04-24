@@ -1,0 +1,107 @@
+¡Perfecto! Aquí tienes un perfil Sensei listo para simular a ese cliente que acaba de estrenar bici y quiere dejarla ajustada a su gusto con un nuevo asiento y puños. Incluye solicitudes sobre opciones, precios y confirma que ambos cambios pueden hacerse en una misma cita. También usamos funciones `pairwise()` para cubrir combinaciones variadas de preferencias de asiento y puños 😉.
+
+```yaml
+test_name: bike_custom_fit_user
+
+llm:
+  format:
+    type: text
+  model: gpt-4o-mini
+  temperature: 0.5
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and want the shop to set it up so it
+    feels just right. You are friendly, detail-oriented, and want to make
+    sure the seat and handlebar grips match your riding preferences.
+  context:
+    - You just purchased a new bike and haven't customized the fit yet.
+    - You spend long hours riding and need both comfort and control.
+    - You're hoping to book an appointment that handles everything in one visit.
+  goals:
+    - Ask if the shop can help customize your new bike's fit, especially the saddle and handlebar grips.
+    - Ask for seat recommendations that match your preference for {{seat_preference}} comfort.
+    - Ask how much it would cost to install a {{seat_preference}} seat during the same visit.
+    - Ask about handlebar grip options that provide {{grip_feature}}.
+    - Ask the price to replace the grips with a {{grip_feature}} option.
+    - Confirm whether both the seat and grip upgrades can be handled in one appointment.
+    - Schedule a setup appointment for {{appointment_day}} at {{appointment_time}}.
+    - seat_preference:
+        function: pairwise()
+        type: string
+        data:
+          - extra cushioning
+          - performance-oriented support
+          - pressure relief
+          - commuter comfort
+    - grip_feature:
+        function: pairwise()
+        type: string
+        data:
+          - ergonomic wrist support
+          - anti-vibration damping
+          - leather wrap feel
+          - moisture-wicking foam
+    - appointment_day:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - this Saturday
+          - next Tuesday
+    - appointment_time:
+        function: another()
+        type: string
+        data:
+          - "9:00 AM"
+          - "11:30 AM"
+          - "2:30 PM"
+          - "4:00 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fitting_service_confirmation:
+        type: string
+        description: >
+          Confirmation that the shop offers bike fitting or customization
+          services for seats and handlebar grips.
+    - seat_option_summary:
+        type: string
+        description: >
+          Details about seat options or recommendations provided by the chatbot.
+    - seat_installation_price:
+        type: money
+        description: >
+          The price to install or replace the seat based on the user's preference.
+    - grip_option_summary:
+        type: string
+        description: >
+          Details about handlebar grip options that meet the user's requested features.
+    - grip_installation_price:
+        type: money
+        description: >
+          The price to replace or install the requested handlebar grips.
+    - combined_service_confirmation:
+        type: string
+        description: >
+          Confirmation that both seat and grip upgrades can be completed in a single appointment.
+    - appointment_details:
+        type: string
+        description: >
+          Final confirmation of the scheduled setup appointment, including date and time.
+
+conversation:
+  number: combinations(0.75, pairwise)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - default
+  max_cost: 0.6
+```
+
+Coloca este archivo en `profiles/` (por ejemplo, `profiles/bike_custom_fit_user.yaml`) y estará todo listo para tus pruebas. Si necesitas ajustar objetivos, variables o salidas para alinearlas con reglas específicas de Sensei Check, me dices y lo adaptamos con gusto 💪🚴‍♂️

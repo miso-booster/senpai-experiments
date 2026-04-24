@@ -1,0 +1,105 @@
+¡Listo! Aquí tienes un perfil nuevo para probar al chatbot de la tienda de bicicletas. 😊
+
+```yaml
+test_name: "bike_shop_wheel_service_booking"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who depends on your bike for daily commuting and weekend rides.
+    You noticed both wheels wobbling after a pothole hit and urgently need a wheel change service.
+  context:
+    - "You prefer early-morning appointments but can be flexible."
+    - "You want to make sure the shop can replace both wheels and check the spokes."
+    - "You hope to get the bike ready before an upcoming group ride."
+  goals:
+    - "Schedule a wheel change appointment for my {{bike_type}} on {{appointment_date}} at {{appointment_time}}."
+    - "Let the shop know I'm also available on {{alternate_date}} at {{alternate_time}} if the first slot is taken."
+    - "Ask about turnaround time, whether they can true the wheels, and if any prep is needed before the visit."
+    - bike_type:
+        function: forward()
+        type: string
+        data:
+          - road bike
+          - mountain bike
+          - commuter bike
+          - gravel bike
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - "2024-07-01"
+          - "2024-07-03"
+          - "2024-07-05"
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - "09:00 AM"
+          - "11:30 AM"
+          - "03:30 PM"
+    - alternate_date:
+        function: random()
+        type: string
+        data:
+          - "2024-07-06"
+          - "2024-07-08"
+          - "2024-07-10"
+    - alternate_time:
+        function: random()
+        type: string
+        data:
+          - "10:30 AM"
+          - "01:00 PM"
+          - "04:45 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase?"
+  output:
+    - scheduled_date:
+        type: date("YYYY-MM-DD")
+        description: "Date confirmed by the chatbot for the appointment."
+    - scheduled_time:
+        type: time("hh:mm a")
+        description: "Time confirmed by the chatbot for the appointment."
+    - appointment_status:
+        type: string
+        description: "Whether the appointment was confirmed, waitlisted, or needs follow-up."
+    - service_details:
+        type: string
+        description: "Summary of services the chatbot committed to provide."
+    - alternate_slot_offered:
+        type: string
+        description: "Any alternate slot proposed by the chatbot if the first one was unavailable."
+    - reference_number:
+        type: string
+        description: "Booking or ticket number issued by the chatbot."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+### Por qué funciona bien para tus pruebas
+- **Cobertura de fechas/horas:** `pairwise()` en `appointment_date` y `appointment_time` combinado con `conversation.number: combinations(1, pairwise)` genera distintas combinaciones para verificar cómo maneja el calendario el bot.
+- **Escenarios alternativos:** Variables `alternate_date` y `alternate_time` aportan opciones secundarias para ver si el chatbot ofrece reprogramaciones.
+- **Salidas listas para reglas:** Campos como `scheduled_date`, `scheduled_time` y `alternate_slot_offered` facilitan escribir reglas posteriores que verifiquen la respuesta del bot.
+
+El diseño sigue las pautas de `sensei-chat-guide.md`, asegurando que los objetivos usen variables declaradas, que el `chatbot.output` sirva de contrato para futuras reglas y que la interacción esté controlada con `goal_style` e `interaction_style`.
+
+¿Quieres ajustar los valores (p. ej., más horas o distintos tipos de bicicleta) o crear reglas que validen estos datos? ¡Feliz de ayudarte! 🚴‍♂️

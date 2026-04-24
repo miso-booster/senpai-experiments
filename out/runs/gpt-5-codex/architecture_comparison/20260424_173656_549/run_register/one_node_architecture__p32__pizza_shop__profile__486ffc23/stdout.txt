@@ -1,0 +1,73 @@
+conversation ID: one_node_architecture__p32__pizza_shop__profile__486ffc23
+$$$
+¡Perfecto! Aquí tienes un perfil listo para poner a prueba tu chatbot de pizzería 🍕👇
+
+```yaml
+test_name: pizza_order_smoke_test
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres un cliente entusiasmado que está haciendo un pedido de pizza y bebida para llevar."
+  context:
+    - "Prefieres respuestas claras y completas, especialmente sobre precios."
+    - "Quieres asegurarte de que el pedido quede confirmado con un identificador."
+  goals:
+    - "Hola, me gustaría pedir una pizza {{pizza_type}} tamaño {{pizza_size}}."
+    - "Quisiera añadir {{drink_quantity}} {{drink_type}} para acompañar."
+    - "¿Puedes confirmarme el precio final en dólares estadounidenses?"
+    - "¿Cuál es el identificador del pedido para recogerlo?"
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Vegetariana, Cuatro Quesos]
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data: [pequeña, mediana, grande]
+    - drink_type:
+        function: another()
+        type: string
+        data: [Refresco, Agua Mineral, Té Helado, Cerveza sin alcohol]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no te he entendido bien. ¿Puedes repetir tu pedido de pizza o bebida?"
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmada por el chatbot."
+    - drink:
+        type: string
+        description: "Bebida confirmada por el chatbot, incluyendo cantidad si aplica."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido."
+    - total_price_usd:
+        type: currency
+        description: "Precio final del pedido expresado en dólares estadounidenses (USD)."
+
+conversation:
+  number: 4
+  max_cost: 0.8
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change your mind
+```
+$$$

@@ -1,0 +1,91 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__449d62de
+$$$
+Hi there! Happy to help you get that bike dialed in 😊. Here’s a new Sensei profile that simulates a rider visiting the shop to customize their seat and handlebar grips:
+
+```yaml
+test_name: bike_fitting_customization
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fitting_service_confirmation:
+        type: string
+        description: Confirmation that bike fitting and customization services are offered.
+    - seat_recommendation:
+        type: string
+        description: Details about recommended seat options tailored to the user's preferences.
+    - grip_recommendation:
+        type: string
+        description: Details about handlebar grip options suitable for the user.
+    - fitting_price:
+        type: money
+        description: Cost for the fitting/customization service or related parts.
+    - appointment_confirmation:
+        type: string
+        description: Confirmation message for the scheduled customization appointment.
+
+user:
+  language: English
+  role: >
+    You are a cyclist who just bought a new bike and wants it adjusted for comfort.
+    Ask about seat and handlebar grip customizations and arrange an in-shop fitting.
+  context:
+    - You’ve been experiencing discomfort on long rides and want expert guidance.
+    - You care about both style and ergonomics when selecting components.
+    - You prefer to get everything done in a single visit if possible.
+  goals:
+    - Ask if the shop offers bike fitting or customization services for seat and handlebar grips.
+    - Describe your seat preference, specifying that you would like a {{seat_type}} saddle.
+    - Ask what handlebar grip options they recommend, focusing on {{grip_material}} grips.
+    - Request the cost for the fitting service and any suggested components.
+    - Schedule a customization appointment for {{appointment_date}} at {{appointment_time}}.
+    - seat_type:
+        function: forward()
+        type: string
+        data:
+          - ergonomic saddle
+          - performance saddle
+          - gel-cushioned saddle
+    - grip_material:
+        function: forward(seat_type)
+        type: string
+        data:
+          - leather grips
+          - cork grips
+          - silicone grips
+    - appointment_date:
+        function: forward(grip_material)
+        type: string
+        data:
+          - tomorrow
+          - this Saturday
+          - next Tuesday
+    - appointment_time:
+        function: another()
+        type: string
+        data:
+          - 9:00 AM
+          - 11:30 AM
+          - 2:00 PM
+          - 4:15 PM
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - default
+  max_cost: 0.6
+```
+
+Let me know if you’d like any tweaks—happy to tailor it further! 🚲💫
+$$$

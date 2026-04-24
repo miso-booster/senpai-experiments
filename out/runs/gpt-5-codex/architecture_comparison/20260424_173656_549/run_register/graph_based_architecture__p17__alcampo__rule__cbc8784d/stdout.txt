@@ -1,0 +1,44 @@
+conversation ID: graph_based_architecture__p17__alcampo__rule__cbc8784d
+$$$
+¡Hola! 😊 Veo que la regla no te está funcionando, y tiene sentido: ahora mismo tiene un par de problemillas de estructura y de referencia que impiden que Sensei-check la evalúe bien.
+
+### ¿Qué pasa con la regla original?
+
+1. **`conversations:` está vacío** ➝ Sensei-check necesita saber cuántas conversaciones usa la regla (por ejemplo, `1`, `2` o `all`). Al quedar sin valor, la regla no se puede ejecutar.
+2. **Uso directo de `membership_benefits`** ➝ Asegúrate de que el perfil al que aplica esta regla expone un campo `membership_benefits` en `chatbot.output`. Sin eso, Sensei-check no tendrá de dónde leer el valor.
+
+Además, el chequeo `membership_benefits != ''` solo verifica que haya texto, pero no garantiza que la respuesta sea realmente útil. Podemos reforzarlo un poquito.
+
+### Versión corregida y mejorada
+
+Aquí tienes una propuesta lista para usar. Ajusta el texto de referencia si tus beneficios tienen otro contenido esperado:
+
+```yaml
+name: membership_benefits_information
+description: Asegura que el chatbot explique claramente al menos un beneficio de la membresía.
+conversations: 1
+when: membership_benefits is not None
+oracle: |
+  membership_benefits.strip() != '' and semantic_content(
+    membership_benefits,
+    'Describe beneficios como descuentos, promociones exclusivas o acumulación de puntos'
+  )
+```
+
+**Qué hace ahora:**
+
+- Declara `conversations: 1`, indicando que la regla analiza una sola conversación a la vez.
+- Filtra con `when` solo los casos en los que realmente hay un campo `membership_benefits`.
+- Comprueba que el texto no esté vacío y, además, usa `semantic_content` para asegurarse de que la respuesta menciona beneficios importantes (puedes adaptar esa descripción a tu programa específico).
+
+Si prefieres simplemente comprobar que el campo no está vacío (sin análisis semántico), podrías usar algo más sencillo:
+
+```yaml
+name: membership_benefits_information
+description: El chatbot debe rellenar el campo membership_benefits con algún texto.
+conversations: 1
+oracle: membership_benefits is not None and membership_benefits.strip() != ''
+```
+
+Cualquier duda extra sobre el perfil o si quieres validar otros campos, ¡aquí estoy! 💪✨
+$$$

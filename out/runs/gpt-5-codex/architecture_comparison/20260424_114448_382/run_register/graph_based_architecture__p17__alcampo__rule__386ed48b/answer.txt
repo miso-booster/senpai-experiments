@@ -1,0 +1,37 @@
+¡Hola! 😊 Vamos a ver por qué tu regla `membership_benefits_information` no estaba funcionando y cómo dejarla lista.
+
+### Problemas principales detectados
+
+1. **Falta el número de conversaciones**  
+   En Sensei-check, la clave `conversations` es obligatoria. Si no le indicas cuántas conversaciones necesita la regla (por ejemplo, `1` o `2`), Sensei no puede evaluarla y la ignora.
+
+2. **Campo `membership_benefits`**  
+   Asegúrate de que tu perfil de SENSEI Chat esté exponiendo un campo llamado exactamente `membership_benefits` en `chatbot.output`. Si ese campo no existe o tiene otro nombre (p. ej. `benefits_summary`), la regla jamás encontrará datos que evaluar.
+
+3. **Chequeo actual demasiado básico**  
+   El `oracle: membership_benefits != ''` solo detecta cadenas vacías. Si el campo es `None`, una cadena de espacios o contiene texto “de relleno”, el chequeo podría pasar sin que el contenido sea útil para el usuario.
+
+---
+
+### Regla corregida y más robusta
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot provides a non-empty description of membership benefits.
+conversations: 1
+oracle: membership_benefits is not None and membership_benefits.strip() != ''
+```
+
+**Qué hace ahora:**
+
+* Verifica que el campo exista (`is not None`).
+* Se asegura de que no esté vacío ni contenga solo espacios.
+
+---
+
+### Consejitos extra
+
+- Si quieres validar que el contenido tenga cierta calidad (por ejemplo, que mencione palabras clave o un mínimo de detalles), puedes enriquecer la condición con funciones como `semantic_content(...)` o comprobar la longitud del texto con `len(membership_benefits.split()) >= X`.
+- No olvides revisar que tu perfil incluya el campo en `chatbot.output`. Si falta, agrégalo ahí primero y luego aplica la regla.
+
+¿Te gustaría que la ajustemos para verificar contenido más específico (p. ej., que mencione descuentos, puntos, etc.)? Estoy aquí para ayudarte 💪😁.

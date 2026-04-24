@@ -1,0 +1,119 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__0ce66662
+$$$
+Here you go! I created a Sensei profile that simulates a frustrated student trying every eduroam setup path they can think of, with each method captured as a variable so you can mix and match scenarios easily.
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a postgraduate student who urgently needs campus Wi-Fi access but keeps failing to configure eduroam.
+    You describe each failed attempt in detail and insist on understanding exactly what to fix.
+  context:
+    - "You have assignments due tonight and must upload lab results from the library."
+    - "You already read the university knowledge base and tried the recommended installers."
+    - "You are moderately tech-savvy but unsure about certificates and identity formats."
+  goals:
+    - "Explain that you already tried the {{setup_method}} on your {{device_platform}} but eduroam still will not connect."
+    - "Describe the exact error message or symptom that appears after using the {{setup_method}}."
+    - "Ask for a detailed checklist to verify {{auth_detail}} so the authentication finally succeeds."
+    - "Mention that you're considering {{fallback_method}} if the first approach keeps failing."
+    - "Request next steps, including whether you should reach out via {{support_option}} or prepare {{extra_requirement}}."
+    - setup_method:
+        function: pairwise()
+        type: string
+        data:
+          - "Eduroam Configuration Assistant Tool (CAT) installer"
+          - "manual WPA2-Enterprise profile via Windows network settings"
+          - "mobileconfig profile downloaded from the university helpdesk"
+          - "wpa_supplicant configuration on Linux"
+          - "network setup wizard in Android settings"
+    - device_platform:
+        function: pairwise()
+        type: string
+        data:
+          - "Windows 11 laptop"
+          - "macOS Sonoma MacBook"
+          - "Android 14 phone"
+          - "iOS 17 iPhone"
+          - "Ubuntu 22.04 laptop"
+    - auth_detail:
+        function: another()
+        type: string
+        data:
+          - "PEAP with MSCHAPv2 credentials"
+          - "installing the university root certificate"
+          - "anonymous identity field formatting"
+          - "EAP-TTLS with PAP inner authentication"
+          - "802.1X username format requirements"
+    - fallback_method:
+        function: random()
+        type: string
+        data:
+          - "using the Eduroam CAT mobile app with QR provisioning"
+          - "having IT staff preconfigure the device at the support desk"
+          - "importing a configuration profile supplied over USB"
+          - "temporarily creating a new local user profile before reattempting setup"
+    - support_option:
+        function: random()
+        type: string
+        data:
+          - "opening an IT helpdesk ticket"
+          - "visiting the campus walk-in support center"
+          - "joining the remote troubleshooting Zoom session"
+          - "following the self-service troubleshooting article"
+    - extra_requirement:
+        function: random()
+        type: string
+        data:
+          - "collecting recent Wi-Fi logs for the support team"
+          - "resetting previously saved networks"
+          - "updating the wireless driver or OS patches"
+          - "disabling private MAC address randomization temporarily"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that—could you restate the issue with your eduroam setup?"
+  output:
+    - troubleshooting_steps:
+        type: list[string]
+        description: "Actionable steps the chatbot provided to resolve the eduroam issue"
+    - success_status:
+        type: string
+        description: "Whether the chatbot indicated the connection should now work or if issues persist"
+    - escalation_path:
+        type: string
+        description: "Specific escalation or support channel recommended by the chatbot"
+    - configuration_summary:
+        type: string
+        description: "Summary of the configuration details the chatbot advised (e.g., protocol, certificates)"
+
+conversation:
+  number: combinations(0.7, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - make spelling mistakes
+    - random:
+      - long phrases
+      - change your mind
+      - single questions
+```
+
+### What’s happening here
+- `setup_method`, `device_platform`, and friends drive the different configuration attempts, as you requested.
+- Pairwise coverage ensures each platform-method combo gets tested without exploding combinations.
+- The outputs capture instructions, status, and escalation so you can plug rules into troubleshooting success later.
+
+Reference: built according to the structure and best practices from **`sensei-chat-guide.md`**.
+
+Hope this gives you a solid starting point! Need tweaks (other devices, languages, conversation styles)? Just let me know 😊
+$$$

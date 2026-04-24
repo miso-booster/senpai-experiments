@@ -1,0 +1,58 @@
+conversation ID: agentic_architecture__p5__ada_uam__profile__db6f31d7
+$$$
+Aquí tienes el nuevo perfil 🙂. Se apoya en las directrices de `sensei-chat-guide.md`, definiendo claramente el rol del usuario, las metas y los campos de `chatbot.output` que luego pueden validarse con reglas.
+
+**Resumen rápido**
+- Usuario simulado: persona de la UAM que contacta con el CAU para obtener teléfono, correo, ubicación y horario.
+- Conversación: en español, tono cordial; formula cada petición por separado (`single questions`) hasta que todas las metas estén cubiertas (`goal_style: all_answered`).
+- Salidas del chatbot: cuatro campos (`cau_phone_number`, `cau_email`, `cau_location`, `cau_opening_hours`) listos para reglas posteriores.
+
+Te sugiero guardarlo como `profiles/contacto_cau_soporte.yaml`.
+
+```yaml
+test_name: "cau_contact_information"
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona usuaria de la Universidad Autónoma de Madrid que necesita
+    asistencia del Centro de Atención a Usuarios (CAU).
+    Tu objetivo es recopilar los datos de contacto para poder llamar, escribir
+    y visitar el CAU.
+  context:
+    - "Mantén un tono cordial y directo."
+    - "Aclara que buscas información oficial y actualizada."
+  goals:
+    - "Solicita el número de teléfono del CAU."
+    - "Pregunta cuál es la dirección de correo electrónico del CAU."
+    - "Pide que te indiquen la ubicación física del CAU."
+    - "Pregunta por el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no dispongo de esa información en este momento."
+  output:
+    - cau_phone_number:
+        type: string
+        description: "Número de teléfono oficial del CAU."
+    - cau_email:
+        type: string
+        description: "Dirección de correo electrónico de contacto del CAU."
+    - cau_location:
+        type: string
+        description: "Dirección física del centro de atención CAU."
+    - cau_opening_hours:
+        type: string
+        description: "Horario de atención del CAU."
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      limit: 8
+  interaction_style:
+    - single questions
+```
+
+¿Quieres que preparemos alguna regla para validar estas salidas o preferirías ajustar primero el perfil?
+$$$

@@ -1,0 +1,39 @@
+conversation ID: graph_based_architecture__p36__pizza_shop__rule__0ba4c601
+$$$
+Hey there! Thanks for sharing the rule 😊 Let’s walk through why it’s failing and how to fix it.
+
+### What’s going wrong?
+
+Right now your rule says:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+The issue is that it never checks whether **conversation 0 actually has more toppings** than conversation 1. So Sensei-check is comparing prices even when both pizzas have the **same number of toppings**, which of course doesn’t guarantee that one should be more expensive than the other.
+
+Because of that, the rule triggers on pairs where it shouldn’t, and you see false failures.
+
+### Quick fix ✨
+
+Just add the missing `if:` clause that enforces the “more toppings” condition:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+This version only evaluates the price comparison when the first conversation truly has more toppings. The `if:` acts as the guard you were missing.
+
+Give this a go and let me know if you want to make it symmetric (so it works regardless of which conversation has more toppings) — happy to help! 🍕
+$$$

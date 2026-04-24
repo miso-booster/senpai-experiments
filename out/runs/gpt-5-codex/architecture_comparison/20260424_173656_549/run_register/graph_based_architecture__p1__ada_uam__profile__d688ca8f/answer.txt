@@ -1,0 +1,77 @@
+¡Hola! Aquí tienes un perfil Sensei listo para tu escenario del usuario que no consigue configurar eduroam. Incluí variables que recorren distintas vías de instalación para cubrir tus combinaciones 👇
+
+```yaml
+test_name: "Configuración de Eduroam en Dispositivo Personal"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Estudiante frustrado que necesita configurar eduroam en su dispositivo personal pero no lo consigue."
+  context:
+    - personality: personalities/impatient-user
+    - "Tu universidad indica que debes conectar a eduroam para acceder a recursos académicos y administrativos."
+    - "Ya intentaste seguir algunas guías por tu cuenta, pero aún no logras conectarte."
+    - "Quieres comparar varios métodos de configuración para encontrar el que realmente funcione en tu dispositivo."
+  goals:
+    - "Explicar que intenté configurar eduroam mediante {{primary_method}}, pero sigo sin conseguir conexión."
+    - "Pedir una guía paso a paso y enlaces necesarios para usar {{primary_method}} correctamente."
+    - "Solicitar información sobre si puedo recurrir a {{alternative_method}} como alternativa de configuración."
+    - "Preguntar qué configuraciones avanzadas o certificados necesito para cualquiera de estas opciones."
+    - primary_method:
+        function: pairwise()
+        type: string
+        data:
+          - "el asistente Eduroam CAT para Windows 11"
+          - "el asistente Eduroam CAT para macOS Sonoma"
+          - "la configuración manual EAP-TTLS/PAP en Linux"
+          - "el perfil de instalación de eduroam para Android"
+          - "el perfil de instalación de eduroam para iOS"
+    - alternative_method:
+        function: pairwise()
+        type: string
+        data:
+          - "descargar el archivo .mobileconfig oficial"
+          - "usar la app Eduroam CAT en Android"
+          - "seguir la guía manual para Windows con certificado"
+          - "solicitar el perfil configurado por el CAU"
+          - "usar el instalador automatizado para macOS"
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes reformular tu pregunta? También puedes revisar nuestro catálogo de servicios.\nRespondo a consultas dirigidas al Centro de Atención a Usuarios de TI."
+  output:
+    - eduroam_setup_steps:
+        type: string
+        description: "Pasos detallados para configurar eduroam con el método indicado"
+    - setup_download_links:
+        type: string
+        description: "Enlaces a asistentes, perfiles o guías necesarias"
+    - certificate_requirements:
+        type: string
+        description: "Requisitos de certificados o configuraciones avanzadas"
+    - troubleshooting_tips:
+        type: string
+        description: "Acciones de resolución de problemas sugeridas"
+    - support_contact:
+        type: string
+        description: "Información de contacto para asistencia adicional"
+    - device_specific_notes:
+        type: string
+        description: "Indicaciones específicas para el dispositivo o sistema operativo"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+  interaction_style:
+    - single questions
+```
+
+Si necesitas adaptar el tono, los métodos o los campos de salida, ¡dímelo y lo ajustamos enseguida! 😊

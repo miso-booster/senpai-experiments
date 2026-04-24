@@ -1,0 +1,86 @@
+conversation ID: graph_based_architecture__p14__alcampo__profile__8c6491c9
+$$$
+¡Hola! 😊 Aquí tienes un perfil Sensei listo para poner a prueba cómo recomienda recetas y organiza planes de menú el chatbot de Alcampo. Lo escribí totalmente en español para que mantengas la coherencia con las peticiones del usuario simulado.
+
+Guárdalo en tu proyecto como `profiles/recipe_planning_and_menu_recommendations.yaml`:
+
+```yaml
+test_name: "Recetas y Planificación de Menús"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: Cliente que busca inspiración culinaria y quiere organizar menús equilibrados con ayuda del chatbot de Alcampo.
+  context:
+    - Te encanta cocinar en casa y combinar recetas rápidas con platos más elaborados para ocasiones especiales.
+    - Intentas que tus menús semanales sean saludables, variados y acordes a una dieta consciente.
+    - Buscas optimizar el tiempo en cocina aprovechando las recomendaciones y productos disponibles en Alcampo.
+  goals:
+    - "Pide recomendaciones de recetas para {{meal_type}} que sigan una dieta {{dietary_style}}."
+    - "Solicita un menú equilibrado para {{number_of_people}} personas cubriendo toda la semana."
+    - "Pregunta por una lista de la compra basada en las recetas sugeridas, detallando cantidades aproximadas."
+    - "Investiga consejos de preparación y tiempos de cocción para organizar mejor cada receta."
+    - "Consulta sugerencias para adaptar el menú a alergias o restricciones alimentarias comunes."
+    - meal_type:
+        function: pairwise()
+        type: string
+        data: [desayuno, comida, cena]
+    - dietary_style:
+        function: pairwise()
+        type: string
+        data: [mediterránea, baja en carbohidratos, vegetariana, sin gluten]
+    - number_of_people:
+        function: forward(dietary_style)
+        type: int
+        data: [1, 2, 4]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recipe_recommendations:
+        type: string
+        description: Resumen de las recetas aconsejadas para la comida consultada
+    - weekly_menu_plan:
+        type: string
+        description: Estructura del menú equilibrado propuesto para varios días
+    - shopping_list:
+        type: string
+        description: Lista de ingredientes sugeridos con cantidades aproximadas
+    - prep_time_guidance:
+        type: string
+        description: Consejos de preparación y tiempos estimados de cocción
+    - dietary_adaptations:
+        type: string
+        description: Recomendaciones para adaptar recetas a alergias o restricciones
+    - product_links:
+        type: string
+        description: Referencias o enlaces a productos de Alcampo relacionados con las recetas
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.5
+  goal_style:
+    steps: 26
+  interaction_style:
+    - long phrases
+    - random:
+      - make spelling mistakes
+      - change language:
+        - Español
+        - Inglés
+```
+
+### Por qué funciona bien para tu objetivo
+- **Foco en recetas y menús**: los goals guían al bot a cubrir recetas, menús semanales, listas de compra y adaptaciones dietéticas.
+- **Variables con cobertura pairwise**: así probarás múltiples combinaciones de tipo de comida, estilo dietético y tamaño de la familia sin disparar el número de conversaciones.
+- **Salidas bien definidas**: el bloque `chatbot.output` convierte las respuestas en campos estructurados que luego puedes validar con tus reglas de Sensei-check si lo necesitas.
+- **Interacción variada**: mezcla mensajes extensos y posibles cambios de idioma o pequeñas faltas, ideal para estresar la comprensión del bot.
+
+Si quieres ajustar algo (por ejemplo, añadir más estilos dietéticos o limitar los cambios de idioma), me dices y lo adaptamos encantado. ¡Mucho éxito con esas pruebas culinarias! 🧑‍🍳✨
+$$$

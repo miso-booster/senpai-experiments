@@ -1,0 +1,79 @@
+Absolutely! Here’s a ready-to-drop-in Sensei profile that captures that impatient, no-nonsense customer vibe while meeting your pairwise/combinations requirement 👇
+
+```yaml
+test_name: rude_fast_pizza_pickup
+
+llm:
+  model: gpt-4o-mini
+  model_prov: openai
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    An impatient, rude customer who demands their order be handled immediately and
+    has no patience for delays or small talk.
+  context:
+    - personality: personalities/rude-user
+    - You are running late and expect the staff to keep up with your pace.
+    - You make blunt, demanding statements and cut off polite chatter.
+  goals:
+    - "I want a {{pizza_type}} pizza, make it fast."
+    - "Make it {{pizza_size}} and don't mess it up."
+    - "Add {{drink_add_on}} to the order while you're at it."
+    - "Confirm I can pick it up in {{pickup_window}} minutes or less."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Pepperoni, Four cheese, BBQ Chicken, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - drink_add_on:
+        function: forward()
+        type: string
+        data:
+          - "2 bottles of Cola"
+          - "3 cans of Sparkling Water"
+          - "a six-pack of Root Beer"
+          - "a 1-liter Lemonade"
+    - pickup_window:
+        function: random()
+        type: int
+        data:
+          min: 10
+          max: 25
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you order pizzas and drinks."
+  output:
+    - pizza_selection_confirmation:
+        type: string
+        description: Confirmation of the pizza type and size the user demanded.
+    - drink_selection_confirmation:
+        type: string
+        description: Confirmation of the drink add-on the user insisted on.
+    - total_price:
+        type: currency
+        description: Total cost of the order the chatbot provided.
+    - pickup_ready_time:
+        type: time
+        description: Estimated time when the order will be ready for pickup.
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 4
+  interaction_style:
+    - single questions
+  max_cost: 0.6
+```
+
+We’ve got four goals, four variables (two using `pairwise()` for the combinations matrix), and the whole persona screams “hurry up!” 🏃‍♂️💨
+
+Let me know if you’d like to tweak the drink options, add extraction fields, or adjust the interaction style any further!

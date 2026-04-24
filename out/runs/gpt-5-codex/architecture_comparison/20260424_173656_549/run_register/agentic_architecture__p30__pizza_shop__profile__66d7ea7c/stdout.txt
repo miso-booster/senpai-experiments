@@ -1,0 +1,95 @@
+conversation ID: agentic_architecture__p30__pizza_shop__profile__66d7ea7c
+$$$
+Here’s a fast-and-feisty pizza profile for you! 🍕🔥 It keeps the simulated customer rude and speed-obsessed, uses four separate goals with four variables (two of them pairwise), and relies on `combinations(1, pairwise)` so the run size is driven by the pairwise matrix—exactly as described in `sensei-chat-guide.md`.
+
+```yaml
+test_name: "rude_pizza_express_user"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer ordering from a pizza shop. You bark insults,
+    refuse polite language, and threaten to cancel if service is slow. Keep messages
+    short, aggressive, and focused on getting the food fast.
+  context:
+    - "You are starving after a long shift."
+    - "You hate waiting and expect the shop to prioritise your order."
+    - "You treat staff bluntly and demand constant reassurance about speed."
+  goals:
+    - "Yell to get a {{size}} pizza rushed out immediately."
+    - "Snarl that the pizza must have {{toppings}} or you'll leave."
+    - "Growl that only a {{crust}} crust is acceptable."
+    - "Threaten to cancel unless the meal feeds {{group_size}} people fast."
+    - size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+          - extra large
+    - toppings:
+        function: pairwise()
+        type: string
+        data:
+          - pepperoni
+          - jalapeños
+          - mushrooms
+          - double cheese
+    - crust:
+        function: forward()
+        type: string
+        data:
+          - thin
+          - pan
+          - stuffed
+    - group_size:
+        function: random()
+        type: int
+        data:
+          min: 2
+          max: 5
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I missed that. Can you repeat what you need?"
+  output:
+    - order_id:
+        type: string
+        description: "Identifier the bot assigns to the pizza order."
+    - quoted_total:
+        type: currency
+        description: "Total price the bot quotes for the order."
+    - ready_time_minutes:
+        type: int
+        description: "Estimated minutes until the pizza is ready or delivered."
+    - rush_commitment:
+        type: string
+        description: "How the bot promises to prioritise and speed up the order."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 4
+    max_cost: 0.3
+  interaction_style:
+    - all questions
+    - make spelling mistakes
+```
+
+**Key highlights (grounded in `sensei-chat-guide.md`):**
+- Four plain-language goals each reference one of the four declared variables, keeping the template straightforward.
+- `size` and `toppings` use `pairwise()` while `crust` and `group_size` follow different functions, satisfying the pairwise matrix requirement and keeping the remaining variables varied.
+- `conversation.number: combinations(1, pairwise)` leverages those pairwise variables so the simulator automatically sets the run count from the generated matrix.
+- The chatbot output schema exposes practical fields (order ID, price, prep time, and speed commitment) to support future rules or reporting.
+
+Let me know if you’d like any tweaks—maybe a different interaction style or extra context lines!
+$$$

@@ -1,0 +1,25 @@
+Hey! I spotted a couple of issues in your original rule when I cross-checked it with `sensei-check-doc.md`:
+
+- `conversations` was set to `2`, but the rule never references `conv[1]`; for a single conversation check, the DSL expects `conversations: 1`.
+- In a one-conversation rule you refer to slots directly (`tune_up_price`), not through `conv[0].`.
+- The `then` clause must evaluate to a boolean expression; returning a plain string isn’t valid. Use `on-error` (optional) for human-friendly messages instead.
+
+Here’s a corrected version that keeps the same intent—only passes when the tune-up price is reported as $50 once it’s available:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+if: tune_up_price is not None
+then: extract_float(tune_up_price) == 50
+on-error: f"Expected the tune-up price to be $50, but got {tune_up_price}"
+```
+
+**What changed (and why):**
+
+1. **`conversations: 1`** — this is a single-conversation oracle, per the syntax guidance in `sensei-check-doc.md`.
+2. **Slot access** — switched from `conv[0].tune_up_price` to `tune_up_price`, which is the proper form for single-conversation rules.
+3. **Boolean `then` expression** — replaced the string literal with `extract_float(tune_up_price) == 50`, matching the requirement that `then` evaluates to `True`/`False`. `extract_float` handles strings like “$50” or “50 dollars”.
+4. **Helpful message** — added `on-error` so failures report the unexpected value.
+
+Let me know if the profile stores the price in a different format and we can tweak the comparison accordingly!

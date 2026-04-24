@@ -1,0 +1,71 @@
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__ec189868
+$$$
+Here you go! I put together a snappy Sensei profile that captures the “rude and in-a-rush” vibe you described. It has exactly four goals, four variables (with two using `pairwise()` so the conversation count comes from the pairwise matrix), and keeps the user pressing for quick answers. Let me know if you’d like to tweak any of the wording or data pools! 🚀
+
+```yaml
+test_name: rude_rush_order
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, sharp-tongued customer who wants your order confirmed immediately
+    and has zero tolerance for delays.
+  context:
+    - personality: personalities/rude-user
+    - You are starving after a long shift and refuse to wait.
+    - You threaten to cancel the order if the staff hesitates or stalls.
+  goals:
+    - "Bark an ETA for a {{pizza_type}} pizza and demand they hurry."
+    - "Insist the pizza comes in a {{pizza_size}} size without any debate."
+    - "Add a {{drink_type}} to the order and warn them not to slow things down."
+    - "Order only if the rushed total stays under {{max_price}}."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, BBQ Chicken, Vegan Supreme]
+    - pizza_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - drink_type:
+        function: pairwise()
+        type: string
+        data: [Cola, Sparkling Water, Energy Drink, Lemonade]
+    - max_price:
+        function: forward()
+        type: string
+        data: ["$25", "$30", "$35", "$40"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - rush_eta:
+        type: string
+        description: "The assistant's promised prep or pickup time for the rushed pizza request."
+    - size_confirmation:
+        type: string
+        description: "Confirmation that the demanded pizza size is acknowledged."
+    - drink_acknowledgement:
+        type: string
+        description: "Response confirming the chosen drink and any timing notes."
+    - quoted_total:
+        type: money
+        description: "Total cost cited by the assistant, including any rush or priority fees."
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.9
+  goal_style:
+    steps: 4
+  interaction_style:
+    - all questions
+```
+$$$

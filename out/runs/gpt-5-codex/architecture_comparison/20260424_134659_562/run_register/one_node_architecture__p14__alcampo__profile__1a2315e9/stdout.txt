@@ -1,0 +1,105 @@
+conversation ID: one_node_architecture__p14__alcampo__profile__1a2315e9
+$$$
+¡Claro que sí! Aquí tienes un perfil listo para poner a prueba cómo el chatbot de Alcampo recomienda recetas y organiza planes de menú 🍽️😊.
+
+```yaml
+test_name: Planificación de menús y recetas personalizadas
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona organizada que quiere optimizar su planificación semanal de comidas,
+    buscando recetas variadas y equilibradas ofrecidas por Alcampo.
+  context:
+    - Llevas un registro de tus comidas para mantener una alimentación saludable sin invertir demasiado tiempo.
+    - Quieres aprovechar los productos disponibles en Alcampo y conocer sustituciones por alergias o preferencias.
+    - Prefieres recomendaciones estructuradas que incluyan lista de la compra y consejos de preparación.
+  goals:
+    - "Pide al chatbot recomendaciones de recetas para {{meal_type}} que sean {{dietary_focus}}."
+    - "Solicita un menú para {{meal_horizon}} que incluya desayunos, comidas y cenas equilibradas."
+    - "Pregunta por los ingredientes clave y consejos de preparación para cada receta sugerida."
+    - "Solicita una lista de la compra organizada por categorías para seguir el plan propuesto."
+    - "Pide alternativas para sustituir {{ingredient_to_replace}} sin perder sabor ni nutrientes."
+    - meal_type:
+        function: pairwise()
+        type: string
+        data:
+          - desayunos
+          - comidas
+          - cenas
+          - meriendas
+    - dietary_focus:
+        function: pairwise()
+        type: string
+        data:
+          - saludables
+          - rápidas
+          - sin gluten
+          - veganas
+    - meal_horizon:
+        function: forward()
+        type: string
+        data:
+          - un día
+          - un fin de semana
+          - una semana completa
+    - ingredient_to_replace:
+        function: random()
+        type: string
+        data:
+          - el gluten
+          - la lactosa
+          - los frutos secos
+          - el azúcar refinado
+
+chatbot:
+  is_starter: false
+  fallback: "Perdona, no he entendido tu consulta culinaria. ¿En qué parte de tu planificación de menús puedo ayudarte? 🍳"
+  output:
+    - recommended_recipes:
+        type: list[string]
+        description: Lista de recetas sugeridas para el tipo de comida solicitado
+    - menu_overview:
+        type: string
+        description: Resumen del plan de menú con distribución diaria
+    - grocery_list:
+        type: list[string]
+        description: Lista de la compra categorizada según el plan propuesto
+    - prep_tips:
+        type: string
+        description: Consejos prácticos para preparar las recetas con eficiencia
+    - substitution_suggestions:
+        type: string
+        description: Alternativas recomendadas para el ingrediente a sustituir
+    - estimated_cooking_time:
+        type: string
+        description: Tiempos estimados de preparación y cocción para cada receta
+    - nutritional_highlights:
+        type: string
+        description: Aspectos nutricionales clave del menú sugerido
+    - planning_tools_link:
+        type: string
+        description: Enlace o referencia a herramientas de planificación disponibles en Alcampo
+
+conversation:
+  number: combinations
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change language:
+            - inglés
+            - catalán
+```
+
+¡Listo para cocinar y evaluar! Si necesitas que ajustemos variables, contexto o salidas, dime y lo iteramos juntos 😉
+$$$

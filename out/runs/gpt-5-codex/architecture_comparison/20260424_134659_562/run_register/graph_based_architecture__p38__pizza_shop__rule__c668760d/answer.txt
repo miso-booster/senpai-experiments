@@ -1,0 +1,16 @@
+Hey there! 👋 If you want Sensei-check to make sure the chatbot actually outputs an `order_id`, the easiest path is a single-conversation rule that inspects the `order_id` field coming straight from the profile’s `chatbot.output`.
+
+Here’s a ready-to-use YAML snippet you can drop into your rules folder (for example, `rules/order_id_present.yaml`). It marks the rule as active and verifies that `order_id` isn’t missing or just an empty placeholder:
+
+```yaml
+name: order_id_present
+description: Chatbot must provide a non-empty order_id in its output
+active: true
+conversations: 1
+oracle: order_id is not None and str(order_id).strip().lower() not in ["", "n/a", "none"]
+on-error: "Missing or empty order_id returned: {order_id}"
+```
+
+💡 A quick reminder: this works as long as your SENSEI Chat profile exposes `order_id` in `chatbot.output`. Once that’s in place, Sensei-check will run this rule over every generated conversation and flag any turn where the assistant skipped or blanked the ID.
+
+Let me know if you’d like a variant (for example, checking a specific format) and I’ll happily help!

@@ -1,0 +1,117 @@
+conversation ID: agentic_architecture__p20__bikeshop__profile__dde87935
+$$$
+Here’s a fresh profile tailored for the bike-shop wheel service scenario! 😊 It follows the structure from `sensei-chat-guide.md`, adds pairwise date/time variables so you can probe the bot’s scheduling logic, and captures confirmation details for downstream rules.
+
+**Highlights**
+- Covers preferred and fallback appointment slots via `pairwise()` and `forward(...)` to exercise different day/time combinations.
+- Encourages the user simulator to push for alternatives (`change your mind`) and sprinkle variety (`random` interaction styles).
+- Exposes appointment details in `chatbot.output` so rules can later verify what the bot confirmed.
+
+```yaml
+test_name: "bike_shop_wheel_service_schedule"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist who needs to schedule an appointment at a local bike shop
+    to replace both wheels on your bike. Be polite but persistent about getting a
+    confirmed slot.
+  context:
+    - "You rely on this bike for commuting and weekend rides."
+    - "You prefer morning appointments but can adjust if needed."
+    - "You want to know how long the wheel change will take."
+  goals:
+    - "Schedule an appointment on {{preferred_date}} at {{preferred_time}} to change both wheels."
+    - "Mention that the bike is a {{bike_type}} and ask what you should bring."
+    - "Ask if the work can be finished before {{event_deadline}}."
+    - "If the preferred slot is unavailable, ask about {{fallback_date}} at {{fallback_time}}."
+    - preferred_date:
+        function: pairwise()
+        type: string
+        data:
+          - "Monday, 14 October"
+          - "Wednesday, 16 October"
+          - "Saturday, 19 October"
+    - preferred_time:
+        function: pairwise()
+        type: string
+        data:
+          - "09:30 AM"
+          - "12:00 PM"
+          - "04:15 PM"
+    - fallback_date:
+        function: forward(preferred_date)
+        type: string
+        data:
+          - "Tuesday, 15 October"
+          - "Thursday, 17 October"
+          - "Sunday, 20 October"
+    - fallback_time:
+        function: forward(preferred_time)
+        type: string
+        data:
+          - "11:00 AM"
+          - "02:30 PM"
+          - "05:00 PM"
+    - bike_type:
+        function: another()
+        type: string
+        data:
+          - "carbon road bike"
+          - "electric commuter bike"
+          - "full-suspension mountain bike"
+    - event_deadline:
+        function: random()
+        type: string
+        data:
+          - "the charity ride this Sunday"
+          - "my training session on Monday evening"
+          - "a weekend tour with friends"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you rephrase your request?"
+  output:
+    - scheduled_date:
+        type: string
+        description: "Date the chatbot confirms for the wheel service appointment"
+    - scheduled_time:
+        type: string
+        description: "Time the chatbot confirms for the appointment"
+    - slot_status:
+        type: string
+        description: "Whether the confirmed slot matches the preferred or fallback request"
+    - confirmation_reference:
+        type: string
+        description: "Any reference or booking number provided by the chatbot"
+    - service_notes:
+        type: string
+        description: "Additional preparation or service notes the chatbot communicates"
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - single questions
+```
+
+**Next steps**
+- Drop this file under `profiles/` (e.g., `profiles/bike_shop_wheel_service_schedule.yml`).
+- When you’re ready, pair it with rules that validate `scheduled_date`, `scheduled_time`, or `slot_status` to ensure the bot respected the preferred vs. fallback slot.
+- Run the profile through your connector to see how the chatbot handles each schedule permutation.
+
+Let me know if you’d like companion rules or adjustments to the variables! 🚴‍♂️
+$$$

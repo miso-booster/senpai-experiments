@@ -1,0 +1,74 @@
+conversation ID: one_node_architecture__p12__alcampo__profile__a4a74457
+$$$
+Here you go! I put together a cart-focused profile that nudges the bot to add and review items step by step 😊
+
+```yaml
+test_name: "Shopping Cart Item Addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A shopper building an online Alcampo cart and validating totals."
+  context:
+    - "You are planning a weekend gathering and want to streamline your online grocery order."
+    - "You care about pairing fresh produce with quality pantry staples."
+    - "You want the chatbot to confirm cart contents and highlight any savings opportunities."
+  goals:
+    - "Ask the chatbot to add {{cart_item}} to my shopping cart and confirm it was included."
+    - "Request the current list of items and prices already in my cart."
+    - "Ask if there are any promotions or discounts that apply to {{cart_item}}."
+    - "Add another item {{additional_item}} to the cart and request the updated total."
+    - "Confirm the final cart summary, including delivery fees or next steps."
+    - cart_item:
+        function: forward()
+        type: string
+        data:
+          - "fresh strawberries 500g"
+          - "organic oat milk 1L"
+          - "Galician beef sirloin 500g"
+    - additional_item:
+        function: forward(cart_item)
+        type: string
+        data:
+          - "artisan sourdough bread"
+          - "Manchego cheese 200g"
+          - "free-range eggs 12-pack"
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para tus pedidos y consultas."
+  output:
+    - cart_items:
+        type: list[string]
+        description: "Items currently confirmed in the shopping cart"
+    - item_prices:
+        type: list[string]
+        description: "Breakdown of individual item prices in the cart"
+    - cart_total:
+        type: money
+        description: "Total amount due for the cart, including any promotions"
+    - promotions_applied:
+        type: string
+        description: "Details about discounts or promotions applied to cart items"
+    - delivery_fee:
+        type: money
+        description: "Delivery fee associated with the current cart"
+    - cart_confirmation_id:
+        type: string
+        description: "Reference ID or confirmation for the updated cart summary"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 18
+  interaction_style:
+    - change your mind
+    - single questions
+```
+$$$

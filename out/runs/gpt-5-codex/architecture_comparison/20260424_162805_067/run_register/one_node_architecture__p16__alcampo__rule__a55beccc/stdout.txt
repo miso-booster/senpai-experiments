@@ -1,0 +1,19 @@
+conversation ID: one_node_architecture__p16__alcampo__rule__a55beccc
+$$$
+Sure thing! I drafted a rule-first check you can plug in once the corresponding profile exists. It assumes the future profile will expose `requested_product_category` and `lactose_free_availability` in `chatbot.output`. Feel free to tweak the field names later if your schema evolves.
+
+```yaml
+name: lactose_free_availability_check
+description: >
+  Ensures the assistant clearly reports availability when lactose-free products are requested.
+  Rule-first design targeting a future lactose-free product inquiry profile.
+active: false
+conversations: 1
+if: requested_product_category is not None and 'lactose' in requested_product_category.lower()
+then: lactose_free_availability is not None and semantic_content(lactose_free_availability, 'Clearly states whether lactose-free products are available or unavailable')
+on-error: >
+  f"Lactose-free availability missing or unclear. requested_product_category={requested_product_category}, lactose_free_availability={lactose_free_availability}"
+```
+
+When you’re ready, just align the profile’s `chatbot.output` with those fields, flip `active` to true, and you’re good to go!
+$$$

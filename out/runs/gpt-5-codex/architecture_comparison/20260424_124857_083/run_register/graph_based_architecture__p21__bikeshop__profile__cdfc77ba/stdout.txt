@@ -1,0 +1,122 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__cdfc77ba
+$$$
+Hey there! Love this idea—having a profile that probes whether the shop can tailor a brand-new bike is a great way to exercise the bot’s knowledge about fittings, parts, and scheduling 😊. Below is a ready-to-drop Sensei profile that captures the scenario you described.
+
+---
+
+### ✅ What this profile does
+- Plays a customer who just bought a bike and wants a custom setup.
+- Asks about seat recommendations, handlebar grips, and pricing for both swaps.
+- Confirms whether the shop can bundle everything into one fitting appointment.
+- Tries to book a specific date and time for the customization.
+
+---
+
+### 📄 Suggested file: `profiles/bike_custom_setup_user.yaml`
+
+```yaml
+test_name: bike_custom_setup_user
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who just bought a new bike and wants the shop to tailor the
+    setup so it fits you perfectly.
+  context:
+    - You’re excited about the bike but want it dialed in before your next ride.
+    - You care a lot about long-ride comfort and control.
+    - You’re willing to pay for expert fitting help if it saves you future aches.
+  goals:
+    - "Explain you recently got a new bike and ask if the shop offers a custom fitting session to match your {{riding_style}} riding style."
+    - "Ask what seat options they recommend for {{seat_preference}}, and whether they can swap it during the fitting."
+    - "Ask about handlebar grip choices, mentioning you’re interested in {{grip_preference}} grips, and whether installation is included."
+    - "Request pricing for both the seat change and new grips, and ask if there’s a bundled fitting cost."
+    - "Ask to schedule the customization appointment on {{appointment_date}} at {{appointment_time}}."
+    - "Confirm if there’s anything you should bring or do before the appointment."
+    - riding_style:
+        function: forward()
+        type: string
+        data:
+          - relaxed commuting
+          - endurance road cycling
+          - weekend trail adventures
+    - seat_preference:
+        function: forward()
+        type: string
+        data:
+          - upright comfort and pressure relief
+          - long-distance cushioning
+          - a performance-oriented posture
+    - grip_preference:
+        function: forward()
+        type: string
+        data:
+          - ergonomic gel
+          - leather wrap
+          - foam with extra padding
+          - winged support grips
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - tomorrow
+          - this Friday
+          - Saturday morning
+          - next Tuesday
+    - appointment_time:
+        function: forward(appointment_date)
+        type: string
+        data:
+          - 9:00 AM
+          - 11:30 AM
+          - 2:00 PM
+          - 4:30 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I’m sorry, it’s a little loud in my shop—could you say that again?"
+  output:
+    - fitting_service_confirmation:
+        type: string
+        description: Confirmation that the shop can perform a custom bike fitting and component swaps.
+    - seat_recommendation:
+        type: string
+        description: The assistant’s suggested seat option and any installation notes.
+    - seat_swap_price:
+        type: currency
+        description: Price (or price range) quoted for changing or installing the seat.
+    - grip_options:
+        type: string
+        description: Summary of handlebar grip choices discussed with the user.
+    - grip_installation_price:
+        type: currency
+        description: Price (or price range) for installing new handlebar grips.
+    - fitting_appointment_confirmation:
+        type: string
+        description: Appointment confirmation including date, time, and any prep instructions.
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      limit: 16
+      export: false
+  interaction_style:
+    - default
+```
+
+---
+
+### 🛠 Tips before you run it
+- Drop the file into `profiles/` and run a quick validation to ensure the variable functions create the coverage you want.
+- Feel free to tweak the wording or the variable lists (e.g., add different grip types) depending on the bot’s catalog.
+- If you need combo coverage between seat and grip preferences, you can switch the functions to `pairwise()` and adjust `conversation.number` accordingly.
+
+Let me know if you’d like a companion rule set or a connector configuration for this scenario! 🚲💨
+$$$

@@ -1,0 +1,83 @@
+conversation ID: one_node_architecture__p20__bikeshop__profile__964548d1
+$$$
+Absolutely, here’s a fresh profile you can drop into your project to stress-test appointment scheduling for wheel changes 😊:
+
+```yaml
+test_name: wheel_change_appointment_requests
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist trying to schedule a wheel change at the bike shop.
+    You are organized but need the assistant to clearly confirm the date and time.
+  context:
+    - You recently noticed wobble on your wheels after a rough commute.
+    - You want the appointment locked in because you rely on the bike every day.
+    - You prefer written confirmation of the scheduled slot.
+  goals:
+    - "Hello! I need to schedule a wheel change for my {{bike_type}}."
+    - "Can we lock it in for {{appointment_date}} at {{appointment_time}}?"
+    - "If that slot is unavailable, please suggest the closest alternative."
+    - "Before we wrap up, confirm the appointment details and let me know if any prep is required."
+    - bike_type:
+        function: random()
+        type: string
+        data: ["road bike", "mountain bike", "gravel bike", "commuter bike"]
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - "tomorrow"
+          - "next Tuesday"
+          - "Friday, July 12th"
+          - "August 3rd"
+          - "the 15th of September"
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - "9:00 AM"
+          - "11:30 AM"
+          - "2:15 PM"
+          - "4:00 PM"
+          - "5:45 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - appointment_status:
+        type: string
+        description: "Confirmation that the wheel change appointment was scheduled or if it failed."
+    - scheduled_date:
+        type: string
+        description: "The date the assistant confirms for the appointment."
+    - scheduled_time:
+        type: string
+        description: "The time the assistant confirms for the appointment."
+    - alternative_slot:
+        type: string
+        description: "Any alternative date/time offered when the requested slot is unavailable."
+    - prep_instructions:
+        type: string
+        description: "Any preparation guidance provided before bringing the bike in."
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - default
+```
+
+Feel free to tweak the date/time lists or add more variables if you want even wider coverage. Let me know if you’d like companion rules for validating the confirmations! 🚴‍♂️
+$$$

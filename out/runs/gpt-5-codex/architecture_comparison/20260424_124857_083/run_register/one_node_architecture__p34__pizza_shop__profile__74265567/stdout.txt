@@ -1,0 +1,109 @@
+conversation ID: one_node_architecture__p34__pizza_shop__profile__74265567
+$$$
+Absolutely! Here’s a profile tailored for that change-of-heart user story 😊👇
+
+```yaml
+test_name: custom_to_predefined_pizza_switch
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You start by wanting a custom-built pizza but tend to second-guess yourself.
+    After hearing the options, you often switch to a predefined favorite instead.
+  context:
+    - You're ordering dinner after a long day and crave something satisfying.
+    - You usually begin with detailed custom requests but get overwhelmed by the choices.
+    - You want a drink to go with the final pizza order.
+  goals:
+    - "I want to build a custom pizza with a {{custom_size}} crust, {{crust_type}} base, and toppings like {{custom_toppings}}."
+    - "Could you tell me the price and how long it would take?"
+    - "Actually, scratch that. Let’s switch to the predefined {{predefined_pizza}} pizza instead."
+    - "Make it a {{final_size}} pizza and add {{drink_quantity}} {{drink_choice}}."
+    - "Please confirm the final order details, price, and pickup time."
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - crust_type:
+        function: another()
+        type: string
+        data: [thin crust, regular crust, stuffed crust]
+    - custom_toppings:
+        function: pairwise()
+        type: string
+        data: [mushrooms and olives, pepperoni and onions, spinach and feta, jalapeños and bacon]
+    - predefined_pizza:
+        function: forward()
+        type: string
+        data: [Margherita, Pepperoni Feast, Four Cheese, BBQ Chicken]
+    - final_size:
+        function: forward(custom_size)
+        type: string
+        data: [medium, large]
+    - drink_choice:
+        function: another()
+        type: string
+        data: [Coke, Sprite, Iced Tea, Bottled Water]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can help you customize a pizza or pick one of our predefined favorites."
+  output:
+    - initial_custom_request:
+        type: string
+        description: Summary of the user's initial custom pizza request.
+    - final_pizza_type:
+        type: string
+        description: The predefined pizza selected after the user changes their mind.
+    - size:
+        type: string
+        description: Final pizza size confirmed in the order.
+    - toppings:
+        type: list[string]
+        description: Toppings associated with the final pizza order (include defaults if predefined).
+    - drink:
+        type: string
+        description: Drink chosen to accompany the order.
+    - drink_quantity:
+        type: int
+        description: How many drinks were ordered.
+    - price:
+        type: currency
+        description: Total price for the finalized order.
+    - estimated_ready_time:
+        type: time
+        description: Estimated preparation or pickup time given by the chatbot.
+    - order_summary:
+        type: string
+        description: The chatbot's final confirmation of the full order.
+    - order_id:
+        type: string
+        description: Unique identifier or confirmation code for the order.
+
+conversation:
+  number: 6
+  max_cost: 0.9
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - change your mind
+    - long phrases
+    - random:
+      - make spelling mistakes
+```
+$$$

@@ -1,0 +1,82 @@
+conversation ID: agentic_architecture__p30__pizza_shop__profile__4be3ea42
+$$$
+Here’s a freshly-minted profile for that impatient, rude pizza-shop customer. The configuration follows the guidelines from `sensei-chat-guide.md`, including two `pairwise()` variables so the conversation count is driven by the pairwise matrix.
+
+```yaml
+test_name: "rude_pizza_rush_profile"
+
+llm:
+  temperature: 0.2
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an irritable pizza customer who believes everyone is too slow.
+    You bark orders, hurry the staff, and threaten bad reviews if they hesitate.
+  context:
+    - "You are exhausted after work and refuse to wait more than a few minutes."
+    - "You think politeness is a waste of time when you are hungry."
+    - "You constantly remind the staff that your time is worth more than theirs."
+  goals:
+    - "Snarl that you need a {{size}} pizza out the door in {{rush_minutes}} minutes, no excuses."
+    - "Demand the pie be overloaded with {{topping_combo}} and grumble if they question it."
+    - "Insist they throw in a free {{drink_addon}} for making you wait this long."
+    - "Threaten a one-star review unless they confirm the {{size}} will be ready within {{rush_minutes}} minutes."
+    - size:
+        function: pairwise()
+        type: string
+        data: [personal, medium, large]
+    - rush_minutes:
+        function: pairwise()
+        type: int
+        data: [10, 12, 15]
+    - topping_combo:
+        function: another()
+        type: string
+        data:
+          - pepperoni and jalapeño
+          - vegan cheese and mushrooms
+          - double bacon and extra cheese
+          - bbq chicken and red onion
+    - drink_addon:
+        function: random()
+        type: string
+        data: [cola can, garlic knots, sparkling water, buffalo wings]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn’t catch that. Could you rephrase?"
+  output:
+    - confirmed_size:
+        type: string
+        description: "Pizza size the bot commits to."
+    - promised_prep_time:
+        type: int
+        description: "Minutes the bot says it will take."
+    - toppings_list:
+        type: list[string]
+        description: "Toppings or combination the bot agrees to deliver."
+    - compensation_offer:
+        type: string
+        description: "Discount or freebie promised to appease the customer."
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 4
+    max_cost: 0.1
+  interaction_style:
+    - all questions
+```
+
+**Highlights**
+- The rude, time-pressing persona is captured in `user.role` and `context`.
+- Four goals reference exactly four variables; `size` and `rush_minutes` use `pairwise()` so the conversation count is derived from the pairwise coverage matrix (per the guidance in `sensei-chat-guide.md`).
+- `conversation.number` leverages those pairwise functions, while the outputs capture the commitments we’ll later want to verify (size, prep time, toppings, and any compensation).
+
+Let me know if you’d like to tweak the tone, add more interaction styles, or expand the chatbot outputs. 😊
+$$$

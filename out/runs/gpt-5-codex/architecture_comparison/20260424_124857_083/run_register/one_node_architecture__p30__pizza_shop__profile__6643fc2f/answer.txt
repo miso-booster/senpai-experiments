@@ -1,0 +1,75 @@
+Absolutely! Here’s a snappy profile that captures that rude, in-a-hurry pizza shopper vibe:
+
+```yaml
+test_name: "pizza_rush_rude_customer"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, no-nonsense customer who hates waiting.
+    Your tone is curt, demanding, and you constantly pressure the chatbot to move faster.
+  context:
+    - "personality: personalities/rude-user"
+    - "You are on a tight break and expect every answer instantly."
+    - "You have zero patience for niceties or delays."
+  goals:
+    - "Snap at the bot to start a {{pizza_type}} pizza order immediately."
+    - "Demand the pizza be {{pizza_size}} without repeating yourself."
+    - "Insist on adding {{side_item}} and tell them not to slow down."
+    - "Push for pickup in {{pickup_window}} minutes or less."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Pepperoni, BBQ Chicken, Veggie Supreme, Meat Lovers]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - side_item:
+        function: forward()
+        type: string
+        data: [garlic knots, cheesy bread, buffalo wings, side salad]
+    - pickup_window:
+        function: forward()
+        type: int
+        data:
+          min: 10
+          max: 35
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "I’m sorry, I didn’t catch that. I can help you place a pizza or drink order right away."
+  output:
+    - selected_pizza_type:
+        type: string
+        description: "The pizza type the chatbot confirms for the order."
+    - selected_pizza_size:
+        type: string
+        description: "The pizza size the chatbot confirms for the order."
+    - order_total:
+        type: currency
+        description: "Total cost quoted for the rushed order."
+    - pickup_eta:
+        type: time("minutes")
+        description: "Estimated time until the order is ready for pickup."
+    - order_id:
+        type: string
+        description: "Unique identifier for the order."
+
+conversation:
+  number: combinations(pairwise)
+  max_cost: 0.8
+  goal_style:
+    steps: 4
+  interaction_style:
+    - single questions
+```
+
+Let me know if you’d like alternate wording or extra outputs!

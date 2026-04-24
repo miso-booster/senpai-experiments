@@ -1,0 +1,74 @@
+¡Claro que sí! Aquí tienes un perfil Sensei listo para probar tu chatbot de pizzería. Configuré el escenario para que el usuario simulado haga un pedido completo, confirme detalles y pida el precio final en dólares, junto con el ID del pedido. También añadí un par de variables con `forward()` para cubrir distintas combinaciones sin explotar el número de conversaciones. Si necesitas ajustar el tono, las metas o agregar más extracción, me dices y lo adaptamos 😊.
+
+```yaml
+test_name: pizza_checkout_en_dolares
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Cliente que quiere hacer un pedido completo en la pizzería y confirmar el resumen final."
+  context:
+    - "Estás organizando una cena informal con amigos y quieres que la orden esté lista para recogerla."
+    - "Te interesa verificar el precio total en dólares antes de confirmar."
+  goals:
+    - "Hola, quisiera pedir una pizza {{pizza_type}} de tamaño {{pizza_size}}."
+    - "Además, agrega {{drink_quantity}} {{drink_type}}."
+    - "¿Cuál sería el precio final en dólares, por favor?"
+    - "¿Me compartes el número o ID del pedido?"
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Vegetariana, Cuatro quesos]
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data: [pequeña, mediana, grande]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Refresco, Agua mineral, Cerveza sin alcohol]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Perdona, no entendí del todo. Puedo ayudarte con pizzas personalizadas, pizzas predefinidas y bebidas."
+  output:
+    - selected_pizza_type:
+        type: string
+        description: "Tipo de pizza que el chatbot confirma como parte del pedido."
+    - selected_drink:
+        type: string
+        description: "Bebida que el chatbot registra en el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido proporcionado por el chatbot."
+    - total_price_usd:
+        type: currency
+        description: "Precio final del pedido expresado en dólares estadounidenses."
+
+conversation:
+  number: combinations
+  max_cost: 0.9
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - default
+    - random:
+        - change your mind
+```
+
+¿Quieres que también se extraiga el tiempo estimado de entrega o algo más del resumen del pedido? Estoy aquí para ayudarte 😄.

@@ -1,0 +1,32 @@
+Great question! 😊  
+In Sensei-check rules, an **oracle** is simply the boolean expression that declares whether a conversation (or a group of them) passed the rule. Think of it as the “final verdict” for that rule: it should evaluate to `True` when everything is correct, and `False` when something’s off.
+
+### Where you place it
+Inside your rule YAML you’ll see a section like:
+
+```yaml
+oracle: <python-style expression>
+```
+
+That expression can use:
+
+- Fields extracted from the conversation (e.g., `price`, `order_id`),
+- Helper functions like `extract_float(...)`, `repeated_answers(...)`, etc.,
+- Any logic you need to decide if the rule should pass.
+
+### Quick example
+Here’s a single-conversation rule that checks whether the chatbot stayed on topic:
+
+```yaml
+name: only_talks_about_pizzas
+description: The chatbot only talks about pizzas
+conversations: 1
+oracle: only_talks_about('pizza orders, drink orders, information on delivery of pizzas, information about the pizza shop')
+```
+
+If `only_talks_about(...)` returns `True`, the rule passes; if not, it fails and you’ll get a report so you can investigate.
+
+### Oracle vs. if/then
+When you need a simple check, `oracle:` is perfect. If you want to express “If condition A holds, then condition B must also hold,” you can switch to the `if:` / `then:` format instead. But under the hood, both are just ways of defining the oracle—the logical test that decides pass or fail.
+
+Hope that clears it up! Let me know if you’d like more examples or guidance on writing your own oracles. 💪

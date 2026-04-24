@@ -1,0 +1,28 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__7bed9277
+$$$
+¡Hola! Ese perfil tiene un montón de campos buenísimos para validar 🕵️‍♀️. Aquí van tres reglas listas para que las pegues en `rules/` y las pruebes con Sensei-check. Cada una ataca un aspecto clave del flujo de admisiones:
+
+```yaml
+name: admission_resources_have_links
+description: Los enlaces principales de admisiones deben parecer URLs válidas
+conversations: 1
+oracle: all(link and 'http' in link.lower() for link in [admission_to_grados_link, waitlist_info_link, future_students_link])
+```
+
+```yaml
+name: welcome_day_details_complete
+description: Si se ofrece un enlace al Welcome Day, también se deben devolver fecha, hora y ubicación
+conversations: 1
+if: welcome_day_link and 'http' in welcome_day_link.lower()
+then: all(field not in [None, ''] for field in [welcome_day_date, welcome_day_time, event_location])
+```
+
+```yaml
+name: application_fee_is_positive
+description: La cuota de solicitud debe indicarse y ser mayor que cero
+conversations: 1
+oracle: application_fee not in [None, ''] and extract_float(application_fee) > 0
+```
+
+Con estas reglas podrás comprobar que el bot entrega enlaces útiles, completa la info del Welcome Day y no se queda corto con la cuota de admisión. Si necesitas algo más (¡o sumar reglas metamórficas!), aquí estoy 😊.
+$$$

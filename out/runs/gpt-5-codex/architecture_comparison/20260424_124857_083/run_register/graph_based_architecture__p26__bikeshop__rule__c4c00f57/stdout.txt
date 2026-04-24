@@ -1,0 +1,25 @@
+conversation ID: graph_based_architecture__p26__bikeshop__rule__c4c00f57
+$$$
+Hey there! Thanks for sharing your rule 😊 I spotted a couple of issues that would prevent it from working as intended:
+
+1. It was set up as a **2-conversation rule**, even though you’re only checking a single field (`tune_up_price`).  
+2. The `then` clause contained a string instead of a boolean expression, so Sensei-check wouldn’t be able to evaluate it.  
+3. The filter in `when` already enforced the price to be 50, which made the rule a bit circular.
+
+Here’s a cleaned-up version that should do the trick:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is always $50.
+conversations: 1
+when: tune_up_price is not None
+oracle: extract_float(tune_up_price) == 50
+```
+
+### What changed?
+- Switched to a **single-conversation** rule (`conversations: 1`).
+- Replaced the string `then` clause with an `oracle` that compares the numerical value.
+- Updated the `when` condition to simply ensure the slot is present, avoiding redundant checks.
+
+Let me know if you need it to also assert the currency (e.g., USD) — happy to help you extend it! ✨
+$$$

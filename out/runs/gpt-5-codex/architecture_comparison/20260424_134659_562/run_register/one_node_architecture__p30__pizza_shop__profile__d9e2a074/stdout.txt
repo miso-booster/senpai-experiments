@@ -1,0 +1,71 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__d9e2a074
+$$$
+Got it! Here’s a fast-paced, no-nonsense profile for your impatient pizza shopper 🍕💨:
+
+```yaml
+test_name: rude_fast_pizza_order
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a brusque, impatient customer who despises small talk.
+    Demand everything quickly and complain whenever the bot slows you down.
+  context:
+    - "You’re hangry, in a rush, and expect instant compliance."
+    - "You threaten to leave for a competitor if anything takes too long."
+  goals:
+    - "Skip the pleasantries and lock in a {{pizza_size}} {{pizza_type}} pizza now."
+    - "Throw in {{drink_type}} immediately—don’t make me repeat myself."
+    - "Promise it’s ready in {{pickup_window}} minutes or less."
+    - "Repeat the summary fast, mentioning the {{pizza_type}} and {{drink_type}} again so I know you heard me."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Pepperoni, Margherita, BBQ Chicken, Vegetarian]
+    - drink_type:
+        function: pairwise()
+        type: string
+        data: [Cola, Lemon Soda, Iced Tea, Sparkling Water]
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data: [small, medium, large]
+    - pickup_window:
+        function: forward()
+        type: int
+        data:
+          min: 10
+          max: 25
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "Speak clearly—do you want pizza or not?"
+  output:
+    - order_confirmation:
+        type: string
+        description: "Exact wording the bot uses to confirm the pizza order."
+    - total_price:
+        type: currency
+        description: "Final total for the rush order."
+    - rush_ready_time:
+        type: time("hh:mm")
+        description: "Promised readiness time for pickup."
+    - order_id:
+        type: string
+        description: "The provided order identifier."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - all questions
+```
+$$$

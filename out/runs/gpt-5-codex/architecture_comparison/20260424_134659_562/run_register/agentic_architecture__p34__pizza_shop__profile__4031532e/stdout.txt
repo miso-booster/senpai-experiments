@@ -1,0 +1,104 @@
+conversation ID: agentic_architecture__p34__pizza_shop__profile__4031532e
+$$$
+Here’s a draft profile that makes the simulated user start with a custom pizza order and then switch to a predefined menu option halfway through:
+
+```yaml
+test_name: "custom_to_menu_pizza_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an indecisive pizza lover who enjoys customizing pies but often ends up
+    choosing a house special instead.
+  context:
+    - "You get excited about unusual topping combinations."
+    - "If the restaurant suggests a tempting preset pizza, you tend to change your mind."
+  goals:
+    - "Start by asking for a custom pizza: {{size}} size, {{crust}} crust, and toppings like {{custom_toppings}}."
+    - "Double-check whether you can add {{extra_request}} to the custom pizza."
+    - "After discussing the custom build, change your mind and request the predefined {{menu_pizza}} from the menu instead."
+    - "Confirm the final order details and ask for the total price in {{currency}} along with the delivery estimate."
+    - size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - crust:
+        function: pairwise()
+        type: string
+        data: [thin, thick, gluten-free]
+    - custom_toppings:
+        function: pairwise()
+        type: string
+        data:
+          - pepperoni and mushrooms
+          - roasted vegetables and feta
+          - chicken, jalapeños, and pineapple
+    - extra_request:
+        function: random()
+        type: string
+        data:
+          - extra cheese
+          - garlic butter dipping sauce
+          - a side salad
+    - menu_pizza:
+        function: another()
+        type: string
+        data:
+          - chef's special truffle pizza
+          - spicy inferno pizza
+          - classic margherita combo
+    - currency:
+        function: random()
+        type: string
+        data: [USD, EUR, GBP]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that—could you rephrase?"
+  output:
+    - final_pizza:
+        type: string
+        description: "Final pizza selection after the user changes their mind"
+    - order_origin:
+        type: string
+        description: "Indicates whether the final pizza is custom or a predefined menu item"
+    - size_confirmed:
+        type: string
+        description: "Size of the final pizza the bot confirms"
+    - crust_confirmed:
+        type: string
+        description: "Crust type for the confirmed pizza"
+    - toppings_confirmed:
+        type: list[string]
+        description: "Toppings included in the final pizza order"
+    - price_quote:
+        type: currency
+        description: "Quoted total price for the final order"
+    - delivery_eta:
+        type: string
+        description: "Estimated delivery or pickup time, if given"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 7
+    max_cost: 0.2
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+### Why this fits your scenario
+- The **interaction_style** includes `change your mind`, which nudges the simulator to switch from the custom build to the preset pizza mid-chat (per the guidance in `sensei-chat-guide.md`).
+- The **goals** walk through the exact flow you described: start custom, probe for extras, then pivot to a menu pizza and confirm final details.
+- The **chatbot.output** schema captures everything rules might later need—final pizza name, whether it was custom or menu, toppings/size/crust confirmation, pricing, and ETA—following the profile structure documented in `sensei-chat-guide.md`.
+
+Let me know if you’d like different toppings, menu items, or interaction tweaks!
+$$$

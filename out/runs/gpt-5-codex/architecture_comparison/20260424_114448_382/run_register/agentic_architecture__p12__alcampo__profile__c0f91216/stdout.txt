@@ -1,0 +1,109 @@
+conversation ID: agentic_architecture__p12__alcampo__profile__c0f91216
+$$$
+Hey there! 😊 Here’s a fresh profile that gets the simulator to ask your chatbot for items to add to a shopping cart. I leaned on the guidance from `sensei-chat-guide.md` to structure the goals, variables, conversation controls, and `chatbot.output` schema.
+
+```yaml
+test_name: "shopping_cart_item_recommendations"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >-
+    You are an organized online shopper building a cart for upcoming needs.
+    Gather recommendations, compare options, and make sure the items suit the intended recipient.
+  context:
+    - "You are browsing a large marketplace with groceries, home goods, and electronics."
+    - "You prefer recommendations that balance value and quality."
+    - "You will push the assistant to verify stock and delivery details before accepting."
+  goals:
+    - "Ask the chatbot to recommend items to add to the cart for {{recipient}} to cover {{shopping_need}}."
+    - "Mention you would like to stay under {{budget}} and prefer {{preference}}."
+    - "Confirm the items can arrive {{delivery_timeframe}} and request at least {{quantity_request}} units if needed."
+    - "Ask whether there are bundle deals or alternative brands worth considering."
+    - shopping_need:
+        function: pairwise()
+        type: string
+        data:
+          - weekly groceries
+          - home office refresh
+          - fitness starter kit
+          - birthday gift basket
+    - recipient:
+        function: pairwise()
+        type: string
+        data:
+          - yourself
+          - your partner
+          - a coworker
+          - a close friend who loves cooking
+    - budget:
+        function: random()
+        type: string
+        data:
+          - "$50"
+          - "$100"
+          - "$200"
+    - preference:
+        function: random()
+        type: string
+        data:
+          - eco-friendly products
+          - bundle deals
+          - top-rated brands
+    - delivery_timeframe:
+        function: random()
+        type: string
+        data:
+          - within three days
+          - by the weekend
+          - before next Tuesday
+    - quantity_request:
+        function: random()
+        type: string
+        data:
+          - two
+          - three
+          - half a dozen
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase?"
+  output:
+    - cart_items:
+        type: list[string]
+        description: "List of item names recommended for the cart."
+    - estimated_total:
+        type: currency
+        description: "Estimated total price for the recommended items."
+    - delivery_window:
+        type: string
+        description: "Promised delivery timeframe for the items."
+    - stock_status:
+        type: string
+        description: "Stock or availability confirmation for the items."
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 6
+    max_cost: 0.2
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - change your mind
+```
+
+### Why this setup?
+- **User goals & variables**: Pairwise coverage on `shopping_need` and `recipient` exercises different cart scenarios, while randomized `budget`, `preference`, delivery timing, and quantity keep the conversations varied.
+- **Chatbot outputs**: The schema captures the key facts future rules might inspect—recommended items, price, delivery promise, and stock confirmation—exactly as outlined in the profile guide.
+- **Conversation controls**: `combinations` ensures Sensei walks through the pairwise matrix, and the interaction style introduces natural variation in how the simulated shopper nudges the bot.
+
+Feel free to tweak the goal strings or the value lists if you have specific product categories or budgets in mind. Let me know if you’d like companion rules or a matching connector too!
+$$$

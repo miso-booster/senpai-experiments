@@ -1,0 +1,47 @@
+Hey there! Great question 😊
+
+### What connectors are for
+In Sensei, **connectors** are the bridge between the simulator and your actual chatbot API. Think of them as little “translation guides” that tell Sensei:
+
+* where to send each simulated user message,
+* how to format the request (headers, payload, HTTP method),
+* and where to look in the API response to pull out the bot’s reply.
+
+They let you plug in *any* HTTP-accessible bot without writing custom Python—just describe the API once in YAML and you’re ready to test.
+
+---
+
+### Core fields you’ll see in a connector YAML
+
+| Field | Purpose |
+|-------|---------|
+| `name` *(optional)* | A friendly label so you recognize the connector when selecting it. |
+| `base_url` **(required)** | The root URL of your chatbot API. Sensei will append the endpoint path to this. |
+| `send_message.path` **(required)** | The endpoint that receives user messages (e.g., `/chat`). |
+| `send_message.method` *(optional, default `POST`)* | HTTP verb to use (POST, GET, etc.). |
+| `send_message.headers` *(optional)* | Any custom headers the API needs—`Authorization`, `Content-Type`, etc. |
+| `send_message.payload_template` **(required)** | JSON body (or query params for GET) describing what to send. Use `{user_msg}` wherever the live user text should be inserted. |
+| `response_path` **(required)** | A dot-separated path telling Sensei how to extract the bot’s reply from the JSON payload (e.g., `data.messages.0.content`). |
+
+You can add other non-required fields (like extra metadata) if your workflow needs them, but the table above covers the contract Sensei expects.
+
+---
+
+### Quick mini-example
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: POST
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+When the simulator says “Hello!”, Sensei will POST `{ "message": "Hello!" }` to the echo endpoint and read the answer back from `json.message`.
+
+---
+
+If you need a hand crafting or tweaking a connector for your own API, just let me know! Happy to help 🧡

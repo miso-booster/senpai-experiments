@@ -1,0 +1,14 @@
+Here’s a rule-first design you can plug in once the matching profile exposes the expected fields 👇
+
+```yaml
+name: lactose_free_availability_consistency
+description: >
+  Ensures lactose-free availability claims include concrete product listings.
+  Requires the target profile to expose `lactose_free_available` (bool) and
+  `lactose_free_products` (list[string]) in chatbot.output.
+conversations: 1
+if: lactose_free_available is True
+then: lactose_free_products is not None and len(lactose_free_products) > 0
+on-error: >
+  f"Lactose-free availability was marked as {lactose_free_available} but returned products: {lactose_free_products}"
+```

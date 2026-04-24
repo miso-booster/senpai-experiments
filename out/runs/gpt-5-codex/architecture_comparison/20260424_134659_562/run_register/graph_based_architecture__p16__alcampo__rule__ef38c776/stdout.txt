@@ -1,0 +1,22 @@
+conversation ID: graph_based_architecture__p16__alcampo__rule__ef38c776
+$$$
+Sure thing! Here’s a rule-first design you can plug in once the relevant profile is ready 😊  
+I assumed the future profile will expose three fields in `chatbot.output`:  
+
+* `requested_dietary_options` – list of dietary constraints the user asked for (e.g., `["lactose_free"]`).  
+* `lactose_free_status` – normalized status such as `"available"`, `"unavailable"`, or `"limited"`.  
+* `availability_note` – human-readable note where the assistant explicitly mentions lactose-free availability.
+
+```yaml
+name: lactose_free_availability
+description: When the user asks for lactose-free products, the assistant must report availability explicitly.
+conversations: 1
+if: |
+  'lactose_free' in requested_dietary_options
+then: |
+  lactose_free_status in ['available', 'unavailable', 'limited'] and availability_note is not None and 'lactose-free' in availability_note.lower()
+on-error: f"Lactose-free availability missing or unclear. Status={lactose_free_status}, note={availability_note}"
+```
+
+Once you build the profile, just make sure those fields (or whatever final names you choose) are exposed in `chatbot.output`, and the rule will start working right away. If you decide to rename them later, remember to mirror the changes in the rule ✨. Let me know if you’d like a version tailored to a specific schema or with different status values!
+$$$

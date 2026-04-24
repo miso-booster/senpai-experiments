@@ -1,0 +1,96 @@
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__dc814ccf
+$$$
+Hey there! I cooked up a fresh Sensei profile that matches your brief: the simulated user is unapologetically rude, in a hurry, and the setup includes exactly four goals backed by four variables—two of them using `pairwise()` so the conversation count can ride on the pairwise matrix. Check it out:
+
+```yaml
+test_name: rude_rush_order_profile
+
+llm:
+  model: gpt-4o-mini
+  model_prov: openai
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, sharp-tongued customer who expects instant results.
+    You snap at delays, insist on fast confirmation, and make it clear you won't repeat yourself.
+  context:
+    - personality: personalities/rude-user
+    - "You only have a few minutes to get this order locked in."
+    - "You hate waiting and demand the chatbot keeps answers short and prompt."
+  goals:
+    - "Listen, I need a {{pizza_size}} {{pizza_type}} pizza and I don't have all day."
+    - "Throw in {{side_item}} too, and don't slow down."
+    - "Have a {{drink_option}} chilled and ready when I show up."
+    - "Repeat that {{pizza_size}} {{pizza_type}} order back so I know you heard me."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data:
+          - Pepperoni
+          - Four cheese
+          - BBQ Chicken
+          - Veggie Supreme
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+          - extra large
+    - side_item:
+        function: forward()
+        type: string
+        data:
+          - Garlic knots
+          - Caesar salad
+          - Hot wings
+          - Breadsticks
+    - drink_option:
+        function: forward()
+        type: string
+        data:
+          - Cola
+          - Sparkling water
+          - Lemon iced tea
+          - Energy drink
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation that the pizza, side, and drink were recorded exactly as requested."
+    - total_cost:
+        type: currency
+        description: "Full cost of the order including sides and drinks."
+    - prep_eta_minutes:
+        type: int
+        description: "Estimated minutes until the order is ready for pickup."
+    - pickup_instructions:
+        type: string
+        description: "Where and how the user should collect the rushed order."
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 4
+    max_cost: 0.6
+  interaction_style:
+    - all questions
+```
+
+**Why this works:**
+
+- **Rude & fast persona**: the role plus `personality: personalities/rude-user` keeps the simulator snappy and abrasive.
+- **Exactly four goals & four variables**: goals hit pizza, side, drink, and confirmation; the variables (`pizza_type`, `pizza_size`, `side_item`, `drink_option`) match up neatly.
+- **Pairwise coverage for conversation count**: both `pizza_type` and `pizza_size` use `pairwise()`, so `conversation.number: combinations(pairwise)` derives directly from that matrix.
+- **Fast-paced chatter**: `interaction_style: all questions` and a 4-step cap keep the exchange tight, just like the user demands.
+
+If you’d like to tweak the tone even snarkier or adjust the outputs, let me know—I’m happy to iterate! 😊
+$$$

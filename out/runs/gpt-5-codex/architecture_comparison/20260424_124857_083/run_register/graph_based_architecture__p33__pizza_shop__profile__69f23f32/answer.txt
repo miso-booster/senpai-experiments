@@ -1,0 +1,56 @@
+Sure thing! Let’s complete the `chatbot` section so your profile is ready to run 😊. Based on the project’s existing documentation, here’s a solid setup that aligns with what this information-seeking user is trying to check:
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  model: gpt-4o-mini
+  temperature: 0.3
+  format:
+    type: text
+user:
+  language: English
+  role: "A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order."
+  context:
+    - "You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria."
+    - "You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered."
+    - "You have a variety of preferences among your friends, so you need to find options that cater to different tastes."
+  goals:
+    - Ask about the available pizza types.
+    - Ask about the price of a Margarita pizza.
+    - Ask about the available drinks and their prices.
+    - Ask about the shop's operating hours.
+    - Ask if they deliver.
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks.\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE"
+  output:
+    - pizza_types:
+        type: string
+        description: "A list of the pizza types offered by the shop. Look for phrases like 'We offer [pizza types]' or a list of available pizzas."
+    - margarita_price:
+        type: money
+        description: "The price of a Margarita pizza. Extract the price, including currency if present. If multiple sizes are mentioned, extract the price for all sizes mentioned."
+    - drinks_and_prices:
+        type: string
+        description: "A list of available drinks and their corresponding prices. Look for entries like 'We have [drink] for [price]'."
+    - operating_hours:
+        type: string
+        description: "The shop's operating hours, including opening and closing times. Look for phrases like 'We are open from... to...'."
+    - delivery_availability:
+        type: string
+        description: "Whether the shop offers delivery. Capture confirmations like 'We deliver' or 'We only do pickup'."
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+**Why these fields?**  
+Each `output` entry lines up with one of the user’s goals, so Sensei knows exactly what to extract from the bot’s replies. That way, any rules you write later can directly check things like `conv[i].margarita_price` or `conv[i].delivery_availability`.
+
+Let me know if you’d like help drafting rules around these outputs or tweaking the interaction style. Happy to keep going! 🍕

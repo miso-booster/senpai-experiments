@@ -1,0 +1,49 @@
+conversation ID: graph_based_architecture__p51__pizza_shop__documentation__dfe6a27a
+$$$
+Hey there! 👋 Happy to help.
+
+### 🌐 What are SENSEI Connectors for?
+
+Connectors are the bridge between Sensei and your target chatbot. They describe **how Sensei should send messages to a bot’s API** and **where to read the bot’s reply**. Instead of writing custom code for every integration, you just drop a YAML file with the connector definition—Sensei handles the rest. Super handy when you want to test different bots quickly!
+
+---
+
+### 🧱 Key fields in a connector YAML
+
+Here’s what you’ll typically see:
+
+| Field | Purpose | Required? |
+|-------|---------|-----------|
+| `name` | Friendly label so you recognize the bot. | Optional |
+| `base_url` | The root URL for the chatbot’s API (e.g., `https://api.mybot.com`). | ✅ Yes |
+| `send_message.path` | Endpoint appended to `base_url` (e.g., `/chat`). | ✅ Yes |
+| `send_message.method` | HTTP method (POST, GET, etc.). Defaults to POST if omitted. | Optional |
+| `send_message.headers` | Any headers the API needs (auth tokens, content type…). | Optional |
+| `send_message.payload_template` | JSON template of the request body. Use `{user_msg}` as a placeholder for the simulated user’s message. | ✅ Yes |
+| `response_path` | Dot path that tells Sensei where to grab the bot’s reply in the JSON response (e.g., `data.reply.text`). | ✅ Yes |
+
+> Tip: Nested fields use dot notation. For arrays, add the index, like `messages.0.text`.
+
+---
+
+### ✨ Example (for context)
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+- Sensei POSTs to `/post`
+- Injects the user’s message into `payload_template`
+- Reads the chatbot’s reply from `json.message`
+
+---
+
+If you’re already working with multiple bots or protected APIs, just tweak the headers and payload to match their requirements—connectors keep everything consistent and easy to share. Let me know if you’d like help crafting one from scratch! 😊
+$$$

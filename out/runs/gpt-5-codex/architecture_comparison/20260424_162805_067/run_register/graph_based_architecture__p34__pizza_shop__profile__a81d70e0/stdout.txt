@@ -1,0 +1,91 @@
+conversation ID: graph_based_architecture__p34__pizza_shop__profile__a81d70e0
+$$$
+¡Hola! Here's a fresh Sensei Profile tailored to your scenario—our simulated user starts by requesting a custom pizza and then pivots mid-convo to a predefined option 🎢🍕
+
+```yaml
+test_name: custom_to_predefined_switch
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You’re a slightly indecisive customer ordering from a pizza shop chatbot.
+    You start out excited about crafting a custom pizza, but midway through the exchange
+    you decide a predefined pizza sounds easier.
+  context:
+    - You’re on your way home from work and want dinner sorted before you arrive.
+    - You promised to pick a pizza everyone will enjoy, so you’re second-guessing your choices.
+  goals:
+    - "Hi! I'd like to build a custom {{custom_size}} pizza with {{custom_toppings}}. Can you help?"
+    - "Actually, could you tell me about your predefined pizzas? I might go with something simpler."
+    - "Please change my order to a {{predefined_size}} {{predefined_pizza}} pizza instead of the custom one."
+    - "Can you confirm the updated order, the total price, and when it will be ready?"
+    - "Great, may I have the order ID for pickup?"
+    - custom_size:
+        type: string
+        function: forward()
+        data: [small, medium, large]
+    - custom_toppings:
+        type: string
+        function: forward()
+        data:
+          - mushrooms and olives
+          - pepperoni and jalapeños
+          - spinach and feta
+          - bacon and pineapple
+    - predefined_pizza:
+        type: string
+        function: forward()
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
+    - predefined_size:
+        type: string
+        function: forward(predefined_pizza)
+        data: [personal, medium, large]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. I can help you with custom or predefined pizzas, plus drinks."
+  output:
+    - custom_order_acknowledgement:
+        type: string
+        description: "How the chatbot responds to the initial custom pizza request."
+    - predefined_menu_details:
+        type: string
+        description: "Information the chatbot shares about predefined pizzas."
+    - final_pizza_selection:
+        type: string
+        description: "Confirmation that the custom order was replaced with the chosen predefined pizza."
+    - total_cost:
+        type: money
+        description: "Total amount for the finalized order."
+    - estimated_ready_time:
+        type: time
+        description: "When the order will be ready for pickup."
+    - order_id:
+        type: string
+        description: "Reference number for pickup or tracking."
+
+conversation:
+  number: 4
+  max_cost: 0.9
+  goal_style:
+    all_answered:
+      export: false
+      limit: 22
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+### Why this fits your needs
+- **Goal sequence** explicitly guides the user from a custom build toward a predefined swap.
+- **Interaction style** includes `change your mind`, nudging the simulator to play out that internal debate.
+- **Outputs** capture both the initial custom acknowledgment and the final predefined confirmation, plus all the practical details you’ll likely want for rules later (price, time, order ID).
+
+Drop this YAML into your `profiles/` folder (e.g., `profiles/custom_to_predefined_switch.yml`) and you’re ready to run simulations. Let me know if you’d like matching Sensei rules or connectors for this scenario! 😊
+$$$

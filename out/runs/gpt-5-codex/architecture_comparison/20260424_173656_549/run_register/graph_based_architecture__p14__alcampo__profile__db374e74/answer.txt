@@ -1,0 +1,106 @@
+¡Genial! Aquí tienes un perfil Sensei listo para poner a prueba la capacidad del chatbot de Alcampo en recomendaciones de recetas y planificación de menús. 🍽️✨ Copia este archivo en `profiles/recipe_and_menu_planning.yaml` (o el nombre que prefieras) y recuerda validarlo antes de ejecutarlo.
+
+```yaml
+test_name: Recipe and Menu Planning Support
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona que quiere organizar sus comidas con ayuda del chatbot de Alcampo.
+    Buscas recomendaciones de recetas equilibradas, menús semanales y consejos para planificar la compra.
+  context:
+    - "Tienes poco tiempo para cocinar entre semana, así que valoras recetas prácticas."
+    - "Quieres variar tus platos e incluir opciones saludables y sabrosas."
+    - "Te interesa recibir sugerencias de sustituciones por si faltan ingredientes."
+  goals:
+    - "Pide al chatbot un conjunto de recetas para {{meal_focus}} adecuado a una dieta {{dietary_preference}}."
+    - "Solicita un menú de {{meal_duration}} con las comidas organizadas por día."
+    - "Pregunta por recetas con un tiempo de preparación aproximado de {{prep_time}}."
+    - "Solicita recomendaciones de sustituciones para ingredientes clave y posibles alérgenos."
+    - "Pregunta cómo planificar la compra para cubrir todas las recetas, considerando {{servings_count}} comensales."
+    - meal_focus:
+        function: pairwise()
+        type: string
+        data:
+          - desayunos energizantes
+          - comidas equilibradas
+          - cenas ligeras
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data:
+          - vegetariana
+          - mediterránea
+          - alta en proteínas
+    - meal_duration:
+        function: forward()
+        type: string
+        data:
+          - 5 días consecutivos
+          - un fin de semana
+          - una semana completa
+    - prep_time:
+        function: random()
+        type: string
+        data:
+          - menos de 20 minutos
+          - alrededor de 30 minutos
+          - hasta 45 minutos
+    - servings_count:
+        function: random()
+        type: int
+        data:
+          min: 2
+          max: 6
+          step: 2
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - recipe_recommendations:
+        type: list[string]
+        description: Listado de recetas sugeridas por tipo de comida
+    - weekly_menu_plan:
+        type: string
+        description: Resumen del menú semanal o del periodo indicado
+    - ingredient_substitutions:
+        type: list[string]
+        description: Sugerencias de sustituciones para ingredientes clave
+    - shopping_plan:
+        type: string
+        description: Orientaciones para planificar la compra asociada al menú
+    - prep_time_guidance:
+        type: string
+        description: Consejos sobre tiempos de preparación y organización
+    - portion_guidance:
+        type: string
+        description: Recomendaciones para ajustar porciones según número de comensales
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - random:
+        - single questions
+        - long phrases
+        - change language:
+            - Español
+            - Inglés
+```
+
+### Siguientes pasos sugeridos
+1. **Guardarlo** en la carpeta `profiles/` de tu proyecto.
+2. **Validarlo** con `validation_check.py` para asegurarte de que el YAML pasa sin errores.
+3. **Ejecutar** Sensei usando el perfil y revisar los outputs `chatbot.output` para verificar si el bot cubre la planificación de recetas como esperas.
+
+Si necesitas ajustar variables, combos o añadir más campos que luego usarás en reglas de Sensei Check, dime y lo ajustamos juntxs. ¡Listo para cocinar con Alcampo! 🥗💡

@@ -1,0 +1,22 @@
+¡Claro! Aquí tienes una regla metamórfica que verifica que, si se intenta reservar dos veces el mismo servicio en la misma fecha y hora, la segunda conversación debe contener un rechazo explícito (o, como mínimo, no confirmar de nuevo el servicio).
+
+```yaml
+name: deny_duplicate_appointment_slot
+description: Si dos conversaciones del perfil de citas piden el mismo servicio en la misma fecha y hora, la segunda debe rechazarse.
+conversations: 2
+when: |
+  conv[0].confirmed_date is not None and
+  conv[1].confirmed_date is not None and
+  conv[0].confirmed_time is not None and
+  conv[1].confirmed_time is not None and
+  conv[0].confirmed_service == conv[1].confirmed_service and
+  conv[0].confirmed_date == conv[1].confirmed_date and
+  conv[0].confirmed_time == conv[1].confirmed_time
+if: conv[0].confirmed_service not in [None, ""]
+then: |
+  conv[1].confirmed_service in [None, ""] or
+  any(token in " ".join(conv[1].chatbot_phrases).lower() for token in ["cannot", "can't", "unable", "already booked"])
+on-error: f"La segunda conversación sigue confirmando {conv[1].confirmed_service} para {conv[1].confirmed_date} a las {conv[1].confirmed_time}."
+```
+
+Esta regla espera que el primer intento se confirme correctamente y comprueba que, si se repite la misma solicitud, el asistente no vuelva a confirmar (o indique claramente que no puede aceptar la segunda reserva). Si necesitas ajustar los términos del rechazo para adaptarlos al lenguaje real del bot, me avisas y lo ajustamos juntos 😊.

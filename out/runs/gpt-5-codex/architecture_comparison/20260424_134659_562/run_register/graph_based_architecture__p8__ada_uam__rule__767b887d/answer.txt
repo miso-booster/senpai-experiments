@@ -1,0 +1,33 @@
+Hey there! Let’s take a look at your **`check_cau_information`** rule together 😊
+
+### ✅ What’s good
+You’re on the right track wanting to confirm that the CAU contact info stays consistent. That’s exactly the kind of sanity check Sensei Rules are great for.
+
+### ⚠️ What needs tweaking
+There are two small issues stopping this rule from catching problems:
+
+1. **`when` combined with `oracle` makes the rule useless here**  
+   - Your `when` clause already filters for conversations where the contact info matches the expected values.
+   - That means if the chatbot *gets it wrong*, the rule doesn’t even run — so it never fails!
+
+2. **Using `conv[0]` in a single-conversation rule**  
+   - According to the Sensei-check docs, `conv[...]` is for metamorphic rules (acting on multiple conversations).  
+   - For a single conversation, you should refer to the fields directly: `contact_email`, `contact_phone`, etc.
+
+### 🔧 Fixed version
+Here’s a cleaned-up rule that always checks those fields and fails if any of them change:
+
+```yaml
+name: check_cau_information
+description: Verifies the CAU shares the official contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' \
+  and contact_phone == '91 497 4029' \
+  and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### 🧠 Why it works better now
+- Removing `when` makes sure the rule applies to **every** run of that profile.
+- Using direct slot names keeps it aligned with how single-conversation oracles are supposed to read, straight from the profile’s `chatbot.output`.
+
+If you drop this version into your rules folder, it’ll flag any conversation where the chatbot gives incorrect CAU contact info. Let me know if you'd like to add extra checks — for example, ensuring each field is actually populated first using `data_collected()` 💡

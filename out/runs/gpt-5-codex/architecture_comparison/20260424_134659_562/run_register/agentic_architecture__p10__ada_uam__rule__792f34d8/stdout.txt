@@ -1,0 +1,93 @@
+conversation ID: agentic_architecture__p10__ada_uam__rule__792f34d8
+$$$
+Hey! I took a close look at your “Usuarios Nuevos y Admisiones” profile and, based on the Sensei guides (`sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`), here are a few ready-to-run Sensei-check rules that should give you useful coverage:
+
+---
+
+### 1. Spanish-language responses stay consistent  
+Makes sure the bot answers in the same language as the user (handy sanity check before looking at data slots).
+
+```yaml
+name: spanish_language_consistency
+description: Confirms the assistant replies in Spanish, matching the user.
+conversations: 1
+oracle: responds_in_same_language()
+```
+
+---
+
+### 2. Key admissions links are present and look like URLs  
+Validates that the four critical links are provided and contain “http”.
+
+```yaml
+name: admissions_links_present
+description: Ensures the bot returns working links for admissions, waitlists, future students, and Welcome Day.
+conversations: 1
+oracle: |
+  all(
+    link and 'http' in link.lower()
+    for link in [
+      admission_to_grados_link,
+      waitlist_info_link,
+      future_students_link,
+      welcome_day_link
+    ]
+  )
+```
+
+---
+
+### 3. Welcome Day details are complete when a link is shared  
+If the assistant mentions Welcome Day, it should also give date, time, and location.
+
+```yaml
+name: welcome_day_details_complete
+description: Verifies Welcome Day link is accompanied by schedule and location details.
+conversations: 1
+if: welcome_day_link is not None and welcome_day_link != ""
+then: |
+  welcome_day_date is not None and
+  welcome_day_time is not None and
+  event_location is not None and event_location != ""
+```
+
+---
+
+### 4. Admissions package has substantive content  
+Checks that the main informational fields aren’t left blank.
+
+```yaml
+name: admissions_information_complete
+description: Checks that admissions requirements, process, contacts, and waitlist info are filled in.
+conversations: 1
+oracle: |
+  all(
+    field is not None and str(field).strip() != ""
+    for field in [
+      admission_requirements,
+      enrollment_process,
+      contact_admissions,
+      waitlist_procedures,
+      future_students_info
+    ]
+  )
+```
+
+---
+
+### 5. Application fee is a valid non-negative amount  
+Parses the `money` output and ensures it’s at least zero (adjust the lower bound if you expect a minimum fee).
+
+```yaml
+name: application_fee_non_negative
+description: Ensures the extracted application fee is a valid amount.
+conversations: 1
+oracle: extract_float(application_fee) >= 0
+```
+
+---
+
+**How to use them:** drop each rule into its own YAML file under `rules/` and run Sensei-check with your profile to see where the bot still needs work. Feel free to tweak thresholds (e.g., require fee > 0) or add more field-specific checks as you learn how the bot behaves.
+
+If you’d like to extend this with metamorphic rules (e.g., compare different `grados` selections), just let me know and we can design those too. 😊
+$$$

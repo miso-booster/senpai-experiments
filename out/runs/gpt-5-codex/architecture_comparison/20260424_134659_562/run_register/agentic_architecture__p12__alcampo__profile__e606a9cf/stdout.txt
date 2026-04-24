@@ -1,0 +1,97 @@
+conversation ID: agentic_architecture__p12__alcampo__profile__e606a9cf
+$$$
+Here you go! 😊 I drafted a Sensei Chat profile that simulates a shopper asking the bot to add items to their cart, request an extra recommendation, and confirm totals.
+
+```yaml
+test_name: "shopping_cart_item_collection"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a busy household shopper planning a weekly restock.
+    You rely on the assistant to check availability, suggest helpful add-ons,
+    and make sure everything is added to the online cart.
+  context:
+    - "You prefer budget-friendly options but accept premium recommendations when justifiable."
+    - "You are juggling work and family, so you want concise confirmations."
+    - "You use a home delivery service that can substitute unavailable items."
+  goals:
+    - "Add {{primary_item}} ({{primary_quantity}} units) to my shopping cart."
+    - "Check availability and add {{secondary_item}} as well."
+    - "Recommend one more complementary item, add it, and explain why it helps."
+    - "Confirm the cart total in {{currency}} and list every item currently in the cart."
+    - primary_item:
+        function: pairwise()
+        type: string
+        data:
+          - organic apples
+          - whole grain bread
+          - almond milk
+          - ground coffee
+          - jasmine rice
+    - primary_quantity:
+        function: forward(primary_item)
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+    - secondary_item:
+        function: pairwise()
+        type: string
+        data:
+          - cheddar cheese
+          - broccoli florets
+          - toothpaste
+          - laundry detergent
+          - granola bars
+    - currency:
+        function: random()
+        type: string
+        data:
+          - USD
+          - EUR
+          - GBP
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you repeat your last request?"
+  output:
+    - cart_items:
+        type: list[string]
+        description: "Items the assistant confirms as present in the cart."
+    - total_estimated_cost:
+        type: currency
+        description: "Estimated total cost for all items in the cart."
+    - recommendation_reason:
+        type: string
+        description: "Explanation the assistant gave when recommending an extra item."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+      - change language:
+        - Spanish
+        - French
+      - single questions
+```
+
+**Why this setup (per `sensei-chat-guide.md`):**
+- The shopper persona, goals, and variable functions follow the profile anatomy and goal design guidance.
+- `conversation.number: combinations(0.6, pairwise)` leverages the two `pairwise()` variables to cover diverse item combinations without exploding runs.
+- `chatbot.output` exposes `cart_items`, `total_estimated_cost`, and `recommendation_reason`, giving future rules a clear contract to validate cart contents, pricing, and the bot’s justification.
+
+Tweak the item lists, currency options, or interaction style as needed to match your exact test cases, and let me know if you’d like a companion rule or connector!
+$$$

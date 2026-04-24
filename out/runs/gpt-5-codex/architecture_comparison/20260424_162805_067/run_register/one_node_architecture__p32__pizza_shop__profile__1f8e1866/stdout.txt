@@ -1,0 +1,76 @@
+conversation ID: one_node_architecture__p32__pizza_shop__profile__1f8e1866
+$$$
+¡Perfecto! Aquí tienes un perfil listo para ejecutar pruebas sobre el chatbot de la pizzería. Ajusta cualquier detalle si necesitas cubrir más variantes 🧪🍕
+
+```yaml
+test_name: "pizza_order_smoke_es"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente que quiere realizar un pedido sencillo de pizzas y bebidas
+    en la pizzería. Pregunta con naturalidad y confirma los detalles.
+  context:
+    - "Planeas recoger el pedido en el local."
+    - "Quisieras que todo quede listo en menos de 30 minutos si es posible."
+  goals:
+    - "Pregunta qué pizzas tienen disponibles."
+    - "Elige la pizza {{pizza_type}} en tamaño {{pizza_size}}."
+    - "Solicita {{number_of_pizzas}} pizzas en total."
+    - "Pide una bebida {{drink_type}}."
+    - "Confirma el pedido y solicita el precio final en dólares."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Vegetariana, Cuatro Quesos]
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data: [pequeña, mediana, grande]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Refresco, Agua, Té helado, Cerveza sin alcohol]
+    - number_of_pizzas:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu mensaje. ¿Podrías repetirlo?"
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmada en el pedido."
+    - drink_type:
+        type: string
+        description: "Bebida confirmada en el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único proporcionado por el chatbot."
+    - total_price_usd:
+        type: currency
+        description: "Precio total del pedido expresado en dólares estadounidenses (USD)."
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 6
+  interaction_style:
+    - default
+    - random:
+        - make spelling mistakes
+        - change language:
+          - inglés
+```
+$$$

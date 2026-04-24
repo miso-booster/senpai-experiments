@@ -1,0 +1,114 @@
+¡Genial! Me encanta la idea de poner a prueba al bot con recetas y planificación de menús 😋. Ya tienes un perfil cercano (`recipe_management_and_cooking_support`), pero si quieres algo enfocado en menús completos y listas de la compra, te propongo crear este perfil nuevo:
+
+---
+
+### 📄 Archivo sugerido
+Guárdalo como  
+`profiles/menu_planning_and_recipe_recommendations.yaml`
+
+```yaml
+test_name: Menu Planning and Recipe Recommendations
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona que disfruta cocinar en casa y busca optimizar su planificación semanal.
+    Quieres recetas variadas, ideas de batch cooking y orientación nutricional sencilla.
+  context:
+    - personality: personalities/conversational-user
+    - "Dispongo de poco tiempo entre semana y necesito un menú equilibrado y fácil de preparar."
+    - "Quiero aprovechar ingredientes que ya tengo en la despensa para reducir desperdicios."
+  goals:
+    - "Pide al chatbot que sugiera recetas para {{meal_type}} que se ajusten a una dieta {{dietary_preference}}."
+    - "Solicita un plan de menú para {{planning_duration}} días adaptado a {{number_of_people}} personas."
+    - "Pregunta por una lista de la compra organizada por categorías."
+    - "Pide sugerencias para aprovechar {{pantry_item}} en nuevas recetas."
+    - "Solicita recomendaciones de preparación anticipada y tiempos estimados."
+    - meal_type:
+        function: forward()
+        type: string
+        data: [desayuno, comida, cena]
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data: [vegetariana, sin gluten, mediterránea, alta en proteínas]
+    - planning_duration:
+        function: forward()
+        type: int
+        data:
+          min: 3
+          max: 7
+          step: 2
+    - number_of_people:
+        function: pairwise()
+        type: int
+        data: [2, 4, 6]
+    - pantry_item:
+        function: random()
+        type: string
+        data:
+          - garbanzos cocidos
+          - arroz integral
+          - espinacas frescas
+          - tomates en lata
+          - pechuga de pollo
+
+chatbot:
+  is_starter: false
+  fallback: "Ups, creo que necesito un poco más de contexto para ayudarte con tus menús 😊. ¿Me cuentas qué necesitas exactamente?"
+  output:
+    - recommended_recipes:
+        type: list[string]
+        description: "Recetas sugeridas para la comida solicitada"
+    - menu_plan:
+        type: string
+        description: "Resumen del plan de menú propuesto para la semana"
+    - grocery_list:
+        type: list[string]
+        description: "Lista de la compra organizada por categorías"
+    - batch_cooking_tips:
+        type: string
+        description: "Consejos para cocinar por adelantado o guardar preparaciones"
+    - nutritional_highlights:
+        type: string
+        description: "Puntos clave de nutrición o equilibrio mencionados por el chatbot"
+    - leftover_ideas:
+        type: string
+        description: "Ideas para aprovechar las sobras o ingredientes recurrentes"
+
+conversation:
+  number: combinations(0.7, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+  interaction_style:
+    - long phrases
+    - random:
+        - change language:
+            - English
+        - change your mind
+```
+
+---
+
+### 🛠️ Consejos rápidos
+
+1. **Guárdalo** en `profiles/` con el nombre propuesto (o el que prefieras).
+2. **Valídalo** antes de ejecutarlo:
+   ```bash
+   python validation_check.py \
+     --profile path/a/tu/proyecto/profiles/menu_planning_and_recipe_recommendations.yaml \
+     --output path/a/output \
+     --combined-matrix \
+     --verbose
+   ```
+   Así revisas que las combinaciones `pairwise()` se generen bien y no falten campos.
+3. **Ejecuta Sensei** (con tu `run.yml` o desde CLI) y revisa que el bot realmente entregue recetas, menús, lista de la compra y consejos de batch cooking.
+
+Si quieres afinarlo más (por ejemplo, añadir preferencias de presupuesto o intolerancias extra), dime y lo adaptamos juntas 😊.

@@ -1,0 +1,20 @@
+Hey there! 😊 Quick heads-up: none of your current profiles expose a `drink` field in `chatbot.output`, so you’ll want to add something like:
+
+```yaml
+- drink:
+    type: int
+    description: Number of drinks included in the order (0 if none)
+```
+
+(For example, in `pizza_order_test_custom.yml` right next to `price`.) Once that’s in place and the extractor is populating it, you can drop in the metamorphic rule below. It checks that going from *n* drinks to *n + 1* drinks bumps the price by exactly $2.
+
+```yaml
+name: drink_addon_cost_increase
+description: Adding exactly one drink increases the total price by $2
+conversations: 2
+when: conv[0].drink is not None and conv[1].drink is not None and conv[0].drink == conv[1].drink + 1
+if: extract_float(conv[1].price) is not None and extract_float(conv[0].price) is not None
+then: extract_float(conv[0].price) == extract_float(conv[1].price) + 2
+```
+
+Feel free to tighten the `when` clause with extra fields (size, toppings, etc.) once those are exposed—doing so will reduce noise from pizza differences. Let me know if you need help wiring the `drink` extractor or adjusting the rule! 🍕🥤

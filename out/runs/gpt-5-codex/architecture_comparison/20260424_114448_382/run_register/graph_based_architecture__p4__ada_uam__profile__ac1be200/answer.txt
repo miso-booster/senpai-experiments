@@ -1,0 +1,62 @@
+¡Hola! 😊 Qué gusto ayudarte a armar este perfil para probar el chatbot de la UAM. Te propongo un perfil centrado en conseguir los datos clave del Centro de Atención a Usuarios (CAU): teléfono, correo electrónico, dirección y horarios.
+
+Aquí tienes un ejemplo completo en YAML que puedes guardar dentro de `profiles/` (por ejemplo, como `soporte_contacto_cau.yaml`). Está pensado para una sola conversación con objetivos muy concretos:
+
+```yaml
+test_name: "Soporte de contacto CAU"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres un estudiante de la UAM que necesita contactar con el CAU para resolver incidencias."
+  context:
+    - "Acabas de experimentar un problema técnico al intentar acceder a plataformas universitarias."
+    - "Necesitas comunicarte con el CAU cuanto antes para resolverlo."
+    - "Quieres recopilar toda la información de contacto oficial disponible."
+  goals:
+    - "Solicitar el número de teléfono oficial del CAU."
+    - "Pedir el correo electrónico de contacto del CAU."
+    - "Preguntar por la dirección física donde atiende el CAU."
+    - "Solicitar los horarios de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Podrías reformular la pregunta, por favor?"
+  output:
+    - cau_phone:
+        type: string
+        description: "Número de teléfono de contacto del CAU"
+    - cau_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - cau_address:
+        type: string
+        description: "Dirección física del CAU"
+    - cau_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 6
+  interaction_style:
+    - single questions
+  max_cost: 0.3
+```
+
+### ¿Por qué está armado así?
+
+- **`user.goals`** lista cada dato que quieres extraer, asegurando que el simulador pregunte por cada punto.
+- **`chatbot.output`** define exactamente los cuatro campos que luego podrás validar con Sensei-check (`conv[0].cau_phone`, `conv[0].cau_email`, etc.).
+- **`interaction_style: single questions`** fuerza al usuario simulado a preguntar cada tema por separado, lo que facilita revisar cómo responde el bot a cada solicitud.
+
+Si quieres añadir variaciones (por ejemplo, distintos estados de ánimo, idiomas o múltiples conversaciones), se puede extender fácilmente con variables o interaction styles más aleatorios. Pero para un smoke test directo, este perfil compacto va genial 👌.
+
+¿Quieres que te ayude a integrarlo en algún `run.yml` o a añadir reglas de validación? Estoy aquí para ello 💪✨

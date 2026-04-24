@@ -1,0 +1,101 @@
+conversation ID: graph_based_architecture__p12__alcampo__profile__df31d020
+$$$
+¡Hola! 😊 Aquí tienes un perfil listo para que Sensei solicite al chatbot que añada artículos al carrito de compras del usuario. Lo dejé con objetivos claros, variables reutilizables y un esquema de `chatbot.output` enfocado en confirmar los ítems y el resumen del carrito.
+
+```yaml
+test_name: Shopping Cart Item Addition
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a shopper building an online grocery cart and want the assistant to add
+    specific items, confirm quantities, and summarize the cart before checkout.
+  context:
+    - "You are planning meals for the week and want to make sure the essentials are covered."
+    - "You prefer receiving confirmation whenever an item is added or removed from the cart."
+    - "You keep an eye on the total cost to stay within budget."
+  goals:
+    - "Ask the chatbot to add {{first_item}} from the {{first_category}} category to my cart."
+    - "Request that the assistant also add {{second_item}} with a quantity of {{second_quantity}}."
+    - "Check whether any dairy-free options like {{dairy_free_item}} can be included and added to the cart."
+    - "Confirm the current cart total and ask for a quick summary of item names and quantities."
+    - "Request instructions for removing an item from the cart if I change my mind."
+    - first_category:
+        function: forward()
+        type: string
+        data:
+          - fresh produce
+          - bakery
+          - beverages
+          - household essentials
+    - first_item:
+        function: forward(first_category)
+        type: string
+        data:
+          - any(3 staple grocery items available at Alcampo)
+    - second_item:
+        function: another()
+        type: string
+        data:
+          - wholegrain bread
+          - sparkling water
+          - oat milk
+          - extra virgin olive oil
+          - basmati rice
+    - second_quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - dairy_free_item:
+        function: random()
+        type: string
+        data:
+          - almond yogurt
+          - vegan cheese slices
+          - lactose-free milk
+
+chatbot:
+  is_starter: false
+  fallback: >
+    Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊
+    ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios.
+  output:
+    - cart_items:
+        type: list[string]
+        description: Names of the items currently in the shopping cart
+    - item_quantities:
+        type: list[int]
+        description: Quantities corresponding to each item in the cart
+    - cart_total:
+        type: money
+        description: Current total price of the cart
+    - add_item_confirmation:
+        type: string
+        description: Confirmation message that items were added successfully
+    - removal_instructions:
+        type: string
+        description: Steps or guidance for removing items from the cart
+    - cart_summary:
+        type: string
+        description: Textual summary of the cart contents and any budget notes
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 26
+  interaction_style:
+    - single questions
+    - change your mind
+```
+
+Si quieres ajustar algún objetivo, añadir más variables o enlazarlo con reglas específicas, dime y lo pulimos juntos. 👀💡
+$$$

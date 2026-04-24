@@ -1,0 +1,68 @@
+¡Perfecto! Aquí tienes un perfil Sensei listo para probar el chatbot del CAU de la UAM y asegurarte de que entregue teléfono, correo, dirección y horarios 😊.
+
+```yaml
+test_name: soporte_contacto_cau_uam
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona usuaria de la Universidad Autónoma de Madrid que
+    necesita ponerse en contacto con el Centro de Atención a Usuarios (CAU)
+    para resolver un problema técnico.
+  context:
+    - "Estás intentando obtener los datos de contacto del CAU para recibir soporte directo."
+    - "Necesitas confirmar los distintos canales de atención disponibles y cuándo están operativos."
+    - "Quieres tener la información oficial para el directorio interno de tu departamento."
+  goals:
+    - "Explica que tienes {{motivo_consulta}} y que necesitas contactar con el Centro de Atención a Usuarios (CAU) de la UAM."
+    - "Solicita el número de teléfono del CAU."
+    - "Pide el correo electrónico oficial del CAU para recibir soporte."
+    - "Pregunta por la dirección física del CAU y cómo acceder a sus oficinas."
+    - "Consulta el horario de atención del CAU, incluyendo posibles guardias o atención fuera del horario general."
+    - motivo_consulta:
+        function: random()
+        type: string
+        data:
+          - un problema con el campus virtual
+          - dificultades para restablecer la contraseña
+          - una incidencia con el correo institucional
+          - dudas sobre el acceso remoto a los servicios TI
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, ¿podrías reformular tu consulta relacionada con el CAU?"
+  output:
+    - contact_phone:
+        type: string
+        description: Número de teléfono oficial del CAU
+    - contact_email:
+        type: string
+        description: Correo electrónico oficial del CAU
+    - physical_address:
+        type: string
+        description: Dirección física de las oficinas del CAU
+    - service_hours:
+        type: string
+        description: Horario de atención del CAU
+
+conversation:
+  number: 2
+  max_cost: 0.3
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+### Por qué está configurado así
+- Siguiendo las pautas del **`sensei-chat-guide.md`**, el perfil define con claridad la persona usuaria, el contexto y las metas conversacionales para cubrir cada dato de contacto que quieres validar.
+- `chatbot.output` se limita a los cuatro campos clave (teléfono, correo, dirección, horarios) para que luego puedas escribir reglas específicas que verifiquen su presencia.
+- Uso `interaction_style: single questions` para que el simulador pregunte cada dato por separado, haciendo más evidente cualquier respuesta incompleta del bot.
+
+Si necesitas ajustar el tono del usuario, cambiar el número de conversaciones o añadir más canales (por ejemplo, formulario web), dime y lo adaptamos rápido. ¡Listo para probar!

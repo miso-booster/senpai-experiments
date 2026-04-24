@@ -1,0 +1,35 @@
+Hey there! 😊
+
+**Connectors** are the bridge between Sensei and whatever chatbot (or API) you want to test. Instead of writing custom Python code, you drop a YAML file in your project, and Sensei knows exactly how to talk to your bot. Think of it as a recipe that tells Sensei: “Here’s where the chatbot lives, how to send it messages, and how to read the reply.”
+
+---
+
+### What fields does a connector YAML include?
+
+Here’s the usual lineup:
+
+- **`name`** *(optional)* — Just a friendly label so you can tell configs apart.
+- **`base_url`** *(required)* — The root URL for your chatbot API.
+- **`send_message`** *(required)* — How to send a user message:
+  - `path`: the endpoint appended to `base_url`.
+  - `method`: HTTP verb (`POST` is the default if you omit it).
+  - `headers`: any custom headers (auth tokens, content type, etc.).
+  - `payload_template`: the JSON body you want to send. Drop `{user_msg}` wherever the user’s text should go.
+- **`response_path`** *(required)* — A dot-separated path showing Sensei where to find the bot’s reply inside the JSON response.
+
+Here’s a tiny example to keep it concrete:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+You can make it more complex if you need authentication, nested JSON, or extra parameters, but those are the core pieces every connector needs.
+
+Let me know if you’d like help tweaking one for your own bot! 🙌

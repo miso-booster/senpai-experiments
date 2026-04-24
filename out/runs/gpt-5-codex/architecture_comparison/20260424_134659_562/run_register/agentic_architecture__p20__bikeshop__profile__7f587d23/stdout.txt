@@ -1,0 +1,120 @@
+conversation ID: agentic_architecture__p20__bikeshop__profile__7f587d23
+$$$
+Hi there! I put together a fresh Sensei profile that focuses on booking wheel-change appointments with plenty of date/time variation so you can exercise the bot’s scheduling logic. 😊
+
+**What you get**
+- A persona that clearly states the wheel-change request and follows up if the first slot is unavailable.
+- Pairwise variables for primary date & time, plus alternates with different fill functions to stress-test rescheduling flows.
+- Chatbot outputs scoped to capture confirmed slots, alternates offered, booking references, and any prep notes.
+
+Here’s the profile (drop it under `profiles/bike_shop_wheel_service.yml`, or whichever filename you prefer):
+
+```yaml
+test_name: "bike_shop_wheel_service_dates"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist trying to schedule a wheel replacement appointment at a local bike shop.
+    You’re specific about dates, times, and turnaround expectations, and you expect a clear confirmation.
+  context:
+    - "You can bring the bike to the downtown shop in person."
+    - "You recently noticed wear on both wheels and want them swapped before an upcoming ride."
+    - "You prefer to receive SMS updates once the booking is confirmed."
+  goals:
+    - "Explain that you need to change both wheels on your {{bike_type}} and would like to book a service appointment."
+    - "Ask if the shop has availability on {{appointment_date}} around {{appointment_time}}."
+    - "If that slot is unavailable, request {{backup_date}} at around {{backup_time}} instead."
+    - "Mention you have a {{availability_constraint}} and need the bike ready accordingly."
+    - "Request a confirmation message with any reference number or further instructions."
+    - bike_type:
+        function: random()
+        type: string
+        data:
+          - road bike
+          - mountain bike
+          - gravel bike
+          - commuter bike
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - next Tuesday
+          - April 22
+          - the first Saturday of next month
+          - May 3rd
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - 9:30 AM
+          - 11:45 AM
+          - 4:00 PM
+          - 18:30
+    - backup_date:
+        function: another()
+        type: string
+        data:
+          - the following day
+          - next available morning
+          - the upcoming Saturday
+          - the second week of May
+    - backup_time:
+        function: random()
+        type: string
+        data:
+          - 8:00 AM
+          - noon
+          - 3:15 PM
+          - 5:30 PM
+    - availability_constraint:
+        function: random()
+        type: string
+        data:
+          - race the following weekend
+          - limited to a two-hour drop-off window
+          - need the bike ready before commuting hours
+          - can only visit after work
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn’t catch that. Could you repeat the appointment details?"
+  output:
+    - confirmed_date:
+        type: date("any format the chatbot uses")
+        description: "Date the chatbot books or confirms for the wheel service"
+    - confirmed_time:
+        type: time("include AM/PM or 24h if provided")
+        description: "Time the chatbot books or confirms"
+    - alternative_slots:
+        type: list[string]
+        description: "Any alternative date/time options offered by the chatbot"
+    - booking_reference:
+        type: string
+        description: "Booking ID or confirmation code supplied by the chatbot"
+    - preparation_notes:
+        type: string
+        description: "Extra instructions or prep notes provided by the chatbot"
+
+conversation:
+  number: combinations(0.8, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.08
+  interaction_style:
+    - long phrases
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+Let me know if you’d like to tweak the variable ranges, interaction style, or the extracted outputs. Happy to help with follow-up rules too! (Reference: `sensei-chat-guide.md` informed the structure and variable strategy here.)
+$$$

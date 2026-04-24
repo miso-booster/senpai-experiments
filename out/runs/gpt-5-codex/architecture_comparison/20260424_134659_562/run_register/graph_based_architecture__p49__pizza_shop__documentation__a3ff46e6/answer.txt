@@ -1,0 +1,49 @@
+Great question! The `pairwise()` function is one of Sensei’s smartest tricks for covering lots of variable combinations without exploding the total number of conversations. Here’s how it works:
+
+### 🧠 What `pairwise()` actually does
+- When you tag **two or more variables** with `function: pairwise()`, Sensei will generate a conversation matrix where **every possible pair of values across those variables appears at least once**.
+- It’s basically the software-testing idea of “pairwise coverage,” meaning you systematically test every two-way combination, while skipping the much larger full Cartesian product.
+
+Think of it like taste-testing pizza toppings: you don’t eat every possible pizza, but you do make sure you’ve tried every topping pair at least once.
+
+---
+
+### 📍 How it’s used inside your profiles
+
+Take your `pizza_order_test_custom.yml` profile:
+
+```yaml
+- size:
+    function: pairwise()
+    type: string
+    data: [small, medium, big, extra large]
+
+- toppings:
+    function: pairwise()
+    type: string
+    data: [cheese, mushrooms, pepperoni]
+```
+
+Because **both** `size` and `toppings` use `pairwise()`, Sensei generates just enough conversations so that every size/topping combination shows up somewhere—without needing 4×3 = 12 runs.
+
+You can layer this with other selection functions (`forward`, `another`, etc.) as you already do with `drink` and `cans`.
+
+---
+
+### ✅ Rules for success
+
+1. **Use it on at least two variables.** One variable alone doesn’t define “pairs.”  
+2. **Great with `conversation.number: combinations(...)`.** This tells Sensei to build conversation counts from the coverage matrix that `pairwise()` created.
+3. **Mix with other functions on non-paired variables.** (Just like your `drink` uses `forward()` while `size`/`toppings` use `pairwise()`.)
+
+---
+
+### 🤝 When should you pick `pairwise()`?
+
+- You have lots of options (pizza size, crust style, drinking options…) but only need solid coverage, not every possible mix.
+- You want to catch interaction bugs caused by specific pairs (“medium pizza + mushrooms” works, “medium pizza + pepperoni” breaks).
+- You’re trying to keep model usage and costs under control—pairwise coverage grows roughly linearly, not exponentially.
+
+---
+
+If you need help tuning the `conversation.number` setting around a pairwise design or combining it with `forward()` dependencies, just let me know. I’m happy to walk through an example step-by-step 😊

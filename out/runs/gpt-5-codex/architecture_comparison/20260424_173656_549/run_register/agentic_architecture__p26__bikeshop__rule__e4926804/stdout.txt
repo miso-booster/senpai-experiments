@@ -1,0 +1,20 @@
+conversation ID: agentic_architecture__p26__bikeshop__rule__e4926804
+$$$
+Here’s a corrected version of the rule (assuming we’re targeting the `bike_repair_and_maintenance_scheduler.yaml` profile, which exposes the `tune_up_price` slot):
+
+```yaml
+name: check_tune_up_price
+description: Confirms the chatbot quotes a $50 USD tune-up.
+conversations: 1
+oracle: tune_up_price is not None and extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'
+on-error: f"Tune-up price was {tune_up_price}"
+```
+
+### What changed and why
+- **`conversations` 1 instead of 2**: We’re only checking a single conversation, so `conversations: 1` is the appropriate scope (per the syntax described in `sensei-check-doc.md`).
+- **Removed the `when` filter and `conv[0]` references**: For single-conversation rules, we work directly with slot names (e.g., `tune_up_price`) rather than `conv[0].…`.
+- **Replaced the string `then` clause with a boolean oracle**: `then` must evaluate to a boolean expression, not a plain message. I used an `oracle` that both requires the slot to be present and enforces the exact price and currency.
+- **Added an `on-error` message**: Gives a clear debug message showing what price was observed when the rule fails.
+
+Let me know if you’re using a different profile or want the rule to behave differently when the price is missing!
+$$$

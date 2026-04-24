@@ -1,0 +1,20 @@
+Here you go! Based on the Sensei-check guidance in `sensei-check-doc.md`, I drafted a rule-first YAML that assumes a future profile will expose the fields needed to verify lactose-free availability.
+
+```yaml
+name: lactose_free_availability_check
+description: Ensures lactose-free options are offered when the user requests lactose-free products.
+active: true
+conversations: 1
+if: 'lactose-free' in [r.lower() for r in dietary_restrictions]
+then: available_lactose_free is True and lactose_free_items is not None and len(lactose_free_items) > 0
+on-error: f"No lactose-free option surfaced despite restriction request: available_lactose_free={available_lactose_free}, lactose_free_items={lactose_free_items}"
+```
+
+### Assumptions for the future profile
+To make this rule runnable, the eventual SENSEI Chat profile should expose at least these outputs in `chatbot.output`:
+
+- `dietary_restrictions`: list of strings provided by the user (e.g., `["lactose-free", "nut-free"]`).
+- `available_lactose_free`: boolean flag indicating whether the assistant confirmed availability.
+- `lactose_free_items`: list of lactose-free product names (or an equivalent structure) returned to the user.
+
+Feel free to tweak the exact field names or add more context once you define the profile, and I’ll happily adjust the rule to match! 😊

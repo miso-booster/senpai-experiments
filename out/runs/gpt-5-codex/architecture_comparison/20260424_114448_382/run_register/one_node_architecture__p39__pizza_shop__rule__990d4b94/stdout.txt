@@ -1,0 +1,18 @@
+conversation ID: one_node_architecture__p39__pizza_shop__rule__990d4b94
+$$$
+Sure thing! Here’s a metamorphic rule that checks the price jumps by exactly $2 whenever a drink is added (assuming the `drink` output slot reflects whether a drink was ordered):
+
+```yaml
+name: drink_adds_two_dollars
+description: Adding a drink increases the total price by exactly $2 when everything else stays equal.
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings and conv[0].number == conv[1].number
+if: bool(conv[0].drink) != bool(conv[1].drink)
+then: abs(abs(extract_float(conv[0].price) - extract_float(conv[1].price)) - 2) <= 0.01
+on-error: >
+  f"Expected a $2 price difference when toggling drinks, but got ${abs(extract_float(conv[0].price) - extract_float(conv[1].price)):.2f}."
+```
+
+Feel free to tweak the tolerance (currently ±$0.01) if your pricing comes back with more variability. Let me know if you’d like to add complementary checks, like verifying the currency or ensuring the drink slot isn’t empty.
+$$$

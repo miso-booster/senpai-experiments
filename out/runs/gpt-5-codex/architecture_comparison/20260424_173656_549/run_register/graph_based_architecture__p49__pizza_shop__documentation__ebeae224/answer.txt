@@ -1,0 +1,59 @@
+Hey there! Happy to walk you through it 😊
+
+### What `pairwise()` does (in plain language)
+
+Think of `pairwise()` as a smart sampler. Instead of trying **every possible combination** of your variables (which can explode quickly!), it builds a smaller set of conversations that still covers **every pair of variable values at least once**.
+
+Imagine you’re testing pizza orders with these options:
+
+- `pizza_type`: Margherita, Pepperoni, Vegetarian  
+- `drink`: Coke, Water, Sprite  
+- `size`: Small, Medium, Large
+
+If you forced the full Cartesian product, that’s 3×3×3 = **27 conversations**. With `pairwise()`, Sensei picks a much smaller subset (maybe 7–9 cases) that ensures:
+
+- Every pizza type is paired with every drink **at least once**
+- Every size appears with each pizza type or drink somewhere
+
+This is usually enough to uncover bugs that show up when two inputs interact (e.g., only “Pepperoni + Large” is broken).
+
+---
+
+### Where you put it
+
+You define it inside a variable under `user.goals`:
+
+```yaml
+- drink_type:
+    function: pairwise()
+    type: string
+    data: [Coke, Water, Sprite]
+```
+
+`pairwise()` works best when **two or more variables** use it (or are paired with `forward()` dependencies). That way, Sensei can generate a **pairwise matrix** across those variables. If it’s alone with no other `pairwise()` or dependent `forward()` variables, it can’t do its magic.
+
+---
+
+### Pairwise + conversation.number
+
+To actually **run** the pairwise matrix, set:
+
+```yaml
+conversation:
+  number: combinations        # or combinations(0.6), combinations(1, pairwise)
+```
+
+This tells Sensei to use the precomputed combos based on your `pairwise()` (and nested `forward()`) functions. Without it, you’d just run the default `number` of conversations, and the matrix wouldn’t kick in.
+
+---
+
+### Summary cheat sheet
+
+| What | Why it matters |
+|------|----------------|
+| `pairwise()` | Efficient coverage: each pair of variable values tested at least once |
+| Needs | At least **two variables** using `pairwise()` (or one pairwise + dependent `forward()` variable) |
+| Controls | Use `conversation.number: combinations(...)` to leverage the coverage grid |
+| Use case | Ideal when full Cartesian combos are too many, but you still want thorough testing for pairwise interactions |
+
+Hope that clears it up! Let me know if you’d like an example using one of your profiles 💬

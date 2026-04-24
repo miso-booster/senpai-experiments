@@ -1,0 +1,35 @@
+conversation ID: agentic_architecture__p8__ada_uam__rule__7c2911cd
+$$$
+¡Hola! Analicé tu regla apoyándome en **sensei-check-doc.md**. Te cuento lo que encontré y cómo dejarla lista:
+
+---
+
+### ¿Qué problemas había?
+
+1. **Uso de `conv[0]` en una regla de una sola conversación**  
+   Para `conversations: 1`, Sensei-check permite acceder directamente a los campos expuestos por el perfil (`contact_email`, `contact_phone`, etc.). La notación `conv[0].campo` se reserva para reglas metamórficas (múltiples conversaciones).  
+   Referencia: sección “Syntax snapshot” y ejemplos de reglas de una conversación en `sensei-check-doc.md`.
+
+2. **`when` duplicando el `oracle`**  
+   Tu `when` filtra solo las conversaciones que ya cumplen la condición. Eso hace que la regla nunca falle: si los datos están mal, el filtro `when` no se activa y la evaluación se omite. Para validar que los datos coinciden siempre, basta con el `oracle`.
+
+---
+
+### Regla corregida
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the expected contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+**Qué cambia y por qué:**
+
+- Eliminé `when` para que la regla se aplique a todas las ejecuciones y falle si los datos no coinciden.
+- Reemplacé `conv[0].campo` por los nombres de los slots directamente, como recomienda la guía.
+
+---
+
+¿Necesitas que revise algún otro detalle o prefieres añadir un mensaje de error personalizado (`on-error`) para saber qué campo falló? Estoy aquí para ayudarte 😊
+$$$

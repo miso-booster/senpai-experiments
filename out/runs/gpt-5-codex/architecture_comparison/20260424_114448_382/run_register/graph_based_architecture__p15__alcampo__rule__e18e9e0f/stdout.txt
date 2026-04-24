@@ -1,0 +1,27 @@
+conversation ID: graph_based_architecture__p15__alcampo__rule__e18e9e0f
+$$$
+Hey there! Let’s get that rule into working shape 😊
+
+Based on what you shared, it looks like you want to make sure that when the simulated user asks for “contact options” and “customer service number” in two comparable conversations, the chatbot actually provides both pieces of info—and that the number is one of the options advertised.
+
+Here’s a polished version of the rule, assuming your profile exposes `user_request`, `contact_options`, and `customer_service_number` in `chatbot.output`. I also made sure the syntax follows Sensei-check’s `if`/`then` pattern:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides consistent customer service contact details.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: str(conv[1].customer_service_number) in str(conv[0].contact_options)
+```
+
+### Why this works
+- ✅ `description` is spelled correctly (Sensei-check will ignore unknown keys like `descriptin`).
+- ✅ The rule is metamorphic: it links two conversations with related user intents.
+- ✅ The `if`/`then` combo only asserts the relation when both fields are actually present.
+- ✅ Casting everything to `str(...)` keeps it safe whether `contact_options` is a list or a formatted string.
+
+If `contact_options` is a structured list (e.g., `["phone: 900123456", "email: ayuda@alcampo.es"]`) and you’d prefer a stricter check, let me know—there are a couple of tidy tweaks we can make.
+
+Does this line up with your profile fields? Happy to adjust if anything’s named differently!
+$$$

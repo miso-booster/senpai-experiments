@@ -1,0 +1,37 @@
+conversation ID: graph_based_architecture__p42__pizza_shop__connector__f34b57e9
+$$$
+¡Hola! Gracias por compartir todos esos detalles, ayudan muchísimo 😊. Revisando tu configuración y los headers, veo un par de cositas que explican por qué el conector no estaba funcionando:
+
+1. **Endpoint incorrecto**: La API responde en `/api/public/messages` y no en `/api/messages`.
+2. **Dominio equivocado**: El `base_url` correcto es `https://api.1millionbot.com`.
+3. **Payload incompleto**: Faltaban los campos `conversation`, `sender`, `bot`, etc., que el servicio espera.
+4. **Ruta de respuesta**: El JSON devuelve la respuesta en `response.0.text`, no en `request.text`.
+
+Aquí tienes el YAML ya corregido y listo para usar:
+
+```yaml
+name: "Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Con esto tu conector debería recuperar correctamente el mensaje:  
+`"<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>"`
+
+Si notas que el servicio exige otros headers como `Origin` o `Referer`, se los podemos sumar sin problema. ¿Quieres que lo dejemos todavía más completo?
+$$$

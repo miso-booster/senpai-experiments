@@ -1,0 +1,67 @@
+conversation ID: one_node_architecture__p22__bikeshop__profile__5bdbe83b
+$$$
+Here’s a fresh profile tailored to that rider who’s feeling uncomfortable and wants guidance without booking anything yet. Let me know if you’d like tweaks! 🚴‍♂️✨
+
+```yaml
+test_name: bike_fit_discomfort_advice
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: A cyclist experiencing discomfort while riding and seeking guidance on whether the bike fit or component wear is the cause.
+  context:
+    - You have started to feel persistent discomfort on recent rides and want to address it before it gets worse.
+    - You're unsure if the issue stems from improper bike fit or worn components.
+    - You want professional advice but are not ready to schedule an appointment yet.
+  goals:
+    - "Explain that you're feeling discomfort in your {{discomfort_zone}} when riding your {{bike_type}} and ask whether it's due to bike fit or worn components."
+    - "Ask for specific adjustments you could try right away to improve comfort."
+    - "Ask if the shop offers assessments or services that help diagnose bike-fit issues."
+    - "Ask whether components such as the {{component_concern}} might need servicing or replacement and how to tell."
+    - "Ask about the typical cost or timeframe for the recommended service, but do not request to book an appointment."
+    - discomfort_zone:
+        function: forward()
+        type: string
+        data: [lower back, knees, wrists, neck, shoulders]
+    - bike_type:
+        function: forward(discomfort_zone)
+        type: string
+        data: [road bike, mountain bike, hybrid commuter]
+    - component_concern:
+        function: forward(bike_type)
+        type: string
+        data: [drivetrain, suspension, brake pads, wheel bearings]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: Recommendations the chatbot provides about adjustments to the bike fit (e.g., saddle height, handlebar position) to alleviate discomfort.
+    - service_offerings_info:
+        type: string
+        description: Information about shop services that can help diagnose or fix fit-related issues (e.g., bike fitting session, tune-up, inspection).
+    - component_condition_guidance:
+        type: string
+        description: Guidance on assessing whether specific components (e.g., drivetrain, suspension) are worn and what signs to look for.
+    - service_cost_timeframe:
+        type: string
+        description: Any cost or timeframe details the chatbot shares for the recommended services or assessments.
+
+conversation:
+  number: combinations(0.5, forward)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single question
+  max_cost: 0.6
+```
+$$$

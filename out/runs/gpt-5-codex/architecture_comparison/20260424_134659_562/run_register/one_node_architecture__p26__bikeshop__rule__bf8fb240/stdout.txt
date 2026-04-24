@@ -1,0 +1,21 @@
+conversation ID: one_node_architecture__p26__bikeshop__rule__bf8fb240
+$$$
+Hey there! Thanks for sharing the rule. I spotted a few issues:
+
+- It was set up as a metamorphic rule (`conversations: 2`) even though it only checks one conversation.
+- `when:` should reference direct fields for single-conversation rules—using `conv[0]` isn’t valid there.
+- The `then:` clause must be a boolean condition, not a string.
+- Since `tune_up_price` is a `money` type, it’s safer to parse the numeric value and verify the currency.
+
+Here’s the corrected version:
+
+```yaml
+name: check_tune_up_price
+description: Tune-up price must be exactly $50 USD.
+conversations: 1
+if: tune_up_price is not None
+then: extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'
+```
+
+Let me know if you’d like to add a custom error message or tweak the currency check!
+$$$

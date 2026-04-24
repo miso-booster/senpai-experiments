@@ -1,0 +1,48 @@
+Hey there! 😊 Thanks for sharing the “Usuarios Nuevos y Admisiones” profile. I took a look at the rule docs (`sensei-check-doc.md` for structure/helpers and `rules-examples.md` for patterns like `responds_in_same_language` and link checks), and here are a few concrete rules you can try right away. I’m assuming we’re targeting exactly this profile—if it lives under a different filename, just let me know.
+
+### 1. Make sure the key admission links aren’t empty
+This leverages the profile’s four URL-style outputs and enforces that they look like real links.
+
+```yaml
+name: enlaces_admisiones_validos
+description: Los enlaces principales de admisiones apuntan a URLs válidas.
+conversations: 1
+oracle: all(str(link).startswith('http') for link in [admission_to_grados_link, waitlist_info_link, future_students_link, welcome_day_link])
+```
+
+### 2. Welcome Day link ⇒ include full event details
+A conditional (`if`/`then`) rule like in `sensei-check-doc.md` ensures that when the bot surfaces the Welcome Day link, it also fills date, time, and location.
+
+```yaml
+name: welcome_day_detalles_completos
+description: Si se comparte el enlace del Welcome Day, también se devuelven fecha, hora y lugar.
+conversations: 1
+if: welcome_day_link not in [None, '']
+then: welcome_day_date not in [None, ''] and welcome_day_time not in [None, ''] and event_location not in [None, '']
+```
+
+### 3. Application fee should be a positive number
+Uses the `extract_float` helper from the docs to make sure the money field is > 0.
+
+```yaml
+name: tasa_de_solicitud_positiva
+description: La tasa de solicitud de admisión debe ser mayor que cero.
+conversations: 1
+oracle: extract_float(application_fee if application_fee else '0') > 0
+```
+
+### 4. Guard the language (should stay in Spanish)
+Directly reuses the documented helper from `rules-examples.md`.
+
+```yaml
+name: respuestas_en_espanol
+description: El chatbot responde en el mismo idioma que el usuario (español).
+conversations: 1
+oracle: responds_in_same_language()
+```
+
+---
+
+**How to try them:** drop each YAML document into your `rules/` folder (one file per block is easiest), run Sensei with this profile, and the rules will flag any conversations that violate the expectations. From there you can tighten or extend them—for example, add metamorphic checks later to compare different `grados` or `cursos` once you see how the data comes back.
+
+If you need variations (e.g., allowing missing links for some flows, or checking that the `grados_available` text mirrors the selected `{{grados}}`), I’m happy to dig deeper. Just say the word!

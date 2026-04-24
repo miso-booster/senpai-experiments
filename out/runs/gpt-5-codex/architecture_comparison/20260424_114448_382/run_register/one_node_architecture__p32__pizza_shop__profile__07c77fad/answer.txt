@@ -1,0 +1,81 @@
+¡Claro! Aquí tienes un perfil listo para que Sensei pruebe tu chatbot de pizzería con las salidas que necesitas 👇
+
+```yaml
+test_name: pizza_order_basic_validation
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona que desea hacer un pedido completo en una pizzería digital.
+    Necesitas conocer el menú, elegir pizza y bebida, y confirmar el precio final antes de pagar.
+  context:
+    - Planeas una cena informal con amigos esta noche.
+    - Quieres recoger el pedido en el local en aproximadamente una hora.
+    - Prefieres respuestas claras y organizadas para verificar cada dato.
+  goals:
+    - Pregunta qué tipos de pizzas ofrecen.
+    - Elige una pizza {{pizza_type}} en tamaño {{pizza_size}}.
+    - Pregunta por las bebidas disponibles.
+    - Pide {{drink_quantity}} {{drink_type}} para acompañar la pizza.
+    - Solicita la confirmación del pedido y el precio final en dólares estadounidenses.
+    - pizza_type:
+        type: string
+        function: forward()
+        data: [Margherita, Pepperoni, Cuatro Quesos, Vegetariana, BBQ Chicken]
+    - pizza_size:
+        type: string
+        function: forward(pizza_type)
+        data: [pequeña, mediana, grande]
+    - drink_type:
+        type: string
+        function: forward()
+        data: [Refresco, Agua Mineral, Té Helado, Jugo]
+    - drink_quantity:
+        type: int
+        function: forward()
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu solicitud. Puedo ayudarte con pizzas personalizadas o bebidas."
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmada por el chatbot."
+    - drink_type:
+        type: string
+        description: "Tipo de bebida confirmada en el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido proporcionado por el chatbot."
+    - total_price_usd:
+        type: currency
+        description: "Precio final del pedido en dólares estadounidenses (por ejemplo, '24.50 USD')."
+
+conversation:
+  number: combinations
+  max_cost: 1.0
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - default
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - change language:
+            - English
+            - Portuguese
+```
+
+Si quieres extender el perfil (por ejemplo, añadir toppings para validar reglas de monotonicidad) dime y lo adaptamos con gusto 😊

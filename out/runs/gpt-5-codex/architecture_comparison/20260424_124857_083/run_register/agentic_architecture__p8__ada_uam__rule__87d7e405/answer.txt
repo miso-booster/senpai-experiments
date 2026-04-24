@@ -1,0 +1,21 @@
+Hi there! 👋 Here’s what I found after reviewing your rule against the official guidance in **`sensei-check-doc.md`** and the profile **`consultante_de_servicios_y_asistencia_del_cau.yaml`**:
+
+### What was wrong
+- The `when` clause was *identical* to the `oracle`.  
+- Because `when` acts as a pre-filter, the rule was only evaluated when the contact info was already correct. If any value was wrong, `when` evaluated to `False`, the rule became “not applicable,” and the failure slipped by unnoticed.
+
+### Fix
+To make the rule actually check the data, we simply remove that `when` filter and keep the validation in the `oracle`. The profile already exposes the fields `contact_email`, `contact_phone`, and `physical_address`, so the rule stays perfectly aligned.
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works
+- With no `when`, the rule runs on every conversation generated from the CAU profile.
+- The `oracle` enforces the exact contact details, ensuring any mismatch triggers a rule failure, as intended.
+
+Let me know if you’d like to add an `on-error` message or extend the rule to cover additional fields!
