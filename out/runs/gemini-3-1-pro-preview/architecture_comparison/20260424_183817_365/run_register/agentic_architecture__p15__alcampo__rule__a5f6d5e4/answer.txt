@@ -1,0 +1,36 @@
+I can definitely help you fix this rule! 😊
+
+I've loaded the SENSEI rules documentation and searched your project for a matching profile. I found the profile `customer_service_assistance.yaml`, which perfectly matches the fields `contact_options` and `customer_service_number` in its `chatbot.output`. 
+
+However, there are a few issues preventing your rule from working:
+
+1. **Typo in the header:** `descriptin` needs to be `description`.
+2. **Missing `then` clause:** In SENSEI-check, if you use an `if` condition, you must pair it with a `then` statement to create a logical rule. If you just want to check a boolean condition, you should use `oracle` instead.
+3. **Invalid field in `when`:** You are filtering using `conv[i].user_request`, but `user_request` **does not exist** in the `chatbot.output` of the `customer_service_assistance.yaml` profile. SENSEI rules can only evaluate fields that are explicitly extracted by the profile.
+
+### How should we fix it?
+
+**Option 1: A single-conversation check (Recommended)**
+If the goal is simply to ensure that the chatbot successfully extracts both the contact options and the customer service number during a conversation, we can simplify this into a 1-conversation `oracle` rule:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+oracle: contact_options is not None and customer_service_number is not None
+```
+
+**Option 2: Keep it as a 2-conversation rule**
+If you specifically want to check this across two different conversations, we can use an `oracle` without the invalid `when` filter:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+oracle: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+```
+
+**Option 3: Add `user_request` to your profile**
+If you really need to filter conversations based on what the user requested (e.g., `'contact options'` vs `'customer service number'`), we will first need to update the `customer_service_assistance.yaml` profile to extract a `user_request` field. 
+
+Are we good to target the `customer_service_assistance.yaml` profile? And which of these options works best for what you are trying to test?

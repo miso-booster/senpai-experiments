@@ -1,0 +1,59 @@
+Hello there! I can absolutely help you with that! 🍕😊
+
+To create a scenario where the simulated user changes their mind halfway through, we can use a super handy feature in Sensei Profiles called **`interaction_style`**. Specifically, we'll use the **`change your mind`** style! 
+
+When you combine this interaction style with a clear `role` and `context`, the Sensei user simulator will naturally start asking for a custom pizza, hesitate or backtrack, and then switch to a predefined one.
+
+Here is a complete, ready-to-use profile you can save in your `profiles/` folder (for example, as `pizza_order_change_mind.yml`):
+
+```yaml
+test_name: "pizza_order_change_mind"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza. You initially want to build your own custom pizza, 
+    but halfway through the conversation, you decide to change your mind and order a predefined pizza instead.
+  context:
+    - "You are hungry and a bit indecisive."
+  goals:
+    - "Start by asking to create a custom pizza with cheese, mushrooms, and pepperoni."
+    - "Change your mind and order a {{predefined_pizza}} pizza instead."
+    - "Ask for the total price of the new order."
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Four cheese]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Would you like a custom or predefined pizza?"
+  output:
+    - final_pizza_ordered:
+        type: string
+        description: "The final pizza that the user decided to order after changing their mind."
+    - total_price:
+        type: currency
+        description: "The final price of the order."
+
+conversation:
+  number: 2
+  goal_style:
+    all_answered:
+      limit: 15
+  interaction_style:
+    - change your mind
+```
+
+### 💡 Why this works so well:
+1. **`interaction_style: [change your mind]`**: This is a reserved keyword in Sensei. It specifically instructs the user simulator to alter its decisions during the chat. It's perfect for testing if your chatbot can gracefully handle a user clearing their cart or updating their order!
+2. **The `role` and `goals`**: We explicitly tell the user persona *what* to change their mind about (from custom to a `{{predefined_pizza}}`).
+3. **`chatbot.output`**: I added a `final_pizza_ordered` field. This is a great way to use **Sensei-check rules** later to verify that your chatbot actually registered the predefined pizza and discarded the custom one! 👀
+
+Give this a try in your project! Let me know if you'd like to tweak the variables or if you need help writing a Sensei Rule to test the output! 🚀✨

@@ -1,0 +1,26 @@
+conversation ID: one_node_architecture__p25__bikeshop__rule__46903cbe
+$$$
+Hello there! I'd be happy to help you create a rule to validate those specific outputs. 😊
+
+Since you want to check the exact values extracted from a single conversation, we can use a **single-conversation oracle**. We will use the `extract_float()` helper to easily check the prices (even if they include currency symbols) and the `semantic_content()` helper to verify the opening hours, which is great for understanding natural language time ranges.
+
+Here is the rule you can add to your project:
+
+```yaml
+name: verify_qa_prices_and_hours
+description: Checks that the shop hours are 10 to 20, tune-up is 50, seat is 20, and tire is 20.
+conversations: 1
+active: true
+oracle: |
+  semantic_content(opening_and_closing, '10 to 20') and extract_float(tune_up) == 50 and extract_float(seat_price) == 20 and extract_float(tire) == 20
+yields: f"One or more values did not match the expected results. Hours: {opening_and_closing}, Tune-up: {tune_up}, Seat: {seat_price}, Tire: {tire}"
+```
+
+### How it works:
+* **`conversations: 1`**: This tells Sensei-check to evaluate each conversation individually.
+* **`semantic_content(...)`**: This uses a quick LLM check to ensure the `opening_and_closing` string means "10 to 20", regardless of how the bot phrased it (e.g., "10 AM to 8 PM" or "10:00 - 20:00").
+* **`extract_float(...)`**: This pulls the first number it finds in your `tune_up`, `seat_price`, and `tire` fields so we can safely compare them to `50` and `20`.
+* **`yields`**: If the rule fails, this will print out exactly what the chatbot returned so you can easily debug it! 👀
+
+Let me know if you need any adjustments or want to test anything else!
+$$$

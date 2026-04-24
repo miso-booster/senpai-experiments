@@ -1,0 +1,26 @@
+conversation ID: agentic_architecture__p39__pizza_shop__rule__90c3e53a
+$$$
+Here is the metamorphic rule you requested! 
+
+Since I couldn't find a specific profile in the project that exactly matches just `drink` and `price` (though there are a few pizza-related ones like `pizza_and_drink_order_placement.yaml`), I have designed this rule assuming you have (or will create) a profile that exposes at least `drink`, `price`, and some base items like `size` or `pizza_type` in its `chatbot.output`.
+
+```yaml
+name: drink_costs_2_dollars_extra
+description: Adding a drink to an order increases the total price by exactly 2 dollars.
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].pizza_type == conv[1].pizza_type
+if: conv[0].drink is None and conv[1].drink is not None
+then: extract_float(conv[1].price) == extract_float(conv[0].price) + 2
+```
+
+### How this works:
+* **`conversations: 2`**: This tells SENSEI-check to compare pairs of conversations (metamorphic testing).
+* **`when`**: This acts as a filter to ensure we are comparing apples to apples. It holds the base order equal (e.g., same `size` and `pizza_type`). *Note: You should adjust these field names to match whatever base items your actual profile uses!*
+* **`if`**: This is the trigger condition. It looks for a pair where the first conversation has no drink (`None`) and the second conversation does have a drink.
+* **`then`**: This asserts the relationship. It uses the built-in `extract_float()` helper (as documented in `sensei-check-doc.md`) to pull the numeric value from the `price` field and checks that the second conversation is exactly $2 more than the first.
+
+**Next Steps:**
+Make sure the profile you use this with has `drink` and `price` defined in its `chatbot.output`. If your profile uses different names for the base items (like `item_name` instead of `pizza_type`), just update the `when` clause to match! 
+
+Let me know if you'd like me to adjust this to fit a specific existing profile in your project! 😊
+$$$

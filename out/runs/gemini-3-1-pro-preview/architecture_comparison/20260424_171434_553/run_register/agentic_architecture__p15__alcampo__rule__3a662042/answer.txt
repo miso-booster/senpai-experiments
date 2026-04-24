@@ -1,0 +1,25 @@
+I have loaded the SENSEI documentation and searched through your project files to help fix this rule. 
+
+I found a profile named `customer_service_assistance.yaml` that seems to be the exact match for this rule. Its `chatbot.output` contains the fields `contact_options` and `customer_service_number`.
+
+However, there are a few issues with the rule as currently written:
+1. **Typo:** `descriptin` needs to be `description`.
+2. **Missing `then` clause:** The rule uses an `if` condition but lacks a `then` statement. SENSEI rules require either an `oracle` (for a direct boolean check) or an `if`/`then` pair (for implications).
+3. **Undefined variable:** The `when` clause filters by `conv[i].user_request`, but `user_request` is neither an extracted field in the profile's `chatbot.output` nor a defined variable in the profile's `goals`.
+
+**How would you like to fix this?**
+
+**Option A: A single-conversation check (Recommended)**
+If the goal is simply to ensure that the chatbot successfully extracts both the contact options and the customer service number during the conversation, we can simplify it to a 1-conversation rule using an `oracle`:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+oracle: contact_options is not None and customer_service_number is not None
+```
+
+**Option B: Keep it as a 2-conversation rule**
+If you specifically want to compare two different conversations, we will need to update the `customer_service_assistance.yaml` profile to include a `{{user_request}}` variable in its goals so the rule can filter by it, and then we'll need to define what the `then` condition should be.
+
+Could you confirm if `customer_service_assistance.yaml` is the correct profile, and whether you'd prefer Option A or Option B?

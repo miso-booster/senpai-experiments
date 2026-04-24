@@ -1,0 +1,33 @@
+conversation ID: graph_based_architecture__p26__bikeshop__rule__7490e623
+$$$
+Hello there! 😊 I would be more than happy to help you review and fix your SENSEI RULE. 
+
+Looking at your rule, I can see what you're trying to achieve, but it has a few structural issues based on the Sensei-check documentation. Since you are checking a static condition (the price being exactly $50) rather than comparing two different conversations, this should be a **single-conversation oracle** rather than a metamorphic rule.
+
+Here is the corrected version of your rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+```
+
+### 🛠️ What I changed and why:
+
+1. **Changed `conversations: 2` to `conversations: 1`**: 
+   Metamorphic rules (`conversations: 2` or more) are used to compare how outputs change when inputs change across multiple conversations. Since you just want to verify a specific value in a single chat, `1` is the correct number!
+2. **Removed the `when` filter**: 
+   The `when` clause is used to *filter* which conversations the rule applies to. If you put `when: conv[0].tune_up_price == 50`, the rule will only run if the price is *already* 50, meaning it would never catch a failure! 
+3. **Replaced `if/then` with `oracle`**: 
+   For single-conversation checks, an `oracle` is the standard way to assert a condition. The `then` clause always expects a Python boolean expression (like `x == y`), not a text string.
+4. **Removed `conv[0].`**: 
+   In single-conversation rules, you don't need to specify the conversation index. You can just use the variable name directly.
+5. **Added `extract_float()`**: 
+   This is a Sensei-check best practice! Chatbots often return prices as strings with currency symbols (like `"$50.00"`). Wrapping your variable in `extract_float(tune_up_price)` safely pulls out the number so you can do a proper math comparison.
+
+**One quick reminder!** 👀 
+Make sure that `tune_up_price` is exactly the name of the field exposed in your SENSEI Chat profile's `chatbot.output`. If your profile calls it something else (like `price` or `total_cost`), you'll need to update the variable name in the rule to match.
+
+Let me know if you have any questions about this or if you'd like to write more rules together! 🥋✨
+$$$

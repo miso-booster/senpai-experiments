@@ -1,0 +1,71 @@
+¡Hola! 👋 ¡Claro que sí! Me encantaría ayudarte a crear este perfil para tu pizzería. 🍕✨
+
+Para lograr lo que necesitas, vamos a crear un archivo YAML que defina el comportamiento del usuario simulado y, lo más importante, la sección `chatbot.output` donde le indicaremos a Sensei exactamente qué datos debe extraer al final de la conversación (tipo de pizza, bebida, ID del pedido y precio final).
+
+Aquí tienes un perfil completo y listo para usar. Puedes guardarlo en tu carpeta `profiles/` con el nombre que prefieras, por ejemplo: `pedido_pizzeria.yml`.
+
+```yaml
+test_name: "prueba_pedido_pizzeria"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente que quiere pedir la cena en una pizzería local. 
+    Quieres pedir una pizza, una bebida y asegurarte de tener el resumen de tu compra.
+  context:
+    - "Tienes mucha hambre y quieres que el pedido sea para recoger en el local."
+    - "Siempre pides el precio total y el número de confirmación antes de despedirte."
+  goals:
+    - "Quiero pedir una pizza {{tipo_pizza}}."
+    - "Para beber, me gustaría pedir {{bebida}}."
+    - "¿Me puedes confirmar el ID de mi pedido y el precio final en dólares?"
+    - tipo_pizza:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Cuatro Quesos, Hawaiana]
+    - bebida:
+        function: pairwise()
+        type: string
+        data: [Coca-Cola, Agua, Cerveza, Sprite]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, hay mucho ruido en la cocina y no te he entendido. ¿Puedes repetirlo?"
+  output:
+    - tipo_pizza:
+        type: string
+        description: "El tipo de pizza que ha elegido el cliente."
+    - bebida:
+        type: string
+        description: "La bebida que ha elegido el cliente."
+    - order_id:
+        type: string
+        description: "El identificador único o número de confirmación del pedido."
+    - precio_final:
+        type: currency
+        description: "El precio final del pedido en dólares (ej. $15.50)."
+
+conversation:
+  number: combinations(1, pairwise) # Generará combinaciones eficientes de pizza y bebida
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - default
+```
+
+### 💡 Notas del Senpai para que todo salga perfecto:
+
+1. **Variables y Combinaciones:** He utilizado la función `pairwise()` para las variables `{{tipo_pizza}}` y `{{bebida}}`. Esto es genial porque Sensei creará automáticamente varias conversaciones combinando diferentes pizzas y bebidas de forma eficiente para probar tu chatbot sin hacer una cantidad infinita de tests. 🚀
+2. **El tipo `currency`:** En la sección `chatbot.output`, le asigné el tipo `currency` al `precio_final`. Recuerda que en Sensei, `currency` suele ser un **tipo de dato personalizado** (Custom Type). Si aún no lo tienes, solo debes crear un archivo llamado `currency.yml` dentro de tu carpeta `types/` con una expresión regular para detectar precios (por ejemplo, números acompañados del símbolo `$`).
+3. **Extracción de datos:** Al usar `export: true` en `goal_style`, Sensei generará un archivo `.csv` al finalizar, donde podrás ver fácilmente si el bot logró capturar la pizza, la bebida, el ID y el precio en cada conversación. 👀
+
+¿Tienes alguna duda sobre cómo ejecutar este perfil o te gustaría añadirle algún comportamiento especial al usuario (como que cambie de opinión a mitad del pedido)? ¡Dime y lo ajustamos! 😊

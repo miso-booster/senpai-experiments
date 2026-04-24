@@ -1,0 +1,111 @@
+conversation ID: graph_based_architecture__p32__pizza_shop__profile__b58aee48
+$$$
+¡Hola! 👋 ¡Claro que sí! Me encantaría ayudarte a crear ese perfil para tu pizzería. 🍕✨
+
+Para lograr lo que necesitas, vamos a crear un archivo YAML (por ejemplo, `pizza_order_profile.yml`) que simule a un usuario pidiendo su comida. Utilizaremos la sección `chatbot.output` para extraer exactamente los datos que mencionaste: el tipo de pizza, la bebida, el ID del pedido y el precio final.
+
+Aquí tienes un perfil completo y listo para usar:
+
+```yaml
+test_name: "pizza_shop_order_test"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente que quiere pedir la cena a domicilio en una pizzería local. 
+    Eres amable pero quieres asegurarte de tener todos los detalles de tu pedido.
+  context:
+    - "Tienes mucha hambre, así que quieres que el proceso sea rápido."
+    - "Siempre pides el precio total y el número de confirmación antes de despedirte."
+  goals:
+    - "Quiero pedir una pizza {{tipo_pizza}}."
+    - "Para beber, me gustaría pedir {{bebida}}."
+    - "¿Me puedes confirmar el ID de mi pedido y el precio final en dólares?"
+    - tipo_pizza:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Cuatro Quesos, Vegetariana]
+    - bebida:
+        function: pairwise()
+        type: string
+        data: [Coca-Cola, Agua mineral, Fanta Naranja, Cerveza]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, hay un poco de ruido en la cocina y no te entendí. ¿Puedes repetirlo?"
+  output:
+    - tipo_pizza:
+        type: string
+        description: "El tipo de pizza que el usuario ha ordenado."
+    - bebida:
+        type: string
+        description: "La bebida que el usuario ha ordenado."
+    - id_pedido:
+        type: string
+        description: "El identificador, código o número de confirmación del pedido."
+    - precio_final:
+        type: currency
+        description: "El precio total del pedido en dólares."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 💡 Notas de tu Senpai sobre este perfil:
+
+1. **Extracción de datos (`chatbot.output`)**: Aquí es donde le decimos a Sensei qué información debe capturar al final de la conversación. He añadido descripciones claras para que el extractor sepa exactamente qué buscar en las respuestas del bot.
+2. **El tipo `currency`**: En el `precio_final` he utilizado el tipo `currency`. Como este es un **tipo de dato personalizado** (Custom Type) en Sensei, necesitarás crear un pequeño archivo llamado `currency.yml` dentro de la carpeta `types/` de tu proyecto para que funcione a la perfección. 
+
+Aquí tienes el código para tu archivo `types/currency.yml` 💸:
+```yaml
+test_name: currency_test
+llm:
+  model: gpt-4o-mini
+  temperature: 0.0
+  format:
+    type: text
+user:
+  language: Spanish
+  role: Usuario que proporciona un número flotante que representa dinero con su divisa.
+  goals:
+    - "El precio es {{amount}}."
+    - amount:
+        type: string
+        function: random()
+        data: ["10.50 USD", "20 €", "5 £"]
+chatbot:
+  is_starter: false
+  fallback: "No te he entendido, ¿puedes repetir?"
+  output:
+    - value:
+        type: float
+        description: el valor numérico
+    - currency:
+        type: string
+        description: la unidad de la divisa (ej. USD, $)
+conversation:
+  number: 1
+  goal_style:
+    steps: 1
+  interaction_style:
+    - default
+```
+
+3. **Combinaciones eficientes (`pairwise`)**: En la sección de `goals`, usé la función `pairwise()` para las variables de la pizza y la bebida. Esto es genial porque Sensei mezclará las opciones (ej. Pizza Margarita + Agua, Pepperoni + Coca-Cola) de forma inteligente para probar la mayor cantidad de combinaciones sin hacer que las pruebas sean infinitas. 🚀
+
+Guarda el perfil en tu carpeta `profiles/` y el tipo personalizado en `types/`, ¡y estarás listo para poner a prueba ese bot pizzero! 
+
+¿Hay alguna otra cosa en la que te pueda ayudar, tal vez ajustando el estilo de interacción o agregando más variables? 😊
+$$$

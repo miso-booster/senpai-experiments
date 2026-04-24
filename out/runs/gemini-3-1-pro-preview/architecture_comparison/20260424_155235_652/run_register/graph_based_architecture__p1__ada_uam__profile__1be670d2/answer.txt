@@ -1,0 +1,72 @@
+Hello there! 👋 I would be absolutely delighted to help you create this Sensei Profile! 🎓✨
+
+To make this profile super effective, I've added a second variable for the **device type** (like an iPhone or a Windows laptop). By nesting the `setup_method` variable inside the `device_type` variable using the `forward()` function, Sensei will automatically generate a combination matrix. This means it will test every single setup method across every device type! 🚀
+
+Here is the complete, ready-to-use YAML profile for your eduroam troubleshooting scenario:
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who urgently needs to connect to the eduroam Wi-Fi network,
+    but you are unable to do so despite trying different methods.
+  context:
+    - "You need internet access for an upcoming online exam."
+    - "You are getting frustrated because the standard instructions aren't working for you."
+  goals:
+    - "Ask how to connect your {{device_type}} to the eduroam network."
+    - "Explain that you already tried using {{setup_method}} but it failed."
+    - "Ask for alternative troubleshooting steps or if you need to visit IT support."
+    - device_type:
+        function: forward()
+        type: string
+        data: [Android phone, iPhone, Windows laptop, MacBook]
+    - setup_method:
+        function: forward(device_type)
+        type: string
+        data:
+          - "the eduroam CAT (Configuration Assistant Tool) app"
+          - "manual network configuration"
+          - "scanning the provided QR code"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I couldn't understand that. Could you please rephrase your question?"
+  output:
+    - troubleshooting_step:
+        type: string
+        description: "The specific fix or step the chatbot suggests to resolve the issue."
+    - requires_it_support:
+        type: string
+        description: "Indicates 'yes' or 'no' if the bot tells the user to visit the IT helpdesk in person."
+
+conversation:
+  number: combinations  # This will run all combinations of device_type and setup_method!
+  goal_style:
+    steps: 6
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+      - change your mind
+```
+
+### 💡 A quick breakdown of what's happening here:
+
+1. **`user.goals` & Variables:** We defined `{{device_type}}` and `{{setup_method}}`. Because we used `forward()` and `forward(device_type)`, Sensei will methodically pair every device with every setup method (e.g., Android + CAT app, Android + manual config, iPhone + CAT app, etc.).
+2. **`conversation.number`:** By setting this to `combinations`, Sensei knows to look at those two nested `forward()` variables and run enough conversations to cover the whole grid.
+3. **`chatbot.output`:** At the end of each conversation, Sensei will extract the `troubleshooting_step` the bot suggested and whether `requires_it_support` was mentioned. Later on, you can easily write **Sensei Rules** to check if the bot gives the correct advice for each device! 👀
+4. **`interaction_style`:** I added a `random` block so the simulated user will occasionally make spelling mistakes, use long phrases, or change their mind, making the test feel much more human and realistic. 😊
+
+You can save this as `eduroam_troubleshooting.yml` inside your `profiles/` folder. 
+
+How does this look to you? Let me know if you'd like to adjust the setup methods, or if you want to write some **Sensei Rules** to validate the chatbot's answers! 🥋✨

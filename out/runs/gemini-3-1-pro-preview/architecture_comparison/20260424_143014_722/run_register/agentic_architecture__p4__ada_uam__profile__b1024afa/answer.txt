@@ -1,0 +1,75 @@
+¡Hola! Claro que sí, estaré encantado de ayudarte a crear este perfil para probar el chatbot de la UAM 😊. 
+
+He revisado la documentación de SENSEI Profiles y los perfiles que ya existen en tu proyecto. Aunque hay algunos relacionados con el CAU (como `consultante_de_servicios_y_asistencia_del_cau.yaml`), vamos a crear uno nuevo y específico que se centre exactamente en extraer la información de contacto y horarios que necesitas.
+
+Aquí tienes el código YAML para tu nuevo perfil. Lo he diseñado para que el usuario simulado pregunte por estos datos de forma natural, introduciendo un pequeño problema técnico aleatorio para darle más realismo a la conversación.
+
+```yaml
+test_name: "uam_cau_informacion_contacto"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante o miembro del personal de la UAM que necesita contactar urgentemente con el CAU (Centro de Atención a Usuarios) para resolver un problema técnico.
+  context:
+    - "No sabes cómo contactar con ellos ni dónde están ubicados físicamente."
+    - "Necesitas obtener varias vías de contacto para asegurarte de que te atienden lo antes posible."
+  goals:
+    - "Explicar que tienes un problema con {{problema}} y necesitas contactar con el CAU."
+    - "Preguntar por el número de teléfono del CAU."
+    - "Preguntar por el correo electrónico del CAU."
+    - "Preguntar por la dirección física o ubicación del CAU."
+    - "Preguntar por el horario de atención del CAU."
+    - problema:
+        function: random()
+        type: string
+        data: 
+          - "el correo institucional"
+          - "la plataforma Moodle"
+          - "la conexión Wi-Fi eduroam"
+          - "tu contraseña de SIGMA"
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu consulta. ¿Puedes reformularla?"
+  output:
+    - telefono:
+        type: string
+        description: "Número de teléfono del CAU proporcionado por el chatbot"
+    - email:
+        type: string
+        description: "Correo electrónico del CAU proporcionado por el chatbot"
+    - direccion:
+        type: string
+        description: "Dirección física o ubicación del CAU proporcionada por el chatbot"
+    - horario:
+        type: string
+        description: "Horario de atención del CAU proporcionado por el chatbot"
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📝 Resumen de lo que hace este perfil:
+
+1. **El Usuario Simulado (`user`)**: Actuará como alguien de la UAM que tiene un problema técnico. Para que las conversaciones no sean idénticas, he añadido una variable `{{problema}}` que elegirá aleatoriamente entre fallos comunes (Moodle, eduroam, correo, etc.).
+2. **Los Objetivos (`goals`)**: El usuario tiene la misión clara de conseguir el teléfono, el email, la dirección y el horario.
+3. **El Contrato de Extracción (`chatbot.output`)**: Esta es la parte más importante para las validaciones posteriores. Al final de la conversación, SENSEI extraerá exactamente los 4 campos que has pedido: `telefono`, `email`, `direccion` y `horario`. Si luego quieres crear reglas (SENSEI Rules) para comprobar si el bot dio el teléfono correcto, podrás referirte a ellos como `conv[i].telefono`, por ejemplo.
+4. **Control de la Conversación (`conversation`)**: Hará 4 conversaciones de prueba y se detendrá en cuanto el chatbot haya respondido a todas las preguntas (`all_answered`). Además, exportará un CSV (`export: true`) para que puedas ver fácilmente qué datos se consiguieron en cada intento.
+
+Puedes guardar este código en un archivo llamado, por ejemplo, `uam_cau_informacion_contacto.yaml` dentro de tu carpeta `profiles/`. 
+
+¿Te gustaría que ajustemos algún detalle del comportamiento del usuario o que creemos alguna regla de validación (SENSEI Rule) para comprobar que los datos que da el bot son los correctos? ¡Dime y nos ponemos a ello!

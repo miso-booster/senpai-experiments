@@ -1,0 +1,35 @@
+I can definitely help you fix that! 😊
+
+Based on the HTTP request and response you provided, there are a few mismatches between your current connector YAML and what the API actually expects and returns. 
+
+Here is the corrected YAML for your connector:
+
+```yaml
+name: "1MillionBot Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### What changed and why:
+
+1. **`base_url` & `path`**: Your original YAML pointed to a generic URL. I updated the `base_url` to `https://api.1millionbot.com` and the `path` to `/api/public/messages` to match the `Host` and `POST` lines in your HTTP headers.
+2. **`headers`**: The API requires an `Authorization` token to accept the request. I added the token from your headers.
+3. **`payload_template`**: Your original payload only sent the language and the message. The API actually requires several other fields to track the session (`conversation`, `sender_type`, `sender`, `bot`, and `url`). I added these exactly as they appeared in your request payload.
+4. **`response_path`**: Your original path was `request.text`. If you look at the JSON response, `request.text` actually contains *your* message (`"hola"`). To get the *bot's* reply (`"¡Buenos días!..."`), we need to look inside the `response` array. Since it's the first item in the array, the correct dot-notation path is `response.0.text`.
+
+Give this updated connector a try and let me know if it works smoothly!

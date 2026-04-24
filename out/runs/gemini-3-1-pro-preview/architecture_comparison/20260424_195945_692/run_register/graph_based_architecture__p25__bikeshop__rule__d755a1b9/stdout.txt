@@ -1,0 +1,30 @@
+conversation ID: graph_based_architecture__p25__bikeshop__rule__d755a1b9
+$$$
+Hello there! 👋 I would be absolutely delighted to help you write a Sensei-check rule for your bike shop profile! 🚲✨
+
+Since you want to verify that the assistant returns specific, fixed values (like the tune-up being 50 and the seat being 20), we will create a **single-conversation rule** (also known as a traditional oracle). 
+
+To do this, we'll use the exact field names you defined in your `chatbot.output` (`opening_and_closing`, `tire`, `tune_up`, and `seat_price`). We can use the handy `extract_float()` helper to check the prices, and the `semantic_content()` helper to make sure the opening hours mean "10 to 20" even if the bot phrases it like "10 AM to 8 PM" or "10:00 - 20:00".
+
+Here is the ready-to-use rule for your project:
+
+```yaml
+name: verify_bike_shop_info
+description: Checks if the bike shop assistant provides the correct hours and prices for the items.
+conversations: 1
+oracle: >
+  semantic_content(opening_and_closing, '10 to 20') and
+  extract_float(tune_up) == 50 and
+  extract_float(seat_price) == 20 and
+  extract_float(tire) == 20
+```
+
+### 🧠 A quick breakdown of what's happening here:
+* **`conversations: 1`**: We only need to look at one conversation at a time to check these static values.
+* **`semantic_content(...)`**: This is a super smart LLM-backed helper! It checks if the text in `opening_and_closing` semantically matches the concept of "10 to 20", so you don't have to worry about exact string matching.
+* **`extract_float(...)`**: This helper pulls the first number it finds out of the text. So even if your bot replies with "$50.00" or "50 bucks", it will correctly extract `50` to compare it!
+
+You can save this in your rules folder, and Sensei-check will automatically evaluate your bike shop conversations against it. 
+
+Does this make sense? Let me know if you'd like to add any other checks, like making sure the bot stays on topic! 😊🛠️
+$$$

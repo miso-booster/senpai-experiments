@@ -1,0 +1,25 @@
+I have checked the SENSEI documentation for metamorphic rules (`sensei-check-doc.md` and `rules-examples.md`) and searched your project's profiles. 
+
+While I found some pizza-related profiles in your project (like `pizza_order_test_custom.yml` which has a `price` output, and `pizza_and_drink_order_placement.yaml` which has `total_cost`), none of them currently expose an output specifically named `drink` in their `chatbot.output`. 
+
+Since you explicitly requested the output name to be `drink`, I have designed the rule assuming you will add (or already have) a profile that exposes both `drink` and `price` (or `cost`) in its `chatbot.output`.
+
+Here is the metamorphic rule. It compares two conversations where the pizza details are identical (`when` clause), but one conversation has no drink and the other has a drink (`if` clause). It then asserts that the price difference is exactly 2 dollars (`then` clause).
+
+```yaml
+name: drink_costs_2_dollars
+description: Adding a drink increases the total price by exactly 2 dollars (assuming pizza size and toppings are equal).
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings
+if: conv[0].drink is None and conv[1].drink is not None
+then: extract_float(conv[1].price) == extract_float(conv[0].price) + 2
+```
+
+### A few things to note:
+1. **Output Fields**: This rule assumes your profile's `chatbot.output` contains `size`, `toppings`, `drink`, and `price`. If your profile uses different names (like `total_cost` instead of `price`), you will need to update the rule to match.
+2. **How `drink` is defined**: 
+   - The rule above assumes `drink` is a string (e.g., `"Coke"`) that is `None` when no drink is ordered. 
+   - If your `drink` output is actually a **list** of drinks, you should change the `if` condition to compare lengths: `if: len(conv[1].drink) == len(conv[0].drink) + 1`.
+   - If your `drink` output is an **integer** (number of drinks), you should change it to: `if: int(conv[1].drink) == int(conv[0].drink) + 1`.
+
+Let me know if you'd like me to adjust this based on how your `drink` output is structured, or if you need help adding the `drink` field to one of your existing profiles! 😊

@@ -1,0 +1,64 @@
+This is a great use case! Testing how your chatbot handles international students—who might ask questions in English and need very clear, step-by-step guidance—is super important. 
+
+Since we want to keep the inputs simple but ensure we can validate the support quality, I've set up a single variable (`{{system}}`) that iterates through Moodle, Sigma, and Eduroam (Wi-Fi). For the `chatbot.output`, I've included fields to extract the setup instructions, access links, and support contact info so you can easily write Sensei-check rules against them later.
+
+Here is the profile ready for your UAM project:
+
+```yaml
+test_name: "erasmus_student_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus exchange student who just arrived at the university.
+    You are completely new and don't know how to set up your digital accounts like Moodle, Sigma, or the Wi-Fi.
+  context:
+    - "You are feeling a bit lost and need clear, step-by-step instructions."
+    - "You only have your acceptance letter, passport, and a personal email."
+    - "You prefer if the chatbot can assist you in English."
+  goals:
+    - "Ask how to get your initial university credentials (ID-UAM) to access the systems."
+    - "Ask how to log into {{system}}."
+    - "Ask where you can go in person or who to email if you still can't log in."
+    - system:
+        function: forward()
+        type: string
+        data: [Moodle, Sigma, Eduroam]
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios."
+  output:
+    - credential_setup_steps:
+        type: string
+        description: "Step-by-step instructions provided to get the initial ID-UAM credentials."
+    - system_access_link:
+        type: string
+        description: "The URL or portal link provided to access the requested system."
+    - in_person_support_location:
+        type: string
+        description: "Physical location or office the student can visit for IT help."
+    - support_email:
+        type: string
+        description: "Email address provided for technical support."
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 15
+  interaction_style:
+    - single questions
+```
+
+### 👀 Why this setup works well:
+* **Language Test:** By setting `language: English`, you test if the UAM bot can gracefully handle non-Spanish queries (or at least guide them properly).
+* **Targeted Outputs:** Fields like `credential_setup_steps` and `support_email` are perfect for your rules. For example, you can later write a Sensei-check rule to ensure that `data_collected() == True` (meaning the bot successfully provided all the necessary links and support emails).
+* **Efficient Combinations:** Using `number: combinations` with the `forward()` function means Sensei will automatically generate 3 conversations—one for Moodle, one for Sigma, and one for Eduroam.
+
+Let me know if you'd like to tweak the outputs or if you want to write some **Sensei Rules** to validate these specific fields! 😊

@@ -1,0 +1,51 @@
+Hello there! I'd be happy to help you fix this rule. 🍕
+
+There are actually **two reasons** why this rule might not be working for you. Let's break them down!
+
+### 1. The missing `if` clause
+In Sensei-check, when you use a `then` statement to check a metamorphic relation between two conversations, you **must** include an `if` statement. The `if` clause acts as the precondition (what changes between the conversations), while the `then` clause is the expected outcome. 
+
+Since your rule is checking if adding *more toppings* increases the price, we need to add an `if` condition that compares the length of the toppings!
+
+Here is the corrected rule:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### 2. Missing fields in your Profile's `chatbot.output` 👀
+I took a peek at your project files, specifically your `pizza_order_test_custom.yml` profile. 
+
+For a rule to use variables like `conv[0].size`, `conv[0].drink`, or `conv[0].toppings`, those exact fields **must be extracted by the chatbot at the end of the conversation**. Right now, your profile's `chatbot.output` only extracts `price`, `time`, and `order_id`. 
+
+To make this rule work perfectly, you'll need to update the `chatbot.output` in your profile to include those missing fields, like this:
+
+```yaml
+  output:
+    - price:
+        type: currency
+        description: The final price of the pizza order
+    - time:
+        type: time("hh:mm:ss")
+        description: just the opening time
+    - order_id:
+        type: string
+        description: my order ID
+    - size:
+        type: string
+        description: The size of the pizza ordered
+    - drink:
+        type: string
+        description: The drink ordered
+    - toppings:
+        type: list[string]
+        description: The list of toppings added to the custom pizza
+```
+
+Once you have the `if` clause in your rule and the matching fields in your profile's output, everything should work smoothly! Let me know if you need help adjusting anything else. 😊

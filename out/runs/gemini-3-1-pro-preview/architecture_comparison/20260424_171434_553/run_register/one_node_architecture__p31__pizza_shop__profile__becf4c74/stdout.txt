@@ -1,0 +1,68 @@
+conversation ID: one_node_architecture__p31__pizza_shop__profile__becf4c74
+$$$
+Hello there! 😊 I'd be happy to help you fix this profile. 
+
+I took a look at your YAML, and there are just a few structural and formatting tweaks needed to get it running perfectly:
+
+1. **Missing `chatbot` section:** The `is_starter`, `fallback`, and `output` fields were accidentally indented under the `user` section. They need to live under their own top-level `chatbot:` block.
+2. **Type correction:** In `custom_pizza_pricing`, the type was set to `str`. In Sensei, the correct primitive type is `string`.
+3. **Boolean value:** Under `all_answered`, the `export` field expects a boolean (`true` or `false`) rather than a number like `1`.
+4. **Missing conversation number:** The `conversation` section needs a `number` field to tell Sensei how many conversations to generate. I've added `number: 3` to match your project's original setup.
+
+Here is the corrected and ready-to-use profile:
+
+```yaml
+test_name: general_information_seeker
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+    - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+    - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+    - Ask what types of questions the chatbot can answer.
+    - Ask what the daily opening hours are.
+    - Ask about the estimated order time, without specifying the number of pizzas.
+    - Ask what drink options are available and their prices.
+    - Ask about the pricing for a custom pizza.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks.\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE"
+  output:
+    - available_information:
+        type: string
+        description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+    - opening_hours:
+        type: string
+        description: The daily opening hours of the pizza shop, as stated by the chatbot.
+    - estimated_order_time:
+        type: string
+        description: The chatbot's explanation of the estimated order time, including factors that influence it.
+    - drink_options_and_prices:
+        type: string
+        description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+    - custom_pizza_pricing:
+        type: string
+        description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - single question
+```
+
+Let me know if you need any more help adjusting your profiles or rules! 🚀🍕
+$$$

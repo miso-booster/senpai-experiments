@@ -1,0 +1,38 @@
+conversation ID: agentic_architecture__p18__alcampo__rule__3c28380c
+$$$
+¡Hola! Claro que sí 😊. 
+
+He revisado los perfiles actuales de tu proyecto y no he encontrado ninguno que esté enfocado específicamente en juguetes ecológicos, así que asumo que estás diseñando la regla primero o que vas a añadir este campo a un perfil existente (lo que llamamos **Rule-first design** en la documentación de SENSEI).
+
+Para comprobar que el chatbot ha devuelto una lista de juguetes y basándonos en el campo `eco_friendly_toys`, podemos crear una regla de **una sola conversación** (un oráculo tradicional) que verifique que ese campo no esté vacío.
+
+Aquí tienes el YAML de la regla:
+
+```yaml
+name: eco_friendly_toys_returned
+description: Comprueba que el chatbot ha devuelto una lista de juguetes eco-friendly durante la conversación.
+conversations: 1
+active: true
+oracle: eco_friendly_toys is not None and len(eco_friendly_toys) > 0
+on-error: "El chatbot no devolvió ninguna lista de juguetes eco-friendly."
+```
+
+### 🔗 Conexión con tu Perfil (SENSEI Chat)
+
+Para que esta regla funcione correctamente, el perfil que utilices para generar las conversaciones **debe** exponer este campo en su sección `chatbot.output`. Debería verse algo así:
+
+```yaml
+chatbot:
+  # ... otras configuraciones ...
+  output:
+    - eco_friendly_toys:
+        type: list[string]
+        description: "Lista de juguetes eco-friendly recomendados o devueltos por el chatbot"
+```
+
+**¿Qué hace esta regla exactamente?**
+1. Toma **1** conversación (`conversations: 1`).
+2. Evalúa la condición en `oracle`: verifica que la variable `eco_friendly_toys` (extraída gracias a tu perfil) exista (`is not None`) y que contenga al menos un elemento (`len(...) > 0`).
+
+¿Te gustaría que te ayude a crear o actualizar el perfil completo para que encaje con esta regla, o con esto ya tienes lo que necesitabas? ¡Dime si tienes alguna duda! 🚀
+$$$

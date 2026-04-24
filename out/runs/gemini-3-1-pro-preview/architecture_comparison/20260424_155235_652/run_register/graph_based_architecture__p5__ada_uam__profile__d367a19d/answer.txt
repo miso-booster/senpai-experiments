@@ -1,0 +1,66 @@
+Hello there! I would be absolutely delighted to help you create this profile for the UAM chatbot! 😊 
+
+Since the UAM (Universidad Autónoma de Madrid) chatbot operates in Spanish, I have set the simulated user's language and goals to Spanish so that Sensei can interact with it naturally. 
+
+In this profile, we will use the `all_answered` goal style. Think of it like a checklist: Sensei will keep chatting with the bot until it successfully gathers the phone number, email, location, and hours, or until it hits a safety limit of 15 messages. We'll also set up the `chatbot.output` section like a little net to catch and extract exactly those four pieces of information at the end of the test! 🥅✨
+
+Here is the complete, ready-to-use YAML profile:
+
+```yaml
+test_name: "cau_contact_info_seeker"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario de la universidad que necesita contactar al Centro de Atención a Usuarios (CAU) 
+    para resolver un problema técnico.
+  context:
+    - "You want to gather all possible contact methods before deciding how to reach out."
+    - "You are polite but need the information clearly."
+  goals:
+    - "Preguntar por el número de teléfono del CAU."
+    - "Solicitar la dirección de correo electrónico del CAU."
+    - "Preguntar por la ubicación física o dirección del CAU."
+    - "Consultar el horario de atención o apertura del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios."
+  output:
+    - cau_phone:
+        type: string
+        description: "El número de teléfono del CAU"
+    - cau_email:
+        type: string
+        description: "La dirección de correo electrónico del CAU"
+    - cau_location:
+        type: string
+        description: "La ubicación física o dirección del CAU"
+    - cau_hours:
+        type: string
+        description: "El horario de atención o apertura del CAU"
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - single questions
+```
+
+### 👀 A quick look at what's happening here:
+* **`interaction_style: [single questions]`**: This tells Sensei to ask for one thing at a time (e.g., first the phone, then the email), which is a great way to thoroughly test if the chatbot can handle follow-up questions.
+* **`chatbot.output`**: Once the conversation finishes, Sensei will extract the data into these specific fields (`cau_phone`, `cau_email`, etc.). If you ever want to write **Sensei Rules** later to verify this data (like checking if the email contains an "@" symbol), these are the exact field names you will use!
+
+You can save this as `cau_support_profile.yml` inside your `profiles/` folder. 
+
+Let me know if you'd like to add any fun interaction styles (like making the user `change your mind` or `make spelling mistakes`), or if you need help writing some Sensei Rules to validate the extracted UAM data! 🚀 How else can I help you today?

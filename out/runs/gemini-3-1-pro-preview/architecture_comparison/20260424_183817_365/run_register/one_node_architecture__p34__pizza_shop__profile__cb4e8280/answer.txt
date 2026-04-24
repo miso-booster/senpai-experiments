@@ -1,0 +1,60 @@
+Hello there! I'd be happy to help you create that profile. 🍕
+
+To make the simulated user change their mind halfway through, we can use a combination of two things:
+1. Setting the **`interaction_style`** to `[change your mind]`. This tells the simulator to naturally hesitate or alter its decisions during the chat.
+2. Structuring the **`goals`** and **`context`** so the user explicitly starts with a custom pizza request and then pivots to a predefined one.
+
+Here is a ready-to-use profile for your scenario:
+
+```yaml
+test_name: "change_mind_custom_to_predefined"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer ordering a pizza who is a bit indecisive."
+  context:
+    - "You initially want to build your own custom pizza."
+    - "Halfway through the conversation, you decide it's too much hassle or you spot something better, and you change your mind to order a predefined pizza instead."
+  goals:
+    - "Start by ordering a custom pizza with {{toppings}}."
+    - "Change your mind and ask for a {{predefined_pizza}} pizza instead."
+    - toppings:
+        function: random()
+        type: string
+        data: [extra cheese and mushrooms, pepperoni and onions, ham and olives]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you repeat your pizza order?"
+  output:
+    - initial_request:
+        type: string
+        description: "The custom pizza toppings the user initially asked for before changing their mind."
+    - final_pizza_ordered:
+        type: string
+        description: "The final predefined pizza the user settled on after changing their mind."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      limit: 15
+  interaction_style:
+    - change your mind
+```
+
+### Why this works:
+* **`interaction_style: [change your mind]`**: This built-in feature makes the LLM act indecisively, perfectly matching your requirement.
+* **`chatbot.output`**: I added two fields (`initial_request` and `final_pizza_ordered`) so that when the conversation ends, you can easily verify that the chatbot successfully tracked the change in the user's order! 👀
+
+Let me know if you'd like to adjust the toppings, the pizza types, or anything else! 😊

@@ -1,0 +1,23 @@
+Hello there! 😊 I can absolutely help you create a rule to verify those specific outputs. It looks like you are working with the `qa.yml` profile from your project! 
+
+Since you want to check the exact values returned in a single conversation, we'll create a single-conversation oracle rule. To make this robust, we can use the `extract_float()` helper to easily grab the numbers for the prices, and the `semantic_content()` helper to ensure the opening hours match the meaning of "10 to 20" (even if the bot phrases it like "from 10 AM to 8 PM").
+
+Here is the rule you can use:
+
+```yaml
+name: check_qa_prices_and_hours
+description: Verifies that the opening hours are 10 to 20, tune-up is 50, seat is 20, and tire is 20.
+conversations: 1
+active: true
+oracle: |
+  semantic_content(opening_and_closing, '10 to 20') and extract_float(tune_up) == 50 and extract_float(seat_price) == 20 and extract_float(tire) == 20
+yields: f"One or more values did not match the expected output! Hours: {opening_and_closing}, Tune-up: {tune_up}, Seat: {seat_price}, Tire: {tire}"
+```
+
+### 🧠 How it works:
+* **`conversations: 1`**: This tells Sensei-check to evaluate this rule on each conversation individually.
+* **`semantic_content(...)`**: This is a handy LLM-backed helper that checks if the text in `opening_and_closing` semantically means "10 to 20", so you don't have to worry about exact string matching.
+* **`extract_float(...)`**: This pulls the first number it finds in the text, which is perfect for your `money` and `str` price fields.
+* **`yields`**: If the rule fails, it will print out this helpful error message showing exactly what the chatbot returned so you can debug it easily! 👀
+
+Let me know if you'd like to test anything else or if you need help adding more conditions! 🚀

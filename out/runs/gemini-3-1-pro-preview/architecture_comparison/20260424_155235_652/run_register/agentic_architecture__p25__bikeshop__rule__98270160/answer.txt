@@ -1,0 +1,22 @@
+Based on the profile you provided and the SENSEI rules documentation (`sensei-check-doc.md`), I can help you create a single-conversation rule to validate those specific outputs.
+
+Since `opening_and_closing` is a string that needs to convey "10 to 20", we can use the LLM-backed `semantic_content` helper to check its meaning. For the prices (`tune_up`, `seat_price`, and `tire`), we can use the `extract_float` helper to pull the numeric values and compare them directly, even if they are returned as strings or money types.
+
+Here is the YAML rule for your profile:
+
+```yaml
+name: check_bike_shop_prices
+description: Checks that the opening and closing times are 10 to 20, tune-up is 50, seat is 20, and tire is 20.
+conversations: 1
+active: true
+oracle: |
+  semantic_content(opening_and_closing, '10 to 20') and extract_float(tune_up) == 50 and extract_float(seat_price) == 20 and extract_float(tire) == 20
+yields: "One or more of the extracted values (opening times, tune-up, seat, or tire price) did not match the expected amounts."
+```
+
+### Summary of what this rule does:
+* **`conversations: 1`**: It evaluates each conversation individually (it's a standard oracle, not a metamorphic rule).
+* **`semantic_content(opening_and_closing, '10 to 20')`**: This checks if the text extracted in the `opening_and_closing` slot semantically matches the concept of "10 to 20" (e.g., it will pass if the bot says "from 10am to 8pm" or "10:00 - 20:00").
+* **`extract_float(...) == X`**: This safely extracts the first number from the `tune_up`, `seat_price`, and `tire` fields and ensures they exactly match 50, 20, and 20 respectively. 
+
+Let me know if you'd like to adjust any of the conditions or if you need help saving this to your project! 😊

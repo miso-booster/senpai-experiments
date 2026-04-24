@@ -1,0 +1,27 @@
+conversation ID: graph_based_architecture__p37__pizza_shop__rule__5b4bb0c8
+$$$
+¡Hola! 👋 ¡Claro que sí, me encantaría ayudarte con eso! 🥤✨
+
+Para comprobar si el asistente confirma que añadió la bebida, podemos crear una **Regla de Sensei (Sensei-check rule)** de una sola conversación. 
+
+Para lograrlo, usaremos la función mágica `utterance_index(who, what)`. Esta función utiliza el LLM por debajo para leer la conversación y decirnos en qué turno exacto ocurrió una acción. Lo ideal es verificar que el turno donde el asistente confirma la bebida ocurre *después* del turno donde el usuario la pide.
+
+Aquí tienes el código YAML listo para que lo guardes en tu carpeta de reglas (por ejemplo, `assistant_confirms_drink.yaml`):
+
+```yaml
+name: assistant_confirms_drink
+description: The assistant confirms adding the drink after the user orders it.
+conversations: 1
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms adding the drink')
+```
+
+### 🤓 ¿Cómo funciona esta regla?
+* **`conversations: 1`**: Le dice a Sensei que evalúe las conversaciones de forma individual (no necesitamos comparar dos conversaciones distintas para esto).
+* **`utterance_index('user', 'ordering a drink')`**: Encuentra el número de turno en el que el usuario pide su bebida.
+* **`utterance_index('assistant', 'confirms adding the drink')`**: Encuentra el número de turno en el que el asistente dice algo como "¡Perfecto, he añadido tu bebida!".
+* **El operador `<`**: Asegura que la confirmación del asistente suceda *después* de la petición del usuario. Si el asistente nunca lo confirma, la función devolverá `-1` o un valor que hará que la regla falle, ¡atrapando el error justo a tiempo! 👀
+
+*Nota: He escrito los textos de la regla en inglés para mantener la consistencia con las otras reglas que ya tienes en tu proyecto (como `ordering_conversation_turns_assistant.yaml`), ¡pero el LLM es súper inteligente y entenderá el contexto sin importar el idioma de la conversación!*
+
+¿Qué te parece? ¿Te gustaría que ajustemos algo más o necesitas ayuda conectando esto con algún **Perfil de Sensei** en particular? ¡Aquí estoy para ayudarte! 😊🍕
+$$$

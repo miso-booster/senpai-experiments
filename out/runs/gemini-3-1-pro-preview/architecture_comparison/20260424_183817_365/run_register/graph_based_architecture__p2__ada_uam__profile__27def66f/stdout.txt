@@ -1,0 +1,80 @@
+conversation ID: graph_based_architecture__p2__ada_uam__profile__27def66f
+$$$
+Hello there! Welcome to the Dojo! 🥋✨ I would be absolutely delighted to help you craft this profile. 
+
+Creating an "Erasmus student" persona is a fantastic use case for Sensei! To meet your requirements, we will keep the `user.goals` simple with just one variable to cycle through the different platforms (Moodle, Sigma, etc.). Then, we will pack the `chatbot.output` section with detailed fields so your Sensei-check rules can easily verify if the bot is providing the right links, steps, and contact info.
+
+Here is a complete, ready-to-use profile tailored for your scenario:
+
+```yaml
+test_name: "erasmus_student_onboarding"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus exchange student who just arrived at the university. 
+    You are completely unfamiliar with the university's digital platforms and need basic, clear guidance.
+  context:
+    - "You don't have your physical student ID card yet, only your passport or national ID."
+    - "You are a bit stressed because classes start soon and you don't know how to check your schedule."
+  goals:
+    - "Ask how to get your initial username and password for the university."
+    - "Ask for a step-by-step guide to log into {{system}}."
+    - "Inquire about where to go or who to contact if you still can't access your account."
+    - system:
+        function: another()
+        type: string
+        data: [Moodle, Sigma, Eduroam, Institutional Email]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. I am the IT Support bot, how can I help you?"
+  output:
+    - credential_setup_steps:
+        type: string
+        description: "Step-by-step instructions provided to get initial credentials"
+    - system_login_url:
+        type: string
+        description: "The direct link or URL provided to access the requested system"
+    - support_email:
+        type: string
+        description: "Email address provided for IT support"
+    - physical_helpdesk_location:
+        type: string
+        description: "Physical office location provided for in-person help"
+    - required_identification:
+        type: string
+        description: "Documents mentioned that the student needs to prove their identity (e.g., passport)"
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - change language:
+        - Spanish
+        - French
+        - Italian
+```
+
+### 💡 Why this setup works perfectly:
+
+1. **Light Inputs (`user.goals`)**: We only use one variable (`{{system}}`). By using the `another()` function and setting `conversation.number: 4`, Sensei will run 4 conversations, asking about a *different* system each time without repeating, until the list is exhausted.
+2. **Rich Outputs (`chatbot.output`)**: This is your "contract" for testing! Because we defined fields like `system_login_url` and `physical_helpdesk_location`, your Sensei-check rules can later easily assert things like:
+   * `when: conv[0].system_login_url is None then: fail("Bot forgot to give the link!")`
+3. **Erasmus Flavor (`interaction_style`)**: I added a fun twist! International students often type with slight errors or switch to the local language when they get frustrated. The `random` interaction style will occasionally make the simulator introduce typos or switch to Spanish, French, or Italian mid-conversation. It makes the test much more realistic! 👀
+
+You can save this as `profiles/erasmus_onboarding.yml` in your project folder. 
+
+How does this look to you? Let me know if you'd like to adjust the outputs or if you need help writing the **Sensei Rules** to validate this profile! 😊
+$$$

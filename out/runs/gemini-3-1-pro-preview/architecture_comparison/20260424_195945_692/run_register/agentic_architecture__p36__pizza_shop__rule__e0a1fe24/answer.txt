@@ -1,0 +1,25 @@
+The reason your rule isn't working is that it is missing the **`if`** condition to check the actual number of toppings! 
+
+Right now, your rule uses `when` to filter for two conversations with the same size and drink, and then immediately jumps to `then` to assert that `conv[0]` costs more than `conv[1]`. Because you never specified that `conv[0]` actually has *more* toppings, the rule will fail if `conv[0]` has fewer toppings or the exact same toppings as `conv[1]`.
+
+In SENSEI-check metamorphic rules (as detailed in `sensei-check-doc.md`), the logic should flow like this:
+1. **`when`**: Filter comparable conversations (e.g., same size and drink).
+2. **`if`**: Establish the precondition (e.g., `conv[0]` has more toppings than `conv[1]`).
+3. **`then`**: Assert the expected outcome (e.g., `conv[0]` costs more).
+
+Here is the fixed YAML for your rule:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### What changed?
+* Added `if: len(conv[0].toppings) > len(conv[1].toppings)`. This ensures the rule only compares the prices when the first conversation actually ordered a longer list of toppings than the second conversation. 
+
+*(Note: I also checked your project's profiles, like `pizza_order_test_custom.yml`, and confirmed that `size`, `drink`, `toppings`, and `price` are all valid fields for this rule!)* 😊 Let me know if you need help testing it!

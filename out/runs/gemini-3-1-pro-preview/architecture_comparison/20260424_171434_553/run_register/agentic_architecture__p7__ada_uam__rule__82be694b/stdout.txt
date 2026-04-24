@@ -1,0 +1,24 @@
+conversation ID: agentic_architecture__p7__ada_uam__rule__82be694b
+$$$
+Here is the SENSEI rule to verify that the chatbot provides the correct information about the CAU. 
+
+Since the chatbot might format the phone number (e.g., `+34 91 497 4029` vs `914974029`) or slightly rephrase the address, I have used the `semantic_content` helper. This built-in function uses an LLM under the hood to check if the extracted value semantically matches the expected information, making your rule much more robust than a strict string equality check!
+
+```yaml
+name: correct_cau_information
+description: Checks that the chatbot provides the correct email, phone, and physical address for the CAU.
+conversations: 1
+active: true
+oracle: |
+  (semantic_content(contact_email, 'cau@uam.es') and
+   semantic_content(contact_phone, '91 497 4029') and
+   semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'))
+```
+
+### How it works:
+* **`conversations: 1`**: This is a single-conversation oracle rule, meaning it evaluates each conversation individually to ensure the correct data was provided.
+* **`contact_email`, `contact_phone`, `physical_address`**: These variables map exactly to the `chatbot.output` fields you provided. SENSEI-check will automatically inject the extracted values into the rule.
+* **`semantic_content(value, expected_description)`**: This helper verifies that the extracted output means the same thing as your expected string, ignoring minor formatting or translation differences. 
+
+Let me know if you'd like to add any other conditions or if you need help saving this rule to your project! 😊
+$$$

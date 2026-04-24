@@ -1,0 +1,73 @@
+conversation ID: agentic_architecture__p5__ada_uam__profile__685e98cb
+$$$
+Here is the SENSEI profile to test the UAM chatbot for CAU (User Support Center) inquiries. 
+
+I've based this on the `sensei-chat-guide.md` documentation. To make the conversations more natural and varied, I added a small `{{issue_type}}` variable so the simulated user has a specific reason for contacting the CAU each time (like Wi-Fi issues or Moodle access).
+
+```yaml
+test_name: "uam_cau_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student or staff member seeking support from the CAU (User Support Center) at UAM.
+  context:
+    - "You need to contact the CAU for technical assistance."
+    - "You want to gather all their contact details and availability before reaching out."
+  goals:
+    - "Explain that you have an issue with {{issue_type}} and need to contact the CAU."
+    - "Ask for the CAU's phone number."
+    - "Ask for the CAU's email address."
+    - "Ask for the CAU's physical location."
+    - "Ask for the CAU's opening hours."
+    - issue_type:
+        function: random()
+        type: string
+        data: 
+          - "your university email"
+          - "the campus Wi-Fi"
+          - "Moodle access"
+          - "your student portal password"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you rephrase?"
+  output:
+    - cau_phone:
+        type: string
+        description: "The phone number of the CAU provided by the chatbot"
+    - cau_email:
+        type: string
+        description: "The email address of the CAU provided by the chatbot"
+    - cau_location:
+        type: string
+        description: "The physical location of the CAU provided by the chatbot"
+    - cau_opening_hours:
+        type: string
+        description: "The opening hours of the CAU provided by the chatbot"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📋 Profile Summary
+* **User Persona:** A UAM student/staff member who needs technical help and requires the CAU's contact info.
+* **Goals & Variables:** The user asks for the 4 specific pieces of information you requested (phone, email, location, hours). The `{{issue_type}}` variable randomly picks a technical issue to give the conversation realistic context.
+* **Goal Style:** I used `all_answered` with a safety limit of 15 steps. This ensures the simulator won't stop the conversation until the chatbot has provided all the requested information (or it hits the limit).
+* **Chatbot Output:** At the end of the run, SENSEI will extract `cau_phone`, `cau_email`, `cau_location`, and `cau_opening_hours`. If you want to write SENSEI-check rules later to validate this data (e.g., checking if the email contains `@uam.es`), you can easily reference these fields as `conv[i].cau_email`!
+
+Let me know if you'd like to adjust the language (e.g., switch it to Spanish), add more interaction styles like spelling mistakes, or create validation rules for this profile! 😊
+$$$

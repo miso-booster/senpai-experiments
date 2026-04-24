@@ -1,0 +1,70 @@
+conversation ID: one_node_architecture__p12__alcampo__profile__a47164d3
+$$$
+Hello there! 😊 I'd be more than happy to help you create a profile for adding items to a shopping cart. 
+
+Since you want the simulated user to ask the chatbot to add items, we can use **variables** in the `user.goals` section. This way, the user can dynamically ask for different products and quantities in each conversation! I've also set up the `chatbot.output` so that the bot extracts the added items and the cart's total, which is super useful if you want to write Sensei rules later to verify the cart math. 🛒✨
+
+Here is a ready-to-use profile:
+
+```yaml
+test_name: "add_items_to_cart_inquiry"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer doing your weekly grocery shopping and you want to add various items to your online shopping cart."
+  context:
+    - "You are preparing for a weekend family dinner and need to make sure you have everything."
+    - "You want to confirm that the items are successfully added to your cart after you request them."
+  goals:
+    - "Ask the chatbot to add {{quantity}} units of {{item}} to your shopping cart."
+    - "Inquire about the current total number of items in the cart."
+    - "Ask for the estimated total price of the cart so far."
+    - item:
+        function: forward()
+        type: string
+        data: ["milk", "organic eggs", "whole wheat bread", "apples"]
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you repeat what you'd like to add to your cart? 🛒"
+  output:
+    - added_item:
+        type: string
+        description: "The name of the item the user requested to add to the cart"
+    - item_quantity:
+        type: int
+        description: "The number of units added to the cart"
+    - total_cart_items:
+        type: int
+        description: "The total number of items currently in the shopping cart"
+    - estimated_total:
+        type: string
+        description: "The estimated total price of the cart (e.g., '15.50 EUR')"
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 15
+  interaction_style:
+    - single questions
+```
+
+### How this works:
+* **`forward()` and `random()` functions:** The profile will iterate through the list of `item`s one by one across 4 conversations, while picking a random `quantity` between 1 and 5 each time.
+* **`chatbot.output`:** It extracts the `added_item`, `item_quantity`, `total_cart_items`, and `estimated_total`. This sets up a perfect contract if you ever want to write a metamorphic rule (for example, checking that adding more items increases the `estimated_total`).
+
+Feel free to save this in your `profiles/` folder. Let me know if you'd like to tweak the items, add more complex combinations, or write a Sensei Rule to test this cart logic! 👀🚀
+$$$

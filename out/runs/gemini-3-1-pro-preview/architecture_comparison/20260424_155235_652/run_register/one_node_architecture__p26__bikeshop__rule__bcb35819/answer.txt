@@ -1,0 +1,27 @@
+Hello there! I'd be happy to help you review and fix your rule. 😊
+
+Looking at your goal—checking if the `tune_up_price` is exactly $50—the rule you wrote has a few structural issues. Since you are verifying a static expected value rather than comparing how the price changes between two different conversations, this should be a **single-conversation oracle** rather than a metamorphic rule. 
+
+Here is the corrected version of your rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+```
+
+### 🛠️ What I changed and why:
+
+1. **Changed `conversations: 2` to `conversations: 1`:** 
+   You only need to look at one conversation at a time to check if the price is $50. Metamorphic rules (`conversations: 2` or more) are used when you want to compare two conversations against each other (for example, checking if adding more services increases the price).
+2. **Removed the `when` filter:** 
+   The `when` clause is used to *filter* which conversations the rule applies to. If you put `when: conv[0].tune_up_price == 50`, Sensei-check will only evaluate conversations that *already* have a price of $50, meaning it would completely ignore the ones that failed and gave the wrong price!
+3. **Replaced `if`/`then` with a simple `oracle`:** 
+   The `then` clause requires a Python boolean expression (like `x == y`), not a text string like `"The tune-up price is $50."`. For a straightforward 1-conversation check, using `oracle` is the cleanest and most standard approach.
+4. **Used `extract_float()`:** 
+   I noticed in your project profiles (like `bike_repair_and_maintenance_scheduler.yaml`) that `tune_up_price` is defined as a `money` type. This means the chatbot might output something like `"$50.00"`. Wrapping it in `extract_float(tune_up_price)` safely extracts just the number so you can do a proper math comparison!
+5. **Removed the `conv[0].` prefix:** 
+   When you use `conversations: 1`, you don't need the `conv[0].` array syntax. You can just call the field directly by its name (`tune_up_price`).
+
+Let me know if you'd like to test any other rules or if you have questions about how this works! 🚲✨

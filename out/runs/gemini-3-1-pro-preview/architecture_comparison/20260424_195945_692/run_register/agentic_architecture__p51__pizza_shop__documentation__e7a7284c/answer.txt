@@ -1,0 +1,34 @@
+Based on the `custom-connector-guide.md` documentation, here is everything you need to know about connectors! 😊
+
+### What are Connectors used for?
+Connectors act as the bridge between the SENSEI simulator and the external chatbot you want to test. They allow you to connect to any chatbot API **without writing a single line of code**. 
+
+Instead of programming the integration, you simply create a YAML configuration file that describes exactly how to communicate with your target chatbot's API (where to send the message, what headers to include, and how to read the bot's reply).
+
+### What fields do they have?
+A connector YAML file consists of a few simple fields to configure the HTTP requests. Here is the breakdown:
+
+*   **`name`** *(Optional)*: A friendly name for your chatbot (e.g., `"My Custom Bot"`).
+*   **`base_url`** *(Required)*: The base URL of the chatbot API (e.g., `"https://api.mychatbot.com"`).
+*   **`send_message`**: A block containing the details of the request:
+    *   **`path`** *(Required)*: The specific API endpoint path that gets appended to the `base_url` (e.g., `"/chat/send"`).
+    *   **`method`** *(Optional, defaults to POST)*: The HTTP method to use, such as `POST`, `GET`, `PUT`, or `DELETE`.
+    *   **`headers`** *(Optional)*: Any custom headers your API needs, like `Authorization` tokens or `Content-Type`.
+    *   **`payload_template`** *(Required)*: The JSON structure expected by the API. You must include the special placeholder **`{user_msg}`** here so the simulator knows exactly where to inject the simulated user's message.
+*   **`response_path`** *(Required)*: A dot-separated path used to navigate the JSON response and extract the bot's actual text reply. For example, if the API returns `{"data": {"messages": [{"content": "Hello!"}]}}`, your `response_path` would be `"data.messages.0.content"`.
+
+### A Quick Example
+Here is how a simple connector looks when put together:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+Let me know if you'd like help creating a connector for a specific API! 🚀

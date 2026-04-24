@@ -1,0 +1,70 @@
+Here is a profile tailored to your needs! 🍕 
+
+I've set up the user to be quite impatient and rude using the `role` and `context` fields, and I've phrased the goals to match that aggressive tone. 
+
+As requested, there are 4 goals and 4 variables. Two of those variables (`pizza_size` and `pizza_type`) use the `pairwise()` function. Because we have at least two pairwise variables, we can set `conversation.number` to `combinations(1, pairwise)` (or just `combinations`), which tells Sensei to automatically calculate the exact number of conversations needed to test every pair of size and type at least once! 🚀
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a very rude and impatient customer ordering from a pizza shop.
+    You want your food immediately and get easily annoyed by pleasantries or slow responses.
+  context:
+    - "You are in a massive hurry."
+    - "You demand things to be done fast and use an aggressive, demanding tone."
+    - "You do not like repeating yourself."
+  goals:
+    - "Give me a {{pizza_size}} pizza right now!"
+    - "Make it a {{pizza_type}}, and don't take all day."
+    - "I also need {{drink_qty}} drinks."
+    - "Make them {{drink_type}} and hurry up."
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [pepperoni, margherita, meat lovers, hawaiian]
+    - drink_qty:
+        function: random()
+        type: int
+        data: [1, 2, 3, 4]
+    - drink_type:
+        function: another()
+        type: string
+        data: [coke, diet coke, sprite, water]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you repeat your order?"
+  output:
+    - ordered_size:
+        type: string
+        description: "The size of the pizza ordered."
+    - ordered_type:
+        type: string
+        description: "The type of pizza ordered."
+    - total_price:
+        type: currency
+        description: "The total price of the order."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      limit: 15
+  interaction_style:
+    - default
+```
+
+Let me know if you'd like to adjust the rudeness level or add any specific metamorphic rules to test this profile! 😊👀

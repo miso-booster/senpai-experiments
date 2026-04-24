@@ -1,0 +1,27 @@
+conversation ID: one_node_architecture__p15__alcampo__rule__d5534166
+$$$
+Hi there! I can absolutely help you get this rule working perfectly. 🛠️
+
+Looking at your rule and your project's `customer_service_assistance.yaml` profile, there are a few little things causing it to break:
+
+1. **Typo in the key:** `descriptin` needs to be spelled `description`.
+2. **Missing a `then` clause:** In Sensei-check, if you use an `if` condition, you must pair it with a `then` statement to tell the system what the expected outcome is.
+3. **Undefined fields:** Your rule checks for `user_request`, but if we look at your `customer_service_assistance.yaml` profile, `user_request` is not defined in the `chatbot.output` section. Sensei-check can only read fields that are explicitly extracted by the profile!
+
+Since your profile is designed to ask for both the contact options and the customer service number in the same chat, this is actually a perfect candidate for a **single-conversation rule** (an oracle) rather than a 2-conversation metamorphic rule. 
+
+Here is the corrected and optimized version of your rule:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+oracle: contact_options is not None and customer_service_number is not None
+```
+
+### Why this works better:
+* We changed `conversations: 2` to `conversations: 1` because both pieces of information are extracted in the same conversation.
+* We replaced `when` and `if` with a simple `oracle` that checks if both `contact_options` and `customer_service_number` (which *are* valid fields in your profile's output) were successfully collected by the chatbot.
+
+Give this a try in your `rules/` folder, and let me know if you need any more help! 😊
+$$$

@@ -1,0 +1,90 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__1bb6a3d6
+$$$
+Here is a complete SENSEI profile for a user who is trying to set up eduroam but is failing. 
+
+Based on the `sensei-chat-guide.md` documentation, I have used variables in the `user.goals` section to represent the different devices, setup methods, and error symptoms the user might experience. I also used the `pairwise()` function to efficiently test combinations of devices and setup methods without creating an overwhelming number of conversations.
+
+```yaml
+test_name: "eduroam_setup_failure"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student or staff member trying to connect to the eduroam Wi-Fi network.
+    You have followed some instructions but you are unable to get it working.
+    You are frustrated but polite, and you need help from the IT support chatbot.
+  context:
+    - "You have your university credentials (email and password) ready."
+    - "You are currently on campus and need internet access for your work."
+  goals:
+    - "Explain that you are trying to set up eduroam on your {{device_type}} using {{setup_method}}."
+    - "Mention that it is failing and the symptom is: {{issue_symptom}}."
+    - "Ask the chatbot for step-by-step help to fix the issue."
+    - device_type:
+        function: pairwise()
+        type: string
+        data: [Windows laptop, MacBook, iPhone, Android phone]
+    - setup_method:
+        function: pairwise()
+        type: string
+        data: [the eduroam CAT tool, the geteduroam app, manual Wi-Fi configuration, scanning a QR code]
+    - issue_symptom:
+        function: random()
+        type: string
+        data: 
+          - "it keeps asking for my password repeatedly"
+          - "it says authentication failed"
+          - "it connects but there is no internet access"
+          - "it shows a certificate warning"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - device_identified:
+        type: string
+        description: "The device the user is trying to connect"
+    - method_attempted:
+        type: string
+        description: "The setup method the user tried"
+    - resolution_provided:
+        type: string
+        description: "The troubleshooting steps or solution provided by the chatbot"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+      - single questions
+```
+
+### 📝 How this profile works:
+
+1. **Variables (`user.goals`)**:
+   - `{{device_type}}`: The device the user is using (e.g., MacBook, Android phone).
+   - `{{setup_method}}`: The different ways they are trying to set it up (e.g., CAT tool, geteduroam app, manual configuration).
+   - `{{issue_symptom}}`: The specific error they are encountering.
+2. **Functions**:
+   - I used `pairwise()` for both `device_type` and `setup_method`. This ensures that the simulator will test every pair of device and setup method at least once, which is great for catching edge cases without running a massive Cartesian grid of every single combination.
+   - I used `random()` for `issue_symptom` to inject a bit of variety into the errors without multiplying the total number of conversations.
+3. **Conversation Controls**:
+   - `number: combinations(1, pairwise)` tells Sensei to run exactly the number of conversations needed to satisfy the pairwise matrix.
+   - `goal_style: all_answered` ensures the conversation continues until the user has successfully explained their problem and asked for help.
+4. **Chatbot Output**:
+   - At the end of the conversation, Sensei will extract `device_identified`, `method_attempted`, and `resolution_provided`. This is very useful if you later want to write **SENSEI RULES** to verify that the chatbot gave the correct instructions for the specific device and method!
+
+Let me know if you'd like to add more setup methods or if you want to create a validation rule for this profile! 😊
+$$$

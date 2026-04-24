@@ -1,0 +1,41 @@
+Hello there! 😊 
+
+The `pairwise()` function is a super handy tool in Sensei Profiles for generating test combinations efficiently. 
+
+Instead of testing every single possible combination of your variables (which can cause a massive explosion of test cases, like a full Cartesian grid), `pairwise()` ensures that **every pair of values across 2 or more variables is tested together at least once**. 
+
+This greatly reduces the total number of conversations you need to run while still catching most 2-way interaction defects! 🎯
+
+### How it works in practice:
+1. **Minimum Requirement:** You must assign `function: pairwise()` to at least **two** variables in your `user.goals` list.
+2. **Execution:** To actually run this generated matrix of combinations, you set your `conversation.number` to `combinations` (to run 100% of the pairwise matrix) or a fraction like `combinations(0.5, pairwise)` (to run 50% of it).
+
+Here is a quick example of how you would set it up in a profile:
+
+```yaml
+user:
+  goals:
+    - "I want a {{size}} pizza with {{crust}} crust and {{sauce}} sauce."
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - crust:
+        function: pairwise()
+        type: string
+        data: [thin, thick, stuffed]
+    - sauce:
+        function: pairwise()
+        type: string
+        data: [tomato, bbq, alfredo]
+
+conversation:
+  # This tells Sensei to run the full pairwise combination matrix
+  number: combinations(1, pairwise) 
+```
+
+In this example, instead of running 27 conversations (3 sizes × 3 crusts × 3 sauces), `pairwise()` will intelligently select a much smaller subset of conversations that guarantees every size is paired with every crust, every size with every sauce, and every crust with every sauce at least once. 
+
+It’s a fantastic way to get broad test coverage without spending too much time or LLM cost! 💸
+
+Let me know if you'd like to see how to apply this to one of your specific pizza shop profiles! 🍕👀

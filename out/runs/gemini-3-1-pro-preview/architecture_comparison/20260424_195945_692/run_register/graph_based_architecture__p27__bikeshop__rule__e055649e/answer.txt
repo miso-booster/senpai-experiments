@@ -1,0 +1,25 @@
+¡Hola! 👋 ¡Qué excelente caso de prueba! Me encanta ayudarte con esto. 😊
+
+Para comprobar que el asistente rechaza una fecha si el usuario la repite dentro de la misma charla, podemos crear una **regla de una sola conversación** (`conversations: 1`). 
+
+Para lograrlo, utilizaremos una función de ayuda genial que viene incluida en Sensei-check llamada `utterance_index`. Esta función analiza la conversación y busca en qué turno un rol específico (en este caso, el asistente) menciona un tema o realiza una acción (como rechazar la fecha).
+
+### 🥇 La Regla de Oro: Conexión con tu Perfil
+Recuerda que las reglas de Sensei-check siempre leen los datos que exporta tu perfil de SENSEI Chat a través del `chatbot.output`. Para que esta regla funcione perfectamente, tu perfil debería tener un campo (por ejemplo, un valor booleano llamado `repite_fecha`) que nos indique si en esa conversación el usuario intentó hacer la trampa de repetir la fecha.
+
+Aquí tienes el código YAML listo para usar:
+
+```yaml
+name: rechaza_fecha_duplicada
+description: Si el usuario intenta dar la misma fecha dos veces, el asistente debe negarse a aceptarla.
+conversations: 1
+if: repite_fecha == True
+then: utterance_index('assistant', 'rechaza o niega la segunda fecha') > 0
+```
+
+### 🔍 ¿Qué está pasando aquí?
+* **`conversations: 1`**: Le decimos a Sensei-check que evalúe las conversaciones de forma individual.
+* **`if: repite_fecha == True`**: Esta es la condición previa. La regla solo exigirá el rechazo si el perfil nos confirma (a través de su `chatbot.output`) que el usuario efectivamente repitió la fecha.
+* **`then: utterance_index(...) > 0`**: ¡Aquí ocurre la magia! ✨ Le pedimos a Sensei-check que busque si el asistente (`'assistant'`) emitió alguna respuesta donde "rechaza o niega la segunda fecha". Si el índice devuelto es mayor a `0`, significa que el asistente se defendió correctamente y la prueba pasa.
+
+¿Te gustaría que también te ayude a diseñar el `chatbot.output` de tu perfil de SENSEI Chat para que encaje perfectamente con esta regla? ¡Dímelo y nos ponemos a ello! 🚀

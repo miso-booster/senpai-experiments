@@ -1,0 +1,32 @@
+conversation ID: agentic_architecture__p37__pizza_shop__rule__4463ef98
+$$$
+¡Hola! 😊
+
+Para crear esta regla, he consultado la documentación de **SENSEI RULES** (`sensei-check-doc.md` y `rules-examples.md`) y he revisado los perfiles de tu proyecto. He visto que tienes un perfil llamado `pizza_and_drink_order_placement.yaml` donde el usuario pide pizzas y bebidas.
+
+Para comprobar si el asistente confirma que añadió la bebida, podemos usar la función de ayuda `utterance_index(who, what)`. Esta función utiliza un LLM por debajo para buscar en qué turno de la conversación un rol específico (`user` o `assistant`) menciona un tema en concreto.
+
+Lo ideal en este caso es comprobar dos cosas:
+1. Que el usuario pide una bebida.
+2. Que el asistente confirma el pedido de la bebida **después** de que el usuario la haya pedido.
+
+Aquí tienes la regla en formato YAML:
+
+```yaml
+name: assistant_confirms_drink_order
+description: El asistente confirma el pedido de la bebida después de que el usuario la pide.
+conversations: 1
+active: true
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms drink order')
+```
+
+### ¿Cómo funciona esta regla?
+- **`conversations: 1`**: Es una regla de oráculo simple que se evalúa de forma individual en cada conversación.
+- **`utterance_index('user', 'ordering a drink')`**: Encuentra el número de turno en el que el usuario pide la bebida.
+- **`utterance_index('assistant', 'confirms drink order')`**: Encuentra el número de turno en el que el asistente confirma que ha añadido la bebida.
+- **`<`**: Al usar el operador "menor que", nos aseguramos de que la confirmación del asistente ocurre en un turno posterior a la petición del usuario. Si el asistente nunca lo confirma, la función devolverá `-1` o un valor que hará que la condición falle.
+
+Esta regla es **general** (no depende de los campos específicos de `chatbot.output` del perfil), por lo que funcionará perfectamente con tu perfil `pizza_and_drink_order_placement.yaml` o cualquier otro donde se pidan bebidas.
+
+¿Te gustaría que la guardemos en el proyecto o necesitas que ajuste algo más? ¡Dime si te sirve! 🥤🍕
+$$$

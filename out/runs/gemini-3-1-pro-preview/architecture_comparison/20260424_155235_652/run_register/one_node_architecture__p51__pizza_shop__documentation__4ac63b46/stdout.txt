@@ -1,0 +1,35 @@
+conversation ID: one_node_architecture__p51__pizza_shop__documentation__4ac63b46
+$$$
+Hello there! 😊 I'd be happy to explain how connectors work in Sensei.
+
+### What are Connectors used for?
+In Sensei, **Connectors** allow you to link the Sensei user simulator to *any* external chatbot API without writing a single line of code! 🚀 
+
+Instead of programming a custom integration, you simply create a YAML configuration file. This file acts as a map, telling Sensei exactly how to send messages to your chatbot and how to extract the bot's replies from the API's response. 
+
+### What fields do they have?
+A connector YAML file is built using a few specific fields to handle the web request. Here is the breakdown of the fields you can use:
+
+*   **`name`** *(Optional)*: A friendly name for your chatbot.
+*   **`base_url`** *(Required)*: The main URL of the chatbot's API (e.g., `https://api.mychatbot.com`).
+*   **`send_message.path`** *(Required)*: The specific endpoint path that gets appended to the base URL (e.g., `/chat/send`).
+*   **`send_message.method`** *(Optional)*: The HTTP method to use, such as `POST`, `GET`, `PUT`, or `DELETE`. If you leave this out, it defaults to `POST`.
+*   **`send_message.headers`** *(Optional)*: Any custom headers your API needs, like `Authorization` tokens or `Content-Type`.
+*   **`send_message.payload_template`** *(Required)*: The JSON structure of the request body. This is where you must include the special `{user_msg}` placeholder so Sensei knows exactly where to inject the simulated user's message!
+*   **`response_path`** *(Required)*: A dot-separated path that tells Sensei how to navigate the API's JSON response to find the bot's actual text reply (for example, `data.messages.0.content` or `response.text`).
+
+Here is a quick example of what a simple connector looks like in action:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+Let me know if you'd like help building a connector for your specific chatbot API! 🤖✨
+$$$

@@ -1,0 +1,63 @@
+Here is a profile designed exactly for this scenario! 😊 
+
+I've set up the user to explain their discomfort and ask for advice without explicitly requesting an appointment. I also added a couple of variables (`discomfort_type` and `bike_type`) so the simulator can test different variations of the problem (like knee pain on a mountain bike vs. numb hands on a road bike). 
+
+In the `chatbot.output` section, I included a field called `appointment_pushed` to track if the chatbot tries to force a booking, which is super helpful for testing if the bot respects the user's informational intent.
+
+Here is the YAML for your new profile:
+
+```yaml
+test_name: bike_fit_and_comfort_inquirer
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A cyclist experiencing discomfort while riding, seeking advice on whether it's a fit issue or worn components.
+  context:
+    - "You feel uncomfortable when riding your bike and are not sure why."
+    - "You suspect it might be that the bike doesn't fit you correctly anymore, or maybe some components like the saddle or grips are worn out."
+    - "You want to ask for advice and learn about the shop's services (like bike fitting or component checks)."
+    - "You are just gathering information and do NOT want to book an appointment right now."
+  goals:
+    - "Explain that you are experiencing {{discomfort_type}} on your {{bike_type}}."
+    - "Ask if this discomfort is usually caused by a poor bike fit or worn-out components."
+    - "Inquire about what services or adjustments the shop offers to diagnose or fix this issue."
+    - discomfort_type:
+        function: random()
+        type: string
+        data: [lower back pain, knee pain, saddle soreness, numb hands]
+    - bike_type:
+        function: random()
+        type: string
+        data: [road bike, mountain bike, hybrid bike, commuter bike]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - suggested_causes:
+        type: string
+        description: "The chatbot's explanation of whether the issue is likely due to bike fit, worn components, or both."
+    - recommended_services:
+        type: string
+        description: "The services the shop offers to help with the discomfort, such as a professional bike fit or a component inspection."
+    - appointment_pushed:
+        type: string
+        description: "Whether the chatbot explicitly tried to schedule an appointment despite the user not asking for one (e.g., 'Would you like to book a fitting?')."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - default
+```
+
+You can save this as `bike_fit_and_comfort_inquirer.yaml` in your `profiles/` folder. Let me know if you'd like to adjust the variables or add any specific interaction styles (like making the user ask everything in a single question)! 🚲✨

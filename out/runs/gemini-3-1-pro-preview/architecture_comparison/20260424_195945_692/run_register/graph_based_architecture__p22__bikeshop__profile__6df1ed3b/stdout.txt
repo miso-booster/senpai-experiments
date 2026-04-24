@@ -1,0 +1,71 @@
+conversation ID: graph_based_architecture__p22__bikeshop__profile__6df1ed3b
+$$$
+Hello there! Senpai here! 😊 
+
+Ouch, riding a bike with discomfort is the worst! It’s a very realistic scenario, and it’s a great test case to see how empathetic and helpful your bike shop chatbot can be without being overly pushy about booking an appointment. 🚲🛠️
+
+To make this work perfectly in Sensei, we will use the `user.context` to explicitly tell the simulated user **not** to ask for an appointment, while using `user.goals` to guide them through explaining their pain and asking for advice. 
+
+Here is a complete, ready-to-run profile tailored exactly to your needs. You can save this as `bike_discomfort_advice_seeker.yaml` in your `profiles/` folder:
+
+```yaml
+test_name: "bike_discomfort_advice_seeker"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A cyclist experiencing physical discomfort while riding, seeking expert advice 
+    on whether it's a bike fit issue or worn-out components.
+  context:
+    - "You feel discomfort in your knees and lower back after riding for more than 30 minutes."
+    - "You are unsure if your bike is the wrong size, poorly adjusted, or if parts like the saddle or pedals are just worn out."
+    - "You want to know what the shop recommends and what services they offer to help."
+    - "CRITICAL: Do NOT explicitly ask to book an appointment. You are only gathering information and advice for now."
+  goals:
+    - "Explain your riding discomfort and ask if it sounds like a bike fit issue or worn components."
+    - "Ask what specific adjustments or checks the shop recommends for this problem."
+    - "Inquire about the services the shop offers related to bike fitting or component inspection."
+    - "Ask for the estimated cost of these recommended services."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - discomfort_diagnosis_advice:
+        type: string
+        description: "The chatbot's advice on whether the issue is likely related to bike fit or worn components."
+    - recommended_services:
+        type: string
+        description: "The specific services or adjustments recommended by the chatbot to fix the user's discomfort."
+    - service_costs:
+        type: string
+        description: "The estimated costs provided by the chatbot for the recommended services."
+    - pushed_appointment:
+        type: string
+        description: "Did the chatbot try to push or suggest booking an appointment? Extract 'Yes' or 'No' and a brief reason."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 👀 A quick breakdown of why this works so well:
+
+1. **The Negative Constraint:** In the `user.context`, I added a `CRITICAL` instruction telling the LLM *not* to ask for an appointment. Sensei's user simulator is very obedient, so this ensures the user stays purely in "information-gathering" mode.
+2. **The `chatbot.output` Contract:** I added a fun field called `pushed_appointment`. Since the user isn't asking for one, this is a fantastic way to test if your chatbot is aggressively trying to close a sale or if it respects the user's pace! You can later write a **Sensei Rule** to check this field.
+3. **Interaction Style:** I left it as `default` so the simulated user can naturally weave their story about knee and back pain, making the conversation feel very human.
+
+How does this look to you? Let me know if you'd like to add any custom variables (like different types of pain or bike models) using Sensei's `forward()` or `random()` functions! I'm always here to help. 🙋‍♂️✨
+$$$

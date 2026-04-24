@@ -1,0 +1,75 @@
+Hello there! 😊 I'd be more than happy to help you set up a rule for your lactose-free products! 🥛✨
+
+Since you don't have a profile yet, we'll be using what we call a **Rule-first design**. This means we'll invent some variable names right now, but you'll just need to make sure your future SENSEI Chat profile exposes these exact same names in its `chatbot.output` later on. 
+
+For this scenario, let's assume your future profile will extract the following fields:
+* `product_name` (string)
+* `is_lactose_free` (boolean)
+* `is_available` (boolean)
+* `price` (string, e.g., "3.50 EUR")
+
+Here are two rules you can use. I put them in separate blocks so they are super easy to copy and paste!
+
+### 1. Single-Conversation Rule: Availability Check
+This rule simply ensures that whenever a user specifically asks for a lactose-free product, the chatbot successfully determines and extracts whether it is available or not.
+
+```yaml
+name: lactose_free_availability_extracted
+description: When a user asks for a lactose-free product, the bot must explicitly determine its availability.
+conversations: 1
+when: is_lactose_free == True
+oracle: is_available is not None
+```
+
+### 2. Metamorphic Rule: Price Monotonicity
+This is where Sensei-check really shines! 🌟 This rule compares *two* different conversations. It states that if a user asks for the exact same product, but one is the regular version and the other is the lactose-free version, the lactose-free version should **not** be cheaper than the regular one.
+
+```yaml
+name: lactose_free_price_monotonicity
+description: A lactose-free product should not be cheaper than its regular dairy counterpart.
+conversations: 2
+when: conv[0].product_name == conv[1].product_name
+if: conv[0].is_lactose_free == False and conv[1].is_lactose_free == True
+then: extract_float(conv[0].price) <= extract_float(conv[1].price)
+```
+
+### A quick tip for later! 💡
+When you are ready to create your SENSEI Chat profile, just make sure your `chatbot.output` looks something like this so the rules work perfectly:
+
+```yaml
+test_name: "product_availability_check"
+
+user:
+  language: English
+  role: "You are a customer checking product availability and dietary requirements."
+  goals:
+    - "Ask about the availability and price of {{product_name}}."
+    - product_name:
+        function: random()
+        type: string
+        data: ["milk", "cheese", "yogurt"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you please rephrase that?"
+  output:
+    - product_name:
+        type: string
+        description: The name of the requested product.
+    - is_lactose_free:
+        type: bool
+        description: True if the user requested a lactose-free variant.
+    - is_available:
+        type: bool
+        description: True if the product is in stock.
+    - price:
+        type: currency
+        description: The price of the product.
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+```
+
+Let me know if you'd like to tweak these or if you need help writing the profile to match! How else can I help you today? 🥰

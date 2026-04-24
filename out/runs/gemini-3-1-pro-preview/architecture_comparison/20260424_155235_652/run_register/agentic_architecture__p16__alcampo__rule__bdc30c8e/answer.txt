@@ -1,0 +1,25 @@
+Based on the SENSEI rules documentation (`sensei-check-doc.md` and `rules-examples.md`), I have created a rule that ensures the chatbot addresses the availability of lactose-free products whenever the user requests them. 
+
+Since there is no profile yet (Case C), I have designed the rule using a hypothetical variable `product_preference`. I also used the built-in `utterance_index` helper, which uses an LLM under the hood to check if the assistant semantically mentions a specific topic.
+
+Here is the YAML for the rule:
+
+```yaml
+name: lactose_free_availability
+description: If the user requests a lactose-free product, the assistant must state whether it is available.
+conversations: 1
+if: product_preference == 'lactose-free'
+then: utterance_index('assistant', 'availability of lactose-free products') > 0
+```
+
+### How this works:
+- **`conversations: 1`**: This is a single-conversation check (an oracle rule).
+- **`if` condition**: It checks if the extracted `product_preference` field is exactly `'lactose-free'`.
+- **`then` condition**: It uses the `utterance_index` helper to verify that the assistant actually talks about the "availability of lactose-free products" at some point during the conversation (returning an index > 0).
+
+### What you need for your future profile:
+For this rule to work, the future SENSEI Chat profile you create **must** expose the following field in its `chatbot.output`:
+
+- **`product_preference`**: A string field (e.g., `'lactose-free'`, `'vegan'`, `'regular'`) that captures the user's dietary request.
+
+Once you create the profile with that output field, this rule will automatically be able to read it and validate the conversations! Let me know if you'd like to adjust the logic or if you want help drafting that profile next. 😊

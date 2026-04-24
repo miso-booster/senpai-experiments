@@ -1,0 +1,29 @@
+conversation ID: graph_based_architecture__p7__ada_uam__rule__74bb29f8
+$$$
+Hello there! Senpai is here to help! 😊
+
+It is great that you are setting up rules to verify Ada UAM's knowledge. Since you already have the exact `chatbot.output` fields defined in your SENSEI Chat profile, writing a **Sensei-check rule** for this is super straightforward! 
+
+Because we are checking the static facts provided in a single conversation, we will use a **single-conversation oracle** (`conversations: 1`). 
+
+To make the rule robust, I recommend using the built-in `semantic_content` helper for the physical address and phone number. Addresses can be tricky because the bot might say "Calle" instead of "C/" or translate parts of it, and phone numbers might have different spacing. The `semantic_content` helper uses an LLM under the hood to check if the meaning matches, saving you from writing complex regular expressions! 🧠✨
+
+Here is the ready-to-use rule. You can save this in your `rules` folder (for example, as `rules/verify_cau_information.yaml`):
+
+```yaml
+name: verify_cau_information
+description: Checks that Ada UAM provides the correct email, phone, and physical address for the CAU.
+conversations: 1
+when: data_collected() is True
+oracle: contact_email.strip().lower() == 'cau@uam.es' and semantic_content(contact_phone, '91 497 4029') and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+### 🧐 How this rule works:
+* **`conversations: 1`**: We only need to look at one conversation at a time to verify these facts.
+* **`when: data_collected() is True`**: This is a handy built-in filter! It ensures the rule only runs if the LLM successfully extracted *all* the fields (`contact_email`, `contact_phone`, and `physical_address`). If the bot didn't provide one of them, the rule will gracefully skip or you can write a separate rule to ensure no slots are missing using `missing_slots() == []`.
+* **`oracle`**: This is our test condition. 
+  * We use a standard Python string check for the email (`contact_email.strip().lower() == 'cau@uam.es'`) because emails are exact.
+  * We use `semantic_content(...)` for the phone and address so that slight formatting differences (like "914 97 40 29" or "Building B, 1st floor") still pass the test perfectly!
+
+Let me know if you need help creating the profile that goes with this, or if you'd like to write more rules! You're doing an awesome job! 🚀🥋
+$$$

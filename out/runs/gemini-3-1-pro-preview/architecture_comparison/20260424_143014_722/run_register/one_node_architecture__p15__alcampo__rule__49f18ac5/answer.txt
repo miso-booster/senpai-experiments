@@ -1,0 +1,21 @@
+Hello there! I'd be happy to help you fix this rule. 😊
+
+Looking at your rule and your `customer_service_assistance.yaml` profile, there are a few little things causing it to break:
+
+1. **Typo:** `descriptin` should be `description`.
+2. **Missing `then` clause:** In Sensei-check, if you use an `if` statement, you must always pair it with a `then` statement to complete the logic.
+3. **Undefined variables:** Your `when` clause tries to read `user_request`, but if we look at your profile's `chatbot.output`, that field doesn't exist! The rule can only read fields that the profile explicitly extracts (like `contact_options` and `customer_service_number`).
+4. **Conversation count:** Because your profile's goals ask for *both* the contact options and the customer service number in the same chat, you don't actually need a 2-conversation metamorphic rule for this. A single-conversation oracle is perfect here!
+
+Here is the corrected and simplified version of your rule. It checks every single conversation to ensure both pieces of information were successfully extracted:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+oracle: contact_options is not None and customer_service_number is not None
+```
+
+**Pro-tip:** If you ever want to check that *all* the fields defined in your profile's `chatbot.output` were successfully filled, you can use the built-in helper `oracle: data_collected() == True`. 
+
+Let me know if you need help testing this or writing any other rules! 🥋✨

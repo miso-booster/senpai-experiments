@@ -1,0 +1,21 @@
+Based on the SENSEI rules documentation (`sensei-check-doc.md`), we can create a single-conversation rule (an oracle) that checks the specific fields extracted in your profile's `chatbot.output`.
+
+Here is the rule to validate those conditions:
+
+```yaml
+name: bike_shop_info_check
+description: Checks that the opening/closing times are 10 to 20, tune-up is 50, seat is 20, and tire is 20.
+conversations: 1
+active: true
+oracle: |
+  semantic_content(opening_and_closing, '10 to 20') and extract_float(tune_up) == 50 and extract_float(seat_price) == 20 and extract_float(tire) == 20
+on-error: f"Failed validation. Got hours: {opening_and_closing}, tune-up: {tune_up}, seat: {seat_price}, tire: {tire}"
+```
+
+### How this rule works:
+* **`conversations: 1`**: This is a standard oracle rule that evaluates each conversation individually.
+* **`semantic_content(opening_and_closing, '10 to 20')`**: Since `opening_and_closing` is a string, we use the `semantic_content` helper. This uses the LLM to flexibly check if the meaning of the extracted text matches "10 to 20" (which handles variations like "10 AM to 8 PM" or "10:00 - 20:00").
+* **`extract_float(...)`**: We use the `extract_float` helper for `tune_up`, `seat_price`, and `tire`. This safely pulls the numeric value out of the strings or money types so we can do an exact mathematical comparison (`== 50` and `== 20`).
+* **`on-error`**: If the rule fails, it will print out exactly what the chatbot returned for those fields so you can easily debug the discrepancy! 😊
+
+Let me know if you need to add any other checks, like validating the `care_bike` field!

@@ -1,0 +1,71 @@
+conversation ID: agentic_architecture__p34__pizza_shop__profile__ddc4fb14
+$$$
+Here is a SENSEI profile designed exactly for this scenario! 
+
+To achieve this, we use a combination of explicit instructions in the `user.role` and `user.goals`, alongside the built-in `change your mind` interaction style. This ensures the simulated user starts with a custom pizza and naturally pivots to a predefined one halfway through.
+
+```yaml
+test_name: "pizza_change_mind_profile"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza. You start by ordering a custom pizza with specific toppings, 
+    but halfway through the conversation, you change your mind and decide to order a predefined pizza from the menu instead.
+  context:
+    - "You are very hungry and want the pizza delivered as soon as possible."
+  goals:
+    - "Start by ordering a custom {{size}} pizza with {{toppings}}"
+    - "Later, change your mind and ask for a {{predefined_pizza}} instead"
+    - size:
+        function: random()
+        type: string
+        data: [medium, large, family]
+    - toppings:
+        function: random(2)
+        type: string
+        data: [pepperoni, mushrooms, onions, extra cheese, black olives]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Hawaiian, Meat Lovers, Veggie Supreme]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you repeat your order?"
+  output:
+    - final_pizza_ordered:
+        type: string
+        description: "The name or description of the final pizza the user ordered"
+    - size:
+        type: string
+        description: "The size of the final pizza ordered"
+    - total_price:
+        type: float
+        description: "The total price of the order"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - change your mind
+```
+
+### 🍕 How this profile works:
+
+1. **`user.role` & `user.goals`**: We explicitly tell the LLM persona to start with a custom pizza (`{{size}}` and `{{toppings}}`) and later switch to a `{{predefined_pizza}}`. The variables will be randomly selected for each conversation (e.g., picking 2 random toppings and 1 random predefined pizza).
+2. **`interaction_style: - change your mind`**: This is a special SENSEI keyword that instructs the user simulator to naturally hesitate or alter its choices during the chat. Combined with the goals, it creates a very realistic mid-conversation pivot.
+3. **`chatbot.output`**: At the end of the conversation, SENSEI will extract the `final_pizza_ordered`, the `size`, and the `total_price`. This is super useful because later you can write SENSEI rules to verify that the chatbot successfully discarded the custom pizza and only charged for the predefined one!
+
+Let me know if you'd like to adjust the toppings, the predefined pizzas, or if you want to write a validation rule for this profile! 😊
+$$$

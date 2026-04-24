@@ -1,0 +1,63 @@
+Hello there! 😊 I'd be happy to help you create a profile to test how your bike shop chatbot handles appointment scheduling. 
+
+To test the dates and times thoroughly, I've set up a profile where the user wants to change their wheels and asks for specific days and times. I used the `forward()` function for the `appointment_day` and nested another `forward()` for the `appointment_time`. By setting `conversation.number` to `combinations`, Sensei will automatically generate a test matrix covering all the different day and time pairings! 🚲🗓️
+
+Here is your ready-to-use profile:
+
+```yaml
+test_name: "wheel_change_appointment"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist whose bike wheels are worn out and need to be replaced.
+    You want to schedule an appointment at the bike shop to get them changed.
+  context:
+    - "You rely on your bike for commuting, so you need the replacement done soon."
+    - "You have specific days and times you are available."
+  goals:
+    - "Ask if they can replace your bike wheels."
+    - "Request to schedule the appointment for {{appointment_day}} at {{appointment_time}}."
+    - appointment_day:
+        function: forward()
+        type: string
+        data: ["Monday", "Wednesday", "Friday", "next Saturday"]
+    - appointment_time:
+        function: forward(appointment_day)
+        type: string
+        data: ["09:00 AM", "01:30 PM", "05:00 PM"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you repeat?"
+  output:
+    - confirmed_day:
+        type: string
+        description: "The day of the appointment confirmed by the chatbot."
+    - confirmed_time:
+        type: time("hh:mm a")
+        description: "The time of the appointment confirmed by the chatbot."
+    - service_type:
+        type: string
+        description: "The service confirmed by the chatbot (e.g., wheel replacement)."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### A quick tip from Senpai 👀:
+Because we are extracting `confirmed_day` and `confirmed_time` in the `chatbot.output` section, you can easily write **Sensei Rules** later to verify that the bot actually booked the correct day and time requested by the user! 
+
+Let me know if you'd like to add any specific interaction styles (like `change your mind` or `make spelling mistakes`) to make the test even trickier for the chatbot! ✨

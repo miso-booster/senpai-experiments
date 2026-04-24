@@ -1,0 +1,71 @@
+conversation ID: agentic_architecture__p4__ada_uam__profile__8f842083
+$$$
+¡Hola! Claro que sí, estaré encantado de ayudarte a crear este perfil para probar el chatbot de la UAM 😊.
+
+Basándome en la documentación de **SENSEI PROFILES** (`sensei-chat-guide.md`), he diseñado un perfil en el que el usuario simulado actuará como un estudiante o trabajador de la UAM que necesita contactar con el CAU. 
+
+Para asegurarnos de que el simulador consiga toda la información que pides, he configurado los `goals` (objetivos) con cada uno de los datos y he utilizado el estilo de finalización de conversación `all_answered`, lo que significa que el simulador no parará de hablar con el chatbot hasta que haya conseguido todas las respuestas (o alcance un límite de seguridad de turnos).
+
+Además, he definido en el apartado `chatbot.output` los campos exactos que SENSEI extraerá al final de la conversación, lo cual será súper útil si luego quieres crear reglas de validación (SENSEI RULES) para comprobar que el bot da la información correcta.
+
+Aquí tienes el código YAML. Puedes guardarlo en tu carpeta `profiles/` con un nombre como `uam_cau_support.yml`:
+
+```yaml
+test_name: "uam_cau_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante o trabajador de la UAM (Universidad Autónoma de Madrid) que necesita 
+    contactar con el CAU (Centro de Atención a Usuarios) para resolver un problema técnico.
+  context:
+    - "Necesitas información de contacto clara y precisa."
+    - "Quieres tener todas las vías de contacto posibles por si una falla."
+  goals:
+    - "Conseguir el número de teléfono del CAU."
+    - "Conseguir el correo electrónico del CAU."
+    - "Conseguir la dirección física del CAU."
+    - "Conseguir el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu consulta. ¿Puedes reformularla?"
+  output:
+    - telefono:
+        type: string
+        description: "El número de teléfono del CAU proporcionado por el chatbot."
+    - email:
+        type: string
+        description: "El correo electrónico del CAU proporcionado por el chatbot."
+    - direccion:
+        type: string
+        description: "La dirección física del CAU proporcionada por el chatbot."
+    - horario:
+        type: string
+        description: "El horario de atención del CAU proporcionado por el chatbot."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📝 Resumen de lo que hace este perfil:
+* **Rol y contexto:** Le da al LLM la personalidad de alguien de la UAM buscando soporte técnico.
+* **Objetivos (`user.goals`):** Le indica explícitamente que debe preguntar por el teléfono, email, dirección y horario.
+* **Extracción (`chatbot.output`):** Al finalizar cada test, SENSEI extraerá las variables `telefono`, `email`, `direccion` y `horario`. Si en el futuro quieres hacer una regla (por ejemplo, para verificar que el email contiene "@uam.es"), usarás estos nombres de variables.
+* **Control de conversación:** Hará `3` conversaciones distintas. El parámetro `all_answered` con `export: true` generará un reporte indicando si el chatbot logró satisfacer todos los objetivos antes de llegar al límite de 15 interacciones.
+
+¿Qué te parece? Si quieres que el usuario simulado sea más impaciente, cometa faltas de ortografía, o pregunte todo en un solo mensaje, podemos ajustar el `interaction_style`. ¡Dime si necesitas algún cambio!
+$$$

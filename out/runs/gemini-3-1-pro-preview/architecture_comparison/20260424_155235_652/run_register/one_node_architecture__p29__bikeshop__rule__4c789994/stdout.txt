@@ -1,0 +1,37 @@
+conversation ID: one_node_architecture__p29__bikeshop__rule__4c789994
+$$$
+Hello there! I'd be happy to help you write that rule 😊.
+
+Looking at your project, I see you have a profile named `appointment.yml` which specifically tests scheduling a bike service. In that profile, you've defined three outputs to capture the appointment details: `confirmed_date`, `confirmed_time`, and `confirmed_service`.
+
+We can write a **single-conversation oracle** rule that checks if the chatbot successfully extracted all of these fields. If any of them are missing (meaning they are `None`), the rule will fail and let you know!
+
+Here is the rule you can use:
+
+```yaml
+name: appointment_is_confirmed
+description: The chatbot successfully confirms the appointment date, time, and service.
+conversations: 1
+active: true
+oracle: confirmed_date is not None and confirmed_time is not None and confirmed_service is not None
+yields: f"Missing appointment details. Date: {confirmed_date}, Time: {confirmed_time}, Service: {confirmed_service}"
+```
+
+### How it works:
+* **`conversations: 1`**: This tells Sensei-check to evaluate each conversation individually.
+* **`oracle`**: This is the condition that must be true. It checks that the three fields defined in your `appointment.yml` profile's `chatbot.output` were successfully populated.
+* **`yields`**: If the rule fails, this helpful message will show you exactly which fields the chatbot missed!
+
+**Pro Tip 💡:** If you want a more generic rule that just checks if *all* outputs defined in a profile were successfully captured, you can use the built-in `data_collected()` helper like this:
+
+```yaml
+name: all_appointment_slots_filled
+description: All conversation slots for the appointment are filled.
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: f"Missing slots: {missing_slots()}"
+```
+
+Let me know if you'd like to create rules for any of your other profiles, like the `bike_repair_and_maintenance_scheduler.yaml`! 🚲🔧
+$$$

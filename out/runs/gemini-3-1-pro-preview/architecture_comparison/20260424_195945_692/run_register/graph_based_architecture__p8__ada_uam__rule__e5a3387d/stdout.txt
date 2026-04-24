@@ -1,0 +1,33 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__e5a3387d
+$$$
+Hello there! I'd be more than happy to help you review and fix your Sensei-check rule! 😊
+
+Looking at your rule, I can see exactly what you are trying to achieve: you want to make sure the chatbot provides the correct email, phone, and physical address for the CAU. 
+
+However, there are two little hiccups in the current YAML that we need to fix. Let's look at the corrected version first, and then I'll explain exactly what changed and why! 👀
+
+### The Fixed Rule
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### What changed and why? 🛠️
+
+1. **Removed the `conv[0].` prefix:** 
+   In Sensei-check, the `conv[0]`, `conv[1]` syntax is exclusively used for **metamorphic rules** where you are comparing multiple conversations (i.e., `conversations: 2` or more). Because your rule is a traditional oracle checking a single conversation (`conversations: 1`), you can just use the field names directly! 
+
+2. **Removed the `when` clause:**
+   In your original rule, your `when` filter and your `oracle` condition were exactly the same. 
+   * Think of `when` as the bouncer at a club: it filters *which* conversations are allowed to be tested by this rule. 
+   * If you tell the bouncer, "Only let in conversations where the email is cau@uam.es and the phone is 91 497 4029," then your `oracle` (the test itself) will *always* pass, because you already filtered out any conversations that got it wrong! 
+   * By removing the `when` clause, the rule will now actually evaluate the conversation and catch the chatbot if it makes a mistake.
+
+### One quick Senpai tip! 💡
+Just remember that for this rule to work perfectly, your SENSEI Chat profile must expose `contact_email`, `contact_phone`, and `physical_address` in its `chatbot.output` schema. Sensei-check will look for those exact field names to run the test.
+
+Does that make sense? Let me know if you have any questions or if you'd like to write more rules together! 🚀
+$$$

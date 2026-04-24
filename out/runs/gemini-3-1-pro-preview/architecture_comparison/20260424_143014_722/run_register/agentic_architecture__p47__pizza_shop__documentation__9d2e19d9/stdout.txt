@@ -1,0 +1,33 @@
+conversation ID: agentic_architecture__p47__pizza_shop__documentation__9d2e19d9
+$$$
+In the context of Sensei (specifically **Sensei-check**), a **metamorphic rule** is a type of validation rule that evaluates *multiple conversations at once* (pairs or tuples) rather than just checking a single conversation in isolation. 
+
+Based on the `sensei-check-doc.md` documentation, here is how it works and why it's useful:
+
+### 1. Checking Relations Instead of Absolute Answers
+Traditional rules (oracles) check if a single conversation meets a specific condition (e.g., "Did the bot ask for an email?"). Metamorphic rules, on the other hand, check the **relations** between conversations. They assert how the chatbot's outputs should change (or stay the same) when the user's inputs change. 
+
+This is incredibly useful because it alleviates the "oracle problem"—you don't need to know the exact correct answer in advance, you just need to know how the system *should behave* relative to a change.
+
+### 2. How it is Structured
+In Sensei-check YAML, a metamorphic rule typically requires `conversations: 2` (or more) and uses the `conv[i]` syntax to compare them. It usually consists of:
+* **`when` (Filter):** Selects eligible conversations to compare (e.g., "Find two conversations where the pizza size and drinks are exactly the same").
+* **`if` (Precondition):** Defines the change in input (e.g., "If conversation A has more toppings than conversation B").
+* **`then` (Expected Relation):** Defines the expected change in output (e.g., "Then the total price in conversation A must be higher than in conversation B").
+
+### 3. A Simple Example
+Imagine you are testing a pizza-ordering chatbot. A classic metamorphic rule would be **Price Monotonicity**:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+In this example, Sensei doesn't need to know the exact price of the pizzas. It just knows that if all other variables are held constant (`when`), adding more toppings (`if`) must result in a higher final price (`then`). 
+
+Does this help clarify how metamorphic testing fits into your Sensei project? Let me know if you'd like to see how to write one for your specific chatbot! 😊
+$$$

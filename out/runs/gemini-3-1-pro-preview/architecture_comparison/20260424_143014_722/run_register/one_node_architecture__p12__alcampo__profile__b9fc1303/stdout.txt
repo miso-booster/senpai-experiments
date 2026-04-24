@@ -1,0 +1,67 @@
+conversation ID: one_node_architecture__p12__alcampo__profile__b9fc1303
+$$$
+Hello there! I'd be happy to help you create a new profile for adding items to a shopping cart. 🛒✨
+
+To make this profile powerful, I've used the `pairwise()` function. This will automatically generate combinations of different items and quantities to test your chatbot efficiently without creating an overwhelming number of conversations. I also added some `chatbot.output` fields so you can easily verify that the bot is capturing the right items and quantities! 
+
+Here is the profile ready for your project:
+
+```yaml
+test_name: "add_items_to_cart"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer who wants to add various groceries to your online shopping cart."
+  context:
+    - "You are preparing for a weekend family dinner."
+    - "You want to make sure the items are successfully added to your cart before checking out."
+  goals:
+    - "Ask the chatbot to add {{quantity}} units of {{item}} to your shopping cart."
+    - "Inquire about the current total price of the cart."
+    - quantity:
+        function: pairwise()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - item:
+        function: pairwise()
+        type: string
+        data: [milk, bread, eggs, apples, chicken breast]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you repeat what you want to add to your cart?"
+  output:
+    - added_item:
+        type: string
+        description: "The name of the item added to the cart"
+    - added_quantity:
+        type: int
+        description: "The number of units added"
+    - cart_total_price:
+        type: currency
+        description: "The total price of the items in the cart"
+
+conversation:
+  number: combinations(1.0, pairwise)
+  goal_style:
+    steps: 8
+  interaction_style:
+    - random:
+      - single questions
+      - make spelling mistakes
+```
+
+### A quick tip from Senpai 💡
+Notice how we defined `added_item`, `added_quantity`, and `cart_total_price` in the `chatbot.output` section? Once you run this profile, you can easily create **Sensei Rules** to check things like: *"If I add 5 apples, the `cart_total_price` should be greater than if I add 1 apple."* 
+
+Let me know if you'd like to adjust the grocery items, change the language, or if you want help writing a metamorphic rule to test this cart! 😊
+$$$

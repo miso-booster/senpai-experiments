@@ -1,0 +1,67 @@
+Hello there! 😊 I would be absolutely delighted to help you create a Sensei Profile for this! 
+
+To make the simulated user ask the chatbot to add items to a shopping cart, we can use **variables** in the `user.goals` section. This allows Sensei to dynamically swap out the items and quantities in each conversation. 
+
+Here is a complete, ready-to-run YAML profile tailored for your shopping cart scenario:
+
+```yaml
+test_name: "add_items_to_cart"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer doing your weekly grocery shopping online. 
+    You want to add specific products to your shopping cart and ensure they are saved.
+  context:
+    - "You prefer to get a confirmation after an item is added."
+    - "You are polite but direct."
+  goals:
+    - "Please add {{quantity}} units of {{item}} to my shopping cart."
+    - "Ask the chatbot to confirm the total number of items currently in the cart."
+    - item:
+        function: forward()
+        type: string
+        data: [organic apples, whole milk, sourdough bread, free-range eggs, coffee beans]
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you repeat what you'd like to add to your cart?"
+  output:
+    - items_added:
+        type: list[string]
+        description: "The list of product names the user successfully added to the cart."
+    - final_cart_quantity:
+        type: int
+        description: "The total number of items in the cart at the end of the conversation."
+
+conversation:
+  number: combinations # This will run 5 conversations, one for each item in the forward() list!
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - single questions
+```
+
+### 🛒 A quick breakdown of why this works so well:
+* **Dynamic Goals:** By using `{{item}}` and `{{quantity}}`, the user simulator will ask for different things every time. 
+* **The `forward()` function:** Because `item` uses `forward()` and `conversation.number` is set to `combinations`, Sensei will automatically generate exactly 5 conversations—testing every single item in your list once!
+* **The `random()` function:** The `quantity` will be a random integer between 1 and 5 for each test.
+* **`chatbot.output`:** At the end of the chat, Sensei will extract `items_added` and `final_cart_quantity`. This is super important because later on, you can write **Sensei Rules** (like `when: conv[0].final_cart_quantity > 0`) to automatically verify that the chatbot actually did its job! 🕵️‍♀️
+
+Just save this as a `.yml` file inside your `profiles/` folder, and you'll be ready to test! Let me know if you'd like to tweak the interaction styles or add any custom data types to it. How else can I help you today? ✨

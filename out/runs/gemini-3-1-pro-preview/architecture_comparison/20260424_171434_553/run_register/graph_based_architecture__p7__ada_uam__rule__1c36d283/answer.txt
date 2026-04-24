@@ -1,0 +1,23 @@
+Hello there! 👋 I would be absolutely delighted to help you create this rule for your Ada UAM chatbot! 😊
+
+Since we want to verify that the chatbot provides specific, absolute facts in a single interaction, we will use a **single-conversation rule** (`conversations: 1`). 
+
+To make this rule robust, we can use a mix of exact matching (for the email) and our handy `semantic_content` helper function (for the address and phone number). The `semantic_content` helper is perfect here because it uses an LLM to check if the meaning matches, so it won't fail if the chatbot formats the phone number without spaces or translates "first floor" slightly differently! 🏢✨
+
+Here is the ready-to-use YAML rule for your project:
+
+```yaml
+name: cau_correct_information
+description: Verifies that the chatbot provides the correct email, phone, and physical address for the CAU.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and semantic_content(contact_phone, '91 497 4029') and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+### 💡 A quick breakdown of what's happening here:
+* **`conversations: 1`**: We only need to look at one conversation at a time to check if the facts are right.
+* **`contact_email == 'cau@uam.es'`**: Emails are usually exact, so a simple equals check works perfectly.
+* **`semantic_content(...)`**: This checks your `chatbot.output` fields (`contact_phone` and `physical_address`) against the expected CAU information, allowing for natural variations in how the chatbot might phrase the address or format the phone number.
+
+You can save this in your `rules/` folder as something like `cau_correct_information.yaml`. 
+
+Does this look good to you, or would you like to add any other conditions to this rule? 👀 Let me know!

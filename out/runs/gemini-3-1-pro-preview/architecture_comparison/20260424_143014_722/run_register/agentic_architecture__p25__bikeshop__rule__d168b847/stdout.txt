@@ -1,0 +1,26 @@
+conversation ID: agentic_architecture__p25__bikeshop__rule__d168b847
+$$$
+I can certainly help you with that! 😊
+
+Based on the SENSEI rules documentation (`sensei-check-doc.md`) and the profile snippet you provided, we need to create a **single-conversation rule** (an oracle). This rule will check the exact values extracted into your `chatbot.output` fields.
+
+Here is the YAML for the rule:
+
+```yaml
+name: check_bike_shop_info
+description: Validates that the bike shop opening hours are 10 to 20, tune-up is 50, seat is 20, and tire is 20.
+conversations: 1
+oracle: |
+  semantic_content(opening_and_closing, '10 to 20') and \
+  extract_float(tune_up) == 50 and \
+  extract_float(seat_price) == 20 and \
+  extract_float(tire) == 20
+```
+
+### How this rule works with your profile:
+* **`conversations: 1`**: We only need to look at one conversation at a time to verify these absolute values.
+* **`semantic_content(opening_and_closing, '10 to 20')`**: Since `opening_and_closing` is a string that represents a time range, we use the `semantic_content` helper. This is an LLM-backed check that ensures the meaning matches "10 to 20" (so it will correctly pass even if the bot says "10:00 to 20:00" or "10 AM to 8 PM").
+* **`extract_float(...)`**: For `tune_up`, `seat_price`, and `tire`, we use the `extract_float` helper. This safely pulls the first number out of the extracted text or money types so we can do a direct mathematical comparison (`== 50` or `== 20`), ignoring any currency symbols or extra words.
+
+Let me know if you'd like to add any other checks to this rule!
+$$$

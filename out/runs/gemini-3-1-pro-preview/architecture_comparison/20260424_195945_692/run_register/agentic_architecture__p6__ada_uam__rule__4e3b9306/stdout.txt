@@ -1,0 +1,28 @@
+conversation ID: agentic_architecture__p6__ada_uam__rule__4e3b9306
+$$$
+¡Hola! 😊 
+
+He revisado la documentación de reglas de SENSEI (`sensei-check-doc.md` y `rules-examples.md`) y también he buscado en tu proyecto. He encontrado que estos campos coinciden perfectamente con el perfil `consultante_de_servicios_y_asistencia_del_cau.yaml`, el cual tiene estos y otros campos adicionales en su `chatbot.output`.
+
+Como quieres asegurarte específicamente de que el chatbot haya proporcionado **el correo electrónico, el teléfono y la dirección física**, la mejor forma de hacerlo es creando una regla de una sola conversación (un *oracle* tradicional) que verifique explícitamente que estas tres variables no sean nulas (`None`). 
+
+Aquí tienes la regla en formato YAML lista para usar:
+
+```yaml
+name: cau_contact_info_provided
+description: Checks that the chatbot provided the CAU's email, phone number, and physical address.
+conversations: 1
+active: true
+oracle: contact_email is not None and contact_phone is not None and physical_address is not None
+yields: f"Missing CAU contact info. Email: {contact_email}, Phone: {contact_phone}, Address: {physical_address}"
+```
+
+### 📝 Resumen de lo que hace esta regla:
+* **`conversations: 1`**: Evalúa cada conversación de forma individual.
+* **`oracle`**: Comprueba que los campos extraídos del `chatbot.output` (`contact_email`, `contact_phone` y `physical_address`) tengan algún valor y no estén vacíos (`not None`).
+* **`yields`**: Si la regla falla (es decir, si falta alguno de los tres datos), mostrará un mensaje de error indicando exactamente qué valores se capturaron, para que puedas ver rápidamente cuál de los tres faltó.
+
+*(Nota: SENSEI también tiene una función llamada `data_collected()` que comprueba que **todos** los campos del perfil estén llenos. Sin embargo, como tu perfil `consultante_de_servicios_y_asistencia_del_cau.yaml` tiene otros campos adicionales como `service_hours` o `faq_link`, usar la comprobación explícita que te he puesto arriba es la forma más segura de evaluar **solo** la información de contacto).*
+
+¿Te gustaría que guardemos esta regla en el proyecto o necesitas que ajustemos algo más?
+$$$

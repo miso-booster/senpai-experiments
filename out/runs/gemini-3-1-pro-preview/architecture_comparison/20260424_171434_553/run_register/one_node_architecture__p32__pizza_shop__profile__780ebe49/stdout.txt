@@ -1,0 +1,70 @@
+conversation ID: one_node_architecture__p32__pizza_shop__profile__780ebe49
+$$$
+¡Hola! Claro que sí, estaré encantado de ayudarte a crear este perfil para tu pizzería 🍕. 
+
+Para lograr lo que necesitas, he configurado la sección `chatbot.output` con los cuatro campos exactos que mencionas. He utilizado el tipo `currency` para el precio final, lo cual es ideal si luego quieres hacer comprobaciones matemáticas con reglas de Sensei-check (por ejemplo, verificar que el precio sea mayor a 0). 
+
+Aquí tienes el perfil listo para usar:
+
+```yaml
+test_name: "pizza_order_with_specific_outputs"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres un cliente que quiere pedir la cena en una pizzería."
+  context:
+    - "Quieres que el pedido sea para recoger en el local."
+    - "Necesitas asegurarte de conocer el precio total y el número de confirmación antes de terminar."
+  goals:
+    - "Quiero pedir una pizza {{pizza_type}}."
+    - "Para beber, añadiré {{drink}}."
+    - "Pregunta cuál es el precio final en dólares."
+    - "Pide el ID o número de confirmación del pedido."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Cuatro Quesos, Barbacoa]
+    - drink:
+        function: pairwise()
+        type: string
+        data: [Coca-Cola, Agua, Cerveza, Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu mensaje. ¿Puedes repetirlo?"
+  output:
+    - pizza_type:
+        type: string
+        description: "El tipo de pizza que ha pedido el usuario."
+    - drink:
+        type: string
+        description: "La bebida que ha pedido el usuario."
+    - order_id:
+        type: string
+        description: "El identificador único o número del pedido."
+    - final_price:
+        type: currency
+        description: "El precio final del pedido en dólares."
+
+conversation:
+  number: combinations(1.0, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 👀 Notas rápidas sobre este perfil:
+* **Variables combinadas:** He usado la función `pairwise()` para `pizza_type` y `drink`. Esto generará combinaciones eficientes de pizzas y bebidas para probar diferentes escenarios sin hacer demasiadas conversaciones.
+* **Extracción de datos:** Al finalizar cada simulación, Sensei extraerá los valores y los guardará. Si más adelante creas reglas metamórficas, podrás acceder a estos datos usando expresiones como `conv[0].final_price` o `conv[0].order_id`.
+
+¡Guarda este código en tu carpeta `profiles/` con extensión `.yaml` y estará listo para ejecutarse! ¿Te gustaría que te ayude a crear alguna regla de validación (Sensei Rule) para comprobar estos resultados? 😊
+$$$

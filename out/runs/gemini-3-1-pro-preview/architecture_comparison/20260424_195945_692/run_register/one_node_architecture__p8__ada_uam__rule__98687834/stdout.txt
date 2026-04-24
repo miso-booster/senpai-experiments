@@ -1,0 +1,34 @@
+conversation ID: one_node_architecture__p8__ada_uam__rule__98687834
+$$$
+Hello there! I would be more than happy to help you review and fix this rule. 😊
+
+You are on the right track, and your field names (`contact_email`, `contact_phone`, `physical_address`) perfectly match the `chatbot.output` defined in your `consultante_de_servicios_y_asistencia_del_cau.yaml` profile! 
+
+However, there is a logical catch in how the rule is currently structured. 
+
+### What needs to be fixed?
+The main issue is that your `when` clause and your `oracle` are exactly the same. 
+* The `when` clause acts as a **filter**. It tells Sensei-check: *"Only evaluate conversations where the email is 'cau@uam.es', the phone is '91 497 4029', etc."*
+* The `oracle` then checks if those values are correct.
+
+Because the filter only selects conversations that already have the correct answers, the rule will **always pass** for those selected, and it will completely ignore any conversation where the chatbot gave the *wrong* information! This defeats the purpose of the test.
+
+Additionally, for single-conversation rules (`conversations: 1`), you don't need to use the `conv[0].` prefix. You can just call the variables directly by their names.
+
+### The Fixed Rule
+
+Here is the corrected version. We remove the restrictive `when` filter so that the rule evaluates the extracted outputs directly in the `oracle`.
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### How it works now:
+1. **`conversations: 1`**: It looks at each conversation individually.
+2. **`oracle`**: It directly asserts that the extracted `contact_email`, `contact_phone`, and `physical_address` match your expected strings. If the chatbot hallucinates a different phone number or email, the oracle will immediately catch it and mark the test as failed. 
+
+Let me know if you need help writing any other rules for your UAM profiles! 🚀
+$$$

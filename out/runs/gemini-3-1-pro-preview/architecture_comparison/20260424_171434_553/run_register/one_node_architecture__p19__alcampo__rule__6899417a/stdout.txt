@@ -1,0 +1,23 @@
+conversation ID: one_node_architecture__p19__alcampo__rule__6899417a
+$$$
+Hello there! 😊 
+
+Since you want a general rule that isn't tied to a specific profile's `chatbot.output` fields, we can use the handy `utterance_index` helper. This function uses a bit of LLM magic under the hood to check if a specific role (in this case, the `'assistant'`) mentioned a certain topic at any point during the conversation. 
+
+Here is a single-conversation rule that checks if the chatbot provided information about current promotions:
+
+```yaml
+name: chatbot_provides_promotions_info
+description: The chatbot mentions current promotions or discounts during the conversation.
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'current promotions or discounts') > 0
+on-error: f"The chatbot failed to provide information about current promotions."
+```
+
+### How it works 👀
+* **`conversations: 1`**: This is a standard oracle rule that evaluates each conversation individually.
+* **`utterance_index('assistant', 'current promotions or discounts') > 0`**: This looks through the conversation turns. If the assistant talks about promotions or discounts, it returns the turn index (which will be greater than 0). If it never mentions it, it returns 0, and the rule will fail.
+
+Let me know if you'd like to tweak this or if you want to explore any other cool Sensei-check helpers! 🚀
+$$$

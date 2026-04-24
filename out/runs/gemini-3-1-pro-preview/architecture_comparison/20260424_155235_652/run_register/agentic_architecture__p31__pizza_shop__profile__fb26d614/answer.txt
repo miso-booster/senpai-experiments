@@ -1,0 +1,63 @@
+I have reviewed your profile against the SENSEI PROFILES documentation (`sensei-chat-guide.md`). There were a few structural and schema issues that needed fixing. 
+
+Here is the corrected YAML:
+
+```yaml
+test_name: general_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+  - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+  - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+  - Ask what types of questions the chatbot can answer.
+  - Ask what the daily opening hours are.
+  - Ask about the estimated order time, without specifying the number of pizzas.
+  - Ask what drink options are available and their prices.
+  - Ask about the pricing for a custom pizza.
+chatbot:
+  is_starter: false
+  fallback: 'I''m sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks.`\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE'
+  output:
+  - available_information:
+      type: string
+      description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+  - opening_hours:
+      type: string
+      description: The daily opening hours of the pizza shop, as stated by the chatbot.
+  - estimated_order_time:
+      type: string
+      description: The chatbot's explanation of the estimated order time, including factors that influence it.
+  - drink_options_and_prices:
+      type: string
+      description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+  - custom_pizza_pricing:
+      type: string
+      description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+conversation:
+  number: 1
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+  - single questions
+```
+
+### 🛠️ Summary of Changes:
+1. **Missing `chatbot` Root Key:** In your original YAML, `is_starter`, `fallback`, and `output` were incorrectly indented under the `user` section. I moved them under their own top-level `chatbot` section.
+2. **Invalid Output Type:** The `custom_pizza_pricing` output had its type set to `str`. In SENSEI, the primitive type for text is `string`.
+3. **Missing `conversation.number`:** SENSEI requires you to define the number of conversations to run. I added `number: 1` to the `conversation` section.
+4. **Invalid `export` Value:** Under `goal_style.all_answered`, `export` was set to `1`. The documentation specifies this must be a boolean, so I changed it to `true`.
+5. **Invalid Interaction Style Keyword:** The interaction style was written as `single question`. The exact reserved keyword in SENSEI is plural: `single questions`.
+6. **Added `model_prov`:** I added `model_prov: openai` under the `llm` section to ensure the provider is explicitly defined for `gpt-4o-mini`. 
+
+Let me know if you need any further adjustments! 😊

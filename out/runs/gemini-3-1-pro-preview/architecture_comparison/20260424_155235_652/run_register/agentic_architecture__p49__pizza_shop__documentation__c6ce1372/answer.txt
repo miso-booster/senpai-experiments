@@ -1,0 +1,27 @@
+Based on the SENSEI RULES documentation (`sensei-check-doc.md`), there isn't actually a specific helper function named `pairwise()`. 
+
+However, if you are looking to compare pairs of conversations, this is done using **metamorphic rules**. In SENSEI-check, you can easily evaluate pairs (or tuples) of conversations to see how the chatbot's outputs change when the inputs change.
+
+Here is how you set up a "pairwise" comparison in a rule:
+
+1. **Set the number of conversations:** Use `conversations: 2` in your YAML rule header.
+2. **Access the pair:** Use the `conv` array to reference the two conversations, specifically `conv[0]` and `conv[1]`.
+3. **Filter comparable pairs (`when`):** Use the `when` clause to ensure you are only comparing apples to apples (e.g., conversations where the user ordered the same drink and pizza size).
+4. **Define the relation (`if` / `then`):** State the condition that changes (`if`) and the expected outcome (`then`).
+
+### Example: Pairwise Comparison for Pricing
+Here is a classic example of a pairwise metamorphic rule. It checks two conversations to ensure that if everything else is the same, adding more toppings results in a higher price:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+**How this works under the hood:**
+Sensei-check looks at all the generated conversations. It finds pairs that match the `when` condition (same size, drink, and quantity). For those pairs, it checks the `if` condition (does conversation 0 have more toppings than conversation 1?). If it does, it asserts the `then` condition (the price in conversation 0 must be strictly greater than the price in conversation 1).
+
+Does this cover what you were trying to do with pairwise comparisons, or did you have a specific scenario in mind for your project? 😊

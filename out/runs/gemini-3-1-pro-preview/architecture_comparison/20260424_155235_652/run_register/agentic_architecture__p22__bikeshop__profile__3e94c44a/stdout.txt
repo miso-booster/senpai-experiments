@@ -1,0 +1,65 @@
+conversation ID: agentic_architecture__p22__bikeshop__profile__3e94c44a
+$$$
+Here is a SENSEI profile tailored to your scenario. I have based this on the `sensei-chat-guide.md` documentation. 
+
+To make the conversations varied and realistic, I added a couple of variables (`{{discomfort_area}}` and `{{bike_type}}`) so the simulated user will complain about different issues (like knee or lower back pain) and ride different types of bikes across the test runs.
+
+```yaml
+test_name: "bike_discomfort_advice"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist experiencing discomfort while riding your bike. You are unsure if the bike is not fit correctly to your body or if some components are worn out and causing the issue. You want advice on possible adjustments or services the shop offers.
+  context:
+    - "You do not explicitly ask to book an appointment."
+    - "You are looking for expert advice to understand the root cause of your discomfort."
+  goals:
+    - "Explain your discomfort in the {{discomfort_area}} and ask if it could be a fit issue or worn parts."
+    - "Ask what kind of adjustments or services the shop can provide for a {{bike_type}}."
+    - discomfort_area:
+        function: random()
+        type: string
+        data: [lower back, knees, neck and shoulders, saddle area, wrists]
+    - bike_type:
+        function: random()
+        type: string
+        data: [road bike, mountain bike, gravel bike, hybrid commuter]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you rephrase?"
+  output:
+    - suggested_service:
+        type: string
+        description: "The service or adjustment suggested by the chatbot"
+    - appointment_offered:
+        type: string
+        description: "Whether the chatbot offered to book an appointment (yes/no)"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+  interaction_style:
+    - default
+```
+
+### Summary of the Profile:
+* **Persona & Context:** The `role` and `context` clearly instruct the LLM to act as a cyclist seeking advice without pushing to book an appointment.
+* **Goals & Variables:** The user will randomly pick a `discomfort_area` and a `bike_type` for each conversation, ensuring your chatbot is tested against a variety of complaints.
+* **Chatbot Output:** At the end of the conversation, SENSEI will extract two fields:
+  * `suggested_service`: To see what advice or service the bot recommended.
+  * `appointment_offered`: To check if the bot proactively offered to book an appointment (even though the user didn't explicitly ask for one). This is very useful if you later want to write a SENSEI Rule to validate the bot's proactiveness!
+* **Conversation Controls:** It will run `3` conversations and stop naturally when all goals are answered (`all_answered`).
+
+Let me know if you'd like to adjust the variables, add more specific interaction styles (like making the user use long phrases), or if you'd like to write a validation rule for this profile! 😊
+$$$

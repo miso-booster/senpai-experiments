@@ -1,0 +1,32 @@
+Hi there! 👋 I'd be absolutely delighted to help you write some SENSEI Check rules for your bike shop profile! 🚲✨
+
+Since you are looking to verify exact, absolute values from the chatbot's answers, we will create **single-conversation oracles** (using `conversations: 1`). 
+
+To make this work perfectly, we'll directly reference the exact field names you set up in your profile's `chatbot.output` (`opening_and_closing`, `tire`, `tune_up`, and `seat_price`). 
+
+Here are two rules to cover your requirements. I've split them up to keep things neat: one for the prices using our `extract_float()` helper, and one for the schedule using our `semantic_content()` helper!
+
+### 1. Checking the Prices 🏷️
+Because prices can sometimes include currency symbols or text (like "$50" or "50 USD"), the `extract_float()` helper is your best friend here. It will grab just the number so we can do a direct math comparison.
+
+```yaml
+name: check_bike_shop_prices
+description: Verifies that the tune-up is 50, seat is 20, and tire is 20.
+conversations: 1
+oracle: extract_float(tune_up) == 50 and extract_float(seat_price) == 20 and extract_float(tire) == 20
+```
+
+### 2. Checking the Opening Hours ⏰
+For the opening and closing times, the chatbot might answer in a few different ways (e.g., "From 10 to 20", "10:00 - 20:00", or "We open at 10 and close at 20"). To handle this natural variation gracefully, we can use the `semantic_content()` helper. It uses a quick LLM check under the hood to ensure the meaning matches your requirement!
+
+```yaml
+name: check_opening_hours
+description: Verifies that the opening and closing times are semantically equivalent to 10 to 20.
+conversations: 1
+oracle: semantic_content(opening_and_closing, '10 to 20')
+```
+
+### A Quick Tip from Senpai 💡
+Notice how we didn't need to invent any new variables? We just used `tune_up`, `seat_price`, `tire`, and `opening_and_closing` exactly as they appear in your profile. If you ever change those names in your SENSEI Chat profile, just remember to update them in your rules too!
+
+How does that look to you? Let me know if you'd like to test anything else, like creating a metamorphic rule to compare multiple conversations, or if you need help with SENSEI Connectors! 😊

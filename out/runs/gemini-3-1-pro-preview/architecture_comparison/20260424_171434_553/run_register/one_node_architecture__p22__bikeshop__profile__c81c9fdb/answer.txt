@@ -1,0 +1,69 @@
+Hello there! 😊 
+
+That sounds like a fantastic scenario to test! It’s really important to see how a chatbot handles consultative questions—like giving advice and explaining services—without aggressively pushing the user to book an appointment right away.
+
+To make this profile even more thorough, I've added a couple of variables (`bike_type` and `discomfort_type`) using the `forward()` function. This will generate a combination matrix so your simulated user will test different types of pain on different types of bikes! 🚲✨
+
+Here is the complete Sensei profile for your user:
+
+```yaml
+test_name: bike_fit_and_comfort_inquiry
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  role: "A cyclist experiencing discomfort while riding, unsure if it's due to poor bike fit or worn components."
+  language: English
+  context:
+    - "You feel discomfort when riding your bike and want to know why."
+    - "You are not sure if your bike needs a professional fit or if parts like the saddle or grips are just worn out."
+    - "You want advice on possible adjustments or services the shop offers."
+    - "You do NOT want to explicitly book an appointment right now; you are just gathering information."
+  goals:
+    - "Mention that you ride a {{bike_type}} and are experiencing {{discomfort_type}}."
+    - "Ask if the shop offers bike fitting services or assessments."
+    - "Ask how to tell if components causing discomfort are worn out."
+    - "Ask for general advice on adjustments you could make."
+    - bike_type:
+        type: string
+        function: forward()
+        data: [road bike, mountain bike, hybrid bike]
+    - discomfort_type:
+        type: string
+        function: forward(bike_type)
+        data: [lower back pain, knee pain, saddle discomfort, numb hands]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - bike_fit_service_offered:
+        type: string
+        description: "Confirmation of whether the shop offers bike fitting services or assessments."
+    - component_wear_advice:
+        type: string
+        description: "The chatbot's advice on how to identify worn components like saddles or grips."
+    - adjustment_recommendations:
+        type: string
+        description: "General advice or adjustments recommended by the chatbot to alleviate the user's discomfort."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - default
+```
+
+### 💡 A quick look at what we did:
+* **Context Constraints:** We explicitly told the user persona in the `context` list *not* to book an appointment, ensuring they just stick to gathering information.
+* **Variables & Combinations:** By nesting `discomfort_type` inside `bike_type` using `forward()`, and setting `conversation.number: combinations`, Sensei will automatically test all 12 variations (3 bike types × 4 discomfort types). 
+* **Targeted Outputs:** The `chatbot.output` fields are set up to extract exactly the advice the bot gives, which will be super helpful if you want to write Sensei-check rules later to ensure the bot is actually providing helpful tips!
+
+Let me know if you'd like to tweak any of the discomfort types or if you need help writing a rule to validate the bot's advice! 👀🔧

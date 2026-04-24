@@ -1,0 +1,24 @@
+Hello there! 😊 I'd be happy to help you fix this rule. 
+
+The reason your rule isn't working is that it's missing the **`if`** clause! 
+
+In Sensei-check, when you write a metamorphic rule using a `then` statement, it must always be paired with an `if` statement. 
+* The **`when`** clause acts as a filter to find comparable conversations (e.g., "find two conversations with the same pizza size and drink").
+* The **`if`** clause sets the precondition or the change in input (e.g., "if conversation 0 has more toppings than conversation 1").
+* The **`then`** clause asserts the expected outcome (e.g., "then conversation 0 should cost more").
+
+Without the `if` clause, Sensei-check doesn't know what condition triggers the `then` check! 
+
+Here is the fixed version of your rule, adding back the logic to check the length of the toppings list:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+If you update your `more_toppings_cost_more.yaml` file with this, it should work perfectly. Let me know if you have any other questions about your Sensei rules! 🍕✨

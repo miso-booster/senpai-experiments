@@ -1,0 +1,53 @@
+Hello there! 👋 I would be absolutely delighted to help you test this profile! 
+
+Your profile looks fantastic, by the way! 🌟 You have set up a very clear scenario for prospective students, and your `chatbot.output` has a lot of great data points we can inspect (like `welcome_day_date`, `application_fee`, and various links).
+
+In **Sensei-check**, rules are designed to look at those exact fields in your `chatbot.output` to make sure the chatbot is behaving correctly across the conversations it generates. 
+
+Here are a few rule suggestions tailored specifically to your profile. You can save each of these as a `.yaml` file inside your `rules/` folder!
+
+### 1. The "Consistent Event" Rule (Metamorphic) 📅
+Since the *Welcome Day* is a specific university event, its date and time shouldn't change just because one student asked about "Biología" and another asked about "Arquitectura". This metamorphic rule compares 2 conversations to ensure the event details remain consistent!
+
+```yaml
+name: welcome_day_consistency
+description: The Welcome Day date and time should be exactly the same for all prospective students, regardless of the degree or course they ask about.
+conversations: 2
+oracle: conv[0].welcome_day_date == conv[1].welcome_day_date and conv[0].welcome_day_time == conv[1].welcome_day_time
+```
+
+### 2. The "Valid Fee" Rule (Single Conversation) 💰
+You have an `application_fee` output. A great sanity check is to ensure that the chatbot never hallucinates a negative cost for the admission application. We can use the `extract_float()` helper for this!
+
+```yaml
+name: application_fee_validity
+description: The application fee extracted by the chatbot must be a valid number and cannot be negative.
+conversations: 1
+oracle: extract_float(application_fee) >= 0
+```
+
+### 3. The "Language Consistency" Rule (Style Check) 🇪🇸
+Your simulated user is explicitly configured to speak Spanish (`language: Spanish`). We want to make sure the chatbot doesn't suddenly switch to English or another language. We can use the `language()` helper to verify this.
+
+```yaml
+name: spanish_language_consistency
+description: The chatbot must reply in Spanish, matching the user's language profile.
+conversations: 1
+oracle: language(chatbot_phrases) == 'SPA'
+```
+
+### 4. The "Stay on Topic" Rule (Guardrail) 🛡️
+Sometimes LLMs can get distracted and start talking about unrelated things. We can use the `only_talks_about()` helper to ensure the chatbot stays focused on university admissions, courses, and the Welcome Day.
+
+```yaml
+name: admissions_topic_guardrails
+description: The assistant should not drift away from university admissions, degrees, courses, and welcome day topics.
+conversations: 1
+oracle: only_talks_about('admisiones a la universidad, grados, cursos, welcome day') is True
+```
+
+### How to use them:
+1. Save these blocks into separate YAML files (e.g., `rules/welcome_day_consistency.yaml`).
+2. When you run Sensei-check, it will automatically read your generated conversations and evaluate them against these rules.
+
+Do any of these catch your eye 👀? Let me know if you'd like to create a rule for a different specific scenario, or if you need help running them! 😊

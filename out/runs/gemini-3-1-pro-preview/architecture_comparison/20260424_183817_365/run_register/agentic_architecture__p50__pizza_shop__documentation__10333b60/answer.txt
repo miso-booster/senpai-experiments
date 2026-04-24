@@ -1,0 +1,35 @@
+Hi there! 😊
+
+In the context of **SENSEI-check** (the system used to test your chatbot), an **oracle** is a boolean condition (a True/False statement) used to determine if a conversation—or a set of conversations—is correct. 
+
+Think of it as the "source of truth" or the test assertion. When SENSEI runs a test, it evaluates the `oracle` expression. If the expression evaluates to `True`, the test passes; if it evaluates to `False`, the test fails.
+
+### How it works in SENSEI Rules
+When you write a rule in YAML, you can define the validation logic using the `oracle` keyword followed by a Python-like expression. 
+
+Here is a simple example of a **single-conversation oracle** that checks if the chatbot stayed on topic:
+
+```yaml
+name: scope_guardrails
+description: Assistant does not drift from the pizza domain
+conversations: 1
+oracle: only_talks_about('pizza and drink orders, delivery, store info')
+```
+
+Oracles can also be used for **global checks** across all conversations. For example, checking that every order ID generated in a batch of tests is unique:
+
+```yaml
+name: unique_order_ids
+description: Every conversation has a unique order_id
+conversations: all
+oracle: is_unique('order_id')
+```
+
+### `oracle` vs. `if` / `then`
+In SENSEI-check, you generally have two ways to write your test conditions:
+1. **`oracle`**: Best for straightforward, absolute checks (e.g., "The language must be English" or "The price must be > 10").
+2. **`if` / `then`**: Best for *metamorphic* rules where you want to express a relationship or implication (e.g., "If the user adds more toppings, then the price should go up"). 
+
+*(Note: I based this explanation on the `sensei-check-doc.md` and `rules-examples.md` documentation!)*
+
+Does this help clarify how oracles are used to test your chatbot? Let me know if you'd like to see how to write one for your specific project!

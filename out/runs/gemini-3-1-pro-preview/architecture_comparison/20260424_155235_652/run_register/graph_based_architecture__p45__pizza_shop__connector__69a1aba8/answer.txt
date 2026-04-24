@@ -1,0 +1,50 @@
+Hello there! 😊 I would be absolutely delighted to help you build this SENSEI CONNECTOR! 
+
+Based on the request and response you provided, I have crafted the YAML configuration for your custom connector. I've included only the minimal required headers (like `Authorization`, `Origin`, and `Referer`) to keep it clean and functional, just as you asked.
+
+Here is your YAML connector configuration:
+
+```yaml
+name: "Malaga SAIC Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### A quick note about removing HTML tags 👀
+You mentioned wanting the assistant response to return plain text with the HTML tags removed. Based on the SENSEI CONNECTORS documentation, the YAML connector is designed to extract the exact value located at the `response_path` (which in your case is `response.0.text`). 
+
+Currently, the YAML configuration doesn't have a built-in feature to automatically strip HTML tags from the extracted string. It will return the raw string exactly as the API sends it (e.g., `"<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>"`). 
+
+To get plain text, you will just need to strip those HTML tags in your Python code right after the connector fetches the response, like this:
+
+```python
+import re
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("your-malaga-config.yml")
+success, response = bot.execute_with_input("hola")
+
+if success:
+    # Remove HTML tags using a simple regex in your code! ✨
+    clean_text = re.sub(r'<[^>]+>', '', response)
+    print(clean_text)
+```
+
+Let me know if you need help saving this file to your connectors folder (`/home/ivan/miso/automatizacion/graph/users/user_1/connectors`) or if you have any other questions about SENSEI CONNECTORS! 🚀

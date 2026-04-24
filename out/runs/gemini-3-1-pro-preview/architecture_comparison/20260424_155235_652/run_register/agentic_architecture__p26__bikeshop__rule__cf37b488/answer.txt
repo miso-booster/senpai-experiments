@@ -1,0 +1,26 @@
+I have reviewed your rule based on the SENSEI rules documentation (`sensei-check-doc.md`), and there are a few issues with it. 
+
+Here is the corrected version of your rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+if: tune_up_price is not None
+then: extract_float(tune_up_price) == 50
+```
+
+### What I changed and why:
+
+1. **Changed `conversations: 2` to `conversations: 1`**: 
+   Your rule is checking an absolute value (the price in a single conversation). `conversations: 2` is used for *metamorphic* rules where you want to compare two different conversations against each other (e.g., `conv[0]` vs `conv[1]`).
+2. **Removed the `conv[0].` prefix**: 
+   Because this is now a single-conversation rule (`conversations: 1`), you don't need to specify `conv[0]`. You can just reference the `chatbot.output` field directly as `tune_up_price`.
+3. **Removed the `when` clause**: 
+   The `when` clause acts as a filter to select which conversations to test. If you put `when: tune_up_price == 50`, SENSEI will *only* run this rule on conversations where the price is already 50. This defeats the purpose of the test because it would just ignore any conversation where the chatbot got the price wrong!
+4. **Fixed the `then` clause**: 
+   The `then` clause must be a Python expression that evaluates to `True` or `False`. A string like `"The tune-up price is $50."` is not a valid condition. I changed it to an actual mathematical comparison.
+5. **Added `extract_float()`**: 
+   Chatbots often return prices as strings with currency symbols (like `"$50"` or `"50.00"`). Using the built-in `extract_float(tune_up_price)` helper ensures that SENSEI safely extracts the number `50` before comparing it, preventing errors.
+
+*(Note: This rule assumes that your SENSEI Chat profile has a field exactly named `tune_up_price` in its `chatbot.output`. If it is named differently, just update the variable name in the `if` and `then` lines!)* 😊

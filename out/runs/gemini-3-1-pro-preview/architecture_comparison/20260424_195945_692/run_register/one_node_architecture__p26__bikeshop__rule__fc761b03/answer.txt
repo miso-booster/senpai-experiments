@@ -1,0 +1,22 @@
+Hello there! 😊 I'd be happy to help you fix this rule. 
+
+The original rule had a few structural issues. Since you want to verify an absolute value (that the price is exactly $50) rather than comparing how two different conversations change, this should be a **single-conversation oracle** instead of a 2-conversation metamorphic rule. 
+
+Here is the corrected version:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: tune_up_price is not None
+oracle: extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'
+```
+
+### Here is what I changed and why 👀:
+
+1. **`conversations: 1` instead of `2`**: Checking if a price equals a specific number is a traditional check, so we only need to look at one conversation at a time.
+2. **Removed the `if/then` logic**: In Sensei-check, `then` expects a Python boolean expression (like `x == y`), not a text string. For single-conversation checks, it's much cleaner to use an `oracle`.
+3. **Fixed the `when` filter**: Your original rule had `when: conv[0].tune_up_price == 50`. The `when` clause acts as a filter, meaning the rule would *only* evaluate conversations where the price was already 50, completely defeating the purpose of the test! I changed it to `when: tune_up_price is not None` so it only runs if the chatbot actually provided a price.
+4. **Added `extract_float` and `currency` helpers**: Since `tune_up_price` is extracted as a `money` type in your profiles, it's best practice to use `extract_float()` to safely check the numeric value and `currency()` to ensure it's in US Dollars. 
+
+Let me know if you need help writing any other rules! 🚀

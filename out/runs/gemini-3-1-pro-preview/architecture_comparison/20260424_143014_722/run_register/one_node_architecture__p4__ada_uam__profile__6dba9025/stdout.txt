@@ -1,0 +1,63 @@
+conversation ID: one_node_architecture__p4__ada_uam__profile__6dba9025
+$$$
+¡Hola! 👋 ¡Claro que sí! Me encantaría ayudarte a crear ese perfil para el chatbot de la UAM. 
+
+Para lograr lo que buscas, vamos a definir un perfil donde el usuario simulado tenga como **objetivos (`goals`)** preguntar específicamente por cada uno de esos datos. Luego, en la sección de **salida del chatbot (`chatbot.output`)**, le indicaremos a Sensei que extraiga exactamente esa información (teléfono, email, dirección y horarios) al finalizar la conversación.
+
+Aquí tienes el código YAML listo para usar. Puedes guardarlo en tu carpeta `profiles/` con un nombre como `contacto_cau.yaml`:
+
+```yaml
+test_name: "soporte_cau_contacto"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario de la UAM que necesita contactar urgentemente con el Centro de Atención a Usuarios (CAU)
+    para resolver una incidencia técnica.
+  context:
+    - "Quieres tener todas las vías de contacto posibles a mano."
+    - "Necesitas saber cuándo están abiertos para poder ir en persona o llamar."
+  goals:
+    - "Preguntar cuál es el número de teléfono del CAU."
+    - "Solicitar la dirección de correo electrónico del soporte técnico."
+    - "Consultar la dirección física de la oficina del CAU."
+    - "Preguntar por los horarios de atención al público."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios."
+  output:
+    - telefono_cau:
+        type: string
+        description: "Número de teléfono de contacto del CAU"
+    - email_cau:
+        type: string
+        description: "Dirección de correo electrónico del CAU"
+    - direccion_cau:
+        type: string
+        description: "Dirección física u oficina del CAU"
+    - horario_cau:
+        type: string
+        description: "Horarios de atención al público del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+### 💡 Un par de detalles sobre este perfil:
+* **`interaction_style: [single questions]`**: Esto hace que el usuario simulado haga una pregunta a la vez (por ejemplo, primero pide el teléfono, espera la respuesta, y luego pide el email). Es ideal para que el chatbot no se abrume y podamos extraer los datos con mayor precisión.
+* **`chatbot.output`**: He definido variables claras (`telefono_cau`, `email_cau`, etc.). Si más adelante quieres crear una **Regla de Sensei (Sensei Rule)** para verificar que el chatbot realmente te dio esta información, podrás usar la función `data_collected() == True` o revisar campos específicos como `conv[0].telefono_cau`.
+
+¡Pruébalo y me cuentas qué tal te va! Si necesitas ajustar algo más o quieres que hagamos una regla para validar estos datos, dímelo. ¡Estoy aquí para ayudarte! 😊
+$$$

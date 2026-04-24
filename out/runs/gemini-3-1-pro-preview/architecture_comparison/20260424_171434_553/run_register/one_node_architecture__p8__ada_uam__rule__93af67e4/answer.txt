@@ -1,0 +1,31 @@
+Hello there! I'd be happy to help you review and fix your Sensei-check rule. 😊
+
+You are definitely on the right track, and your field names (`contact_email`, `contact_phone`, `physical_address`) perfectly match the `chatbot.output` defined in your `consultante_de_servicios_y_asistencia_del_cau.yaml` profile. Great job there! 
+
+However, there is a **logical flaw** in how the rule is currently structured. 
+
+### What's wrong with the original rule?
+In your original rule, the `when` clause and the `oracle` clause are exactly the same. 
+* The `when` clause acts as a **filter**. It tells Sensei-check: *"Only evaluate conversations where the email, phone, and address are exactly these values."*
+* The `oracle` then checks: *"Are the email, phone, and address exactly these values?"*
+
+Because of this setup, the rule will **always pass** for the conversations it selects, and it will completely ignore any conversations where the chatbot gave the *wrong* information! It’s a bit like grading a test but only looking at the exams that already have the correct answers. 😅
+
+Also, for single-conversation rules (`conversations: 1`), you don't need to use the `conv[0].` prefix. You can just call the variables directly!
+
+### The Fixed Rule
+
+Here is the corrected version. We just need to remove the `when` clause so it evaluates the extracted outputs of the conversation, and we can clean up the syntax:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### How it works now:
+1. **`conversations: 1`**: It looks at each conversation individually.
+2. **`oracle`**: It directly checks the extracted fields (`contact_email`, `contact_phone`, `physical_address`) against your expected strings. If the chatbot hallucinates a different phone number or address, the rule will now properly catch it and report a failure! 👀
+
+Let me know if you need help writing any other rules for your UAM project! 🚀

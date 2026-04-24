@@ -1,0 +1,99 @@
+conversation ID: agentic_architecture__p3__ada_uam__profile__cc41feee
+$$$
+¡Hola! Claro que sí, estaré encantado de ayudarte a arreglar tu perfil. 😊
+
+He revisado tu YAML basándome en la documentación de **SENSEI PROFILES** (`sensei-chat-guide.md`) y he encontrado algunos errores de estructura y campos faltantes que impedían que funcionara correctamente.
+
+### 🛠️ ¿Qué problemas tenía?
+
+1. **Error de sintaxis en `user.goals`**: Tenías mezclada la frase *"Consigue el código de activación..."* con la definición de una variable. En YAML, las frases objetivo y las definiciones de variables deben ser elementos separados en la lista. Además, faltaba el nombre de la variable `identificador_id_uam` como clave de su diccionario.
+2. **Falta el campo `function` en las variables**: Todas las variables definidas en `goals` (como `user_account` e `identificador_id_uam`) necesitan especificar una función de llenado (por ejemplo, `function: random()`) para decirle a Sensei cómo elegir los datos en cada conversación.
+3. **Falta el campo `user.role`**: El perfil necesita un `role` (rol) principal que describa quién es el usuario simulado. He añadido uno basándome en tu contexto.
+4. **Falta `llm.model_prov`**: Al especificar el modelo de LLM, es recomendable añadir el proveedor (en este caso, `openai`).
+5. **Formato del `fallback`**: He envuelto el mensaje de `fallback` entre comillas dobles para evitar problemas con los saltos de línea (`\n`) y los caracteres especiales.
+
+### ✨ Perfil Corregido
+
+Aquí tienes el YAML listo para funcionar:
+
+```yaml
+test_name: Asistencia Técnica y Cuentas
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+user:
+  language: Spanish
+  role: "Eres un usuario de la universidad que necesita ayuda urgente con sus cuentas y plataformas virtuales."
+  context:
+  - Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad.
+  - Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias.
+  - Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento.
+  goals:
+  - "Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU)."
+  - "Preguntar sobre los procedimientos para obtener una cuenta ID-UAM."
+  - "Solicitar los pasos necesarios para establecer la contraseña por primera vez."
+  - "Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado."
+  - "Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}."
+  - identificador_id_uam:
+      function: random()
+      type: string
+      data:
+      - '123456789'
+      - '987654321'
+      - '112233445'
+      - '556677889'
+      - '998877665'
+  - user_account:
+      function: random()
+      type: string
+      data:
+      - usuario123
+      - maria.garcia
+      - juan_lopez_2023
+      - pedro.salas
+      - sara.martinez
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro\ncatálogo de servicios\n.\nRespondo a preguntas dirigidas al\nCentro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+  - contact_info:
+      type: string
+      description: Detalles de contacto del CAU
+  - operational_hours:
+      type: string
+      description: Horarios operativos del CAU
+  - available_services_list:
+      type: string
+      description: Servicios disponibles para crear cuenta
+  - password_setup_link:
+      type: string
+      description: Enlace para establecer contraseña
+  - contact_information:
+      type: string
+      description: Opciones de asistencia para recuperación de ID-UAM
+  - recovery_steps:
+      type: string
+      description: Pasos para recuperar ID-UAM
+  - activation_code:
+      type: string
+      description: Código de activación para cambiar contraseña
+  - user_account:
+      type: string
+      description: Nombre de usuario para recuperación
+  - identificador_id_uam:
+      type: string
+      description: Identificador único de ID-UAM
+  - password_change_steps:
+      type: string
+      description: Pasos para cambiar la contraseña
+conversation:
+  number: 5
+  goal_style:
+    steps: 30
+```
+
+¡Pruébalo y dime si te funciona bien o si necesitas ajustar algo más! 🚀
+$$$

@@ -1,0 +1,65 @@
+¡Hola! Claro que sí, me parece una idea fantástica 🧑‍🍳. Planificar el menú semanal y buscar recetas es un caso de uso genial para probar el chatbot de Alcampo.
+
+He diseñado un **Perfil de Sensei** que simula a un cliente buscando inspiración para cocinar, intentando organizar su menú semanal y preguntando por recetas con ingredientes específicos y preferencias dietéticas. Además, el perfil evalúa si el chatbot explica cómo añadir los ingredientes directamente al carrito de la compra.
+
+Aquí tienes el código YAML. Puedes guardarlo en tu carpeta `profiles/` con un nombre como `recipe_and_menu_planning.yaml`:
+
+```yaml
+test_name: "Recipe Recommendation and Menu Planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Un cliente que busca inspiración para cocinar y ayuda para planificar su menú semanal utilizando los productos de Alcampo."
+  context:
+    - "Quieres organizar tus comidas de la semana para comer más sano y ahorrar tiempo."
+    - "Tienes preferencias dietéticas específicas y buscas recetas fáciles de preparar."
+  goals:
+    - "Pide al chatbot que te recomiende una receta para una cena rápida que incluya {{main_ingredient}}."
+    - "Pregunta cómo puedes planificar un menú semanal equilibrado utilizando la sección de recetas de Alcampo."
+    - "Solicita opciones de recetas que sean {{dietary_preference}}."
+    - "Pregunta si es posible añadir automáticamente los ingredientes de las recetas recomendadas a tu carrito de la compra."
+    - main_ingredient:
+        function: random()
+        type: string
+        data: [pollo, salmón, verduras de temporada, ternera, tofu]
+    - dietary_preference:
+        function: random()
+        type: string
+        data: [sin gluten, vegetarianas, bajas en calorías, altas en proteínas]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recommended_recipe:
+        type: string
+        description: "Nombre o descripción de la receta recomendada por el chatbot"
+    - menu_planning_tips:
+        type: string
+        description: "Consejos o pasos proporcionados para planificar el menú semanal"
+    - dietary_options_provided:
+        type: string
+        description: "Opciones de recetas adaptadas a las preferencias dietéticas solicitadas"
+    - cart_integration_info:
+        type: string
+        description: "Información sobre cómo añadir los ingredientes de la receta al carrito de la compra"
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+### ¿Qué hace este perfil? 👀
+1. **Variabilidad de datos (`user.goals`)**: Utiliza la función `random()` para alternar entre diferentes ingredientes principales (pollo, salmón, tofu...) y preferencias dietéticas (sin gluten, vegetarianas...). ¡Así cada conversación será única!
+2. **Extracción de datos (`chatbot.output`)**: Al final de la conversación, Sensei extraerá la receta recomendada, los consejos de planificación y si el bot supo explicar cómo pasar los ingredientes al carrito. Esto te vendrá de perlas si luego quieres crear **Reglas de Sensei (Sensei Rules)** para validar que el bot siempre da una receta válida.
+
+Si necesitas ayuda para crear una regla metamórfica que valide los resultados de este perfil, ¡solo tienes que decírmelo! 😊✨

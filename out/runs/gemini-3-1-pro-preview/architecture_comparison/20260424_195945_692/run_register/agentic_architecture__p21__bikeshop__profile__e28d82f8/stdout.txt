@@ -1,0 +1,83 @@
+conversation ID: agentic_architecture__p21__bikeshop__profile__e28d82f8
+$$$
+Here is a complete SENSEI profile tailored for your bikeshop scenario! 🚲
+
+I have designed it so the simulated user explains they have a new bike, asks to change the seat and grips, requests a cost estimate, and schedules a drop-off day. 
+
+```yaml
+test_name: "bikeshop_bike_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike. You want to go to the local bikeshop 
+    to have it set up and tailored to your liking. Specifically, you want to change the seat 
+    and the handlebar grips.
+  context:
+    - "You want to know the estimated cost for the new parts and the labor."
+    - "You need to schedule a day to drop off the bike."
+  goals:
+    - "Explain that you have a new bike and need a setup."
+    - "Request to change the seat to a {{seat_type}} seat."
+    - "Request to change the handlebar grips to {{grip_type}} grips."
+    - "Ask for the total estimated cost."
+    - "Schedule the drop-off for {{day_of_week}}."
+    - seat_type:
+        function: pairwise()
+        type: string
+        data: [gel, leather, sporty]
+    - grip_type:
+        function: pairwise()
+        type: string
+        data: [ergonomic, foam, rubber]
+    - day_of_week:
+        function: random()
+        type: string
+        data: [Monday, Wednesday, Friday]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you repeat?"
+  output:
+    - seat_requested:
+        type: string
+        description: "The type of seat the user wants to install"
+    - grips_requested:
+        type: string
+        description: "The type of handlebar grips the user wants to install"
+    - appointment_day:
+        type: string
+        description: "The day the user scheduled to drop off the bike"
+    - estimated_cost:
+        type: float
+        description: "The total estimated cost provided by the chatbot"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🛠️ How this profile works:
+
+1. **User Persona & Context (`user.role` & `user.context`)**: We give the LLM clear instructions about who it is (a new bike owner) and its underlying motivations (finding out the cost and scheduling a drop-off).
+2. **Dynamic Goals (`user.goals`)**: Instead of hardcoding one specific seat or grip, I used variables like `{{seat_type}}` and `{{grip_type}}`. 
+   * By using the `pairwise()` function for the seat and grips, Sensei will automatically generate a smart matrix of conversations to test different combinations (e.g., a gel seat with ergonomic grips, a leather seat with foam grips, etc.) without having to test every single exhaustive combination.
+   * `{{day_of_week}}` uses `random()` to just pick a random day for each conversation.
+3. **Data Extraction (`chatbot.output`)**: At the end of the conversation, Sensei will extract the `seat_requested`, `grips_requested`, `appointment_day`, and `estimated_cost`. This is super useful if you want to write **SENSEI RULES** later to validate that the chatbot successfully collected the right information and gave a valid price!
+4. **Conversation Controls**: 
+   * `number: combinations(1, pairwise)` tells Sensei to run exactly enough conversations to cover the pairwise combinations of seats and grips.
+   * `goal_style: all_answered` ensures the simulator keeps talking until all its goals are met (or until it hits the safety limit of 15 turns).
+
+You can save this as `bikeshop_setup.yml` in your `profiles/` directory. Let me know if you'd like to add any specific interaction styles (like making the user change their mind mid-conversation) or if you'd like to write some validation rules for it! 😊
+$$$

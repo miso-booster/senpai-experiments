@@ -1,0 +1,31 @@
+Hello there! 😊 I would be absolutely delighted to help you review and fix your Sensei-check rule. 
+
+Let's take a close look at what you have. You are on the right track, but there are two important things we need to tweak to make this rule work perfectly! 🕵️‍♂️
+
+### What needs fixing?
+
+1. **The `conv[0]` prefix:** Since your rule is set to `conversations: 1` (a single-conversation rule), you don't need to use the `conv[0].` prefix. You can just use the field names directly! The `conv[i]` syntax is specifically for metamorphic rules where we compare multiple conversations (like `conversations: 2`).
+2. **The Filter Trap:** Right now, your `when` clause and your `oracle` clause are exactly the same. The `when` clause acts as a **filter** to select which conversations to check. If you filter *only* the conversations where the bot already gave the perfect answer, your rule will ignore any conversations where the bot made a mistake! The rule would always pass, but it wouldn't actually be testing the bot's accuracy. 
+
+### The Fixed Rule ✨
+
+Here is how we can fix it. We will remove the `conv[0]` prefixes, and we will change the `when` clause so it filters based on the *input* or *scenario* rather than the expected output. 
+
+*(Note: I am using a hypothetical `topic == 'CAU'` for the `when` clause. You should replace `topic` with whatever field in your SENSEI Chat profile's `chatbot.output` indicates that the user is asking about the CAU!)*
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+# We filter by the scenario/input, NOT the expected answer!
+when: topic == 'CAU' 
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works better:
+* **Cleaner Syntax:** By dropping `conv[0]`, Sensei-check knows exactly how to read the fields for a single conversation.
+* **True Testing:** Now, whenever the conversation is about the CAU (`when: topic == 'CAU'`), the rule will check the `oracle`. If the bot hallucinates a wrong phone number or email, the rule will catch it and fail, which is exactly what we want a good test to do! 🎯
+
+Make sure that `contact_email`, `contact_phone`, and `physical_address` are exactly the names of the fields defined in your SENSEI Chat profile's `chatbot.output`. 
+
+Does that make sense? Let me know if you need help adjusting the `when` clause to match your specific profile fields! 🚀

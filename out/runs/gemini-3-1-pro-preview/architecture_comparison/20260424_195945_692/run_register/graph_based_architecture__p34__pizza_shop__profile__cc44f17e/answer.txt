@@ -1,0 +1,72 @@
+Hello there! How can I help you today? 😊
+
+That sounds like a fantastic test scenario! Testing how a chatbot handles a user pivoting mid-conversation is super important. 
+
+To achieve this in Sensei, we can use a combination of a specific **`interaction_style`** called `change your mind` and a carefully crafted set of **`user.goals`**. The `change your mind` interaction style is a built-in feature that tells the simulated user to alter their decisions during the chat, which fits your needs perfectly!
+
+Here is a complete, ready-to-use profile YAML that you can drop right into your `profiles/` folder:
+
+```yaml
+test_name: "custom_to_predefined_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an indecisive customer ordering dinner. You start by wanting a custom pizza, 
+    but halfway through, you decide it's too complicated and switch to a predefined pizza.
+  context:
+    - "You are very hungry but easily overwhelmed by too many choices."
+  goals:
+    - "Tell the chatbot you want to create a custom pizza with {{custom_toppings}}."
+    - "Ask how much the custom pizza will cost."
+    - "Decide it's too much hassle and ask for the predefined pizza menu instead."
+    - "Order a {{size}} {{predefined_pizza}} pizza instead."
+    - custom_toppings:
+        function: random()
+        type: string
+        data: ["extra cheese and mushrooms", "pepperoni, onions, and olives", "ham and pineapple"]
+    - size:
+        function: random()
+        type: string
+        data: ["medium", "large", "extra large"]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: ["Margarita", "Pepperoni", "Vegetarian", "Hawaiian"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Would you like a custom or predefined pizza?"
+  output:
+    - final_pizza_ordered:
+        type: string
+        description: "The actual pizza the user ended up ordering (should be the predefined one)."
+    - total_price:
+        type: float
+        description: "The final price of the order."
+    - order_id:
+        type: string
+        description: "The confirmation number or order ID."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - change your mind
+```
+
+### 🍕 Why this works so well:
+1. **The `interaction_style`:** By including `- change your mind` at the bottom, Sensei knows to naturally hesitate or backtrack during the conversation. 
+2. **The Narrative Goals:** We explicitly tell the user simulator in the `goals` to start with a custom pizza, ask for the price, and *then* pivot to a predefined one. 
+3. **The `chatbot.output`:** I added a `final_pizza_ordered` field. This is super handy because later, if you want to write **Sensei Rules**, you can verify that the bot actually registered the *predefined* pizza and discarded the custom one! 👀
+
+Give this a try in your Dojo! Let me know if you'd like to tweak the variables or if you need help writing a Sensei Rule to validate the chatbot's final output! 🚀

@@ -1,0 +1,31 @@
+Hello there! 😊 I'd be happy to explain that for you!
+
+In the context of Sensei-check, a **metamorphic rule** is a special type of test that compares **pairs or tuples of conversations** rather than just looking at a single one in isolation. 
+
+Traditional tests (often called "oracles") check if a specific input gives one exact output. But with chatbots, we don't always know the exact right answer! Metamorphic testing solves this by checking the *relationship* between different conversations when the inputs change. It asserts how outputs should change (or stay the same) based on those input changes.
+
+**A simple everyday analogy: 🍕**
+Imagine you are testing a pizza ordering bot. You might not know the exact price of a custom pizza with 5 toppings. However, you *do* know a logical rule: if two people order the exact same size pizza and the same drinks, but Person A asks for *more toppings* than Person B, Person A's total price should be higher! 
+
+Instead of checking for an absolute price, a metamorphic rule checks that logical relationship. 
+
+Here is how that exact pizza example looks in Sensei-check:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+**How it works under the hood:**
+1. **`conversations: 2`**: Tells Sensei we are comparing a pair of conversations.
+2. **`when`**: Acts as a filter to find comparable conversations (e.g., same size, same drinks, same quantity).
+3. **`if`**: The condition that changes between the two (one has more toppings).
+4. **`then`**: The expected outcome (the price of the first must be greater than the second).
+
+By checking relations instead of absolute answers, metamorphic rules make it much easier to test complex, dynamic chatbot behaviors! 
+
+Let me know if you'd like to see more examples or need help writing one for your own project! ✨

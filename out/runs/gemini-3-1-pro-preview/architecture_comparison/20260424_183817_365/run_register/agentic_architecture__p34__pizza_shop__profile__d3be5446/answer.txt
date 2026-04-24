@@ -1,0 +1,58 @@
+Here is a SENSEI profile that perfectly matches your scenario. It uses the built-in `change your mind` interaction style along with specific context and goals to ensure the simulated user starts with a custom pizza and switches to a predefined one.
+
+```yaml
+test_name: "pizza_change_mind"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza.
+  context:
+    - "You initially want to build your own custom pizza with specific toppings."
+    - "Halfway through the conversation, you decide it's too complicated and change your mind to order a predefined pizza from the menu instead."
+  goals:
+    - "Start by ordering a custom pizza with {{custom_toppings}}"
+    - "Eventually change your mind and order a {{predefined_pizza}} instead"
+    - custom_toppings:
+        function: random(3)
+        type: string
+        data: [mushrooms, onions, extra cheese, olives, bell peppers, sausage]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, BBQ Chicken, Meat Lovers]
+
+chatbot:
+  is_starter: false
+  fallback: "I didn't quite catch that. Could you repeat?"
+  output:
+    - final_pizza_ordered:
+        type: string
+        description: "The name of the predefined pizza the user finally ordered"
+    - initial_custom_toppings:
+        type: list[string]
+        description: "The custom toppings the user initially asked for before changing their mind"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+  interaction_style:
+    - change your mind
+```
+
+### How this profile works:
+
+1. **`user.context` & `user.goals`**: We explicitly instruct the LLM simulating the user to start with a custom pizza request (picking 3 random toppings) and then switch to a predefined pizza (picking 1 random classic pizza).
+2. **`interaction_style: [change your mind]`**: This is a built-in Sensei control that naturally encourages the simulated user to alter their decisions mid-conversation, reinforcing the context we provided.
+3. **`chatbot.output`**: At the end of the conversation, Sensei will extract both the `initial_custom_toppings` the user asked for and the `final_pizza_ordered`. This is super useful if you want to write SENSEI RULES later to verify that the chatbot correctly discarded the custom toppings and only charged for the predefined pizza! 🍕
+
+Let me know if you'd like to adjust the toppings, the number of conversations, or write a validation rule for this! 😊

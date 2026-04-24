@@ -1,0 +1,31 @@
+Hello there! 😊 I'd be happy to help you create that rule. 
+
+Since you want this rule to be independent of any specific profile but still want to check if promotions were provided, we have two great ways to approach this!
+
+**Option 1: Using a generic variable**
+If you assume that whatever profile you use will extract a variable (let's call it `current_promotions`), you can write a simple oracle to check if that variable was successfully filled out by the chatbot:
+
+```yaml
+name: provided_promotions_info
+description: Checks if the chatbot successfully provided information about current promotions.
+conversations: 1
+active: true
+oracle: current_promotions is not None
+yields: f"The chatbot failed to provide information about current promotions."
+```
+
+**Option 2: Using the `utterance_index` helper (Truly profile-agnostic)**
+If you don't want to rely on *any* extracted variables from a profile's `chatbot.output`, you can use Sensei's built-in `utterance_index` helper. This function uses an LLM under the hood to check the actual conversation text and find the turn where the assistant talked about a specific topic:
+
+```yaml
+name: chatbot_mentions_promotions
+description: Checks the conversation text to ensure the assistant talked about current promotions.
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'current promotions or discounts') > 0
+yields: f"The chatbot never mentioned current promotions in the conversation."
+```
+
+Both are great approaches! The first one is perfect if you are actively extracting that data in your profiles, and the second one is amazing if you just want to analyze the raw conversation flow without worrying about variables at all. 
+
+Let me know if you need help tweaking this or adding it to your project! 🚀

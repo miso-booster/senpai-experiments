@@ -1,0 +1,80 @@
+conversation ID: graph_based_architecture__p2__ada_uam__profile__59d0ba69
+$$$
+Hello there! Welcome to the Dojo! 🥋✨ How can I help you today?
+
+Creating a profile for a newly arrived Erasmus student is a fantastic use case! It’s super important to make sure your chatbot gives them the warm, detailed support they need when they are feeling a bit lost. 🌍🎒
+
+Since you want minimal input variables but a **rich set of chatbot outputs** to verify the support quality, I've designed a profile that uses just one simple variable (`{{platform}}`) to cycle through Moodle, Sigma, and the university email. Meanwhile, the `chatbot.output` section is packed with specific fields so your Sensei-check rules can later verify that the bot provided links, credentials info, and in-person help locations.
+
+I also added a fun `interaction_style` where the student might randomly try to switch to Spanish, which is very typical for an Erasmus student practicing the local language! 😉
+
+Here is the ready-to-use YAML profile. You can save this as `erasmus_digital_setup.yml` inside your `profiles/` folder:
+
+```yaml
+test_name: "erasmus_digital_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus student who just arrived at the university. You are feeling a bit overwhelmed
+    and need step-by-step help setting up your digital accounts like Moodle, Sigma, and the Wi-Fi.
+  context:
+    - "You don't know any of the local university systems."
+    - "You need clear, beginner-friendly instructions."
+    - "You might ask follow-up questions if the instructions are too technical."
+  goals:
+    - "Ask how to log in to {{platform}} for the very first time."
+    - "Ask how to connect your phone and laptop to the university Wi-Fi (eduroam)."
+    - "Ask where you can go in person if you still can't get your accounts working."
+    - platform:
+        function: forward()
+        type: string
+        data: ["Moodle", "Sigma", "the university email"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you please rephrase your question? I am the IT support bot."
+  output:
+    - platform_url:
+        type: string
+        description: "The direct link provided to access the requested platform."
+    - login_credentials_info:
+        type: string
+        description: "Instructions on what username and password the student should use."
+    - wifi_instructions:
+        type: string
+        description: "Step-by-step guide or link to connect to the university Wi-Fi."
+    - physical_helpdesk_location:
+        type: string
+        description: "The physical office address or room number where the student can get in-person IT help."
+    - support_email:
+        type: string
+        description: "The contact email for the IT support desk."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - random:
+      - long phrases
+      - change language:
+        - Spanish
+```
+
+### 💡 Why this works perfectly for your needs:
+1. **Minimal Inputs:** The `forward()` function simply iterates through the 3 platforms. It will run exactly 3 conversations, asking about a different system each time.
+2. **Comprehensive Outputs:** At the end of the conversation, Sensei will extract `platform_url`, `login_credentials_info`, `wifi_instructions`, etc. Later, you can write **Sensei Rules** like `when: conv[0].platform_url is None then: fail` to ensure the bot is actually giving out the links!
+3. **`all_answered` Goal Style:** This tells Sensei to keep the conversation going until all the goals are met, ensuring the bot gets a fair chance to provide all that juicy support info. Setting `export: true` will even generate a handy CSV for you to review! 📊
+
+How does this look to you? Let me know if you'd like to tweak the outputs or if you need help writing the **Sensei Rules** to validate these fields! 😊👀
+$$$

@@ -1,0 +1,71 @@
+Here is a profile tailored for an Erasmus student who needs help setting up their university systems. 
+
+As requested, I kept the input variables minimal (just randomising the specific system they ask about first) but added a robust `chatbot.output` section. This will allow you to easily write SENSEI rules later to verify that the chatbot provided links, step-by-step instructions, and fallback IT support contacts.
+
+```yaml
+test_name: "erasmus_onboarding_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus exchange student who has just arrived at the university. 
+    You are feeling a bit lost and do not know how to set up your digital university accounts.
+  context:
+    - "You need access to Moodle for your classes and assignments."
+    - "You need access to Sigma for your academic records and enrollment."
+    - "You don't have your university credentials yet or don't know how to activate them."
+  goals:
+    - "Ask how to set up and log into {{system}}."
+    - "Ask what to do if you haven't received your student credentials yet."
+    - system:
+        function: random()
+        type: string
+        data: [Moodle, Sigma, University Email, Eduroam Wi-Fi]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - systems_explained:
+        type: list[string]
+        description: "List of university systems (e.g., Moodle, Sigma) the chatbot explained how to set up."
+    - provided_links:
+        type: list[string]
+        description: "Any URLs or links provided by the chatbot for setup, login, or guides."
+    - step_by_step_provided:
+        type: string
+        description: "'Yes' if the chatbot provided clear step-by-step instructions, 'No' otherwise."
+    - support_contact_provided:
+        type: string
+        description: "Contact email, phone number, or physical office location for IT support if the user is still stuck."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - long phrases
+      - single questions
+```
+
+### 💡 How this profile works:
+
+1. **Minimal Inputs (`user.goals`)**: The user will always ask what to do about missing credentials, but the specific system they ask to set up first (`{{system}}`) is randomised among Moodle, Sigma, Email, and Eduroam.
+2. **Rich Outputs (`chatbot.output`)**: 
+   - `systems_explained` and `provided_links` extract lists of the actual help provided.
+   - `step_by_step_provided` acts as a boolean-like string to check if the bot actually guided the user properly instead of just giving a vague answer.
+   - `support_contact_provided` ensures the bot gives a human fallback (like an IT desk) for a lost Erasmus student.
+3. **Interaction Style**: I added a random mix of spelling mistakes, long phrases, and single questions to simulate the natural confusion and typing style of a stressed student in a new country 😊.
+
+Once you run this profile, you can easily create rules checking things like `when: conv[0].step_by_step_provided == 'No' then: conv[0].support_contact_provided is not None`! Let me know if you'd like to adjust any of the outputs or add more systems to the list.

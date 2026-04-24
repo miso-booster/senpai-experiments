@@ -1,0 +1,61 @@
+¡Hola! 👋 ¡Claro que sí, me encantaría ayudarte con eso! 😊 
+
+Crear un perfil para probar cómo el chatbot de la UAM responde sobre el CAU (Centro de Atención a Usuarios) es una idea genial. Para lograr lo que buscas, vamos a configurar los **`user.goals`** (lo que el usuario simulado va a preguntar) y el **`chatbot.output`** (la información que queremos que Sensei extraiga al final para que puedas validarla).
+
+He preparado este perfil YAML basándome en tus necesidades. Además, le he añadido el mensaje de *fallback* (respuesta por defecto) que suele usar el bot de la UAM para que sea lo más realista posible. 👀
+
+Aquí tienes tu perfil listo para usar. Solo tienes que guardarlo en tu carpeta `profiles/` con un nombre como `contacto_cau.yml`:
+
+```yaml
+test_name: "Soporte CAU - Contacto y Horarios"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Estudiante o usuario de la UAM que necesita contactar urgentemente con el Centro de Atención a Usuarios (CAU)."
+  context:
+    - "Tienes un problema técnico y necesitas hablar con alguien del CAU."
+    - "Quieres saber todas las formas posibles de contactar con ellos (teléfono, email, presencial) y cuándo están abiertos."
+  goals:
+    - "Preguntar por el número de teléfono del CAU."
+    - "Solicitar la dirección de correo electrónico del CAU."
+    - "Preguntar por la dirección física para poder ir en persona."
+    - "Consultar los horarios de atención al público."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro\ncatálogo de servicios\n.\nRespondo a preguntas dirigidas al\nCentro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - telefono_cau:
+        type: string
+        description: "Número de teléfono del CAU"
+    - email_cau:
+        type: string
+        description: "Correo electrónico del CAU"
+    - direccion_fisica:
+        type: string
+        description: "Dirección física del CAU"
+    - horarios_atencion:
+        type: string
+        description: "Horarios de atención del CAU"
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 15
+  interaction_style:
+    - single questions
+```
+
+### 💡 ¿Por qué lo hemos configurado así?
+
+1. **`user.goals`**: Aquí le decimos exactamente al simulador qué debe intentar conseguir. Como le hemos puesto el estilo de interacción `single questions`, el usuario irá haciendo una pregunta a la vez, lo cual es ideal para ver cómo el chatbot maneja cada dato por separado.
+2. **`chatbot.output`**: Esta es la magia ✨. Al terminar la conversación, Sensei analizará el chat y extraerá el teléfono, el email, la dirección y el horario. Luego, si quieres usar **Sensei Rules**, podrás comprobar fácilmente si el bot dio la información correcta (por ejemplo: `conv[0].email_cau is not None`).
+3. **`conversation.goal_style.steps`**: Le hemos dado 15 turnos de conversación como límite, que es más que suficiente para que el usuario haga sus 4 preguntas y el bot responda.
+
+¿Qué te parece? Si quieres que el usuario tenga alguna personalidad en concreto (por ejemplo, que esté enfadado o que tenga prisa) o si quieres añadir variables para probar diferentes escenarios, ¡dímelo y lo ajustamos en un abrir y cerrar de ojos! 🚀

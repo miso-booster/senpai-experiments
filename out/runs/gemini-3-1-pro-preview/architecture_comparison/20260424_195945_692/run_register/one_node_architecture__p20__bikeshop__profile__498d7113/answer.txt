@@ -1,0 +1,63 @@
+Hello there! 😊 I'd be happy to help you create a Sensei profile to test how your bike shop chatbot handles appointment scheduling for wheel changes. 
+
+To thoroughly test the dates and times, we can use the `forward()` function in the `user.goals` section. By nesting the time variable inside the day variable, Sensei will automatically generate a combination matrix, testing every single day with every single time! 📅⏱️
+
+Here is the complete profile ready for your project:
+
+```yaml
+test_name: "wheel_change_appointment"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer who needs to replace their bike wheels and wants to schedule an appointment."
+  context:
+    - "Your current bike wheels are damaged and you need new ones installed."
+    - "You have specific availability and want to test if the shop can accommodate your schedule."
+  goals:
+    - "Tell the chatbot you need to get your bike wheels changed."
+    - "Ask to schedule an appointment for {{appointment_day}} at {{appointment_time}}."
+    - appointment_day:
+        function: forward()
+        type: string
+        data: ["tomorrow", "next Monday", "Friday", "October 15th"]
+    - appointment_time:
+        function: forward(appointment_day)
+        type: string
+        data: ["09:00 AM", "1:30 PM", "17:00"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you rephrase that?"
+  output:
+    - confirmed_day:
+        type: string
+        description: "The day of the appointment confirmed by the chatbot."
+    - confirmed_time:
+        type: time("hh:mm")
+        description: "The time of the appointment confirmed by the chatbot."
+    - service_booked:
+        type: string
+        description: "The type of service booked (e.g., wheel change)."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - default
+```
+
+### What's happening in this profile? 👀
+* **Variables & Combinations:** We defined `appointment_day` and `appointment_time`. Because `appointment_time` uses `forward(appointment_day)`, Sensei will run conversations covering all 12 combinations (4 days × 3 times). We set `conversation.number: combinations` to tell Sensei to run the full matrix!
+* **Outputs:** The `chatbot.output` section extracts the `confirmed_day` and `confirmed_time` at the end of the chat. This is super useful if you want to write a Sensei-check rule later to verify that the chatbot booked the exact date and time the user requested. 🕵️‍♂️
+
+Let me know if you'd like to adjust the times, add some interaction styles (like making the user change their mind mid-conversation!), or if you want to write a metamorphic rule to validate these outputs! 🚲✨

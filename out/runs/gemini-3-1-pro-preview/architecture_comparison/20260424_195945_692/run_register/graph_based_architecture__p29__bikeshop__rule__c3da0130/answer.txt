@@ -1,0 +1,37 @@
+Hello there! 😊 I would be absolutely delighted to help you write that rule for your bike service chatbot! 🚲🔧
+
+Since you want to check if a specific action happens within a single interaction, we will write a **single-conversation rule** (which we sometimes call a traditional oracle). 
+
+In Sensei-check, there are two fantastic ways to do this, depending on how your **SENSEI Chat profile** is set up. Let's look at both!
+
+### Option 1: Checking the conversation text directly (Using Helpers)
+If you want to check the actual dialogue to ensure the assistant says something that sounds like a confirmation, we can use the built-in `utterance_index` helper. This is an LLM-backed function that searches the conversation to see if a specific topic or intent was mentioned by a specific role.
+
+Here is what that rule looks like:
+
+```yaml
+name: confirm_bike_service_dialogue
+description: The assistant must confirm the bike service appointment in the chat.
+conversations: 1
+oracle: utterance_index('assistant', 'appointment confirmation') > 0
+```
+*How it works:* `utterance_index` looks through the assistant's messages. If it finds a confirmation, it returns the turn index (which is greater than 0). If it doesn't, it fails!
+
+### Option 2: Checking the extracted data (Profile-Bound Rule)
+In Sensei, rules usually work hand-in-hand with **SENSEI Chat profiles**. If your profile is designed to extract an output when an appointment is made—like an `appointment_date` or a `status` field in the `chatbot.output`—it is highly recommended to check that field directly! 
+
+Assuming your profile extracts a field called `appointment_date`, your rule would look like this:
+
+```yaml
+name: bike_service_scheduled_data
+description: The chatbot must successfully extract the appointment date.
+conversations: 1
+oracle: appointment_date is not None
+```
+*(Note: In single-conversation rules, you can refer to the field directly, or use `conv[0].appointment_date`!)*
+
+### Which one should you choose? 🤔
+* Use **Option 1** if you just want to ensure the bot *spoke* the confirmation to the user.
+* Use **Option 2** if your bot is supposed to actually collect and save the booking data (which is usually the best practice for scheduling bots!).
+
+Do you already have a SENSEI Chat profile set up for this bike service scenario? If you'd like, I can help you align the rule perfectly with your profile's `chatbot.output`! Let me know how else I can help you today. ✨

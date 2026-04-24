@@ -1,0 +1,70 @@
+Here is the SENSEI profile tailored for testing the bike shop's virtual assistant. I have structured it based on the SENSEI Chat documentation (`sensei-chat-guide.md`).
+
+```yaml
+test_name: "bike_shop_basic_inquiry"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer interacting with a bike shop's virtual assistant.
+    You are looking for general information about the shop and its standard services.
+    You must phrase your questions clearly and directly.
+  context:
+    - "Do NOT ask about appointments, specific bike models, custom or advanced repairs, warranties, or delivery services."
+    - "Do NOT ask about any topic outside of basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices rather than advanced repairs."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - shop_hours:
+        type: string
+        description: "The opening and closing times provided by the chatbot."
+    - tire_price:
+        type: string
+        description: "The price quoted for a new bike tire."
+    - tune_up_price:
+        type: string
+        description: "The price quoted for a standard bike tune-up."
+    - seat_price:
+        type: string
+        description: "The price quoted for a new bike seat."
+    - maintenance_advice:
+        type: string
+        description: "The general advice provided on basic bike maintenance and good practices."
+    - unrelated_topics_introduced:
+        type: string
+        description: "Any unrelated services, advanced repairs, or unsolicited suggestions introduced by the chatbot."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### How this profile meets your requirements:
+
+1. **Role & Language**: The `user.language` is set to English, and the `user.role` establishes the persona of a normal customer asking clear, direct questions about standard services.
+2. **Strict Constraints**: The `user.context` explicitly forbids the simulator from asking about appointments, specific models, custom/advanced repairs, warranties, delivery, or anything outside the allowed scope.
+3. **Specific Inquiries**: The `user.goals` list maps exactly to the 5 questions you want the simulated user to ask (hours, tire price, tune-up price, seat price, and basic maintenance advice).
+4. **Validation-Ready Outputs**: The `chatbot.output` section is designed to extract exactly what you want to test. It pulls out the hours, the three specific prices, the maintenance advice, and importantly, a field called `unrelated_topics_introduced`. This makes it very easy to write SENSEI Rules later to verify that prices are clearly stated and that no unsolicited services were pushed!
+5. **Execution Controls**: The `goal_style` is set to `all_answered` to ensure the conversation naturally concludes only once all 5 questions have been addressed by the chatbot.
+
+Let me know if you'd like to adjust any of the extraction fields or if you'd like to write some SENSEI Rules to validate these outputs! 😊

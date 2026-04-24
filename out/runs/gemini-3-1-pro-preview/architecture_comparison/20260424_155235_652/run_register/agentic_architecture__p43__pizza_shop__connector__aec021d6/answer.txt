@@ -1,0 +1,32 @@
+¡Hola! 😊 He revisado la configuración de tu conector basándome en la documentación de SENSEI (`custom-connector-guide.md`).
+
+La buena noticia es que **tu YAML está perfectamente configurado** para los JSON de *request* y *response* que me has compartido. No tiene ningún error de sintaxis ni de estructura lógica. 
+
+Aquí tienes el código limpio por si acaso tuvieras algún problema de indentación o caracteres invisibles en tu archivo original:
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+### ¿Por qué está correcto?
+1. **`payload_template`**: Tienes anidado `text` dentro de `message` y usas el comodín `{user_msg}`, lo cual generará exactamente el JSON de request que necesitas: `{"message": {"text": "hola"}}`.
+2. **`response_path`**: La ruta `"response.text"` navegará correctamente por el JSON de respuesta (`json["response"]["text"]`) para extraer el mensaje del bot: `"¡Hola! ¿Cómo puedo ayudarte hoy?"`.
+
+### ¿Sigues teniendo problemas?
+Dado que la configuración es correcta, si el conector te está fallando podría deberse a otra cosa. ¿Te está arrojando algún **mensaje de error específico**? 
+
+Algunas cosas comunes que podrías revisar:
+* ¿La API requiere algún token de autenticación en los `headers` (por ejemplo, `Authorization: "Bearer ... "`) que falte añadir?
+* ¿El endpoint (`https://api.anotherexample.com/api/chat`) es accesible desde donde estás ejecutando las pruebas?
+
+¡Dime si te sale algún error en particular y lo miramos a fondo! 🥋

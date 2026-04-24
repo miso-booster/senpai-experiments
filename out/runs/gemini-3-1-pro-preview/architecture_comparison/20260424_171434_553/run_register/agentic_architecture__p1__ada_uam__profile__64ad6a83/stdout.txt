@@ -1,0 +1,75 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__64ad6a83
+$$$
+I have checked your project and there isn't a specific profile for eduroam issues yet, so I have created a new one for you! 
+
+Based on the SENSEI profiles documentation (`sensei-chat-guide.md`), I've designed a profile where the user simulates a student trying to connect to eduroam. The profile uses variables to randomly select the device they are using and the setup method they attempted (e.g., the eduroam CAT installer, manual configuration, etc.).
+
+Here is the YAML for the new profile. You can save this as `profiles/eduroam_setup_failure.yml`:
+
+```yaml
+test_name: "eduroam_setup_failure"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student trying to connect your device to the eduroam Wi-Fi network. 
+    You have tried following the instructions but it keeps failing. You are frustrated but polite.
+  context:
+    - "You are currently on campus and need internet access for a class."
+    - "You have your university credentials ready and are sure the password is correct."
+  goals:
+    - "Explain that you are trying to set up eduroam on your {{device_type}} using the {{setup_method}}, but it is not working."
+    - "Ask for troubleshooting steps or alternative ways to connect."
+    - device_type:
+        function: random()
+        type: string
+        data: [laptop, smartphone, tablet]
+    - setup_method:
+        function: random()
+        type: string
+        data: 
+          - "eduroam CAT installer"
+          - "manual configuration"
+          - "QR code"
+          - "university portal link"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - device_mentioned:
+        type: string
+        description: "The device the user is trying to connect (e.g., laptop, smartphone)."
+    - method_attempted:
+        type: string
+        description: "The setup method the user tried to use."
+    - issue_resolved:
+        type: string
+        description: "Whether the chatbot successfully provided a working solution (yes/no/unclear)."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📝 Summary of the Profile
+- **Variables (`user.goals`)**: 
+  - `{{device_type}}`: Randomly picks between a laptop, smartphone, or tablet.
+  - `{{setup_method}}`: Randomly picks between different ways to connect (CAT installer, manual configuration, QR code, or portal link).
+- **Chatbot Outputs (`chatbot.output`)**: It extracts the device mentioned, the method attempted, and whether the issue was ultimately resolved. This is super useful if you want to write SENSEI rules later to check if the bot successfully helps users on specific devices!
+- **Conversation Controls**: It will run 3 conversations (`number: 3`) and stop when all goals are answered, exporting the results to a CSV.
+
+Let me know if you'd like to tweak the setup methods, add more interaction styles (like making the user `change your mind` or `make spelling mistakes`), or if you'd like to create a rule to validate this profile! 😊
+$$$

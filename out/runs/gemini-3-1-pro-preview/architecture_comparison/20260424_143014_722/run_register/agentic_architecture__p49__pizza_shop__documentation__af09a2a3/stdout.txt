@@ -1,0 +1,40 @@
+conversation ID: agentic_architecture__p49__pizza_shop__documentation__af09a2a3
+$$$
+Hello! 😊
+
+In SENSEI-check, there isn't actually a specific built-in helper function named `pairwise()`. However, SENSEI handles **pairwise comparisons** natively through its **metamorphic rules**! 
+
+Instead of calling a function, you tell SENSEI to compare pairs of conversations by setting `conversations: 2` in your rule definition. SENSEI will then automatically evaluate pairs of conversations that match your criteria.
+
+Here is how pairwise comparison works under the hood (based on the `sensei-check-doc.md` documentation):
+
+### 1. Requesting a Pair
+You start by setting `conversations: 2` in your YAML rule. This tells SENSEI to look at conversations in pairs rather than one by one.
+
+### 2. Accessing the Pair
+You access the data from the two conversations using the `conv` array:
+* `conv[0]` represents the first conversation in the pair.
+* `conv[1]` represents the second conversation in the pair.
+
+### 3. Structuring the Comparison
+A pairwise rule typically uses three clauses to define the relationship:
+* **`when` (The Filter):** Defines what makes the two conversations comparable (e.g., "only compare pairs where the pizza size is the same").
+* **`if` (The Precondition):** Defines the difference between the pair (e.g., "if conversation 0 has more toppings than conversation 1").
+* **`then` (The Expected Relation):** Defines what must be true about the output (e.g., "then conversation 0 must cost more than conversation 1").
+
+### Example: Pairwise Price Comparison
+Here is a classic example of a pairwise (metamorphic) rule that checks if adding more toppings increases the price, assuming all other factors are equal:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+In this example, SENSEI automatically pairs up conversations, filters them using the `when` clause, and then checks the `if`/`then` logic across `conv[0]` and `conv[1]`.
+
+Do you have a specific pairwise relationship or rule you are trying to build for your project? If so, let me know what your chatbot does, and we can write the rule together! 🥋
+$$$

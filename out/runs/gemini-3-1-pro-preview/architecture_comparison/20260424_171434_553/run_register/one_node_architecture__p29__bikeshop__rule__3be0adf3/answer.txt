@@ -1,0 +1,38 @@
+Hello there! I'd be happy to help you write that rule! 🚲✨
+
+Looking at your `bikeshop` project, I see you have a couple of profiles that handle scheduling, such as `appointment.yml` and `bike_repair_and_maintenance_scheduler.yaml`. 
+
+To check if the chatbot successfully confirms an appointment, we can write a single-conversation rule (an oracle) that verifies if the specific appointment fields defined in your profile's `chatbot.output` were successfully extracted.
+
+Here is a rule tailored for your **`appointment.yml`** profile. It checks that the `confirmed_date`, `confirmed_time`, and `confirmed_service` fields are all captured:
+
+```yaml
+name: appointment_is_confirmed
+description: The chatbot successfully confirms the appointment date, time, and service.
+conversations: 1
+active: true
+oracle: confirmed_date is not None and confirmed_time is not None and confirmed_service is not None
+```
+
+Alternatively, if you want to test the **`bike_repair_and_maintenance_scheduler.yaml`** profile, that profile exposes a field called `appointment_confirmation`. Here is how you would write a rule for that one:
+
+```yaml
+name: repair_appointment_confirmed
+description: The chatbot provides an appointment confirmation when scheduling a tune-up.
+conversations: 1
+active: true
+oracle: appointment_confirmation is not None
+```
+
+### 💡 A Quick Tip:
+If you want a more generic rule that just ensures *all* the fields in your profile's `chatbot.output` were successfully filled out during the conversation, you can use our handy `data_collected()` helper function like this:
+
+```yaml
+name: all_appointment_data_collected
+description: All conversation slots for the appointment are filled.
+conversations: 1
+active: true
+oracle: data_collected() == True
+```
+
+You can save any of these in your `rules/` folder. Let me know if you'd like to tweak these or if you need help with anything else! 😊

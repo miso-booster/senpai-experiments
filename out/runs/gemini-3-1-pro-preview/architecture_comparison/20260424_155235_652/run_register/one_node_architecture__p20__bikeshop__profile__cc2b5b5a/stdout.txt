@@ -1,0 +1,65 @@
+conversation ID: one_node_architecture__p20__bikeshop__profile__cc2b5b5a
+$$$
+Hello there! I'd be happy to help you set up this test for your bike shop chatbot! 🚲✨
+
+To test how the chatbot manages different dates and times, we can use variables in the `user.goals` section. By using the `forward()` function and nesting the time variable inside the date variable, Sensei will automatically generate a combination matrix. This means it will test every single time slot for every single day you provide! 
+
+I've also set the `conversation.number` to `combinations` so it runs through all those possibilities, and added some fields in `chatbot.output` to extract the exact date and time the bot confirms.
+
+Here is your ready-to-use profile:
+
+```yaml
+test_name: "wheel_change_appointment"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A cyclist who needs to schedule an appointment at the bike shop to have their wheels changed."
+  context:
+    - "You recently bought new wheels and need a professional to install them."
+    - "You have a busy schedule, so you are trying specific dates and times to see what is available."
+  goals:
+    - "Hi, I'd like to schedule an appointment to get my wheels changed on {{appointment_date}} at {{appointment_time}}."
+    - appointment_date:
+        function: forward()
+        type: string
+        data: ["Monday", "Wednesday", "Friday", "tomorrow"]
+    - appointment_time:
+        function: forward(appointment_date)
+        type: string
+        data: ["09:00 AM", "12:30 PM", "04:00 PM"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, my gears are slipping. Could you repeat that?"
+  output:
+    - confirmed_date:
+        type: string
+        description: "The date confirmed by the chatbot for the appointment."
+    - confirmed_time:
+        type: time("hh:mm a")
+        description: "The time confirmed by the chatbot for the appointment."
+    - service_booked:
+        type: string
+        description: "The type of service booked (e.g., wheel change or wheel installation)."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### A quick tip from Senpai 👀:
+Because we used `forward()` for `appointment_date` (4 options) and `forward(appointment_date)` for `appointment_time` (3 options), Sensei will generate exactly **12 conversations** to test every combination. 
+
+Let me know if you want to add any other variables, try out different interaction styles (like making the user change their mind mid-conversation), or if you'd like to write a Sensei Rule to validate these appointments! 😊🔧
+$$$

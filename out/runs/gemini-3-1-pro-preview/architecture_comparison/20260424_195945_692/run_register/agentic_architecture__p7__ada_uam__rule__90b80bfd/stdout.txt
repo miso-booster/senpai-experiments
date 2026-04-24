@@ -1,0 +1,23 @@
+conversation ID: agentic_architecture__p7__ada_uam__rule__90b80bfd
+$$$
+Based on the SENSEI RULES documentation (`sensei-check-doc.md`), we can create a single-conversation rule (an `oracle`) that verifies if the chatbot correctly provided the CAU information.
+
+Since the chatbot outputs you provided (`contact_email`, `contact_phone`, and `physical_address`) are strings, we can use exact matching for the email and the built-in `semantic_content` helper for the phone and address. The `semantic_content` helper is perfect here because it uses an LLM check to ensure the meaning matches, which prevents the rule from failing if the chatbot formats the phone number differently (e.g., "914974029" vs "91 497 4029") or slightly rephrases the address.
+
+Here is the YAML rule:
+
+```yaml
+name: correct_cau_information
+description: Validates that the chatbot provides the correct email, phone, and physical address for the CAU.
+conversations: 1
+oracle: |
+  contact_email == 'cau@uam.es' and semantic_content(contact_phone, '91 497 4029') and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+### How this works:
+* **`conversations: 1`**: This is a standard oracle rule that checks each conversation individually.
+* **`contact_email == 'cau@uam.es'`**: Checks for an exact match on the email address, as emails shouldn't vary in formatting.
+* **`semantic_content(...)`**: Checks that the extracted `contact_phone` and `physical_address` semantically match the expected values, making the test robust against minor formatting or translation differences by the chatbot. 
+
+You can save this as a `.yaml` file in your `rules/` directory! Let me know if you need to adjust anything else 😊.
+$$$

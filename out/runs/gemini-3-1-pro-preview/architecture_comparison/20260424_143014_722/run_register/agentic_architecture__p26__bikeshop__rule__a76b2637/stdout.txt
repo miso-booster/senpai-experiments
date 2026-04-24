@@ -1,0 +1,26 @@
+conversation ID: agentic_architecture__p26__bikeshop__rule__a76b2637
+$$$
+I have reviewed your rule against the SENSEI-check documentation (`sensei-check-doc.md`), and there are a few issues with the syntax and logic. 
+
+Here is the corrected version of your rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+on-error: "The tune-up price is not $50."
+```
+
+### What I changed and why:
+
+1. **Changed `conversations: 2` to `conversations: 1`**: Your rule evaluates an absolute value for a single conversation. Metamorphic rules (`conversations: 2` or more) are used when you want to compare multiple conversations against each other.
+2. **Removed the `conv[0].` prefix**: In single-conversation rules, you don't need the `conv[i]` array syntax. You can reference the field directly (i.e., `tune_up_price`).
+3. **Replaced `when`, `if`, and `then` with `oracle`**: 
+   - `when` is used to filter conversations, and `if`/`then` is used for conditional implications. Since you just want to assert a simple fact, `oracle` is the correct keyword.
+   - The `then` clause in SENSEI expects a Python boolean expression (like `x == y`), not a string.
+4. **Used the `extract_float()` helper**: Chatbots often return prices as strings with currency symbols (e.g., `"$50"`, `"50 USD"`). Using `extract_float(tune_up_price) == 50` safely extracts the number for a reliable mathematical comparison.
+5. **Moved your string to `on-error`**: The string you had in `then` was moved to `on-error`, which is the proper field to display a helpful message if the rule fails.
+
+*Note: For this rule to work, make sure that `tune_up_price` is exactly the name of the field defined in your SENSEI Chat profile's `chatbot.output`!* 😊 Let me know if you need help checking your profile as well.
+$$$

@@ -1,0 +1,39 @@
+conversation ID: graph_based_architecture__p15__alcampo__rule__6630cc41
+$$$
+Hello there! 😊 I'd be happy to help you fix this rule for the Dojo! 
+
+Looking at your YAML, there are two quick things we need to adjust to make it work perfectly:
+
+1. **A tiny typo:** `descriptin` needs to be spelled `description`.
+2. **Missing logic:** In Sensei-check, whenever you use an `if:` statement, you **must** pair it with a `then:` statement to complete the rule (e.g., "If X happens, *then* Y should be true"). Alternatively, if you just want to assert that a condition is true without an if/then relationship, you should use `oracle:`.
+
+Depending on what exactly you want to test, here are two ways to fix it!
+
+### Option 1: Using `oracle` (Simplest fix)
+If your goal is simply to verify that the chatbot successfully extracted those fields (meaning they are not `None`), you can just change `if:` to `oracle:` like this:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+oracle: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+```
+
+### Option 2: Using `if` and `then` (Metamorphic relation)
+If you want to test a *relationship* between the two conversations—for example, checking that the specific phone number provided in conversation 1 is actually included in the general contact options provided in conversation 0—you can use `if` and `then`:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: conv[1].customer_service_number in conv[0].contact_options
+```
+
+### 💡 Senpai's Friendly Reminder:
+For this rule to work, please make sure that `user_request`, `contact_options`, and `customer_service_number` are exactly matching the field names defined in your SENSEI Chat profile's `chatbot.output`. Sensei-check pulls directly from those extracted outputs!
+
+Let me know if you need help adjusting your SENSEI Chat profile to match this, or if you have any other questions! 🥋✨
+$$$

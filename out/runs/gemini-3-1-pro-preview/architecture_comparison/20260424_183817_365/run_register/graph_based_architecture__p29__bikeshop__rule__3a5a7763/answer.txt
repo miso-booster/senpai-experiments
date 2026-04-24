@@ -1,0 +1,35 @@
+Hello there! I would be absolutely delighted to help you write that rule! 🚲✨
+
+In Sensei-check, we can write a **single-conversation rule** (sometimes called an oracle) to verify that your chatbot behaves correctly for this specific scenario. 
+
+Depending on how your SENSEI Chat profile is set up, there are two great ways to check this. Let's look at both! 👀
+
+### Option 1: Checking the conversation dialogue
+If you want to verify that the assistant actually *says* something to confirm the appointment, we can use the handy `utterance_index` helper. This function uses an LLM under the hood to check if a specific topic was mentioned by a specific role.
+
+Here is what the YAML rule looks like:
+
+```yaml
+name: confirm_bike_service_dialogue
+description: The assistant must verbally confirm the bike service appointment.
+conversations: 1
+oracle: utterance_index('assistant', 'appointment confirmation') > 0
+```
+*How it works:* It looks through the conversation and finds the turn index where the assistant confirms the appointment. If it's greater than `0`, it means the assistant successfully brought it up! 🎉
+
+### Option 2: Checking the extracted data (Profile-bound rule)
+Usually, the most robust way to test this is by checking the data your chatbot extracts. If your SENSEI Chat profile has a `chatbot.output` field for something like `appointment_date` or `service_status`, we can write a rule to ensure that data was successfully collected!
+
+```yaml
+name: bike_service_data_collected
+description: The chatbot successfully schedules and extracts the appointment date.
+conversations: 1
+oracle: |
+  'appointment_date' not in missing_slots()
+```
+*How it works:* The `missing_slots()` helper returns a list of any `chatbot.output` fields that the bot failed to fill. This rule passes if `appointment_date` was successfully captured.
+
+### 💡 Senpai's Tip:
+Remember that Sensei-check rules work hand-in-hand with your SENSEI Chat profiles! 🤝 If you use **Option 2**, just make sure that `appointment_date` (or whatever you choose to name it) is exactly the same name used in your profile's `chatbot.output` schema.
+
+Does this make sense for your bike service bot? Let me know if you'd like help setting up the profile to match this rule, or if you want to test something else! 😊

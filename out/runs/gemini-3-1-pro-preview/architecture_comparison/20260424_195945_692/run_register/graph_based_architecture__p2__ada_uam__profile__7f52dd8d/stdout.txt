@@ -1,0 +1,76 @@
+conversation ID: graph_based_architecture__p2__ada_uam__profile__7f52dd8d
+$$$
+Hello there! Welcome to the Dojo! 🥋✨
+
+An Erasmus student profile is a fantastic idea! 🌍 It’s a great way to test if your chatbot is patient, clear, and helpful with newcomers who might be feeling a little lost. 
+
+Since you want to keep the input variables minimal but need a robust set of `chatbot.output` fields to verify the support quality, I've designed a profile that focuses heavily on extracting those key support details (like setup steps, links, and contact info). 
+
+Here is a ready-to-use Sensei Profile for your Erasmus student. You can save this as `erasmus_student_setup.yml` inside your `profiles/` folder:
+
+```yaml
+test_name: "erasmus_student_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus exchange student who just arrived at the university. 
+    You are completely new to the digital systems and need help setting up your accounts.
+  context:
+    - "You don't know how the local university systems work."
+    - "You need step-by-step instructions because everything is new to you."
+    - "You want to make sure you are properly enrolled in your classes."
+  goals:
+    - "Ask how to get your initial credentials and password."
+    - "Ask how to log into {{system}} and if there is a guide for international students."
+    - "Ask where to go or who to contact if you experience technical issues."
+    - system:
+        function: forward()
+        type: string
+        data: [Moodle, Sigma, "University Email"]
+
+chatbot:
+  is_starter: false
+  fallback: "I am sorry, could you please rephrase your question? I am the IT support bot."
+  output:
+    - credential_setup_steps:
+        type: string
+        description: "Step-by-step instructions on how to get initial credentials"
+    - system_access_link:
+        type: string
+        description: "The URL or link provided to access the requested system"
+    - international_guide_mentioned:
+        type: string
+        description: "Whether a guide or specific help for international/Erasmus students was provided"
+    - support_contact_email:
+        type: string
+        description: "Email address for IT support"
+    - support_contact_phone:
+        type: string
+        description: "Phone number for IT support"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 10
+  interaction_style:
+    - single questions
+```
+
+### 🧐 Why this works perfectly for your needs:
+
+1. **Minimal Variables:** We only used one variable (`{{system}}`) with the `forward()` function. This means Sensei will run exactly 3 conversations—one asking about Moodle, one about Sigma, and one about the University Email. Nice and simple!
+2. **Rich Chatbot Outputs:** The `chatbot.output` section is the star of the show here 🌟. By defining fields like `credential_setup_steps`, `system_access_link`, and `support_contact_email`, Sensei will extract exactly what the bot answered. Later, you can easily write **Sensei Rules** (like `when: conv[0].support_contact_email is None then: fail`) to ensure the bot is actually providing the right support.
+3. **Interaction Style:** I set it to `single questions` so the simulated user asks things one by one, giving your chatbot a fair chance to explain the steps clearly. 
+
+**💡 Senpai Tip:** If you want to test how your bot handles language barriers (a very common Erasmus scenario!), you could add `- change language: [Spanish]` under `interaction_style`. The simulated user will start in English and suddenly switch to Spanish! 
+
+How does this look to you? Let me know if you'd like to add any specific custom types or if you need help writing the Rules to check these outputs! 😊
+$$$

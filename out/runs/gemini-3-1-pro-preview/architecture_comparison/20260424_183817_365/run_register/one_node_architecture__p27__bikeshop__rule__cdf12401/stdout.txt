@@ -1,0 +1,29 @@
+conversation ID: one_node_architecture__p27__bikeshop__rule__cdf12401
+$$$
+¡Hola! Qué buena idea para una regla. Evitar reservas duplicadas (o *double bookings*) es súper importante para el sistema de citas de tu tienda de bicicletas. 🚲😊
+
+Viendo los perfiles de tu proyecto, tienes uno llamado `appointment.yml` que utiliza las variables de entrada `ap_date` y `hour`, y extrae los resultados `confirmed_date` y `confirmed_time`. 
+
+Podemos crear una **regla metamórfica de 2 conversaciones** que verifique lo siguiente: si dos conversaciones intentan reservar exactamente la misma fecha y hora, y la primera logra confirmarse, la segunda no debe ser confirmada (es decir, el asistente la rechaza y el campo extraído queda vacío).
+
+Aquí tienes la regla lista para usar:
+
+```yaml
+name: prevent_double_booking
+description: Si dos conversaciones solicitan la misma fecha y hora, el asistente rechaza la segunda (no puede confirmar ambas).
+conversations: 2
+when: conv[0].ap_date == conv[1].ap_date and conv[0].hour == conv[1].hour
+if: conv[0].confirmed_date is not None
+then: conv[1].confirmed_date is None
+```
+
+### 👀 ¿Cómo funciona esta regla?
+1. **`conversations: 2`**: Le dice a Sensei-check que compare las conversaciones en pares.
+2. **`when`**: Filtra y selecciona solo aquellos pares de conversaciones donde el usuario pidió exactamente la misma fecha (`ap_date`) y la misma hora (`hour`).
+3. **`if`**: Establece la condición inicial. Si en la primera conversación el asistente sí confirmó la cita (el campo `confirmed_date` no está vacío)...
+4. **`then`**: ...entonces, en la segunda conversación, el asistente debe haber denegado la cita, por lo que el extractor no habrá podido capturar una fecha confirmada (`confirmed_date is None`).
+
+Puedes guardar este bloque de código en un archivo dentro de tu carpeta `rules/` (por ejemplo, `rules/prevent_double_booking.yaml`). 
+
+¿Te gustaría que ajustemos algo más de esta regla o te ayudo con alguna otra cosa? ✨
+$$$

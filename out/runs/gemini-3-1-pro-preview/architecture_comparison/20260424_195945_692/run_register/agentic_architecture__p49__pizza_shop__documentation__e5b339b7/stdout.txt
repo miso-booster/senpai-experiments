@@ -1,0 +1,33 @@
+conversation ID: agentic_architecture__p49__pizza_shop__documentation__e5b339b7
+$$$
+Hi there! 😊
+
+In SENSEI-check, there isn't actually a specific helper function called `pairwise()`. However, SENSEI is built around **metamorphic testing**, which is exactly about making **pairwise (or tuple) comparisons** between different conversations!
+
+Instead of a function, you evaluate pairs of conversations by creating a **metamorphic rule**. Here is how it works based on the `sensei-check-doc.md` documentation:
+
+### How to compare pairs of conversations
+To check a relation between two conversations, you define a rule with `conversations: 2`. This tells SENSEI-check to look at pairs of conversations. You can then access each conversation in the pair using the `conv` array: `conv[0]` and `conv[1]`.
+
+A pairwise rule typically uses three parts:
+1. **`when`**: A filter to select comparable pairs (e.g., "when the pizza size is the same in both conversations").
+2. **`if`**: The condition or change in the input (e.g., "if conversation 0 has more toppings than conversation 1").
+3. **`then`**: The expected outcome in the output (e.g., "then conversation 0 must cost more than conversation 1").
+
+### Example: Pairwise Price Comparison
+Here is a canonical example of a pairwise rule that checks if adding more toppings increases the price, assuming all other factors are equal:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### Summary of what happens under the hood:
+When SENSEI-check runs this rule, it pairs up the generated conversations. It uses the `when` clause to filter out pairs that aren't comparable (like comparing a small pizza to a large one). For the pairs that *do* match the `when` filter, it checks the `if/then` relationship to ensure your chatbot's logic holds up.
+
+Did you have a specific pairwise comparison in mind for your project? If you tell me what you're trying to test, I can help you write the exact rule for it!
+$$$

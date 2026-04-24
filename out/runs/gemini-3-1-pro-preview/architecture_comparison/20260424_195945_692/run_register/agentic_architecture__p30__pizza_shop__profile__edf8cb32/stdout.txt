@@ -1,0 +1,80 @@
+conversation ID: agentic_architecture__p30__pizza_shop__profile__edf8cb32
+$$$
+Here is the profile for your pizza shop! 🍕 
+
+I've designed the simulated user to be rude, impatient, and demanding. The profile includes exactly 4 goals with 4 variables. As requested, two of those variables (`size` and `toppings`) use the `pairwise()` function, which allows us to set the conversation number to be determined by the pairwise combination matrix.
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering pizza. You are extremely rude, impatient, and want things done as fast as possible.
+  context:
+    - "You hate waiting and will complain if the bot is slow or asks too many questions."
+    - "You demand quick service and use aggressive language."
+  goals:
+    - "I want a {{size}} pizza right now!"
+    - "Put {{toppings}} on it and don't skimp!"
+    - "Deliver it to {{address}} immediately!"
+    - "I'm paying with {{payment_method}}, so hurry up!"
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, family]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, extra cheese, olives]
+    - address:
+        function: random()
+        type: string
+        data: [123 Fake St, 456 Fast Ln, 789 Quick Blvd]
+    - payment_method:
+        function: random()
+        type: string
+        data: [cash, credit card, apple pay]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please repeat?"
+  output:
+    - size:
+        type: string
+        description: "The size of the pizza ordered"
+    - toppings:
+        type: string
+        description: "The toppings requested on the pizza"
+    - address:
+        type: string
+        description: "The delivery address"
+    - payment_method:
+        type: string
+        description: "The chosen payment method"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+```
+
+### 📝 Summary of what was done:
+* **Persona & Tone:** The `user.role` and `user.context` instruct the LLM to act rude and impatient. The goal prompts themselves are also written aggressively to match this persona.
+* **4 Goals & 4 Variables:** The goals cover `size`, `toppings`, `address`, and `payment_method`.
+* **Pairwise Matrix for Conversation Count:** 
+  * `size` and `toppings` are assigned the `pairwise()` function. 
+  * `address` and `payment_method` use the `random()` function.
+  * In the `conversation` block, `number: combinations(1, pairwise)` tells Sensei to calculate the total number of conversations based on the pairwise combinations of `size` and `toppings` (ensuring every pair of size and topping is tested at least once) and run 100% (`1`) of that matrix.
+
+Let me know if you'd like to adjust the data lists, add any custom types, or create rules to validate this profile! 😊
+$$$

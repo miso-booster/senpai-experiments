@@ -1,0 +1,35 @@
+Hello there! I'd be happy to help you fix your connector 😊. 
+
+Looking at the HTTP trace you provided, there are a few things we need to adjust to make it work perfectly:
+
+1. **Base URL & Path:** The request is actually going to `api.1millionbot.com` and the path is `/api/public/messages`.
+2. **Headers:** The API requires an `Authorization` token, and it's usually a good idea to include the `Origin` and `Referer` headers since they were in your trace.
+3. **Payload Template:** The API expects several specific fields like `conversation`, `sender`, `bot`, and `url` alongside the message.
+4. **Response Path:** Your current path `request.text` is actually pointing to the *user's* message echo. The bot's actual reply is inside the `response` array, so the correct path is `response.0.text`.
+
+Here is the corrected YAML ready for you to use:
+
+```yaml
+name: "Malaga SAIC Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Give this a try and let me know if it connects successfully! 👀

@@ -1,0 +1,37 @@
+conversation ID: agentic_architecture__p16__alcampo__rule__07dd668d
+$$$
+Since you are creating this rule before the profile exists, we are using a **Rule-first design**. I have drafted a single-conversation rule that checks if the chatbot explicitly discusses the availability of a product whenever the user requests a lactose-free option. 
+
+To do this, I used the `utterance_index` helper, which uses an LLM under the hood to check if the assistant mentions a specific topic during the conversation.
+
+Here is the YAML for your rule:
+
+```yaml
+name: lactose_free_availability
+description: If the user requests a lactose-free product, the assistant must state whether it is available.
+conversations: 1
+active: true
+if: dietary_preference == 'lactose-free'
+then: utterance_index('assistant', 'availability of the lactose-free product') > 0
+```
+
+### How it works:
+- **`conversations: 1`**: This is a single-conversation check (an oracle).
+- **`if: dietary_preference == 'lactose-free'`**: The rule only triggers if the extracted dietary preference is exactly `'lactose-free'`.
+- **`then: utterance_index(...) > 0`**: It verifies that the assistant actually mentions the availability of the lactose-free product at some point in the dialogue.
+
+### ⚠️ Future Profile Requirements
+Because this rule relies on a specific variable (`dietary_preference`), the future SENSEI Chat profile you create **must** expose this exact field in its `chatbot.output`. 
+
+When you build your profile, ensure the `chatbot.output` section looks something like this:
+
+```yaml
+chatbot:
+  output:
+    - dietary_preference:
+        type: string
+        description: The dietary preference requested by the user (e.g., 'lactose-free', 'vegan', 'none').
+```
+
+Let me know if you'd like to adjust the logic (for example, if you'd prefer to check a boolean `is_available` variable instead of analyzing the chatbot's text) or if you want help creating the profile to go with it! 😊
+$$$

@@ -1,0 +1,71 @@
+I have created a SENSEI profile that perfectly matches your requirements for testing the bike shop's virtual assistant. 
+
+Based on the `sensei-chat-guide.md` documentation, I've structured the profile to ensure the simulated user behaves naturally, sticks strictly to the allowed topics, and extracts the exact information you need to validate the chatbot's performance later.
+
+Here is the YAML for your profile:
+
+```yaml
+test_name: "bike_shop_general_info"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer interacting with a bike shop's virtual assistant.
+    You are looking for general information about the shop and its standard services.
+  context:
+    - "Phrase your questions clearly and directly."
+    - "Do NOT ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or any topic outside of basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices rather than advanced repairs."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you please rephrase?"
+  output:
+    - shop_hours:
+        type: string
+        description: "The opening and closing times provided by the chatbot."
+    - tire_price:
+        type: string
+        description: "The quoted price for a new bike tire."
+    - tune_up_price:
+        type: string
+        description: "The quoted price for a standard bike tune-up."
+    - seat_price:
+        type: string
+        description: "The quoted price for a new bike seat."
+    - maintenance_advice:
+        type: string
+        description: "The general advice provided on basic bike maintenance and care."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🚲 How this profile works:
+
+1. **Role & Context (`user.role` & `user.context`)**: The profile explicitly instructs the LLM to act as a normal customer and phrase questions clearly and directly. The strict negative constraints (no appointments, no specific models, no warranties, etc.) are placed in the `context` to ensure the simulator doesn't hallucinate out-of-scope questions.
+2. **Goals (`user.goals`)**: The exact questions you requested are listed as plain text goals. The simulator will naturally weave these into the conversation.
+3. **Extraction (`chatbot.output`)**: I defined specific fields (`shop_hours`, `tire_price`, `tune_up_price`, `seat_price`, and `maintenance_advice`). At the end of the conversation, SENSEI will extract the chatbot's answers into these fields. This is crucial because it allows you to easily write SENSEI rules later to validate if the prices are clear, if the terminology is correct, and if no unrelated services were pushed.
+4. **Conversation Controls (`conversation`)**: 
+   - `goal_style: all_answered` ensures the conversation won't stop until the simulator has successfully asked all 5 questions.
+   - `interaction_style: default` ensures the simulated user behaves naturally without adding weird quirks (like spelling mistakes or changing languages).
+
+You can save this as `bike_shop_profile.yml` in your `profiles/` directory. Let me know if you'd like to adjust any of the goals or if you'd like to start writing some validation rules for these outputs! 😊

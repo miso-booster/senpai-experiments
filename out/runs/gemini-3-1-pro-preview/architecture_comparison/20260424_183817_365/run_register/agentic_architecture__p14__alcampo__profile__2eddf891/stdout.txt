@@ -1,0 +1,73 @@
+conversation ID: agentic_architecture__p14__alcampo__profile__2eddf891
+$$$
+¡Hola! 😊 He revisado la documentación de los perfiles de SENSEI (`sensei-chat-guide.md`) y también he buscado en tu proyecto. He visto que ya tienes un perfil llamado `recipe_management_and_cooking_support.yaml` que menciona "La Cocina de Alcampo", pero para enfocarnos específicamente en **recomendar recetas dinámicas y planificar menús**, he diseñado un perfil nuevo mucho más potente.
+
+Este nuevo perfil utiliza **variables combinadas** (`pairwise()`) para que el simulador de usuario pida diferentes tipos de recetas (desayunos, comidas, cenas) adaptadas a distintas dietas (vegetariana, sin gluten, etc.), y además evalúa si el chatbot es capaz de ayudar con el menú semanal y la cesta de la compra.
+
+Aquí tienes el YAML listo para usar. Puedes guardarlo en tu carpeta `profiles/` como `alcampo_menu_planning.yaml`:
+
+```yaml
+test_name: "alcampo_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente de Alcampo que busca inspiración para cocinar y ayuda para planificar su menú semanal.
+    Quieres aprovechar los productos de Alcampo y buscas recetas prácticas.
+  context:
+    - "Te gustan los productos frescos y de temporada."
+    - "Valoras que las recetas sean fáciles y rápidas de preparar."
+  goals:
+    - "Pide una recomendación de receta para {{meal_type}} que sea {{diet_type}}."
+    - "Pregunta cómo puedes planificar un menú semanal equilibrado con productos de Alcampo."
+    - "Pregunta si es posible añadir los ingredientes de las recetas recomendadas directamente a tu carrito de la compra."
+    - meal_type:
+        function: pairwise()
+        type: string
+        data: [el desayuno, la comida, la cena]
+    - diet_type:
+        function: pairwise()
+        type: string
+        data: [vegetariana, sin gluten, baja en calorías, rica en proteínas]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido bien. ¿Podrías repetirlo?"
+  output:
+    - recommended_recipe:
+        type: string
+        description: "El nombre o descripción de la receta recomendada por el chatbot."
+    - menu_planning_tips:
+        type: string
+        description: "Consejos o pasos dados por el chatbot para planificar el menú semanal."
+    - cart_integration_info:
+        type: string
+        description: "Información sobre si los ingredientes se pueden añadir al carrito de compra."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📝 Resumen de lo que hace este perfil:
+
+1. **Variables Dinámicas (`user.goals`)**: Utiliza la función `pairwise()` para combinar los tipos de comida (`meal_type`) con los tipos de dieta (`diet_type`). Esto generará conversaciones variadas (por ejemplo: "una receta para la cena que sea sin gluten" o "una receta para el desayuno rica en proteínas").
+2. **Extracción de Datos (`chatbot.output`)**: Al final de cada conversación, SENSEI extraerá tres campos clave que luego podrás validar con reglas (Sensei-check):
+   - `recommended_recipe`: Para comprobar que el bot efectivamente dio una receta.
+   - `menu_planning_tips`: Para verificar que el bot ofreció ayuda con el menú.
+   - `cart_integration_info`: Para saber si el bot explicó cómo pasar los ingredientes al carrito de Alcampo.
+3. **Control de la Conversación**: Usamos `combinations(1, pairwise)` para que ejecute todas las combinaciones posibles entre las variables, y `all_answered` para que la conversación termine de forma natural una vez que el simulador haya resuelto todos sus objetivos (con un límite de seguridad de 15 mensajes).
+
+¿Te parece bien este enfoque o te gustaría añadir algún otro objetivo o restricción alimentaria a las variables? 🥦🛒
+$$$

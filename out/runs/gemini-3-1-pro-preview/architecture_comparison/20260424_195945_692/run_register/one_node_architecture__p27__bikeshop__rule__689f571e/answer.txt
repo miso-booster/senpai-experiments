@@ -1,0 +1,26 @@
+¡Hola! Claro que sí, te ayudo con eso. 😊
+
+Viendo los archivos de tu proyecto, tienes un perfil llamado `appointment.yml` que se encarga de agendar citas en la tienda de bicicletas. Este perfil utiliza las variables de entrada `ap_date` y `hour`, y luego extrae la confirmación en el campo `confirmed_date`.
+
+Para comprobar que el asistente rechaza la segunda petición para la misma fecha y hora (asumiendo que tu chatbot guarda el estado o tiene memoria entre las distintas conversaciones de la prueba), lo ideal es usar una **regla metamórfica de 2 conversaciones**. 
+
+La lógica es como una ley de causa y efecto:
+1. **Filtramos (`when`)**: Buscamos dos conversaciones donde el usuario haya pedido exactamente la misma fecha (`ap_date`) y la misma hora (`hour`).
+2. **Condición (`if`)**: Verificamos si en la primera conversación la cita se confirmó con éxito (es decir, `confirmed_date` no está vacío).
+3. **Comprobación (`then`)**: Exigimos que en la segunda conversación el asistente no haya podido confirmar la cita (el campo `confirmed_date` debe ser nulo).
+
+Aquí tienes la regla lista para usar:
+
+```yaml
+name: reject_duplicate_appointment
+description: Si se solicita la misma fecha y hora en dos conversaciones distintas, el asistente debe rechazar o no confirmar la segunda.
+conversations: 2
+when: conv[0].ap_date == conv[1].ap_date and conv[0].hour == conv[1].hour
+if: conv[0].confirmed_date is not None
+then: conv[1].confirmed_date is None
+```
+
+**💡 Un pequeño consejo de Senpai:** 
+Esta regla asume que las conversaciones ocurren de forma secuencial y que tu chatbot tiene un sistema de reservas real por detrás. Si tu chatbot no guarda memoria entre sesiones y evalúa cada conversación de forma aislada, siempre confirmará ambas. En ese caso, si quisieras probar el rechazo en una *misma* sesión, tendrías que modificar tu perfil `appointment.yml` para que el usuario intente pedir la misma cita dos veces en la misma charla.
+
+¡Espero que te sea muy útil! ¿Te gustaría que ajustemos algo más de esta regla o revisemos otro perfil? 👀🚲

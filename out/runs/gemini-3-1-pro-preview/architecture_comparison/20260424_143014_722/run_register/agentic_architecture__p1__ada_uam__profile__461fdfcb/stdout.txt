@@ -1,0 +1,65 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__461fdfcb
+$$$
+Here is a SENSEI profile for a user who is struggling to set up the eduroam Wi-Fi network. 
+
+I've included variables for the `device_type` and the `setup_method` to simulate the different ways the user might have tried to configure the connection.
+
+```yaml
+test_name: "eduroam_setup_failure"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student trying to connect your device to the eduroam Wi-Fi network, but you are unable to do so. You are asking the IT support chatbot for help.
+  context:
+    - "You are frustrated because you need internet access for your classes."
+    - "You keep getting an authentication error or it just won't connect."
+  goals:
+    - "Explain that you are trying to connect to eduroam on your {{device_type}} but it is failing."
+    - "Mention that you tried to set it up using the {{setup_method}}."
+    - device_type:
+        function: random()
+        type: string
+        data: [iPhone, Android phone, Windows laptop, MacBook, iPad]
+    - setup_method:
+        function: another()
+        type: string
+        data: [official eduroam CAT installer, manual configuration, QR code, university portal guide]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - issue_resolved:
+        type: string
+        description: "Whether the chatbot was able to resolve the issue (yes/no)"
+    - suggested_solution:
+        type: string
+        description: "The solution suggested by the chatbot"
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 6
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### 📝 Summary of the Profile
+* **Variables**: 
+  * `device_type`: Uses the `random()` function to pick a random device (e.g., iPhone, Windows laptop) for each conversation.
+  * `setup_method`: Uses the `another()` function to cycle through different setup methods (CAT installer, manual config, QR code, portal guide) without repeating them until all options are exhausted.
+* **Outputs**: The `chatbot.output` section extracts whether the issue was resolved and what solution the chatbot suggested. This will be very useful if you want to write SENSEI rules later to check if the bot actually helps the user!
+* **Conversation Controls**: It runs 4 conversations (to cover the 4 setup methods) with a limit of 6 steps per conversation. It also includes a random interaction style to simulate real-world user behaviour, like making spelling mistakes or using long phrases.
+
+Let me know if you'd like to adjust the setup methods, add more variables, or create a rule to validate this profile! 😊
+$$$

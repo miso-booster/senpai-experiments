@@ -1,0 +1,97 @@
+conversation ID: graph_based_architecture__p3__ada_uam__profile__ad7f2134
+$$$
+¡Hola! Claro que sí, estoy aquí para ayudarte. 😊
+
+Veo que estás armando un perfil súper útil para probar la asistencia técnica. Tienes casi todo perfecto, pero hay un par de detallitos con la estructura del YAML y las variables que están rompiendo el archivo. ¡Nada que no podamos solucionar rápido! 🛠️
+
+Aquí te explico los problemitas que encontré:
+
+1. **Falta el `role` del usuario**: En la sección `user`, Sensei necesita saber a quién está simulando. Agregué un `role` para darle esa personalidad.
+2. **Error de formato en las variables de `goals`**: Los datos de la variable `{{identificador_id_uam}}` se habían mezclado con el texto del último objetivo, lo que hace que el YAML sea inválido. Los separé correctamente.
+3. **Falta la función de llenado (`function`)**: A tus variables `identificador_id_uam` y `user_account` les faltaba el campo `function` (como `forward()`, `random()`, etc.). Esto es vital para decirle a Sensei cómo debe elegir los valores de la lista en cada conversación. Les he puesto `forward()` para que itere por la lista de forma ordenada.
+4. **Estilo de interacción**: Te agregué `interaction_style: [single questions]` en la sección `conversation`. Es una muy buena práctica para que el usuario simulado haga las preguntas de una en una y la conversación fluya mucho más natural. 👀
+
+Aquí tienes tu perfil corregido y listo para la acción:
+
+```yaml
+test_name: Asistencia Técnica y Cuentas
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: Spanish
+  role: "Usuario con problemas técnicos relacionados con plataformas virtuales y cuentas de usuario."
+  context:
+  - "Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad."
+  - "Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias."
+  - "Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento."
+  goals:
+  - "Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU)."
+  - "Preguntar sobre los procedimientos para obtener una cuenta ID-UAM."
+  - "Solicitar los pasos necesarios para establecer la contraseña por primera vez."
+  - "Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado."
+  - "Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}."
+  - identificador_id_uam:
+      type: string
+      function: forward()
+      data:
+      - '123456789'
+      - '987654321'
+      - '112233445'
+      - '556677889'
+      - '998877665'
+  - user_account:
+      type: string
+      function: forward()
+      data:
+      - usuario123
+      - maria.garcia
+      - juan_lopez_2023
+      - pedro.salas
+      - sara.martinez
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro\ncatálogo de servicios\n.\nRespondo a preguntas dirigidas al\nCentro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+  - contact_info:
+      type: string
+      description: Detalles de contacto del CAU
+  - operational_hours:
+      type: string
+      description: Horarios operativos del CAU
+  - available_services_list:
+      type: string
+      description: Servicios disponibles para crear cuenta
+  - password_setup_link:
+      type: string
+      description: Enlace para establecer contraseña
+  - contact_information:
+      type: string
+      description: Opciones de asistencia para recuperación de ID-UAM
+  - recovery_steps:
+      type: string
+      description: Pasos para recuperar ID-UAM
+  - activation_code:
+      type: string
+      description: Código de activación para cambiar contraseña
+  - user_account:
+      type: string
+      description: Nombre de usuario para recuperación
+  - identificador_id_uam:
+      type: string
+      description: Identificador único de ID-UAM
+  - password_change_steps:
+      type: string
+      description: Pasos para cambiar la contraseña
+conversation:
+  number: 5
+  goal_style:
+    steps: 30
+  interaction_style:
+    - single questions
+```
+
+¡Cópialo, pruébalo y me cuentas qué tal te va! Si necesitas ayuda con alguna otra cosa de tus perfiles, reglas o conectores de Sensei, aquí estaré. ✨
+$$$

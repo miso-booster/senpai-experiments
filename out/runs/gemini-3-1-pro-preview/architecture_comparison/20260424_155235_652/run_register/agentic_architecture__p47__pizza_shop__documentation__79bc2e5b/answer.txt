@@ -1,0 +1,43 @@
+In the context of Sensei (specifically **Sensei-check**), a **metamorphic rule** is a way to test your chatbot by comparing *multiple conversations* against each other, rather than trying to verify a single conversation in isolation. 
+
+This approach helps solve the "oracle problem" (where it's hard to know the exact perfect answer a chatbot should give) by checking **relations** and **invariants** when inputs change. 
+
+Here is a breakdown of how it works based on the `sensei-check-doc.md` documentation:
+
+### 1. The Mental Model
+Instead of asking, *"Is the price of this pizza exactly $15.50?"* (which might change or be hard to predict), a metamorphic rule asks: *"If I order two pizzas of the exact same size and drink, but the first one has **more toppings**, is the price of the first one **higher**?"*
+
+You are essentially saying: "If the inputs change in *this* specific way, the outputs should change in *that* specific way."
+
+### 2. How it Works in YAML
+To write a metamorphic rule, you define:
+* **`conversations: N`**: The number of conversations to compare (usually `2`).
+* **`when`**: An optional filter to select comparable conversations (e.g., "only compare conversations where the pizza size is the same").
+* **`if` / `then`**: The relation you are testing. "If condition A is true across these conversations, then condition B must also be true."
+
+You access the data from the different conversations using the `conv` array (e.g., `conv[0]` for the first conversation, `conv[1]` for the second). These fields (like `size`, `toppings`, `price`) come directly from the `chatbot.output` defined in your SENSEI Chat profile.
+
+### 3. A Canonical Example
+Here is a classic metamorphic rule checking **price monotonicity** for a pizza ordering bot:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+**What this rule does:**
+1. It grabs **2** conversations.
+2. The `when` clause ensures it only compares apples to apples (same size, same drink, same quantity).
+3. The `if` clause checks if the first conversation has *more toppings* than the second.
+4. The `then` clause asserts that the extracted price of the first conversation *must be strictly greater* than the second.
+
+### Why are they useful?
+Metamorphic rules are incredibly powerful for testing LLM-based chatbots because they allow you to verify the **logic** and **robustness** of the bot without needing hardcoded, exact expected answers. You can test things like:
+* **Monotonicity:** (e.g., larger sizes cost more, higher priority tickets get faster SLAs).
+* **Consistency:** (e.g., if the user speaks Spanish, the bot should consistently reply in Spanish across different scenarios).
+
+Let me know if you'd like to see how to apply a metamorphic rule to a specific profile or use case in your project! 😊

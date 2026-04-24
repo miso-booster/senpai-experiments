@@ -1,0 +1,70 @@
+Here is a profile tailored for an Erasmus student who needs help setting up university platforms. I've kept the input variables minimal (just one variable to cycle through different platforms) and focused heavily on the `chatbot.output` section so you can easily validate the support provided using SENSEI rules later.
+
+Based on the `sensei-chat-guide.md` documentation, here is the YAML profile:
+
+```yaml
+test_name: "erasmus_it_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus student who has just arrived at the university.
+    You are completely lost and do not know how to set up or access the university's digital platforms.
+  context:
+    - "You are polite but a bit anxious because classes are starting soon."
+    - "You need clear, step-by-step instructions or direct links to solve your problem."
+  goals:
+    - "Ask for help to access and set up {{platform}}."
+    - platform:
+        function: forward()
+        type: string
+        data: [Moodle, Sigma, Student Email, Campus Wi-Fi]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you rephrase?"
+  output:
+    - platform_identified:
+        type: string
+        description: "The university platform the user asked about (e.g., Moodle, Sigma)."
+    - instructions_provided:
+        type: string
+        description: "A summary of the step-by-step instructions given by the chatbot."
+    - useful_links:
+        type: list[string]
+        description: "A list of URLs or links provided to the user."
+    - support_contact:
+        type: string
+        description: "Any IT support email or phone number provided in case of further issues."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 💡 How this profile works:
+
+1. **Minimal Inputs (`user.goals`)**: 
+   We only use one variable, `{{platform}}`. The `forward()` function will iterate deterministically through the list (`[Moodle, Sigma, Student Email, Campus Wi-Fi]`).
+2. **Conversation Control**: 
+   Since there are 4 platforms in the list, `conversation.number` is set to `4` to ensure the simulator tests each platform exactly once. The `all_answered` goal style ensures the conversation naturally concludes once the chatbot has provided the required help.
+3. **Rich Outputs (`chatbot.output`)**: 
+   This is the contract for your future SENSEI rules. At the end of each conversation, SENSEI will extract:
+   - `platform_identified`: To verify the bot understood which system the student was asking about.
+   - `instructions_provided`: To check if actual guidance was given.
+   - `useful_links`: Extracted as a `list[string]` so you can write rules to ensure the bot is actually providing URLs.
+   - `support_contact`: To check if the bot offers a fallback human contact (like an IT desk) for the stressed student.
+
+You can save this as `erasmus_it_support.yml` in your `profiles/` directory. Let me know if you'd like to add any specific interaction styles (like making spelling mistakes) or if you want to draft some SENSEI rules to validate these outputs! 😊

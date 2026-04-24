@@ -1,0 +1,25 @@
+conversation ID: one_node_architecture__p7__ada_uam__rule__ed21ffee
+$$$
+Here is a rule to verify that Ada UAM is giving you the exact CAU contact information! 😊
+
+Since the chatbot might format the phone number with different spacing or output the address in Spanish instead of English, we can use the `semantic_content` helper. This helper uses the LLM to check if the extracted value *means* the same thing as your expected text, making your rule much more robust against minor formatting differences.
+
+Here is the YAML for your rule:
+
+```yaml
+name: correct_cau_information
+description: Verifies that the chatbot provides the correct CAU contact email, phone, and physical address.
+conversations: 1
+active: true
+oracle: |
+  semantic_content(contact_email, 'cau@uam.es') and semantic_content(contact_phone, '91 497 4029') and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+on-error: f"Incorrect CAU info returned. Got Email: {contact_email}, Phone: {contact_phone}, Address: {physical_address}"
+```
+
+### How it works:
+* **`conversations: 1`**: This is a standard oracle rule that checks each conversation individually.
+* **`semantic_content(...)`**: It compares the fields extracted in your profile (`contact_email`, `contact_phone`, and `physical_address`) against the true location and contact details you provided.
+* **`on-error`**: If the rule fails, it will print out exactly what the chatbot *did* return, making it super easy for you to debug! 🕵️‍♂️
+
+Just save this in your `rules/` folder (for example, as `rules/correct_cau_information.yaml`), and Sensei-check will automatically validate the CAU details for you! Let me know if you need help with anything else. ✨
+$$$

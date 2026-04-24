@@ -1,0 +1,30 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__10f81ede
+$$$
+Hello there! 😊 I'd be more than happy to help you review and fix your SENSEI Check rule. 
+
+Looking at your YAML, I can see exactly what you are trying to achieve: you want to make sure the chatbot provides the correct contact details for the CAU. However, there are two little hiccups in the current logic that we need to polish up! 🛠️
+
+### What needs fixing?
+
+1. **The `conv[0]` syntax:** In Sensei-check, you only use the `conv[0]`, `conv[1]` syntax when you are writing a *metamorphic* rule (where `conversations` is 2 or more). Since your rule is a single-conversation oracle (`conversations: 1`), you should just use the field names directly (e.g., `contact_email` instead of `conv[0].contact_email`).
+2. **The `when` filter trap:** Your `when` clause and your `oracle` clause are exactly the same! The `when` clause acts as a filter to select which conversations to test. If you say, *"Only test conversations where the email is cau@uam.es"* and then your oracle asks, *"Is the email cau@uam.es?"*, the test will always pass! It's like filtering a basket to only look at red apples, and then checking if they are red. 🍎 If the bot makes a mistake and outputs the wrong email, the `when` clause will simply skip that conversation, and you'll never catch the error!
+
+### The Fixed Rule ✨
+
+Here is the corrected version. I removed the `when` clause so it actually evaluates the output, and I removed the `conv[0]` prefixes:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### How it works now:
+* **`conversations: 1`**: Tells Sensei-check to look at each conversation individually.
+* **`oracle`**: Directly checks if the extracted fields match the expected CAU information. If the chatbot outputs a different email or phone number, the rule will now correctly report a failure so you can investigate it! 👀
+
+**One quick Senpai reminder:** 💡 Make sure that `contact_email`, `contact_phone`, and `physical_address` are exactly the names of the fields defined in your SENSEI Chat profile under `chatbot.output`. Sensei-check pulls the data directly from those slots!
+
+Does this make sense? Let me know if you need help with any other rules or profiles! 🥋🚀
+$$$

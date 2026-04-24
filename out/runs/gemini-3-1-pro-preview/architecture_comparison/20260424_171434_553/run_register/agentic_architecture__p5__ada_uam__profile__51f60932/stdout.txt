@@ -1,0 +1,70 @@
+conversation ID: agentic_architecture__p5__ada_uam__profile__51f60932
+$$$
+Here is the SENSEI profile to test the UAM chatbot for the CAU (User Support Center) scenario. 
+
+I have designed the profile so the simulated user will try to get all the requested information, and the `chatbot.output` section will extract those exact details at the end of the conversation so you can validate them later.
+
+```yaml
+test_name: "uam_cau_support_test"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student or staff member seeking support from the UAM CAU (User Support Center).
+  context:
+    - "You need to contact the CAU for technical assistance."
+    - "You want to know exactly where they are located and when you can reach them."
+  goals:
+    - "Ask for the CAU's phone number."
+    - "Ask for the CAU's email address."
+    - "Ask for the CAU's physical location."
+    - "Ask for the CAU's opening hours."
+
+chatbot:
+  is_starter: false
+  fallback: "I am sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - phone_number:
+        type: string
+        description: "The phone number of the CAU"
+    - email_address:
+        type: string
+        description: "The email address of the CAU"
+    - physical_location:
+        type: string
+        description: "The physical location or office of the CAU"
+    - opening_hours:
+        type: string
+        description: "The opening hours of the CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - single questions
+      - all questions
+      - default
+```
+
+### 📝 Summary of the Profile
+
+*   **User & Goals:** The simulated user acts as a student/staff member. The goals are straightforward text prompts asking for the four specific pieces of information you mentioned.
+*   **Chatbot Output:** The `chatbot.output` schema defines four fields (`phone_number`, `email_address`, `physical_location`, `opening_hours`). At the end of the test, SENSEI will extract these values from the chatbot's replies. If you write SENSEI rules later, you can reference these fields (e.g., `conv[0].phone_number`).
+*   **Conversation Controls:** 
+    *   It will run **3 conversations** to ensure the chatbot handles the request consistently.
+    *   The `goal_style` is set to `all_answered`, meaning the conversation will naturally stop once the user has obtained all the requested CAU details (with a safety limit of 15 steps).
+    *   The `interaction_style` is randomized so that in some runs the user might ask everything at once (`all questions`), one by one (`single questions`), or in a natural flow (`default`).
+
+Let me know if you'd like to adjust the language (e.g., to Spanish), add any specific interaction styles (like making spelling mistakes), or if you'd like to write some validation rules for this profile! 😊
+$$$

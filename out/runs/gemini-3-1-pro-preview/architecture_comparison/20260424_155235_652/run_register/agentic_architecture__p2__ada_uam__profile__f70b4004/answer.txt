@@ -1,0 +1,66 @@
+Here is a SENSEI profile designed specifically for an Erasmus student who needs help setting up university systems. 
+
+I have kept the input variables minimal (just cycling through the different systems) but added a robust `chatbot.output` section. This will allow you to easily write SENSEI-check rules later to verify that the chatbot is actually providing links, step-by-step guides, and support contacts.
+
+```yaml
+test_name: "erasmus_it_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus student who just arrived at the university. You are confused and do not know how to set up the university's digital systems.
+  context:
+    - "You are polite but a bit stressed because classes start soon."
+    - "You need clear, step-by-step instructions or direct links to get started."
+  goals:
+    - "Ask how to log in and set up {{system}}."
+    - "Ask where to find the official guides or support for {{system}}."
+    - system:
+        function: another()
+        type: string
+        data: [Moodle, Sigma, Eduroam Wi-Fi, University Email]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - system_name:
+        type: string
+        description: "The name of the system the user asked about."
+    - provided_link:
+        type: string
+        description: "Any URL or link provided by the chatbot to help the user."
+    - has_step_by_step:
+        type: string
+        description: "Whether the chatbot provided step-by-step instructions (yes/no)."
+    - support_contact:
+        type: string
+        description: "Email or phone number for IT support if provided."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      limit: 10
+  interaction_style:
+    - default
+```
+
+### 📝 Summary of the Profile & Outputs
+
+- **The Persona:** The user acts as a stressed but polite Erasmus student asking for help with one system at a time.
+- **The Input Variable (`system`):** It uses the `another()` function to cycle through `[Moodle, Sigma, Eduroam Wi-Fi, University Email]` without repeating, across 4 conversations.
+- **The Chatbot Outputs (Contract for Rules):**
+  - `system_name`: Extracts which system was discussed so you can verify the bot stayed on topic.
+  - `provided_link`: Captures any URLs the bot gives. You can later write a rule like `when: conv[0].provided_link is None then: False` to ensure a link is always provided.
+  - `has_step_by_step`: A simple yes/no extraction to check if the bot actually explained the process instead of just dropping a link.
+  - `support_contact`: Extracts IT contact info, useful if you want a rule ensuring the bot offers human fallback for technical issues.
+
+Let me know if you'd like to add any other systems to the list or if you want to start writing the validation rules for these outputs! 😊

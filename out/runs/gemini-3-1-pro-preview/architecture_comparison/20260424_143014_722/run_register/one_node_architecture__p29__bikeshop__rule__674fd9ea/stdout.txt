@@ -1,0 +1,36 @@
+conversation ID: one_node_architecture__p29__bikeshop__rule__674fd9ea
+$$$
+Hello there! I'd be happy to help you write that rule. 😊
+
+Looking at your project, I see you have a couple of profiles related to scheduling services, specifically `appointment.yml` and `bike_repair_and_maintenance_scheduler.yaml`. 
+
+Since Sensei-check rules validate the data extracted in your profile's `chatbot.output`, we can write a single-conversation rule (an oracle) that ensures the appointment confirmation fields are successfully filled by the end of the chat.
+
+Here are two options depending on which profile you want to test:
+
+**Option 1: For the `appointment.yml` profile**
+This rule checks that the chatbot successfully confirmed the date, time, and service.
+
+```yaml
+name: appointment_successfully_scheduled
+description: The chatbot confirms the appointment date, time, and service.
+conversations: 1
+active: true
+oracle: confirmed_date is not None and confirmed_time is not None and confirmed_service is not None
+on-error: f"The chatbot failed to confirm the appointment details. Missing slots: {missing_slots()}"
+```
+
+**Option 2: For the `bike_repair_and_maintenance_scheduler.yaml` profile**
+This profile extracts a single `appointment_confirmation` field, so we can just check if that field was successfully captured.
+
+```yaml
+name: tune_up_appointment_confirmed
+description: The chatbot confirms the scheduled tune-up appointment.
+conversations: 1
+active: true
+oracle: appointment_confirmation is not None
+on-error: "The chatbot did not provide an appointment confirmation."
+```
+
+You can save either of these as a `.yaml` file inside your `rules/` folder. Let me know if you'd like to test a different condition or need help with anything else! 🚲✨
+$$$

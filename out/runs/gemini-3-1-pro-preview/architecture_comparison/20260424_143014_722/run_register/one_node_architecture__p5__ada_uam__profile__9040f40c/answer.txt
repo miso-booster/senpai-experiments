@@ -1,0 +1,59 @@
+¡Hola! Claro que sí 😊. Aquí tienes un perfil de SENSEI Chat diseñado específicamente para probar si el chatbot de la UAM es capaz de proporcionar toda la información de contacto y horarios del Centro de Atención a Usuarios (CAU). 
+
+He configurado el perfil para que el usuario simulado haga preguntas directas sobre el teléfono, correo, ubicación y horario, y he preparado el bloque `chatbot.output` para extraer exactamente esos datos al final de la conversación.
+
+```yaml
+test_name: "informacion_contacto_cau"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario de la universidad que necesita contactar urgentemente con el 
+    Centro de Atención a Usuarios (CAU) para resolver un problema técnico.
+  context:
+    - "Quieres conocer todas las vías de contacto disponibles para comunicarte con el soporte."
+    - "Necesitas saber cuándo están abiertos para poder planificar tu visita o llamada."
+  goals:
+    - "Preguntar por el número de teléfono del CAU."
+    - "Preguntar por la dirección de correo electrónico del CAU."
+    - "Solicitar la ubicación física o dirección de las oficinas del CAU."
+    - "Consultar el horario de atención al público del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios."
+  output:
+    - cau_phone:
+        type: string
+        description: "Número de teléfono del CAU proporcionado por el chatbot"
+    - cau_email:
+        type: string
+        description: "Dirección de correo electrónico del CAU"
+    - cau_location:
+        type: string
+        description: "Ubicación física o dirección de las oficinas del CAU"
+    - cau_hours:
+        type: string
+        description: "Horario de atención al público del CAU"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+### ¿Qué hace este perfil? 👀
+1. **`user.goals`**: Guía al simulador para que pregunte específicamente por los 4 puntos que te interesan (teléfono, email, ubicación y horario).
+2. **`chatbot.output`**: Le dice a Sensei que, al terminar la conversación, extraiga esos 4 datos. Esto es súper útil porque luego puedes crear una **Regla de Sensei-check** (usando la función `data_collected()`) para verificar automáticamente si el chatbot de la UAM realmente entregó toda la información.
+3. **`interaction_style`**: He añadido `single questions` para que el simulador haga las preguntas de una en una, lo cual suele ser ideal para evaluar si el bot responde bien a cada dato por separado.
+
+¡Espero que te sea muy útil para tus pruebas con la UAM! Si necesitas que ajustemos algo o quieres que te ayude a crear una regla para validar estos resultados, ¡solo dímelo! 🥋✨

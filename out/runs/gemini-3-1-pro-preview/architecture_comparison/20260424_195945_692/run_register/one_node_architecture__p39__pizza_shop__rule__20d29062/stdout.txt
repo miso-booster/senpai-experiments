@@ -1,0 +1,28 @@
+conversation ID: one_node_architecture__p39__pizza_shop__rule__20d29062
+$$$
+Hello there! 😊 I'd be happy to help you create that metamorphic rule. 
+
+To check that adding a drink costs exactly $2 extra, we need to compare **two conversations** where everything else about the order (like the pizza size and type) stays exactly the same, but one conversation has exactly one more drink than the other.
+
+Assuming your profile's `chatbot.output` exposes `drink` as a list of drinks (and `price` as the total cost), here is the rule you need:
+
+```yaml
+name: drink_costs_two_dollars_extra
+description: Adding one extra drink to an order increases the total price by exactly 2 dollars (assuming size and pizza type remain the same).
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].pizza_type == conv[1].pizza_type
+if: len(conv[0].drink) == len(conv[1].drink) + 1
+then: extract_float(conv[0].price) == extract_float(conv[1].price) + 2
+```
+
+### 👀 How it works:
+* **`conversations: 2`**: Tells Sensei-check this is a metamorphic rule that compares pairs of conversations.
+* **`when`**: This is our filter! It ensures we are only comparing apples to apples 🍎 (or in this case, pizzas to pizzas 🍕). It locks the `size` and `pizza_type` so they are identical in both conversations.
+* **`if`**: This is the trigger condition. It looks for a pair where the first conversation has exactly one more item in the `drink` list than the second conversation.
+* **`then`**: This is the expected outcome. It extracts the numerical value from your `price` output and asserts that the first conversation's price is exactly $2 more than the second's.
+
+**A quick Senpai tip 💡:** 
+Make sure that your SENSEI Chat profile actually has `drink` (as a list), `size`, `pizza_type`, and `price` defined in its `chatbot.output` section. If your profile uses different names for the pizza details (like `chosen_pizza_size`), just update the `when` clause to match your exact output fields! 
+
+Let me know if you need help adjusting this to fit your specific profile! 🚀
+$$$

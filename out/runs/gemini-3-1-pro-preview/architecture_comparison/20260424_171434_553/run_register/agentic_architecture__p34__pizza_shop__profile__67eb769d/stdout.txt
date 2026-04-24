@@ -1,0 +1,71 @@
+conversation ID: agentic_architecture__p34__pizza_shop__profile__67eb769d
+$$$
+Here is a SENSEI profile that perfectly matches your scenario. I've designed it so the simulated user starts by ordering a custom pizza but then changes their mind to a predefined one.
+
+To achieve this, I used a combination of explicit instructions in the `user.context` and `user.goals`, along with the built-in `change your mind` interaction style.
+
+```yaml
+test_name: "pizza_change_mind_test"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza from a chatbot.
+  context:
+    - "You start by ordering a custom pizza with your choice of toppings."
+    - "Halfway through the conversation, you change your mind and decide you just want a predefined pizza instead."
+  goals:
+    - "Start by ordering a custom pizza with {{custom_toppings}}"
+    - "Change your mind and ask for a {{predefined_pizza}} pizza instead"
+    - custom_toppings:
+        function: random()
+        type: string
+        data: 
+          - "mushrooms, onions, and extra cheese"
+          - "pepperoni, jalapenos, and black olives"
+          - "ham, bacon, and sausage"
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: 
+          - "Margherita"
+          - "Pepperoni"
+          - "Hawaiian"
+          - "BBQ Chicken"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you repeat?"
+  output:
+    - final_pizza_ordered:
+        type: string
+        description: "The final predefined pizza the user decided to order"
+    - initial_custom_toppings:
+        type: string
+        description: "The custom toppings the user initially asked for before changing their mind"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - change your mind
+```
+
+### How this profile works:
+
+1. **`user.context` & `user.goals`**: We explicitly tell the LLM the narrative arc of the conversation. It starts by trying to fulfill the first goal (ordering the custom pizza with random toppings) and then moves to the second goal (changing to a random predefined pizza).
+2. **`interaction_style: [change your mind]`**: This is a built-in SENSEI interaction style that naturally encourages the simulated user to hesitate, correct themselves, or change their previous inputs during the conversation.
+3. **`chatbot.output`**: At the end of the conversation, SENSEI will extract both the `initial_custom_toppings` they asked for and the `final_pizza_ordered`. This is very useful if you later want to write a **SENSEI Rule** to verify that your chatbot successfully discarded the custom toppings and only charged for the predefined pizza!
+
+Let me know if you'd like to adjust the toppings, the number of conversations, or if you'd like to write a validation rule for this profile! 😊
+$$$

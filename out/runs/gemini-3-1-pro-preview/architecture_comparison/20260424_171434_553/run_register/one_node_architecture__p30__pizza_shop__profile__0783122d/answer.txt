@@ -1,0 +1,74 @@
+Hello there! I can absolutely help you with that. 😊
+
+Here is a Sensei profile tailored for a very impatient and rude customer ordering from a pizza shop. I've set up 4 goals with 4 variables, and used the `pairwise()` function on two of them (`pizza_size` and `pizza_type`). To make sure the number of conversations is driven by that pairwise matrix, I set `conversation.number` to `combinations(1, pairwise)`. 
+
+Here is your YAML profile:
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A rude, impatient customer ordering a pizza."
+  context:
+    - "You are in a huge hurry and hate waiting."
+    - "You are very demanding, blunt, and rude to the chatbot."
+    - "You want your food ready as fast as possible and have zero tolerance for small talk."
+  goals:
+    - "Give me a {{pizza_size}} pizza right now, no delays!"
+    - "Make it a {{pizza_type}} and don't mess it up."
+    - "I also need {{drink_qty}} drinks, hurry up."
+    - "Make the drinks {{drink_type}}."
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [pepperoni, hawaiian, meat lovers, vegetarian]
+    - drink_qty:
+        function: forward()
+        type: int
+        data: [1, 2, 3]
+    - drink_type:
+        function: random()
+        type: string
+        data: [coke, sprite, water]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand. Could you please repeat your order?"
+  output:
+    - ordered_size:
+        type: string
+        description: "The size of the pizza ordered."
+    - ordered_type:
+        type: string
+        description: "The type of pizza ordered."
+    - total_price:
+        type: currency
+        description: "The total price of the order."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - single question
+```
+
+### A quick breakdown of what's happening here 👀:
+* **The Persona:** The `role` and `context` fields instruct the LLM to act rude and rushed. The goal prompts themselves are also written aggressively to match the vibe!
+* **The Variables:** `pizza_size` and `pizza_type` use `pairwise()`. Sensei will calculate the most efficient way to test all pairs of sizes and types. `drink_qty` uses `forward()` to iterate through numbers, and `drink_type` just picks a `random()` drink each time.
+* **The Matrix:** By setting `number: combinations(1, pairwise)`, Sensei will automatically run exactly the number of conversations needed to cover 100% of the pairwise combinations between your sizes and pizza types.
+
+Let me know if you need any adjustments to the outputs or if you'd like to add a Sensei rule to test this profile! 🍕🚀

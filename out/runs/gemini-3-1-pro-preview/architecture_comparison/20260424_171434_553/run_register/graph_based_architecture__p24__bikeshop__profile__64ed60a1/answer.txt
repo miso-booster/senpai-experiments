@@ -1,0 +1,68 @@
+Hello there! 😊 I'd be more than happy to help you create this profile. 
+
+Based on your description, we need a straightforward, polite user who sticks strictly to the basics: hours, standard prices, and general maintenance. To make sure the simulated user doesn't wander off-topic into appointments or specific bike models, we can place those restrictions directly into the `user.context` section. 
+
+Also, since I noticed in your other project files (like `qa.yml`) that you use a custom `money` type for prices, I've included that in the `chatbot.output` so your extractions work perfectly! 🚲💸
+
+Here is the complete YAML profile for your test:
+
+```yaml
+test_name: "general_info_and_pricing_check"
+
+llm:
+  temperature: 0.3 # Kept low so the user simulator remains focused and direct
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer looking for general information about a local bike shop and its standard services. 
+    You phrase your questions clearly and directly.
+  context:
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, or delivery services."
+    - "Do not ask about any topic outside of basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - shop_hours:
+        type: string
+        description: "The opening and closing times of the bike shop."
+    - tire_price:
+        type: money
+        description: "The price of a new bike tire provided by the chatbot."
+    - tune_up_price:
+        type: money
+        description: "The price of a standard bike tune-up provided by the chatbot."
+    - seat_price:
+        type: money
+        description: "The price of a new bike seat provided by the chatbot."
+    - bike_care_advice:
+        type: string
+        description: "General advice provided by the chatbot on how to properly take care of a bike."
+
+conversation:
+  number: 2 # Runs the conversation twice to ensure consistent behavior
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15 # Safety stop just in case the bot gets stuck
+  interaction_style:
+    - default
+```
+
+### 💡 A few quick tips on how this works:
+* **`user.context`**: This is the perfect place for "negative constraints." By explicitly telling the LLM *not* to ask about appointments or warranties, it will stick strictly to your script.
+* **`chatbot.output`**: I mapped each of your requirements to an output field. Once the test finishes, Sensei will extract these values. You can then use **Sensei Rules** to check if `conv[i].tire_price` is not null, or if `conv[i].bike_care_advice` contains appropriate terminology!
+* **`goal_style.all_answered`**: This ensures the conversation naturally concludes only after the chatbot has addressed all 5 of your goals.
+
+Just save this as a `.yml` file in your `profiles/` folder, and you're ready to test! Let me know if you need help writing the Sensei Rules to validate these outputs, or if you'd like to tweak anything else. How else can I help you today? 👀✨

@@ -1,0 +1,71 @@
+Here is a SENSEI Profile designed exactly for this scenario! 
+
+To achieve this, we can use the built-in `change your mind` interaction style. This tells the simulated user to alter their decisions during the chat. We pair this with specific `user.goals` and a `user.role` so the simulator knows it should start with a custom pizza and switch to a predefined one.
+
+Here is the complete YAML profile based on the `sensei-chat-guide.md` documentation:
+
+```yaml
+test_name: "pizza_change_mind_scenario"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza. You initially want to build a custom pizza, 
+    but halfway through the process, you change your mind and decide it is easier to 
+    just order a standard predefined pizza instead.
+  context:
+    - "You are hungry and want the pizza delivered to your house."
+  goals:
+    - "Start by ordering a {{size}} custom pizza with {{toppings}}."
+    - "Eventually change your mind and ask for a {{predefined_pizza}} instead."
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: random(2)
+        type: string
+        data: [mushrooms, extra cheese, black olives, onions, green peppers, pepperoni]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Hawaiian, Meat Lovers, Veggie Supreme, BBQ Chicken]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you repeat your pizza order?"
+  output:
+    - final_pizza_type:
+        type: string
+        description: "The final type of pizza the user settled on (e.g., Margherita, Hawaiian, etc.)"
+    - final_size:
+        type: string
+        description: "The final size of the pizza ordered"
+    - discarded_toppings:
+        type: list[string]
+        description: "Any custom toppings the user initially asked for but then discarded"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - change your mind
+```
+
+### How this profile works:
+
+1. **`interaction_style: [change your mind]`**: This is a reserved keyword in Sensei that naturally prompts the LLM simulator to hesitate, backtrack, or alter its choices mid-conversation.
+2. **`user.role` & `user.goals`**: We explicitly instruct the persona to start with the custom `{{size}}` and `{{toppings}}` variables, and then pivot to the `{{predefined_pizza}}` variable. The `random(2)` function ensures the user picks exactly two random custom toppings to start with before abandoning them.
+3. **`chatbot.output`**: At the end of the conversation, Sensei will extract the `final_pizza_type`, the `final_size`, and the `discarded_toppings`. This is extremely useful because later you can write a **Sensei Rule** to verify that the chatbot actually dropped the custom toppings and only charged for the predefined pizza!
+
+Let me know if you'd like to adjust the toppings, add more variables, or if you'd like me to write a validation rule to go along with this profile! 😊

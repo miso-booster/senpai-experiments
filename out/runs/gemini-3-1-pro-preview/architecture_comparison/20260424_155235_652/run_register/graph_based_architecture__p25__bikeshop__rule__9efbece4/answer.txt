@@ -1,0 +1,26 @@
+Hello there! 👋 I'd be absolutely delighted to help you write a Sensei-check rule for your bike shop profile! 🚲✨
+
+Since you want to verify that the assistant provides specific, fixed answers (like exact prices and hours) in a single chat, we will create a **single-conversation oracle** rule. 
+
+To do this, we'll use your profile's `chatbot.output` fields and pair them with a couple of handy Sensei-check helpers:
+*   **`extract_float()`**: This is perfect for pulling the numbers out of your `tire`, `tune_up`, and `seat_price` fields so we can check if they equal 50 or 20.
+*   **`semantic_content()`**: Since `opening_and_closing` is a string and the bot might say "We are open from 10 AM to 8 PM" or "10 to 20", this LLM-backed helper is great for checking if the meaning matches "10 to 20" without worrying about exact phrasing.
+
+Here is the ready-to-use YAML rule for your project:
+
+```yaml
+name: check_bike_shop_info
+description: Verifies that the bike shop returns the correct prices and opening hours.
+conversations: 1
+oracle: extract_float(tune_up) == 50 and extract_float(seat_price) == 20 and extract_float(tire) == 20 and semantic_content(opening_and_closing, '10 to 20')
+```
+
+### 🧠 How it works:
+1.  **`conversations: 1`**: Tells Sensei-check to look at each conversation individually.
+2.  **`oracle: ...`**: This is the condition that must be `True` for the test to pass.
+3.  It checks that the extracted numbers for the tune-up, seat, and tire match your exact prices.
+4.  It uses `semantic_content` to ensure the opening hours logically match "10 to 20".
+
+Just save this as a `.yaml` file in your rules folder, and Sensei-check will automatically validate these outputs for you! 
+
+How does that look to you? Let me know if you'd like to add any other checks, like making sure the assistant stays on topic! 😊🛠️

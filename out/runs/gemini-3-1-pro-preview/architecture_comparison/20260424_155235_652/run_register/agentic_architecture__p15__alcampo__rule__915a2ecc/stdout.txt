@@ -1,0 +1,39 @@
+conversation ID: agentic_architecture__p15__alcampo__rule__915a2ecc
+$$$
+I can certainly help you fix this rule! 😊
+
+I reviewed the SENSEI-check documentation and checked your project's profiles. I found the profile `customer_service_assistance.yaml`, which seems to be the target for this rule. 
+
+Here are the issues with the current rule and how to fix them:
+
+1. **Typo in `description`**: `descriptin` needs to be corrected to `description`.
+2. **Missing `then` clause**: In SENSEI-check, if you use `if`, you **must** also provide a `then` clause to create an implication ("If X happens, then Y should happen"). If you just want to assert that a condition is true, you should use `oracle` instead.
+3. **Missing `user_request` field**: Your `when` filter tries to use `conv[0].user_request`. However, `user_request` is **not** defined in the `chatbot.output` of your `customer_service_assistance.yaml` profile. The profile only exposes `contact_options`, `customer_service_number`, `hours_of_operation`, `online_form_instructions`, `required_fields`, and `message_details`.
+
+### The Recommended Fix (Single Conversation)
+Since your `customer_service_assistance.yaml` profile is designed to ask for both the contact options and the customer service number in the *same* conversation, you don't actually need a 2-conversation metamorphic rule. You can simply use a **single-conversation rule** to verify that both fields were successfully extracted (i.e., they are not `None`).
+
+Here is the corrected and optimized YAML:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+oracle: contact_options is not None and customer_service_number is not None
+```
+
+### Alternative (If you really need 2 conversations)
+If you are using a different profile where the user only asks for one thing per conversation, and you want to ensure both are collected across two different conversations, you would need to use `oracle` (since there is no `then` condition). 
+
+*Note: For this to work, you would first need to add `user_request` to your profile's `chatbot.output`.*
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+oracle: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+```
+
+I highly recommend the **first option** (conversations: 1) as it perfectly aligns with your existing `customer_service_assistance.yaml` profile! Let me know if you'd like me to help you update the profile or if you have any questions.
+$$$

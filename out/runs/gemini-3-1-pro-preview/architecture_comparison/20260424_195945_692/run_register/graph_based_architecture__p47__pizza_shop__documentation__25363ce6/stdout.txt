@@ -1,0 +1,30 @@
+conversation ID: graph_based_architecture__p47__pizza_shop__documentation__25363ce6
+$$$
+Hello there! 😊 I'd be absolutely delighted to explain what a metamorphic rule is in Sensei! 
+
+In traditional testing, you usually look at a single conversation and check if the chatbot gave the exact right answer (like checking if 1 + 1 = 2). But chatbots are complex, and sometimes we don't know the *exact* right answer for every possible scenario. This is known as the "oracle problem."
+
+**Metamorphic rules** solve this by looking at the **relationship** between two or more conversations instead of just one! 🕵️‍♀️✨
+
+Instead of asking, *"Is the price of this pizza exactly $15.50?"* a metamorphic rule asks, *"If I order the exact same pizza but add extra cheese, does the price go up?"* 🍕📈
+
+### How it works in Sensei-check:
+When you write a metamorphic rule in YAML, you define three main things:
+1. **Conversations:** How many conversations you want to compare (usually 2).
+2. **The Filter (`when`):** A condition to select comparable conversations (e.g., "Find two conversations where the user ordered the same size pizza and the same drink").
+3. **The Relation (`if` / `then`):** The logical rule that must hold true (e.g., "If conversation A has more toppings than conversation B, then the price in A must be higher than the price in B").
+
+Here is a quick peek at what that looks like in code:
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+By checking these relationships, Sensei can automatically test thousands of conversations and catch logical bugs without you needing to know the exact price of every single pizza combination. 🧠💡
+
+Does that make sense? Let me know if you'd like to dive deeper into how to write one for your own project! 👀✨
+$$$

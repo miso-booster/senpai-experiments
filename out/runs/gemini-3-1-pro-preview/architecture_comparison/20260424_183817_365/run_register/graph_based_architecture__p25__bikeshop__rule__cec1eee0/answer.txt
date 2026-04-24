@@ -1,0 +1,39 @@
+Hello there! 🚲 I'd be absolutely delighted to help you write a Sensei-check rule for your bike shop profile! 
+
+Since you want to verify specific, fixed values for a single chat (like the exact price of a tire or the specific opening hours), we will create a **single-conversation oracle**. This type of rule looks at one conversation at a time and checks if the extracted outputs match your expected values.
+
+To do this, we'll use the exact field names you defined in your profile's `chatbot.output` (`opening_and_closing`, `tire`, `tune_up`, and `seat_price`). We can also use some handy built-in helpers:
+* `extract_float()` to easily grab the numbers out of the price strings.
+* `semantic_content()` to use a quick LLM check to ensure the opening hours mean "10 to 20", even if the bot phrases it like "We open at 10 AM and close at 8 PM (20:00)".
+
+Here is the ready-to-use YAML rule for your project:
+
+```yaml
+name: check_bike_shop_info
+description: Verifies that the bike shop assistant provides the correct prices and opening hours.
+conversations: 1
+oracle: extract_float(tune_up) == 50 and extract_float(seat_price) == 20 and extract_float(tire) == 20 and semantic_content(opening_and_closing, '10 to 20')
+```
+
+### 💡 A quick tip from Senpai:
+If you want to know exactly *which* item failed during testing, you can also split this into two smaller rules—one for the prices and one for the schedule! 
+
+For example, here is how the prices-only rule would look:
+
+```yaml
+name: check_bike_shop_prices
+description: Verifies the prices of the tune-up, seat, and tire.
+conversations: 1
+oracle: extract_float(tune_up) == 50 and extract_float(seat_price) == 20 and extract_float(tire) == 20
+```
+
+And the schedule rule:
+
+```yaml
+name: check_bike_shop_hours
+description: Verifies the opening and closing times.
+conversations: 1
+oracle: semantic_content(opening_and_closing, 'open from 10 to 20')
+```
+
+How does that look to you? Let me know if you'd like to test anything else, like making sure the bot stays on topic, or if you need help setting up a SENSEI Connector to run this! 😊

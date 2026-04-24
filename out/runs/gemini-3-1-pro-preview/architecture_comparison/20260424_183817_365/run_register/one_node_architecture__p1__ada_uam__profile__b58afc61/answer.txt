@@ -1,0 +1,66 @@
+Here is a profile for a user who is struggling to connect to the **eduroam** network. 
+
+To make the test as thorough as possible, I included two variables: the `device_type` (since eduroam setup varies heavily by OS) and the `setup_method` (the different ways the user tried to configure it). By using nested `forward()` functions, Sensei will automatically generate a combination matrix to test how your chatbot handles every setup method across every device! 🚀
+
+```yaml
+test_name: "eduroam_setup_issues"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student or staff member trying to connect your device to the eduroam Wi-Fi network, but you keep encountering errors and cannot connect.
+  context:
+    - "You are currently on campus and urgently need internet access for your classes."
+    - "You have already tried following the standard instructions, but it still doesn't work."
+  goals:
+    - "State that you are trying to connect your {{device_type}} to eduroam."
+    - "Explain that you attempted to set it up using {{setup_method}}, but it failed or gave an error."
+    - "Ask for specific troubleshooting steps or if there is an alternative way to get connected."
+    - device_type:
+        function: forward()
+        type: string
+        data: [Windows laptop, MacBook, Android smartphone, iPhone]
+    - setup_method:
+        function: forward(device_type)
+        type: string
+        data: 
+          - the automatic eduroam CAT installer
+          - manual network configuration
+          - scanning the campus QR code
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you explain your issue again?"
+  output:
+    - troubleshooting_steps:
+        type: string
+        description: "The step-by-step instructions provided by the chatbot to fix the connection."
+    - requires_it_desk:
+        type: string
+        description: "Whether the chatbot advises the user to visit the physical IT support desk (Yes/No)."
+    - provided_links:
+        type: list[string]
+        description: "Any URLs or links provided by the chatbot for certificates or installers."
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 6
+  interaction_style:
+    - random:
+      - single questions
+      - long phrases
+      - make spelling mistakes
+```
+
+### A quick tip 👀
+Because we set `conversation.number: combinations`, Sensei will run 12 conversations (4 devices × 3 setup methods) to ensure your chatbot knows how to troubleshoot every scenario. 
+
+Let me know if you'd like to add any specific custom types to this, or if you want to write a **Sensei Rule** to verify that the chatbot always provides a link to the CAT installer! 😊

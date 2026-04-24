@@ -1,0 +1,35 @@
+conversation ID: graph_based_architecture__p29__bikeshop__rule__d9eba235
+$$$
+Hello there! 🚲 I would be absolutely delighted to help you write that rule! 
+
+In **Sensei-check**, rules work hand-in-hand with your **SENSEI Chat profiles**. To check if an appointment is confirmed, we have two great approaches depending on how your profile is set up. 
+
+Here are two ways you can write this rule:
+
+### Option 1: Checking the conversation text (Using Helpers)
+If you want to check if the assistant *literally* says something about confirming the appointment, you can use our handy `utterance_index` helper. This uses an LLM under the hood to find where the assistant mentions a specific topic!
+
+```yaml
+name: confirm_bike_service_message
+description: The assistant must confirm the appointment when a bike service is requested.
+conversations: 1
+when: service_type == 'bike service'
+oracle: utterance_index('assistant', 'appointment confirmed') > 0
+```
+
+### Option 2: Checking extracted data (Profile-bound rule)
+The most robust way to do this is to have your SENSEI Chat profile extract the appointment details into its `chatbot.output` (for example, a `status` field and an `appointment_date` field). Then, your rule just checks those fields! ✨
+
+```yaml
+name: bike_service_data_collected
+description: Ensures the appointment date and confirmed status are collected for bike services.
+conversations: 1
+when: service_type == 'bike service'
+oracle: status == 'confirmed' and appointment_date != None
+```
+
+### 💡 A Quick Senpai Tip:
+Notice how I used `when: service_type == 'bike service'`? For these rules to work perfectly, your SENSEI Chat profile's `chatbot.output` needs to expose a field called `service_type` (and `status` or `appointment_date` if you use Option 2). Always make sure the variables in your rules match the exact names in your profile! 📝
+
+Do you already have a SENSEI Chat profile set up for this bike shop, or would you like some help creating one to match this rule? 😊
+$$$

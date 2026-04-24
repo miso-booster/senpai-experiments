@@ -1,0 +1,39 @@
+Hello! I can certainly help you fix this rule. 😊
+
+I've reviewed the SENSEI documentation (`sensei-check-doc.md`) and searched your project for a profile that matches these fields. I found `customer_service_assistance.yaml`, which extracts `contact_options` and `customer_service_number`. 
+
+Based on the docs and your project, there are a few issues with the rule you provided:
+1. **Typo:** `descriptin` needs to be `description`.
+2. **Missing keyword:** A metamorphic rule (using `conversations: 2`) needs either an `oracle` or an `if`/`then` pair. You have `when` (which is great for filtering) and `if`, but no `then`.
+3. **Missing Profile Field:** You are filtering by `user_request`, but `user_request` is **not** defined in the `chatbot.output` of your `customer_service_assistance.yaml` profile. SENSEI rules can only read fields that the profile explicitly extracts.
+4. **Conversation Scope:** Your profile is set up to ask all its goals in a single conversation (it has 22 steps). This means both `contact_options` and `customer_service_number` will be extracted in the *same* conversation, so you don't actually need a 2-conversation rule!
+
+Here are two ways to fix it, depending on what you want to achieve:
+
+### Option 1: Single-Conversation Rule (Recommended)
+Since your profile extracts both pieces of information in the same chat, you can simplify this to a 1-conversation rule using an `oracle`. This checks that both fields were successfully collected:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+oracle: contact_options is not None and customer_service_number is not None
+```
+
+### Option 2: Metamorphic Rule (If you change your profile)
+If you specifically want to compare two *different* conversations (e.g., one where the user only asks for options, and another where they only ask for the number), you will need to add `user_request` to your profile's `chatbot.output`. If you do that, the corrected 2-conversation rule would look like this:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+oracle: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+```
+*(Notice I changed `if` to `oracle` here, as you are just asserting a final condition rather than an "if X then Y" implication).*
+
+---
+**💡 Bonus Tip for your Profile:**
+While inspecting `customer_service_assistance.yaml`, I noticed it is missing colons on two main keys. You have `user` and `goals` instead of `user:` and `goals:`. You might want to add those colons so the YAML parses correctly!
+
+Does Option 1 look like the right fit for your current profile? Let me know if you'd like me to help update the profile as well!

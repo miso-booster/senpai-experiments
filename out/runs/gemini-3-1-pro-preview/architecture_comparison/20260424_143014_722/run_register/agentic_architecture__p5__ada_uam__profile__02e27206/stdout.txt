@@ -1,0 +1,70 @@
+conversation ID: agentic_architecture__p5__ada_uam__profile__02e27206
+$$$
+I have created a SENSEI profile based on the `sensei-chat-guide.md` documentation. 
+
+This profile simulates a user who contacts the UAM chatbot to get information about the CAU (User Support Center). It asks for the phone number, email, location, and opening hours, and then extracts those specific details at the end of the conversation.
+
+Here is the YAML profile:
+
+```yaml
+test_name: "uam_cau_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a user of the UAM (Universidad Autónoma de Madrid) seeking support from the CAU (User Support Center).
+    You need to find out how to contact them and where they are located.
+  context:
+    - "You are polite but need the information quickly."
+    - "You want to know all the contact details and opening hours."
+  goals:
+    - "Ask for the CAU's phone number."
+    - "Ask for the CAU's email address."
+    - "Ask for the physical location of the CAU."
+    - "Ask for the opening hours of the CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you rephrase?"
+  output:
+    - phone_number:
+        type: string
+        description: "The phone number of the CAU provided by the chatbot"
+    - email_address:
+        type: string
+        description: "The email address of the CAU provided by the chatbot"
+    - physical_location:
+        type: string
+        description: "The physical location or address of the CAU"
+    - opening_hours:
+        type: string
+        description: "The opening hours of the CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📋 Summary of the Profile
+
+* **`user.goals`**: The simulated user has four clear, fixed goals to ask the chatbot (phone, email, location, and hours). Since there are no variables needed for this specific scenario, they are written as plain text prompts.
+* **`chatbot.output`**: This is the contract for what Sensei will extract at the end of the conversation. It includes `phone_number`, `email_address`, `physical_location`, and `opening_hours`. If you later want to write SENSEI RULES to validate the bot's answers, you can reference these exact fields (e.g., `conv[0].phone_number`).
+* **`conversation`**: 
+  * It will run `3` times.
+  * The `goal_style` is set to `all_answered`, meaning the simulator will keep talking until all four goals are met (or until it hits the safety limit of 15 steps). It will also export a CSV showing which goals were satisfied.
+  * The `interaction_style` is `default`, so the simulator will behave naturally.
+
+Let me know if you'd like to add any specific interaction styles (like making spelling mistakes or changing languages) or if you'd like to create a rule to validate these outputs! 😊
+$$$

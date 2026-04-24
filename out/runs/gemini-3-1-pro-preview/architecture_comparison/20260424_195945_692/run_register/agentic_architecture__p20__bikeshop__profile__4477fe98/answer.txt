@@ -1,0 +1,72 @@
+Here is a complete SENSEI profile tailored for your bike shop scenario. 
+
+To thoroughly test how the chatbot manages dates and times, I've used **nested `forward()` functions** for the variables. This will create a combination matrix, ensuring the simulator tests every time slot against every generated date.
+
+```yaml
+test_name: "bike_shop_wheel_change"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who wants to set an appointment at a bike shop to have your wheels changed.
+  context:
+    - "You need to change both the front and rear wheels of your mountain bike."
+    - "You want to know how long the service will take and how much it will cost."
+  goals:
+    - "Set an appointment for {{appointment_date}} at {{appointment_time}}"
+    - "Ask for the total price of the service"
+    - appointment_date:
+        function: forward()
+        type: string
+        data:
+          - any(3 dates within the next 14 days)
+    - appointment_time:
+        function: forward(appointment_date)
+        type: string
+        data:
+          - "09:00 AM"
+          - "01:30 PM"
+          - "04:45 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please repeat?"
+  output:
+    - confirmed_date:
+        type: date(day-month-year)
+        description: "The confirmed date for the appointment"
+    - confirmed_time:
+        type: time(hh:mm)
+        description: "The confirmed time for the appointment"
+    - total_price:
+        type: float
+        description: "The total price quoted for the wheel change"
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🚲 How this profile works:
+
+1. **Date & Time Variables**: 
+   - `appointment_date` uses an LLM-generated list (`any(3 dates within the next 14 days)`) to dynamically pick 3 upcoming dates.
+   - `appointment_time` has 3 hardcoded times (morning, early afternoon, late afternoon).
+   - Because `appointment_time` uses `forward(appointment_date)`, it nests the times inside the dates. This creates a grid of 9 unique combinations (3 dates × 3 times).
+2. **Conversation Number**: By setting `conversation.number: combinations`, Sensei will automatically run exactly 9 conversations to test every single date and time pair.
+3. **Chatbot Output**: At the end of each conversation, Sensei will extract the `confirmed_date`, `confirmed_time`, and `total_price`. This is super useful because later you can write SENSEI RULES to verify if the extracted date/time matches what the user originally requested!
+4. **Goal Style**: `all_answered` ensures the conversation naturally stops once the user has successfully booked the date/time and gotten the price.
+
+Let me know if you'd like to add any specific interaction styles (like making the user change their mind about the date mid-conversation) or if you want to write a rule to validate this profile! 😊

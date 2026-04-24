@@ -1,0 +1,67 @@
+conversation ID: graph_based_architecture__p22__bikeshop__profile__309fb9b9
+$$$
+Hello there! 😊 I would be absolutely delighted to help you create this Sensei Profile! 
+
+This is a fantastic use case. Testing how a chatbot handles consultative, advice-seeking questions—especially when the user *isn't* ready to commit to an appointment—is a great way to evaluate its empathy and helpfulness. 
+
+Here is a complete, ready-to-use YAML profile tailored to your cyclist's situation. I've structured it so the simulated user explains their discomfort, asks for advice, and explicitly avoids booking an appointment.
+
+### 🚴‍♂️ Profile: `bike_discomfort_advice_seeker.yml`
+
+```yaml
+test_name: "bike_discomfort_advice_seeker"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A cyclist experiencing discomfort during rides, seeking advice on bike fit and component wear without booking an appointment."
+  context:
+    - "You feel pain in your knees and lower back after riding for more than 30 minutes."
+    - "You are unsure if your bike is improperly fitted or if parts like the saddle or pedals are worn out."
+    - "You want to know what services or adjustments the shop offers to help with this."
+    - "You do NOT want to book an appointment right now; you are just gathering information."
+  goals:
+    - "Explain your discomfort and ask if it might be a bike fit issue or worn components."
+    - "Ask what specific adjustments can be made to improve comfort."
+    - "Inquire about the services the shop offers for bike fitting or component checking."
+    - "Ask for the price of a bike fitting service or component inspection."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - discomfort_advice:
+        type: string
+        description: "The chatbot's advice regarding whether the issue might be bike fit or worn components."
+    - suggested_adjustments:
+        type: string
+        description: "Specific adjustments suggested by the chatbot to improve comfort (e.g., saddle height, handlebar reach)."
+    - offered_services:
+        type: string
+        description: "Services offered by the shop related to bike fitting or component inspection."
+    - service_price:
+        type: money
+        description: "The price quoted for the fitting or inspection service, if provided."
+
+conversation:
+  number: 2
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - single questions
+```
+
+### 💡 Why this works so well:
+* **The `context` is key:** By explicitly telling the LLM in the context, *"You do NOT want to book an appointment right now,"* Sensei will naturally resist if the chatbot tries to push for a scheduled time.
+* **Targeted `goals`:** The goals guide the user to ask about the root cause (fit vs. wear), the adjustments, the services, and the pricing, step-by-step.
+* **The `chatbot.output` contract:** I added fields like `discomfort_advice` and `suggested_adjustments`. At the end of the conversation, Sensei will extract exactly what the chatbot recommended. Later, you can easily write **Sensei Rules** to verify that the bot actually provided helpful advice instead of just saying, "I don't know, please book an appointment." *(Note: I used the `money` custom type for the price, as I noticed you use that in your other bike shop profiles!)* 👀
+
+You can save this right into your `profiles/` folder. Let me know if you'd like to tweak the interaction style (maybe make them use `long phrases` to explain their pain?) or if you need help writing some Sensei Rules to validate the chatbot's answers! 🥋✨
+$$$
