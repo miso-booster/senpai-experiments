@@ -526,6 +526,129 @@ def _write_friedman_metrics(
         )
 
 
+def _kendalls_w(rank_vectors: Sequence[Sequence[int]]) -> float:
+    if not rank_vectors:
+        return float("nan")
+    n_raters = len(rank_vectors)
+    n_items = len(rank_vectors[0])
+    if n_raters < 2 or n_items < 2:
+        return float("nan")
+    if any(len(vector) != n_items for vector in rank_vectors):
+        return float("nan")
+
+    rank_sums = [
+        sum(vector[item_index] for vector in rank_vectors)
+        for item_index in range(n_items)
+    ]
+    mean_rank_sum = _mean(rank_sums)
+    s = sum((rank_sum - mean_rank_sum) ** 2 for rank_sum in rank_sums)
+    denominator = (n_raters**2) * (n_items**3 - n_items)
+    return (12.0 * s / denominator) if denominator else float("nan")
+
+
+def _sample_sd(values: Sequence[float]) -> float:
+    filtered = [value for value in values if not math.isnan(value)]
+    if len(filtered) < 2:
+        return float("nan")
+    mean_value = _mean(filtered)
+    return math.sqrt(
+        sum((value - mean_value) ** 2 for value in filtered) / (len(filtered) - 1)
+    )
+
+
+def _write_interrater_metrics(
+    by_prompt_path: pathlib.Path,
+    summary_path: pathlib.Path,
+    arch_list: Sequence[str],
+    prompt_ratings: Dict[str, List[PromptRating]],
+) -> None:
+    by_prompt_rows: List[Dict[str, str]] = []
+    w_values: List[float] = []
+    unanimous_full_count = 0
+    unanimous_top_count = 0
+
+    subject_ids = sorted(
+        {rating.subject_id for ratings in prompt_ratings.values() for rating in ratings}
+    )
+
+    for prompt_id in sorted(prompt_ratings):
+        ratings = sorted(prompt_ratings[prompt_id], key=lambda rating: rating.subject_id)
+        common_arches = [
+            arch_id
+            for arch_id in arch_list
+            if all(arch_id in rating.ranks_by_arch for rating in ratings)
+        ]
+        rank_vectors = [
+            [rating.ranks_by_arch[arch_id] for arch_id in common_arches]
+            for rating in ratings
+        ]
+        w_value = _kendalls_w(rank_vectors)
+        if not math.isnan(w_value):
+            w_values.append(w_value)
+
+        ordered_rankings = [
+            tuple(sorted(common_arches, key=lambda arch_id: rating.ranks_by_arch[arch_id]))
+            for rating in ratings
+        ]
+        top_choices = [ranking[0] for ranking in ordered_rankings if ranking]
+        unanimous_full = bool(ordered_rankings) and len(set(ordered_rankings)) == 1
+        unanimous_top = bool(top_choices) and len(set(top_choices)) == 1
+        unanimous_full_count += int(unanimous_full)
+        unanimous_top_count += int(unanimous_top)
+
+        by_prompt_rows.append(
+            {
+                "prompt_id": prompt_id,
+                "n_raters": len(ratings),
+                "n_architectures": len(common_arches),
+                "kendalls_w": _format_float(w_value),
+                "unanimous_full_ranking": int(unanimous_full),
+                "unanimous_top_choice": int(unanimous_top),
+            }
+        )
+
+    prompt_count = len(prompt_ratings)
+    summary_rows = [
+        ("n_prompts", float(prompt_count)),
+        ("n_raters", float(len(subject_ids))),
+        ("kendalls_w_mean", _mean(w_values)),
+        ("kendalls_w_median", _percentile(w_values, 0.5)),
+        ("kendalls_w_sd", _sample_sd(w_values)),
+        ("kendalls_w_min", min(w_values) if w_values else float("nan")),
+        ("kendalls_w_max", max(w_values) if w_values else float("nan")),
+        (
+            "unanimous_top_choice_rate",
+            unanimous_top_count / prompt_count if prompt_count else float("nan"),
+        ),
+        (
+            "unanimous_full_ranking_rate",
+            unanimous_full_count / prompt_count if prompt_count else float("nan"),
+        ),
+    ]
+
+    with by_prompt_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "prompt_id",
+                "n_raters",
+                "n_architectures",
+                "kendalls_w",
+                "unanimous_full_ranking",
+                "unanimous_top_choice",
+            ],
+            delimiter=";",
+        )
+        writer.writeheader()
+        writer.writerows(by_prompt_rows)
+
+    with summary_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["metric", "value"], delimiter=";")
+        writer.writeheader()
+        for metric, value in summary_rows:
+            writer.writerow({"metric": metric, "value": _format_float(value)})
+
+
 def _generate_plots(
     answers_dir: pathlib.Path,
     arch_list: Sequence[str],
@@ -951,6 +1074,8 @@ def main() -> None:
     pairwise_metrics_path = answers_dir / "metrics_pairwise.csv"
     position_distribution_path = answers_dir / "metrics_position_distribution.csv"
     friedman_metrics_path = answers_dir / "metrics_friedman.csv"
+    interrater_by_prompt_path = answers_dir / "metrics_interrater_by_prompt.csv"
+    interrater_summary_path = answers_dir / "metrics_interrater_summary.csv"
 
     _write_combined_rankings(out_path, all_rows)
     _write_avg_prompt_rank_metrics(
@@ -967,6 +1092,12 @@ def main() -> None:
     )
     _write_position_distribution(position_distribution_path, arch_list, all_rows)
     _write_friedman_metrics(friedman_metrics_path, arch_list, prompt_weighted_ranks)
+    _write_interrater_metrics(
+        interrater_by_prompt_path,
+        interrater_summary_path,
+        arch_list,
+        prompt_ratings,
+    )
     _generate_plots(
         answers_dir,
         arch_list,
@@ -982,6 +1113,8 @@ def main() -> None:
     print(f"Wrote metrics: {pairwise_metrics_path}")
     print(f"Wrote metrics: {position_distribution_path}")
     print(f"Wrote metrics: {friedman_metrics_path}")
+    print(f"Wrote metrics: {interrater_by_prompt_path}")
+    print(f"Wrote metrics: {interrater_summary_path}")
 
 
 if __name__ == "__main__":
