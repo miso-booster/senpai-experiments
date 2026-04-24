@@ -53,7 +53,7 @@ class PromptRating:
 
 
 def _load_key(path: pathlib.Path) -> Dict[Tuple[str, str], Dict[str, str]]:
-    with path.open("r", encoding="utf-8", newline="") as f:
+    with _open_csv_text(path) as f:
         reader = csv.DictReader(f, delimiter=";")
         key_map: Dict[Tuple[str, str], Dict[str, str]] = {}
         for row in reader:
@@ -63,6 +63,21 @@ def _load_key(path: pathlib.Path) -> Dict[Tuple[str, str], Dict[str, str]]:
                 continue
             key_map[(pid, label)] = row
     return key_map
+
+
+def _open_csv_text(path: pathlib.Path):
+    for encoding in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
+        try:
+            f = path.open("r", encoding=encoding, newline="")
+            f.read(4096)
+            f.seek(0)
+            return f
+        except UnicodeDecodeError:
+            try:
+                f.close()
+            except UnboundLocalError:
+                pass
+    return path.open("r", encoding="latin-1", newline="")
 
 
 def _build_prompt_label_map(
@@ -377,11 +392,146 @@ def _write_pairwise_metrics(
             )
 
 
+def _write_position_distribution(
+    out_path: pathlib.Path,
+    arch_list: Sequence[str],
+    all_rows: Sequence[Dict[str, str]],
+) -> None:
+    counts: Dict[Tuple[str, int], int] = {}
+    weighted_counts: Dict[Tuple[str, int], float] = {}
+    totals_by_arch: Dict[str, int] = {arch_id: 0 for arch_id in arch_list}
+    weighted_totals_by_arch: Dict[str, float] = {arch_id: 0.0 for arch_id in arch_list}
+
+    for row in all_rows:
+        arch_id = row.get("arch_id", "")
+        if not arch_id:
+            continue
+        rank_position = int(row["rank_position"])
+        confidence_weight = float(row.get("confidence_weight") or 0.0)
+        counts[(arch_id, rank_position)] = counts.get((arch_id, rank_position), 0) + 1
+        weighted_counts[(arch_id, rank_position)] = (
+            weighted_counts.get((arch_id, rank_position), 0.0) + confidence_weight
+        )
+        totals_by_arch[arch_id] = totals_by_arch.get(arch_id, 0) + 1
+        weighted_totals_by_arch[arch_id] = (
+            weighted_totals_by_arch.get(arch_id, 0.0) + confidence_weight
+        )
+
+    max_rank = max((int(row["rank_position"]) for row in all_rows), default=0)
+    with out_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "arch_id",
+                "rank_position",
+                "count",
+                "proportion",
+                "weighted_count",
+                "weighted_proportion",
+            ],
+            delimiter=";",
+        )
+        writer.writeheader()
+        for arch_id in arch_list:
+            total = totals_by_arch.get(arch_id, 0)
+            weighted_total = weighted_totals_by_arch.get(arch_id, 0.0)
+            for rank_position in range(1, max_rank + 1):
+                count = counts.get((arch_id, rank_position), 0)
+                weighted_count = weighted_counts.get((arch_id, rank_position), 0.0)
+                writer.writerow(
+                    {
+                        "arch_id": arch_id,
+                        "rank_position": rank_position,
+                        "count": count,
+                        "proportion": _format_float(count / total if total else float("nan")),
+                        "weighted_count": _format_float(weighted_count),
+                        "weighted_proportion": _format_float(
+                            weighted_count / weighted_total
+                            if weighted_total
+                            else float("nan")
+                        ),
+                    }
+                )
+
+
+def _friedman_metrics(
+    arch_list: Sequence[str],
+    prompt_weighted_ranks: Dict[str, Dict[str, float]],
+) -> Dict[str, float]:
+    prompt_rows = [
+        [prompt_weighted_ranks[prompt_id][arch_id] for arch_id in arch_list]
+        for prompt_id in sorted(prompt_weighted_ranks)
+        if all(arch_id in prompt_weighted_ranks[prompt_id] for arch_id in arch_list)
+    ]
+    n_blocks = len(prompt_rows)
+    n_architectures = len(arch_list)
+    if n_blocks < 2 or n_architectures < 2:
+        return {
+            "n_blocks": float(n_blocks),
+            "n_architectures": float(n_architectures),
+            "statistic": float("nan"),
+            "p_value": float("nan"),
+            "kendalls_w": float("nan"),
+        }
+    try:
+        from scipy.stats import friedmanchisquare
+    except ImportError:
+        return {
+            "n_blocks": float(n_blocks),
+            "n_architectures": float(n_architectures),
+            "statistic": float("nan"),
+            "p_value": float("nan"),
+            "kendalls_w": float("nan"),
+        }
+
+    columns = list(zip(*prompt_rows))
+    result = friedmanchisquare(*columns)
+    statistic = float(result.statistic)
+    return {
+        "n_blocks": float(n_blocks),
+        "n_architectures": float(n_architectures),
+        "statistic": statistic,
+        "p_value": float(result.pvalue),
+        "kendalls_w": statistic / (n_blocks * (n_architectures - 1)),
+    }
+
+
+def _write_friedman_metrics(
+    out_path: pathlib.Path,
+    arch_list: Sequence[str],
+    prompt_weighted_ranks: Dict[str, Dict[str, float]],
+) -> None:
+    metrics = _friedman_metrics(arch_list, prompt_weighted_ranks)
+    with out_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "n_blocks",
+                "n_architectures",
+                "statistic",
+                "p_value",
+                "kendalls_w",
+            ],
+            delimiter=";",
+        )
+        writer.writeheader()
+        writer.writerow(
+            {
+                "n_blocks": int(metrics["n_blocks"]),
+                "n_architectures": int(metrics["n_architectures"]),
+                "statistic": _format_float(metrics["statistic"]),
+                "p_value": _format_float(metrics["p_value"]),
+                "kendalls_w": _format_float(metrics["kendalls_w"]),
+            }
+        )
+
+
 def _generate_plots(
     answers_dir: pathlib.Path,
     arch_list: Sequence[str],
     avg_prompt_rank_metrics_path: pathlib.Path,
     pairwise_metrics_path: pathlib.Path,
+    position_distribution_path: pathlib.Path,
     *,
     plot_format: str,
     dpi: int,
@@ -531,6 +681,49 @@ def _generate_plots(
         ax.grid(axis="y", alpha=0.3)
         _save(fig, "RQ1_pairwise_summary")
 
+    with position_distribution_path.open("r", encoding="utf-8", newline="") as f:
+        position_rows = list(csv.DictReader(f, delimiter=";"))
+    if position_rows:
+        rank_positions = sorted({int(row["rank_position"]) for row in position_rows})
+        fig, ax = plt.subplots(figsize=(8.2, 4.8))
+        left_by_arch = {arch_id: 0.0 for arch_id in arch_list}
+        labels = _display_arch_labels(arch_list)
+        y_positions = list(range(len(arch_list)))
+        rank_colors = plt.get_cmap("Blues")(
+            [0.35 + (0.5 * i / max(len(rank_positions) - 1, 1)) for i in range(len(rank_positions))]
+        )
+        for color, rank_position in zip(rank_colors, rank_positions):
+            values = []
+            for arch_id in arch_list:
+                row = next(
+                    (
+                        item
+                        for item in position_rows
+                        if item["arch_id"] == arch_id
+                        and int(item["rank_position"]) == rank_position
+                    ),
+                    None,
+                )
+                values.append(float(row["weighted_proportion"]) if row else 0.0)
+            left_values = [left_by_arch[arch_id] for arch_id in arch_list]
+            ax.barh(
+                y_positions,
+                values,
+                left=left_values,
+                color=color,
+                edgecolor="white",
+                label=f"Rank {rank_position}",
+            )
+            for arch_id, value in zip(arch_list, values):
+                left_by_arch[arch_id] += value
+        ax.set_yticks(y_positions, labels)
+        ax.set_xlim(0.0, 1.0)
+        ax.set_xlabel("Confidence-weighted proportion")
+        ax.set_title("RQ1: Rank Position Distribution")
+        ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.28), ncol=len(rank_positions))
+        ax.grid(axis="x", alpha=0.3)
+        _save(fig, "RQ1_position_distribution")
+
 
 def _bootstrap_metrics(
     prompt_ids: Sequence[str],
@@ -650,7 +843,7 @@ def main() -> None:
     for answers_path in answers_files:
         subject_id = answers_path.stem.replace("answers_", "", 1)
         seen_prompts_for_subject = set()
-        with answers_path.open("r", encoding="utf-8", newline="") as f:
+        with _open_csv_text(answers_path) as f:
             reader = csv.DictReader(f, delimiter=";")
             if not reader.fieldnames:
                 continue
@@ -756,6 +949,8 @@ def main() -> None:
 
     avg_prompt_rank_metrics_path = answers_dir / "metrics_avg_prompt_rank.csv"
     pairwise_metrics_path = answers_dir / "metrics_pairwise.csv"
+    position_distribution_path = answers_dir / "metrics_position_distribution.csv"
+    friedman_metrics_path = answers_dir / "metrics_friedman.csv"
 
     _write_combined_rankings(out_path, all_rows)
     _write_avg_prompt_rank_metrics(
@@ -770,11 +965,14 @@ def main() -> None:
         prompt_pairwise_winners,
         bootstrap_pair_metrics,
     )
+    _write_position_distribution(position_distribution_path, arch_list, all_rows)
+    _write_friedman_metrics(friedman_metrics_path, arch_list, prompt_weighted_ranks)
     _generate_plots(
         answers_dir,
         arch_list,
         avg_prompt_rank_metrics_path,
         pairwise_metrics_path,
+        position_distribution_path,
         plot_format="png",
         dpi=200,
     )
@@ -782,6 +980,8 @@ def main() -> None:
     print(f"Wrote combined rankings: {out_path}")
     print(f"Wrote metrics: {avg_prompt_rank_metrics_path}")
     print(f"Wrote metrics: {pairwise_metrics_path}")
+    print(f"Wrote metrics: {position_distribution_path}")
+    print(f"Wrote metrics: {friedman_metrics_path}")
 
 
 if __name__ == "__main__":
