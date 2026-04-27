@@ -1,0 +1,65 @@
+Sure! Here's a simple Sensei profile that simulates a user asking the chatbot to add items to their shopping cart. It includes variables for item names and quantities, and exposes relevant outputs like the list of items added and the total count.
+
+```yaml
+test_name: "shopping_cart_add_items"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a shopper who wants to add items to your online shopping cart.
+    You ask the chatbot to add specific products with quantities.
+  context:
+    - "You want to build your shopping cart with various grocery items."
+  goals:
+    - "Add {{quantity}} units of {{item}} to my shopping cart."
+    - quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - item:
+        function: random()
+        type: string
+        data:
+          - apples
+          - bananas
+          - milk
+          - bread
+          - eggs
+          - cheese
+          - chicken breast
+          - rice
+          - coffee
+          - orange juice
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you please specify the item and quantity?"
+  output:
+    - items_added:
+        type: list[string]
+        description: "List of items successfully added to the shopping cart"
+    - total_items:
+        type: int
+        description: "Total number of items in the shopping cart after addition"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+This profile generates conversations where the user asks to add a certain quantity of a randomly chosen item to their cart. The chatbot's output should include the list of items added and the total count, which can later be used in Sensei-check rules for validation.
+
+Let me know if you want it customized further! 😊

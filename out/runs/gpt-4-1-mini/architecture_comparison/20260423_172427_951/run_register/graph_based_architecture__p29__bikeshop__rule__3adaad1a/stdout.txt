@@ -1,0 +1,45 @@
+conversation ID: graph_based_architecture__p29__bikeshop__rule__3adaad1a
+$$$
+Hey! I’d love to help you craft that rule 😊
+
+To check if the chatbot confirms an appointment when the user asks to schedule a bike service, we need to write a **Sensei-check rule** that inspects the conversation output for some kind of confirmation message once the user requests the service.
+
+Here’s how we can approach it:
+
+1. **Profile output:**  
+Make sure your SENSEI Chat profile exposes a field in `chatbot.output` that contains the assistant’s replies or confirmation status. For example, a field like `confirmation_message` or `chatbot_phrases` (list of assistant utterances).
+
+2. **Rule logic:**  
+We want a single-conversation rule (`conversations: 1`) that checks:  
+- If the user requested a bike service (maybe a slot like `service_type == 'bike service'`),  
+- Then the assistant must confirm the appointment somewhere in its replies.
+
+3. **Checking confirmation:**  
+We can use the helper `utterance_index('assistant', 'confirmed') > 0` or a similar keyword search to detect confirmation phrases like "appointment confirmed", "your bike service is scheduled", etc.
+
+---
+
+### Example rule YAML:
+
+```yaml
+name: bike_service_appointment_confirmation
+description: When the user requests a bike service, the assistant confirms the appointment
+conversations: 1
+when: service_type == 'bike service'
+oracle: utterance_index('assistant', 'confirm') > 0 or utterance_index('assistant', 'appointment') > 0
+```
+
+---
+
+### Explanation:
+
+- `when:` filters conversations where the user asked for bike service.
+- `oracle:` checks if the assistant said something containing "confirm" or "appointment" (you can adjust keywords).
+- `utterance_index` returns the turn index where the assistant says that keyword; `> 0` means it appeared somewhere.
+
+---
+
+If your profile uses a different field name or you want to check a specific output slot, just let me know! We can adapt the rule to match your profile’s `chatbot.output` fields perfectly.
+
+Does this look like what you need? Want me to help you tweak it? 🚲✨
+$$$

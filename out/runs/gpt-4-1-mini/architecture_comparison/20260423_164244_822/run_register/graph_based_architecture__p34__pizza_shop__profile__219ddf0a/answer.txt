@@ -1,0 +1,84 @@
+Hey! That sounds like a perfect use case for the `change your mind` interaction style in a Sensei profile 😊. This style makes the user simulator switch their mind during the conversation, which fits exactly what you want: starting with a custom pizza request, then switching to a predefined pizza.
+
+Here’s a quick outline of how you can create such a profile:
+
+- The user goals include ordering a custom pizza (with variables like size and toppings).
+- The interaction style includes `change your mind` so the user will eventually switch to ordering a predefined pizza.
+- The goals should cover both custom pizza ordering and predefined pizza ordering.
+- The chatbot output fields should capture the final order details (pizza type, size, toppings if any, price, order ID, etc.).
+- Set a reasonable number of conversation steps so the switch can happen naturally.
+
+---
+
+### Example profile snippet for your scenario
+
+```yaml
+test_name: custom_to_predefined_pizza_switch
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You want to order a pizza. Initially, you ask for a custom pizza with specific toppings,
+    but halfway through the conversation, you change your mind and ask for a predefined pizza instead.
+  context:
+    - "You like to customize your pizza but sometimes prefer ready-made options."
+  goals:
+    - "Order a {{size}} custom pizza with {{toppings}}"
+    - "Actually, I want a {{predefined_pizza}} pizza instead"
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: random(3)
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives, onions, peppers]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you please clarify your order?"
+  output:
+    - final_pizza_type:
+        type: string
+        description: "The final pizza type ordered (custom or predefined)"
+    - final_size:
+        type: string
+        description: "The size of the pizza ordered"
+    - final_toppings:
+        type: string
+        description: "Toppings if a custom pizza was ordered"
+    - order_id:
+        type: string
+        description: "Order confirmation ID"
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - change your mind
+```
+
+---
+
+### What happens here?
+
+- The user starts by ordering a custom pizza with some toppings.
+- Because of `change your mind`, the user will at some point switch to ordering a predefined pizza.
+- The chatbot output fields let you check what the final pizza type and size were, plus toppings if custom.
+- The conversation runs for 5 steps to allow the switch to happen naturally.
+
+---
+
+If you want, I can help you build a full profile file or tweak this example to your project folder structure! Just let me know 😊🍕

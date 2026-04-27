@@ -1,0 +1,82 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__7a078e88
+$$$
+Hey! That sounds like a great use case for a Sensei profile focused on bike setup and customization. 😊
+
+Since you want a user profile simulating someone who recently bought a new bike and wants to get it tailored by changing the seat and handlebar grips, we can create a profile that:
+
+- Sets the user role as a new bike owner wanting customization.
+- Includes goals like asking about seat options, handlebar grip options, prices, and scheduling a setup or adjustment appointment.
+- Defines variables for seat types, grip types, maybe colors or materials.
+- Extracts chatbot outputs like confirmation of availability, prices, and appointment details.
+
+Here’s a starter example profile YAML you can adapt for your bikeshop testing:
+
+```yaml
+test_name: "new_bike_setup_and_customization"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a new bike owner who recently purchased a bike and want to get it tailored
+    to your preferences by changing the seat and handlebar grips.
+  context:
+    - "You want to know about available seat options and handlebar grips."
+    - "You want to inquire about prices and schedule an appointment for the setup."
+  goals:
+    - "Ask about the types of seats available for my bike."
+    - "Ask about the types of handlebar grips available."
+    - "Inquire about the price of a {{seat_type}} seat."
+    - "Inquire about the price of {{grip_type}} handlebar grips."
+    - "Schedule an appointment for bike setup with the new {{seat_type}} seat and {{grip_type}} grips."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [comfort, racing, gel, leather]
+    - grip_type:
+        function: forward()
+        type: string
+        data: [foam, leather, rubber, gel]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you please repeat that?"
+  output:
+    - seat_availability_confirmation:
+        type: string
+        description: "Chatbot confirmation about seat availability."
+    - grip_availability_confirmation:
+        type: string
+        description: "Chatbot confirmation about handlebar grip availability."
+    - seat_price:
+        type: money
+        description: "Price of the selected seat type."
+    - grip_price:
+        type: money
+        description: "Price of the selected handlebar grip type."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation message for the scheduled setup appointment."
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+This profile:
+
+- Uses `forward()` to iterate through seat and grip types.
+- Has clear goals to ask about availability, prices, and scheduling.
+- Extracts relevant chatbot outputs for validation and rules later.
+
+If you want, I can help you customize it further or explain any part! Just let me know 😊🚲
+$$$

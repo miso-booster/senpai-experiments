@@ -1,0 +1,32 @@
+conversation ID: agentic_architecture__p49__pizza_shop__documentation__aa6ad653
+$$$
+The `pairwise` function is not explicitly mentioned in the Sensei-check documentation I loaded, but based on the context of how metamorphic rules work in Sensei-check, I can explain the concept related to pairs of conversations.
+
+In Sensei-check, metamorphic rules often compare pairs of conversations to check relations between their outputs. For example, a common pattern is a 2-conversation rule that compares fields from two conversations, accessed as `conv[0]` and `conv[1]`. This is effectively a "pairwise" comparison of conversations.
+
+How it works in practice:
+
+- You specify `conversations: 2` in the rule, meaning the rule evaluates pairs of conversations.
+- You use a `when:` filter to select pairs that are comparable (e.g., same pizza size and drink).
+- You write an `if:` condition describing how the inputs differ (e.g., one has more toppings).
+- You write a `then:` condition describing the expected relation in outputs (e.g., price should be higher).
+
+Example from the docs:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+This rule compares pairs of conversations to check that when the number of toppings increases, the price also increases.
+
+So, the "pairwise" concept in Sensei-check is about selecting and comparing pairs of conversations with controlled input differences to assert expected output relations. The DSL uses the `conv` array indexed by 0 and 1 to access each conversation in the pair.
+
+If you meant a specific `pairwise` function in code or DSL that I missed, please clarify or provide more context! Otherwise, this explanation covers how pairwise comparison is done in Sensei-check rules.
+
+I based this on the `sensei-check-doc.md` and `rules-examples.md` documentation. Would you like me to help you write a pairwise metamorphic rule or explain any other related concept? 😊
+$$$

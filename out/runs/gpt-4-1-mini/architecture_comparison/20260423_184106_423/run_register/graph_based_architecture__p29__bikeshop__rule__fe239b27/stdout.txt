@@ -1,0 +1,57 @@
+conversation ID: graph_based_architecture__p29__bikeshop__rule__fe239b27
+$$$
+Hey! I'd love to help you craft that rule 😊
+
+To write a Sensei-check rule that verifies if the chatbot confirms an appointment when the user requests to schedule a bike service, we need a bit of info from your SENSEI Chat profile first:
+
+1. **Does your profile expose a field in `chatbot.output` that indicates appointment confirmation?**  
+   For example, something like `appointment_confirmed` (boolean), or maybe a `confirmation_message` string that contains confirmation text.
+
+2. **Do you have a way to detect the user intent or the request for scheduling a bike service?**  
+   This might be reflected in an input slot or a field in the conversation metadata.
+
+---
+
+### Assuming you have:
+
+- A field `appointment_confirmed` in `chatbot.output` that is `True` or contains confirmation text when the appointment is confirmed.
+- A field `user_intent` or similar that equals `"schedule_bike_service"` when the user requests scheduling.
+
+---
+
+### Then a simple single-conversation rule could look like this:
+
+```yaml
+name: appointment_confirmation_check
+description: Chatbot must confirm appointment when user requests bike service scheduling
+conversations: 1
+when: user_intent == 'schedule_bike_service'
+oracle: appointment_confirmed is True
+on-error: "Expected appointment confirmation but got: {appointment_confirmed}"
+```
+
+---
+
+### If your profile exposes confirmation as a message string, you could check for keywords:
+
+```yaml
+name: appointment_confirmation_check
+description: Chatbot must confirm appointment when user requests bike service scheduling
+conversations: 1
+when: user_intent == 'schedule_bike_service'
+oracle: |
+  'confirmed' in appointment_confirmation_message.lower() or 'scheduled' in appointment_confirmation_message.lower()
+on-error: "No confirmation phrase found in: {appointment_confirmation_message}"
+```
+
+---
+
+### If you don't have these fields yet:
+
+- You might want to add a slot in your profile's `chatbot.output` that captures appointment confirmation status or message.
+- Then update the rule accordingly.
+
+---
+
+Feel free to share your profile's relevant output fields or the current structure, and I can help tailor the rule precisely! 🚲✨
+$$$

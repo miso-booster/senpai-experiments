@@ -1,0 +1,72 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__8b7d20f3
+$$$
+Got it! You want a Sensei profile for a user visiting the bike shop to get their new bike customized, specifically changing the seat and handlebar grips. I'll create a profile YAML that simulates this user scenario, with relevant goals and output fields for the chatbot to confirm or provide info about the customization.
+
+Here's a friendly, clear profile for that use case:
+
+```yaml
+test_name: "bike_setup_and_customization"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and want to visit the bike shop to have it tailored
+    to your preferences. You want to change the seat and the handlebar grips to more comfortable options.
+  context:
+    - "You want to discuss options for seats and handlebar grips."
+    - "You care about comfort and style."
+  goals:
+    - "Ask about available seat options and prices."
+    - "Request to change the bike seat to a {{seat_type}}."
+    - "Ask about handlebar grip options and prices."
+    - "Request to change the handlebar grips to {{grip_type}}."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [gel seat, leather seat, ergonomic seat]
+    - grip_type:
+        function: forward()
+        type: string
+        data: [foam grips, leather grips, ergonomic grips]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you please repeat that?"
+  output:
+    - seat_change_confirmation:
+        type: string
+        description: "Chatbot confirmation about changing the bike seat."
+    - grip_change_confirmation:
+        type: string
+        description: "Chatbot confirmation about changing the handlebar grips."
+    - seat_price:
+        type: money
+        description: "Price quoted for the new seat."
+    - grip_price:
+        type: money
+        description: "Price quoted for the new handlebar grips."
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 6
+  interaction_style:
+    - single questions
+```
+
+This profile:
+
+- Defines a user role focused on bike customization.
+- Has goals to ask about seat and grip options, request changes with variable types.
+- Extracts chatbot outputs confirming changes and prices.
+- Runs 4 conversations cycling through seat and grip types.
+
+If you want, I can help you write some Sensei-check rules to validate the outputs from this profile too! 😊
+$$$

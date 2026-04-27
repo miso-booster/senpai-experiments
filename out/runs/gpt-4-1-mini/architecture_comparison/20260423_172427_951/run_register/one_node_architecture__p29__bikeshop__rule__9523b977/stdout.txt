@@ -1,0 +1,30 @@
+conversation ID: one_node_architecture__p29__bikeshop__rule__9523b977
+$$$
+Absolutely! To write a Sensei-check rule that verifies if the chatbot confirms an appointment when the user requests to schedule a bike service, we need to:
+
+1. Target the profile that includes appointment scheduling (e.g., your `bike_repair_and_maintenance_scheduler` or `appointment` profile).
+2. Use the `chatbot.output` field that captures the appointment confirmation. From your profiles, it looks like `appointment_confirmation` or similar fields exist.
+3. Write a rule that checks, for a single conversation, that when the user asks to schedule a bike service, the chatbot provides a non-empty confirmation.
+
+Here’s a simple example rule you can adapt:
+
+```yaml
+name: appointment_confirmation_present
+description: The chatbot confirms the appointment when the user schedules a bike service
+conversations: 1
+active: true
+when: 'any("schedule" in utterance.lower() or "appointment" in utterance.lower() for utterance in user_utterances)'
+oracle: appointment_confirmation is not None and appointment_confirmation != ""
+yields: "Appointment confirmation missing or empty when user schedules a service."
+```
+
+Explanation:
+
+- `when:` filters conversations where the user mentions scheduling or appointment in any user utterance.
+- `oracle:` asserts the `appointment_confirmation` field (from `chatbot.output`) is present and not empty.
+- `yields:` provides a helpful error message if the rule fails.
+
+If your profile uses a different field name for confirmation (like `confirmed_date` or `confirmed_time`), adjust the field accordingly.
+
+Would you like me to tailor this rule exactly to your profile’s output fields? If so, please tell me which profile you want to target or share the relevant `chatbot.output` fields. 😊
+$$$

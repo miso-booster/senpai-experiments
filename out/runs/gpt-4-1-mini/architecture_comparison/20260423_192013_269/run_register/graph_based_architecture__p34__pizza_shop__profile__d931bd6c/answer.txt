@@ -1,0 +1,76 @@
+Hey! I got you 😊 You want a Sensei profile where the user starts ordering a custom pizza but then changes their mind during the chat and switches to ordering a predefined pizza instead. This is a classic "change your mind" interaction style scenario!
+
+Here’s a profile outline that fits your request, using the `change your mind` interaction style and goals that cover both custom and predefined pizzas. I’ll base it on the pizza domain you have and keep it aligned with Sensei best practices.
+
+---
+
+```yaml
+test_name: "custom_to_predefined_pizza_order_change"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who initially wants to order a custom pizza with specific toppings,
+    but halfway through the conversation, you change your mind and decide to order a predefined pizza instead.
+  context:
+    - "You like experimenting with pizza toppings but sometimes prefer classic options."
+  goals:
+    - "Order a custom pizza with {{size}} size and {{toppings}} toppings."
+    - "Change your mind and order a {{predefined_pizza}} pizza instead."
+    - size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: forward()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives, onions]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian, BBQ Chicken]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you please clarify your order?"
+  output:
+    - final_pizza_type:
+        type: string
+        description: "The final pizza type ordered (custom or predefined)."
+    - final_pizza_size:
+        type: string
+        description: "The size of the final pizza ordered."
+    - final_toppings:
+        type: string
+        description: "The toppings on the final pizza if custom."
+    - order_confirmation:
+        type: string
+        description: "Chatbot's confirmation message for the final order."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 6
+  interaction_style:
+    - change your mind
+    - single questions
+```
+
+---
+
+### Explanation:
+
+- The user starts with a goal to order a custom pizza (`size` + `toppings`).
+- Then the user changes their mind and orders a predefined pizza instead (`predefined_pizza`).
+- The `change your mind` interaction style ensures the user revises their choice mid-conversation.
+- The chatbot output fields capture the final pizza details and confirmation.
+- `single questions` style keeps each user input focused, which is typical for this kind of scenario.
+
+Would you like me to help you generate this as a full YAML file ready to drop into your `profiles/` folder? Or do you want it customized further (e.g., more toppings, languages, or interaction styles)? Just let me know! 😊

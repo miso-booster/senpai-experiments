@@ -1,0 +1,31 @@
+Para que la regla funcione correctamente, debe incluir los campos obligatorios y estar activa. Además, es importante indicar que se evalúa en una sola conversación. Aquí tienes la regla ajustada con esos detalles y un mensaje claro en caso de fallo:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits.
+active: true
+conversations: 1
+oracle: membership_benefits != ''
+yields: "Membership benefits information is missing or empty."
+```
+
+Con esta configuración, la regla verificará que el campo `membership_benefits` no esté vacío en cada conversación individual.
+
+¿Quieres que te ayude con alguna otra regla o aspecto? 😊
+
+```yaml
+name: small_base_price_floor
+description: Small pizzas should cost at least $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+```yaml
+name: toppings_monotonicity
+description: More toppings increases total price
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```

@@ -1,0 +1,72 @@
+conversation ID: graph_based_architecture__p1__ada_uam__profile__cdd5f872
+$$$
+Got it! You want a Sensei profile simulating a user who wants to set up eduroam on their device but faces difficulties. The profile should include variables representing different ways the user might try to set up eduroam.
+
+Here's a clear, friendly, and structured profile example for that scenario. It includes variables for setup methods (e.g., manual config, using a wizard, downloading a config file, etc.) and simulates the user struggling with the process.
+
+```yaml
+test_name: "eduroam_setup_difficulty"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que intenta configurar la red Wi-Fi eduroam en su dispositivo,
+    pero tienes problemas para completar la configuración correctamente.
+    Intentas diferentes métodos para configurar la conexión y buscas ayuda para resolver
+    los inconvenientes.
+  context:
+    - personality: personalities/impatient-user.yml
+    - "Tienes conocimientos básicos de tecnología, pero la configuración de eduroam te resulta complicada."
+    - "Intentas conectarte desde diferentes dispositivos y sistemas operativos."
+  goals:
+    - "Intentar configurar eduroam usando {{setup_method}}."
+    - "Describir el problema que encuentras al usar {{setup_method}}."
+    - setup_method:
+        function: forward()
+        type: string
+        data:
+          - "la configuración manual de red Wi-Fi"
+          - "el asistente de configuración automática"
+          - "la descarga del perfil de configuración"
+          - "la configuración mediante certificado digital"
+          - "la configuración usando la aplicación oficial eduroam CAT"
+
+chatbot:
+  is_starter: false
+  fallback: "Disculpa, no entendí bien. ¿Podrías explicarlo de otra forma o consultar nuestro catálogo de servicios?"
+  output:
+    - setup_success:
+        type: string
+        description: "Indica si la configuración fue exitosa o no"
+    - error_description:
+        type: string
+        description: "Descripción del problema encontrado durante la configuración"
+    - suggested_solution:
+        type: string
+        description: "Sugerencia o paso siguiente para resolver el problema"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 10
+  interaction_style:
+    - change your mind
+    - make spelling mistakes
+    - single questions
+```
+
+### Explanation:
+- The variable `setup_method` covers different ways the user might try to set up eduroam.
+- The user role and context describe the struggle and attempts.
+- The chatbot output fields capture whether setup succeeded, error details, and suggestions.
+- Interaction styles simulate a realistic user who might change their mind or make typos.
+
+If you'd like, I can help you customize it further or add more variables! 😊
+$$$

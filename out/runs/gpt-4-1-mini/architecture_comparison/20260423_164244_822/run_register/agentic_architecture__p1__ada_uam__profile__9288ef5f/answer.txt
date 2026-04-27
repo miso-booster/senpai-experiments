@@ -1,0 +1,63 @@
+I have loaded the profiles documentation and now will create a profile YAML for a user who wants to set up eduroam on their device but is unable to do so. The profile will include variables representing different ways the user might try to set up eduroam (e.g., manual configuration, using a setup tool, contacting support, etc.).
+
+Here is the profile YAML draft: 
+
+```yaml
+test_name: "eduroam_setup_help"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a user trying to set up the eduroam Wi-Fi network on your device but are unable to complete the setup successfully.
+    You try different methods to configure eduroam but face difficulties.
+  context:
+    - "You want to connect to eduroam but encounter setup problems."
+    - "You try various setup methods but need assistance."
+  goals:
+    - "Try to set up eduroam using {{setup_method}}"
+    - setup_method:
+        function: random()
+        type: string
+        data:
+          - "manual configuration of network settings"
+          - "using the eduroam setup wizard/tool"
+          - "installing the eduroam configuration profile"
+          - "contacting IT support for help"
+          - "searching online help guides"
+          - "resetting network settings and retrying"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you please clarify your issue with eduroam setup?"
+  output:
+    - final_status:
+        type: string
+        description: "The final status of the eduroam setup attempt (e.g., success, failure, needs support)"
+    - attempted_method:
+        type: string
+        description: "The method the user tried to set up eduroam"
+    - issue_description:
+        type: string
+        description: "Description of the problem encountered during setup"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+      - single questions
+```
+
+This profile simulates a user trying different methods to set up eduroam but facing difficulties, with variables capturing the setup method tried. The chatbot output fields capture the final status, the method attempted, and a description of the issue encountered.
+
+Would you like me to adjust or add anything else?

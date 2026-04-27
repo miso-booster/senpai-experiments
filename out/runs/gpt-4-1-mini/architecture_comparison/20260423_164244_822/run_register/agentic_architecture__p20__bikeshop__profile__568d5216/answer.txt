@@ -1,0 +1,66 @@
+I will create a SENSEI profile for a bike shop user who wants to set an appointment to have their wheels changed. The profile will include variables for different days and times to test how the chatbot manages scheduling.
+
+This profile will:
+- Simulate a user requesting an appointment for wheel changing.
+- Include variables for appointment day and time with multiple options.
+- Define chatbot output fields to extract the confirmed appointment date and time.
+- Use a conversation number that generates combinations of days and times for thorough testing.
+
+I'll draft this profile now following the structure and examples from the `sensei-chat-guide.md`.
+```yaml
+test_name: "bike_shop_wheel_change_appointment"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who wants to set an appointment at a bike shop to have your wheels changed.
+    You want to test how the chatbot manages scheduling different days and times.
+  context:
+    - "You prefer weekdays but are open to weekends if necessary."
+    - "You want a clear confirmation of the appointment date and time."
+  goals:
+    - "I want to book an appointment to change my bike wheels on {{appointment_day}} at {{appointment_time}}."
+    - appointment_day:
+        function: forward()
+        type: string
+        data: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+    - appointment_time:
+        function: forward(appointment_day)
+        type: string
+        data: [09:00 AM, 11:00 AM, 02:00 PM, 04:00 PM, 06:00 PM]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand. Could you please specify the day and time again?"
+  output:
+    - confirmed_day:
+        type: string
+        description: "The day confirmed by the chatbot for the appointment"
+    - confirmed_time:
+        type: string
+        description: "The time confirmed by the chatbot for the appointment"
+    - confirmation_status:
+        type: string
+        description: "Whether the appointment was successfully booked or not"
+
+conversation:
+  number: combinations(1, forward)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - random:
+      - single questions
+      - long phrases
+      - make spelling mistakes
+```
+
+This profile uses `forward()` functions to iterate through different days and times systematically, generating combinations to test the chatbot's handling of appointment scheduling. The chatbot output fields capture the confirmed appointment day, time, and booking status for later validation by rules.
+
+Let me know if you want me to help create rules to validate the chatbot's responses based on this profile! 😊

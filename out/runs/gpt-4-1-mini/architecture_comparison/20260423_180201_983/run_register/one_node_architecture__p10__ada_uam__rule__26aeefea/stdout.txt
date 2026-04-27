@@ -1,0 +1,63 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__26aeefea
+$$$
+Hey! Your profile looks great and quite detailed for the "Usuarios Nuevos y Admisiones" scenario. To test it effectively, you can create Sensei-check rules that verify the outputs your profile exposes in `chatbot.output`. Since your profile extracts many useful fields like URLs, dates, strings, and even money, here are some friendly rule ideas you can try to get started:
+
+1. **Check that important URLs are non-empty strings**  
+Make sure the bot always returns URLs for admission info, waitlist, welcome day, etc.
+
+2. **Validate that date fields are valid and in the future**  
+For example, the Welcome Day date and admission deadline should be valid dates and ideally not in the past.
+
+3. **Check that the application fee is non-negative**  
+The fee should be a positive money value or zero.
+
+4. **Ensure that lists of available courses and degrees are non-empty strings**  
+The bot should provide some info here.
+
+Here’s a sample Sensei-check rule YAML block with these ideas to get you started:
+
+```yaml
+name: admission_info_completeness
+description: Ensure key admission info fields are present and valid
+conversations: 1
+oracle: |
+  admission_to_grados_link is not None and admission_to_grados_link != "" and
+  waitlist_info_link is not None and waitlist_info_link != "" and
+  future_students_link is not None and future_students_link != "" and
+  welcome_day_link is not None and welcome_day_link != "" and
+  grados_available is not None and grados_available != "" and
+  cursos_available is not None and cursos_available != "" and
+  contact_admissions is not None and contact_admissions != ""
+```
+
+```yaml
+name: welcome_day_date_valid
+description: Welcome Day date and time should be valid and not empty
+conversations: 1
+oracle: |
+  welcome_day_date is not None and welcome_day_time is not None
+```
+
+```yaml
+name: admission_deadline_valid
+description: Admission deadline date should be present
+conversations: 1
+oracle: admission_deadline is not None
+```
+
+```yaml
+name: application_fee_non_negative
+description: Application fee should be zero or positive
+conversations: 1
+oracle: application_fee is not None and application_fee >= 0
+```
+
+If you want to get fancy, you can also write metamorphic rules comparing conversations, for example:
+
+- If the degree (`grados`) changes, the application fee should not be negative.
+- The Welcome Day date should be consistent across conversations.
+
+But starting with these simple presence and sanity checks will already help you validate your profile outputs and catch missing or malformed data.
+
+Would you like me to help you craft more specific or advanced rules based on your profile? 😊
+$$$

@@ -1,0 +1,91 @@
+conversation ID: graph_based_architecture__p10__ada_uam__rule__d1895006
+$$$
+¡Hola! 😊 Veo que tienes un perfil muy completo para un asistente que ayuda a estudiantes potenciales con información sobre admisiones y eventos como Welcome Day en la UAM. Para probarlo con Sensei, te recomiendo crear algunas reglas que validen la coherencia, completitud y calidad de las respuestas que genera el chatbot.
+
+Aquí te dejo algunas ideas de reglas que puedes usar para probar este perfil, basadas en los campos que expones en `chatbot.output` y en las metas del usuario:
+
+---
+
+### 1) Regla para verificar que los enlaces importantes siempre estén presentes
+
+Queremos asegurarnos de que el chatbot siempre entregue URLs útiles para los temas clave: admisión, lista de espera, futuros estudiantes y Welcome Day.
+
+```yaml
+name: essential_links_present
+description: El chatbot debe proporcionar enlaces para admisión, lista de espera, futuros estudiantes y Welcome Day
+conversations: 1
+oracle: >
+  admission_to_grados_link is not None and admission_to_grados_link != '' and
+  waitlist_info_link is not None and waitlist_info_link != '' and
+  future_students_link is not None and future_students_link != '' and
+  welcome_day_link is not None and welcome_day_link != ''
+```
+
+---
+
+### 2) Regla para verificar que las fechas y horas del evento Welcome Day sean válidas
+
+Si el chatbot menciona la fecha y hora del Welcome Day, estas deben ser valores válidos (no nulos y con formato correcto).
+
+```yaml
+name: welcome_day_datetime_valid
+description: La fecha y hora del Welcome Day deben estar presentes y ser válidas
+conversations: 1
+oracle: >
+  welcome_day_date is not None and welcome_day_date != '' and
+  welcome_day_time is not None and welcome_day_time != ''
+```
+
+---
+
+### 3) Regla para verificar que la lista de grados y cursos ofrecidos no esté vacía
+
+Queremos asegurarnos que el chatbot mencione grados y cursos disponibles.
+
+```yaml
+name: degrees_and_courses_listed
+description: El chatbot debe listar los grados y cursos disponibles
+conversations: 1
+oracle: >
+  grados_available is not None and grados_available != '' and
+  cursos_available is not None and cursos_available != ''
+```
+
+---
+
+### 4) Regla metamórfica simple para comparar dos conversaciones con diferentes grados o cursos
+
+Si en dos conversaciones diferentes se pregunta por distintos grados o cursos, la información de admisión y requisitos debería cambiar acorde.
+
+```yaml
+name: admission_info_varies_by_degree
+description: La información de admisión debe variar cuando se consultan diferentes grados
+conversations: 2
+when: conv[0].grados != conv[1].grados or conv[0].cursos != conv[1].cursos
+if: "True"
+then: conv[0].admission_requirements != conv[1].admission_requirements or conv[0].admission_to_grados_link != conv[1].admission_to_grados_link
+```
+
+---
+
+### 5) Regla para verificar que el costo de la solicitud de admisión sea un valor positivo
+
+```yaml
+name: application_fee_positive
+description: El costo de la solicitud de admisión debe ser un valor positivo
+conversations: 1
+oracle: extract_float(application_fee) > 0
+```
+
+---
+
+### ¿Cómo usar estas reglas?
+
+1. Guarda cada bloque YAML en un archivo `.yaml` dentro de tu carpeta de reglas (`rules/`).
+2. Ejecuta Sensei-check apuntando a tu perfil y estas reglas.
+3. Revisa los resultados para ver qué reglas pasan o fallan y ajusta el perfil o las reglas según sea necesario.
+
+---
+
+Si quieres, puedo ayudarte a escribir estas reglas en archivos listos para usar o a crear reglas más específicas según qué aspectos quieras probar primero. ¿Quieres que te prepare los archivos YAML completos? 😊
+$$$

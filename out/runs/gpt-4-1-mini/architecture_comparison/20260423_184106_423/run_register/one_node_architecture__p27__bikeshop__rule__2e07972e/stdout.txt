@@ -1,0 +1,27 @@
+conversation ID: one_node_architecture__p27__bikeshop__rule__2e07972e
+$$$
+¡Claro! Para esta regla, queremos verificar que si en dos conversaciones la fecha indicada es la misma, entonces el asistente en la segunda conversación debe negar aceptar esa fecha (por ejemplo, con una frase que contenga "no puedo aceptar", "no está disponible", "ya está reservada", o similar).
+
+Asumiendo que el perfil tiene un campo en `chatbot.output` llamado `confirmed_date` (que contiene la fecha confirmada por el asistente) y que podemos buscar en las frases del asistente alguna negación en la segunda conversación, podemos escribir una regla metamórfica de dos conversaciones.
+
+Aquí te dejo un ejemplo de regla en YAML para Sensei-check:
+
+```yaml
+name: deny_duplicate_date
+description: Si se dice la misma fecha en dos conversaciones, la segunda debe negar aceptarla
+conversations: 2
+when: conv[0].confirmed_date == conv[1].confirmed_date and conv[0].confirmed_date is not None
+if: true
+then: utterance_index('assistant', 'no puedo aceptar') > 0 or utterance_index('assistant', 'no está disponible') > 0 or utterance_index('assistant', 'ya está reservada') > 0
+on-error: |
+  f"La segunda conversación no negó aceptar la fecha duplicada {conv[1].confirmed_date}"
+```
+
+Esta regla:
+
+- Filtra pares de conversaciones donde la fecha confirmada es igual y no es nula.
+- En la segunda conversación (`conv[1]`) espera encontrar alguna negación en la respuesta del asistente.
+- Usa `utterance_index` para buscar frases indicativas de rechazo.
+
+Si quieres, puedo ayudarte a ajustar la regla para que use otro campo o frases específicas que tengas en tu perfil. ¿Quieres? 😊
+$$$

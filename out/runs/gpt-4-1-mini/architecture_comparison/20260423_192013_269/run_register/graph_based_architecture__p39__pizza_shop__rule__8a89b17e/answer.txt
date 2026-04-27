@@ -1,0 +1,21 @@
+Got it! You want a metamorphic rule that verifies: when adding a drink to a pizza order, the total price should increase by exactly 2 dollars.
+
+Here’s a Sensei-check rule for that, assuming your profile’s `chatbot.output` includes at least these fields: `size`, `toppings`, `number`, `drink`, and `price`.
+
+```yaml
+name: drink_adds_two_dollars
+description: Adding a drink increases the price by exactly $2 (same pizza size, toppings, and quantity)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings and conv[0].number == conv[1].number
+if: (conv[0].drink == '' or conv[0].drink is None) and (conv[1].drink != '' and conv[1].drink is not None)
+then: abs(extract_float(conv[1].price) - extract_float(conv[0].price) - 2) < 0.01
+```
+
+### Explanation:
+- `when:` ensures we compare orders with the same pizza size, toppings, and quantity.
+- `if:` selects pairs where the first conversation has **no drink** and the second **has a drink**.
+- `then:` checks that the price difference is exactly $2 (allowing a tiny margin of 1 cent for floating point fuzziness).
+
+If your `drink` field uses a different convention for "no drink" (e.g., `"none"`), just adjust the condition accordingly.
+
+Would you like me to help you adapt this to your exact profile fields or currency? 😊

@@ -1,0 +1,25 @@
+Since there is no existing profile yet, I will create a rule-first Sensei-check rule that assumes a future profile will expose certain outputs related to lactose-free product availability.
+
+The rule will:
+- Work on single conversations (availability check).
+- Check that the chatbot output includes a field indicating lactose-free availability (e.g., `lactose_free_available`).
+- Assert that this field is not None and is a boolean.
+- Optionally, if the field is False, the chatbot should mention an alternative or apology (this can be checked by presence of a phrase in the chatbot's responses).
+
+Here is the draft YAML for the rule-first design:
+```yaml
+name: lactose_free_availability_check
+description: >
+  Checks that the chatbot indicates availability of lactose-free products.
+  Assumes a future profile exposing `lactose_free_available` (bool) and
+  chatbot phrases mentioning alternatives if lactose-free is unavailable.
+conversations: 1
+active: true
+when: conv[0].lactose_free_available is not None
+oracle: |
+  isinstance(conv[0].lactose_free_available, bool) and (
+    conv[0].lactose_free_available is True or
+    'no lactose-free products' in ' '.join(conv[0].chatbot_phrases).lower() or
+    'sorry' in ' '.join(conv[0].chatbot_phrases).lower()
+  )
+on-error

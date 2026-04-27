@@ -1,0 +1,47 @@
+Thanks for sharing your rule! I reviewed it against the Sensei-check rules documentation (`sensei-check-doc.md` and `rules-examples.md`). Here are the key points and corrections:
+
+### Your original rule:
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 2
+when: conv[0].tune_up_price == 50
+if: conv[0].tune_up_price is not None
+then: "The tune-up price is $50."
+```
+
+### Issues found:
+1. **Rule type**: Your rule looks like a single-conversation oracle (checking a price equals 50), but you set `conversations: 2`. For a single conversation check, it should be `conversations: 1`.
+2. **Use of `when` and `if`**: The `when` clause is a filter to select conversations, and `if`/`then` is for implication checks. Your `when` filters only conversations where the price is already 50, so the rule will only run on those conversations, making the check redundant.
+3. **`then` clause**: The `then` clause should be a boolean expression (oracle), not a string message. Use `oracle:` or `if`/`then` with boolean expressions.
+4. **Missing `oracle`**: For single conversation rules, you typically use `oracle:` with a boolean condition.
+5. **Field name**: Make sure `tune_up_price` is a valid field exposed by your profile's `chatbot.output`. If not, you need to check or add it.
+
+### Corrected rule example for a single conversation:
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+```
+
+### Explanation of changes:
+- Changed `conversations` to 1 because this is a single conversation check.
+- Removed `when` and `if` because we want to check the price directly.
+- Used `oracle:` with a boolean expression that extracts the numeric value from `tune_up_price` and compares it to 50.
+- Removed the string message in `then` since `oracle` returns true/false. You can add a `yields:` field if you want a custom failure message.
+
+If you want to keep the message on failure, you can do:
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+yields: "Tune-up price is not $50."
+```
+
+---
+
+If your intention was to compare between two conversations (e.g., check if both have price 50), the rule would look different and use `conv[0]` and `conv[1]` references.
+
+Would you like me to check which profile exposes `tune_up_price` or help you create a multi-conversation rule? 😊

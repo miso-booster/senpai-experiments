@@ -1,0 +1,78 @@
+Got it! I'll help you create a Sensei profile for a user who wants to set an appointment specifically to have their wheels changed. We'll focus on varying the dates and times to test how the chatbot handles different scheduling scenarios.
+
+Here's a profile YAML you can use as a starting point. It includes variables for appointment date and time, with multiple options to cover different days and hours. The user role and goals are tailored to requesting a wheel change appointment.
+
+```yaml
+test_name: "bike_wheel_change_appointment"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You want to set an appointment at the bike shop to have your wheels changed.
+    You will ask for available dates and times, then confirm an appointment.
+  context:
+    - "You need to change your bike wheels soon."
+    - "You prefer morning or early afternoon appointments."
+  goals:
+    - "I want to set an appointment to change my bike wheels on {{ap_date}} at {{ap_time}}."
+    - ap_date:
+        function: forward()
+        type: string
+        data:
+          - "Monday, November 4th, 2024"
+          - "Tuesday, November 5th, 2024"
+          - "Wednesday, November 6th, 2024"
+          - "Thursday, November 7th, 2024"
+          - "Friday, November 8th, 2024"
+    - ap_time:
+        function: another()
+        type: string
+        data:
+          - "09:00 AM"
+          - "10:30 AM"
+          - "12:00 PM"
+          - "01:30 PM"
+          - "03:00 PM"
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry, I didn't catch that. Could you please repeat your appointment request?"
+  output:
+    - confirmed_date:
+        type: string
+        description: "The date confirmed by the chatbot for the wheel change appointment."
+    - confirmed_time:
+        type: string
+        description: "The time confirmed by the chatbot for the wheel change appointment."
+    - confirmation_message:
+        type: string
+        description: "Full confirmation message from the chatbot regarding the appointment."
+
+conversation:
+  number: 5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - single questions
+```
+
+### Explanation:
+
+- **Variables `ap_date` and `ap_time`**: Different dates and times to test how the chatbot handles scheduling.
+- **Functions**:
+  - `forward()` for dates to iterate through the list sequentially.
+  - `another()` for times to cycle through times without repetition until exhausted.
+- **Conversation number**: 5 to cover all date options.
+- **Goal style**: Ends when all goals are answered, exporting results for review.
+- **Chatbot output**: Extracts confirmed date, time, and full confirmation message for validation and rules.
+
+If you'd like, I can help you customize it further or explain how to run this profile with your Sensei setup! 😊

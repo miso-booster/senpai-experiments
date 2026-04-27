@@ -1,0 +1,22 @@
+Got it! You want a Sensei-check rule that verifies the chatbot outputs for the CAU contact info: email, phone number, and physical address are all present (non-empty).
+
+Here’s a clear, profile-bound single-conversation rule that checks those fields are not missing or empty:
+
+```yaml
+name: cau_contact_info_complete
+description: CAU contact info must include email, phone number, and physical address
+conversations: 1
+oracle: conv[0].contact_email is not None and conv[0].contact_email != '' and
+        conv[0].contact_phone is not None and conv[0].contact_phone != '' and
+        conv[0].physical_address is not None and conv[0].physical_address != ''
+on-error: >
+  Missing CAU contact info: email='{{conv[0].contact_email}}', phone='{{conv[0].contact_phone}}', address='{{conv[0].physical_address}}'
+```
+
+### Explanation:
+- `conversations: 1` means it checks each conversation individually.
+- The `if: True` means this applies to all conversations.
+- The `then:` condition ensures none of the three fields are `None` or empty strings.
+- The `on-error` message helps debug which field(s) are missing.
+
+If you want, I can help you adapt it to a metamorphic rule or add more checks (like format validation). Just let me know! 😊

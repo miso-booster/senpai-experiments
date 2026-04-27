@@ -1,0 +1,84 @@
+Hey there! 😊 The `pairwise()` function in Sensei Profiles is a super handy way to generate test cases that cover **all pairs of variable combinations** without having to test every single full combination (which can explode exponentially).
+
+### What does `pairwise()` do?
+
+Imagine you have multiple variables, each with several possible values. Testing every possible combination (the full Cartesian product) can be huge and slow. Instead, `pairwise()` ensures that **every possible pair of values between any two variables appears at least once** in the generated conversations.
+
+---
+
+### Simple example
+
+Say you have two variables:
+
+- `color`: [red, blue, green]
+- `size`: [small, medium, large]
+
+A full combination would be 3 colors × 3 sizes = 9 test cases:
+
+| color | size  |
+|-------|-------|
+| red   | small |
+| red   | medium|
+| red   | large |
+| blue  | small |
+| blue  | medium|
+| blue  | large |
+| green | small |
+| green | medium|
+| green | large |
+
+But with `pairwise()`, you might get fewer test cases, like 4 or 5, that still cover every possible pair:
+
+| color | size  |
+|-------|-------|
+| red   | small |
+| blue  | medium|
+| green | large |
+| red   | medium |
+
+Here, every pair of color and size values appears at least once somewhere, but you avoid testing all 9.
+
+---
+
+### Why is this useful?
+
+- **Efficiency:** You get good coverage with fewer tests.
+- **Effectiveness:** Many bugs are caused by interactions between pairs of inputs, so pairwise testing catches a lot of issues.
+- **Scalability:** When you have 3+ variables, pairwise testing drastically reduces the number of conversations compared to full combinations.
+
+---
+
+### How to use it in Sensei Profiles?
+
+In your profile YAML under `user.goals`, you declare variables with `function: pairwise()`. For example:
+
+```yaml
+goals:
+  - "Order a {{pizza_size}} {{pizza_type}} pizza with {{drink}}"
+  - pizza_size:
+      function: pairwise()
+      type: string
+      data: [small, medium, large]
+  - pizza_type:
+      function: pairwise()
+      type: string
+      data: [margherita, pepperoni, vegetarian]
+  - drink:
+      function: pairwise()
+      type: string
+      data: [cola, water, juice]
+```
+
+Sensei will generate a set of conversations that cover all pairs of these variables without exploding into every full combination.
+
+---
+
+### A quick note
+
+- You need at least **two variables** with `pairwise()` to get pairwise combinations.
+- You can mix `pairwise()` with other functions like `forward()` or `random()`.
+- It’s great for balancing coverage and test cost.
+
+---
+
+If you want, I can help you create a small example profile snippet using `pairwise()` or explain how it works with nested `forward()`! Just ask 😊🍕

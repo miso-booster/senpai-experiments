@@ -1,0 +1,49 @@
+Thanks for sharing your rule! Based on the official Sensei-check rules documentation (`sensei-check-doc.md` and `rules-examples.md`), here are some observations and corrections:
+
+### Your original rule:
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 2
+when: conv[0].tune_up_price == 50
+if: conv[0].tune_up_price is not None
+then: "The tune-up price is $50."
+```
+
+### Issues and fixes:
+1. **`conversations: 2` is for metamorphic rules comparing multiple conversations.**  
+   Your rule seems to check a single conversation's price, so it should be `conversations: 1`.
+
+2. **`when` is a filter for selecting conversations, but you are using it to check the price.**  
+   The price check should be in `oracle` (for single conversation) or in `if`/`then` for metamorphic rules.  
+   Since you want to check the price equals 50, use `oracle: extract_float(tune_up_price) == 50`.
+
+3. **`if`/`then` is used for implications, but your logic is a direct check, so use `oracle`.**
+
+4. **The field `tune_up_price` must exist in the profile's `chatbot.output`.**  
+   Make sure this field exists and is a string or numeric price representation.
+
+5. **The `then` field is not valid for single-conversation rules.**  
+   Use `yields` to provide a helpful message on failure.
+
+### Corrected rule example for a single conversation:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+yields: "The tune-up price is not $50."
+```
+
+### Explanation of changes:
+- Changed `conversations` from 2 to 1 because this is a single-conversation check.
+- Removed `when` and `if`/`then` and replaced with a single `oracle` expression that extracts the numeric price and compares it to 50.
+- Added `yields` to provide a failure message if the price is not 50.
+- Assumes `tune_up_price` is a field exposed by the profile's `chatbot.output`.
+
+---
+
+If you want to check this price across multiple conversations or in a metamorphic way, please clarify, and I can help adjust accordingly.
+
+Would you like me to check which profile has `tune_up_price` in `chatbot.output` or help you create/update that profile? 😊

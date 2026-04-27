@@ -1,0 +1,40 @@
+Sure! Here's a Sensei-check rule that verifies the expected outputs from your profile:
+
+- The `opening_and_closing` time should be between 10 and 20 (assuming 24-hour format, e.g., "10:00-20:00").
+- The `tune_up` price should be 50.
+- The `seat_price` should be 20.
+- The `tire` price should be 20.
+
+Since `opening_and_closing` and `seat_price` are strings, I'll assume the opening and closing times are expressed in a string format like `"10 to 20"` or `"10:00 - 20:00"`, so we'll extract numbers from the string to check the range. For `seat_price` as a string, I'll also extract the float value to compare.
+
+Here's the rule YAML:
+
+```yaml
+name: bike_shop_price_and_hours_check
+description: Verify opening hours and prices for tire, tune-up, and seat
+conversations: 1
+oracle: |
+  # Extract opening and closing hours as numbers from the string
+  import re
+
+  times = re.findall(r'\b(\d{1,2})\b', opening_and_closing)
+  if len(times) >= 2:
+      open_hour = int(times[0])
+      close_hour = int(times[1])
+  else:
+      open_hour = None
+      close_hour = None
+
+  # Extract numeric value from seat_price string
+  def extract_float_from_str(s):
+      m = re.search(r'\d+(\.\d+)?', s)
+      return float(m.group()) if m else None
+
+  seat_val = extract_float_from_str(seat_price)
+
+  # Check conditions
+  open_hour is not None and close_hour is not None and 10 <= open_hour <= 20 and 10 <= close_hour <= 20 and \
+  extract_float(tune_up) == 50 and extract_float(tire) == 20 and seat_val == 20
+```
+
+If you want, I can help you adapt it to a metamorphic rule or add error messages too! 😊

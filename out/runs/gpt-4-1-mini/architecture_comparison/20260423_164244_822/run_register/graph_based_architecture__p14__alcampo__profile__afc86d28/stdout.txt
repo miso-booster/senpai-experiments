@@ -1,0 +1,77 @@
+conversation ID: graph_based_architecture__p14__alcampo__profile__afc86d28
+$$$
+¡Claro! Para crear un perfil Sensei que pruebe la capacidad del chatbot de Alcampo para recomendar recetas y planificación de menús, podemos basarnos en el perfil existente llamado **"recipe_management_and_cooking_support"** que ya cubre temas de recetas, gestión de ingredientes y soporte para cocinar.
+
+Puedo ayudarte a crear un perfil YAML adaptado a tu solicitud, que incluya:
+
+- Un rol de usuario que busque recomendaciones de recetas y planificación de menús.
+- Objetivos claros para pedir recetas, buscar ingredientes, planificar menús, etc.
+- Campos de salida (`chatbot.output`) para extraer la información relevante que el bot debe proporcionar.
+- Control de conversación para simular interacciones realistas.
+
+Aquí te dejo un ejemplo de perfil que puedes usar como plantilla para probar esas capacidades:
+
+```yaml
+test_name: "recipe_recommendation_and_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a user looking for recipe recommendations and menu planning assistance.
+    You want to find recipes based on ingredients, dietary preferences, and meal occasions.
+    You also want help managing shopping lists and planning weekly menus.
+  context:
+    - personality: personalities/conversational-user.yml
+    - "You prefer healthy and easy-to-make meals."
+    - "You want to plan menus for breakfast, lunch, and dinner."
+  goals:
+    - "Ask for recipe recommendations for {{meal_type}} with {{main_ingredient}}."
+    - "Request tips on how to manage ingredients for the week."
+    - "Inquire about adding recipe ingredients to a shopping list."
+    - "Ask for suggestions on planning a weekly menu."
+    - meal_type:
+        function: forward()
+        type: string
+        data: [breakfast, lunch, dinner, snacks]
+    - main_ingredient:
+        function: random()
+        type: string
+        data: [chicken, fish, vegetables, pasta, beef]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you please rephrase your recipe or menu planning request?"
+  output:
+    - recommended_recipes:
+        type: string
+        description: "List of recommended recipes based on user query"
+    - shopping_list_instructions:
+        type: string
+        description: "Instructions on how to add ingredients to the shopping list"
+    - menu_planning_tips:
+        type: string
+        description: "Suggestions for planning weekly menus"
+    - ingredient_management_advice:
+        type: string
+        description: "Advice on managing ingredients efficiently"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 10
+  interaction_style:
+    - single questions
+```
+
+---
+
+### ¿Quieres que te ayude a ajustar este perfil para que se adapte mejor a tus necesidades?  
+Por ejemplo, podemos agregar variables, cambiar el idioma, o incluir estilos de interacción específicos. 😊
+$$$

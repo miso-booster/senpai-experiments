@@ -1,0 +1,31 @@
+conversation ID: agentic_architecture__p49__pizza_shop__documentation__457b8e40
+$$$
+The `pairwise` function is not explicitly described in the Sensei-check documentation or examples I have loaded. However, based on the context of Sensei-check metamorphic rules, I can explain the general concept of how pairwise comparisons work in this framework:
+
+### How pairwise works in Sensei-check metamorphic rules
+
+- Sensei-check rules can compare multiple conversations at once, often pairs of conversations (`conversations: 2`).
+- The conversations are accessed via the `conv` array, where `conv[0]` is the first conversation, `conv[1]` the second, etc.
+- Pairwise comparisons mean you write rules that check relations between two conversations, for example:
+  - If two pizza orders have the same size and drink, the one with more toppings should cost more.
+  - This is expressed as:
+    ```yaml
+    conversations: 2
+    when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+    if: len(conv[0].toppings) > len(conv[1].toppings)
+    then: extract_float(conv[0].price) > extract_float(conv[1].price)
+    ```
+- The system automatically selects pairs of conversations that satisfy the `when` filter and applies the `if/then` condition to check the expected relation.
+- This pairwise approach is a core part of metamorphic testing in Sensei-check, enabling validation of relational properties rather than absolute outputs.
+
+### Summary
+
+- The "pairwise" concept in Sensei-check is about writing rules that compare two conversations at a time.
+- You specify `conversations: 2` and use `conv[0]` and `conv[1]` to access the two conversations.
+- You filter comparable pairs with `when`, then specify the expected relation with `if`/`then` or `oracle`.
+- This helps test properties like monotonicity, consistency, or invariants across conversation pairs.
+
+If you meant a specific `pairwise` function or helper in the DSL that I missed, please clarify or provide more context! Otherwise, this explanation covers how pairwise comparisons work in Sensei-check rules.
+
+I relied on the documentation in `sensei-check-doc.md` and `rules-examples.md` for this explanation. 😊
+$$$

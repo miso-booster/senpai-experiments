@@ -1,0 +1,47 @@
+Hey! Let me check your Sensei rule for you 😊
+
+Your rule is named `check_cau_information` and aims to verify that the CAU (Centro de Atención a Usuarios) provides the correct contact details.
+
+Here’s what I notice:
+
+1. You use `conversations: 1`, so this is a single-conversation rule.
+2. You use `when:` to filter conversations where the fields match exactly the expected values.
+3. Then the `oracle:` repeats the same exact condition.
+
+**Problem:**  
+Using the same exact condition in `when:` and `oracle:` is redundant and can cause the rule to never run or always pass trivially.
+
+- The `when:` clause is a filter to select which conversations the rule applies to.
+- The `oracle:` is the actual check you want to run on those conversations.
+
+In your case, you want to **check** that the fields equal those values, so you should **not** filter only conversations that already have those values (that would exclude all conversations that don't match, so no check happens).
+
+Instead, you want the rule to apply to all conversations (or at least those that have those fields non-null), and then check if the fields match the expected values.
+
+---
+
+### Fixed version
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: conv[0].contact_email is not None and conv[0].contact_phone is not None and conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+on-error: |
+  f"CAU info mismatch: email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+---
+
+### Explanation
+
+- **`when:`** now filters conversations where the fields exist (not None), so the rule applies only when we have data to check.
+- **`oracle:`** asserts the fields must exactly match the expected CAU contact info.
+- **`on-error:`** gives a helpful message showing the actual values if the check fails.
+
+This way, the rule will run on all conversations that have those fields, and will fail if any of them differ from the expected values.
+
+---
+
+If you want me to help you with more rules or profiles, just ask! 😊

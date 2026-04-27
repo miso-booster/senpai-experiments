@@ -1,0 +1,77 @@
+¡Claro! Vamos a revisar tu conector para que funcione bien con la request y response que muestras 😊.
+
+Tu conector actual es:
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+---
+
+### Lo que veo:
+
+- La request que envías es correcta, coincide con el `payload_template`.
+- El response que recibes tiene esta estructura:
+
+```json
+{
+  "status": "success",
+  "response": {
+    "text": "¡Hola! ¿Cómo puedo ayudarte hoy?"
+  }
+}
+```
+
+- El `response_path` que tienes es `"response.text"`, que es correcto para acceder a `"response" -> "text"` dentro del JSON.
+
+---
+
+### Posibles problemas y soluciones:
+
+1. **Formato YAML**: Asegúrate que el YAML esté bien indentado y sin errores de sintaxis.
+2. **`response_path` debe ser una cadena**: En tu YAML está bien, pero si lo copiaste a otro formato, verifica que sea texto.
+3. **Si el conector no funciona**, puede ser que el sistema espere que el `response_path` empiece desde la raíz del JSON. En ese caso, `"response.text"` es correcto.
+
+---
+
+### Conector corregido y listo para usar:
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+---
+
+### Extra: Si quieres probar que funciona, puedes usar este ejemplo en Python (si usas la librería del Chatbot Dojo):
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("ruta/a/tu/conector.yaml")
+success, response = bot.execute_with_input("hola")
+print(response)  # Debería imprimir: "¡Hola! ¿Cómo puedo ayudarte hoy?"
+```
+
+---
+
+Si tienes algún error específico o el conector no responde como esperas, dime qué mensaje o problema te da y te ayudo a ajustarlo mejor. ¡Estoy aquí para ayudarte! 😊✨

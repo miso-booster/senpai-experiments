@@ -1,0 +1,36 @@
+¡Claro! Aquí tienes una regla Sensei-check para verificar que el campo `library_hours` del perfil "Préstamos y Recursos de la Biblioteca" indica un horario de atención de 9 a 20 horas.
+
+La regla asume que el campo `library_hours` contiene texto donde se puede extraer la hora de apertura y cierre, y comprueba que sea aproximadamente entre las 9:00 y las 20:00 (puedes ajustar la lógica si el formato es diferente).
+
+```yaml
+name: library_hours_9_to_20
+description: El horario de atención de la biblioteca debe ser de 9 a 20 horas
+conversations: 1
+active: true
+oracle: |
+  import re
+  def extract_hours(text):
+      # Busca patrones de hora en formato 24h o 12h (ej: 9:00, 09:00, 20:00, 8 am, 8pm)
+      matches = re.findall(r'(\d{1,2})(?::\d{2})?\s*(am|pm)?', text.lower())
+      hours = []
+      for h, meridian in matches:
+          hour = int(h)
+          if meridian == 'pm' and hour != 12:
+              hour += 12
+          elif meridian == 'am' and hour == 12:
+              hour = 0
+          hours.append(hour)
+      return sorted(hours)
+  hours = extract_hours(library_hours)
+  # Debe contener al menos dos horas y la primera ser 9 o cercano, la última 20 o cercano
+  len(hours) >= 2 and abs(hours[0] - 9) <= 1 and abs(hours[-1] - 20) <= 1
+```
+
+Esta regla:
+
+- Se aplica a cada conversación individual (`conversations: 1`).
+- Extrae horas del texto `library_hours`.
+- Verifica que el primer horario esté cerca de las 9 y el último cerca de las 20.
+- Usa un margen de ±1 hora para flexibilidad.
+
+Si quieres, puedo ayudarte a ajustarla para formatos específicos o para que sea más estricta. 😊

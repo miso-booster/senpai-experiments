@@ -1,0 +1,85 @@
+Got it! Let's create a Sensei profile for a pizza shop where the user is rude and wants things done fast. We'll include 4 goals with 4 variables, and 2 of those variables will use `pairwise()` functions so that the conversation number can be derived from the pairwise combinations.
+
+Here's a profile YAML you can use or adapt:
+
+```yaml
+test_name: "rude_user_fast_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude customer who demands quick service and gets impatient easily.
+    You want your pizza order done fast and expect the chatbot to keep up.
+  context:
+    - personality: personalities/rude-user.yml
+    - "You want things done quickly and won't tolerate delays."
+  goals:
+    - "Order a {{pizza_type}} pizza immediately."
+    - "Choose the {{pizza_size}} size for the pizza."
+    - "Add {{topping}} as extra topping."
+    - "Get {{drink_quantity}} cans of {{drink_type}}."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Pepperoni, Margherita, BBQ Chicken, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - topping:
+        function: forward()
+        type: string
+        data: [extra cheese, mushrooms, jalapenos]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water]
+    - drink_quantity:
+        function: forward(drink_type)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Please be quick and clear."
+  output:
+    - order_confirmation:
+        type: string
+        description: "Confirmation message of the pizza and drink order."
+    - total_price:
+        type: currency
+        description: "Total price for the pizza and drinks."
+    - estimated_ready_time:
+        type: time("hh:mm")
+        description: "Estimated time until the order is ready."
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 5
+    max_cost: 0.5
+  interaction_style:
+    - change your mind
+    - make spelling mistakes
+```
+
+### Explanation:
+- The user is rude and wants fast service (role + personality).
+- 4 goals with 4 variables: `pizza_type`, `pizza_size`, `topping`, `drink_type`, and `drink_quantity`.
+- `pizza_type` and `pizza_size` use `pairwise()` to create a combination matrix for conversation count.
+- `topping` and `drink_type` use `forward()` to iterate through options.
+- `drink_quantity` depends on `drink_type` (nested forward).
+- `conversation.number: combinations(pairwise)` means the number of conversations will be based on the pairwise combinations of the two pairwise variables.
+- Interaction styles include "change your mind" and "make spelling mistakes" to simulate a bit of realistic rude user behavior.
+
+If you want me to help you save this or tweak anything, just ask! 😊🍕

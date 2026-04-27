@@ -1,0 +1,87 @@
+Sure! Here's a SENSEI profile for a pizza shop where the user is rude and wants things done fast. It includes 4 goals with 4 variables, two of which use `pairwise()` functions to enable pairwise combination coverage and define the number of conversations accordingly.
+
+```yaml
+test_name: "pizza_shop_rude_fast_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude customer who is impatient and wants things done quickly.
+    You demand fast service and are blunt in your requests.
+  context:
+    - personality: personalities/rude-user.yml
+    - "You want your pizza order processed as fast as possible."
+  goals:
+    - "Order a {{pizza_type}} pizza with {{size}} size."
+    - "Add {{toppings}} as toppings."
+    - "Get {{drink_quantity}} {{drink_type}} drinks."
+    - "Specify delivery to {{delivery_area}} area."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: forward()
+        type: string
+        data: [cheese, mushrooms, olives, bacon]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Please repeat your order quickly."
+  output:
+    - pizza_type:
+        type: string
+        description: "Type of pizza ordered"
+    - size:
+        type: string
+        description: "Size of the pizza"
+    - toppings:
+        type: list[string]
+        description: "List of toppings added"
+    - drink_type:
+        type: string
+        description: "Type of drink ordered"
+    - drink_quantity:
+        type: int
+        description: "Number of drinks ordered"
+    - delivery_area:
+        type: string
+        description: "Delivery area specified"
+    - total_price:
+        type: currency
+        description: "Total price of the order"
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - rude
+    - single questions
+```
+
+This profile:
+
+- Sets the user role as rude and impatient.
+- Defines 4 goals with variables.
+- Uses `pairwise()` on `pizza_type` and `size` to generate a pairwise combination matrix that determines the number of conversations.
+- Uses `forward()` for `toppings` and `drink_type` to iterate through those options.
+- Includes a fallback message tailored for a rude user.
+- Extracts relevant outputs for validation and rules.
+
+Let me know if you'd like me to help with rules or anything else! 😊

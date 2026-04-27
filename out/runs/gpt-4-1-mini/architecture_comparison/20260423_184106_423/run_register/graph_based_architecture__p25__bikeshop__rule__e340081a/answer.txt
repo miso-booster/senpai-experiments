@@ -1,0 +1,50 @@
+Hey! 😊 I see you want to create a Sensei-check rule to verify the outputs of your bike shop chatbot profile, specifically checking that:
+
+- The opening and closing times are between 10 and 20 (I assume these are hours, like 10:00 to 20:00),
+- The tune-up price is 50,
+- The seat price is 20,
+- The tire price is 20.
+
+Let's build a single-conversation oracle rule for this. Since your profile exposes these fields in `chatbot.output`, the rule will check their values accordingly.
+
+---
+
+Here's a YAML rule you can use to check those constraints:
+
+```yaml
+name: bike_shop_price_and_hours_check
+description: |
+  Checks that the bike shop opening and closing times are between 10 and 20,
+  and that tune-up, seat, and tire prices match expected values.
+conversations: 1
+oracle: |
+  # Parse opening and closing times from the string (assuming format like "10-20" or "10:00-20:00")
+  import re
+
+  times = re.findall(r'\d{1,2}', opening_and_closing)
+  if len(times) >= 2:
+      open_time = int(times[0])
+      close_time = int(times[1])
+  else:
+      open_time = close_time = -1  # invalid fallback
+
+  (10 <= open_time <= 20) and (10 <= close_time <= 20) and \
+  (extract_float(tune_up) == 50) and \
+  (extract_float(seat_price) == 20) and \
+  (extract_float(tire) == 20)
+```
+
+---
+
+### Explanation:
+
+- We extract numbers from the `opening_and_closing` string to get opening and closing hours.
+- We check both opening and closing times are between 10 and 20.
+- We use `extract_float()` helper to parse prices from `tune_up`, `seat_price`, and `tire` fields, and compare them to the expected values.
+- The rule applies to a single conversation (`conversations: 1`).
+
+---
+
+If your `opening_and_closing` format is different or you want a more specific check, just let me know! I can help adjust it. Also, if you want a metamorphic rule comparing multiple conversations, we can do that too.
+
+How does this look? 😊

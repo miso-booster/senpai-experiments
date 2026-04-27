@@ -1,0 +1,71 @@
+Hey! Your profile looks great and quite detailed for the "Usuarios Nuevos y Admisiones" scenario 😊. To test it effectively, you’ll want some Sensei-check rules that validate the outputs your profile exposes in `chatbot.output`. Since your profile extracts many fields like URLs, dates, strings, and money, I can suggest a few practical rules to get you started:
+
+- Check that important URLs are non-empty strings (so the bot provides links).
+- Validate that dates like `welcome_day_date` and `admission_deadline` are present and valid.
+- Ensure the application fee is a positive amount.
+- Confirm that some key textual fields are filled (not empty).
+- Optionally, a global style rule to check the bot responds in Spanish consistently.
+
+Here are some example rules you can add to your project to try out your profile:
+
+```yaml
+name: admission_links_present
+description: Important admission-related URLs must be provided
+conversations: 1
+oracle: |
+  all([
+    admission_to_grados_link is not None and admission_to_grados_link != '',
+    waitlist_info_link is not None and waitlist_info_link != '',
+    future_students_link is not None and future_students_link != '',
+    welcome_day_link is not None and welcome_day_link != ''
+  ])
+yields: "One or more admission-related links are missing or empty."
+```
+
+```yaml
+name: welcome_day_dates_valid
+description: Welcome Day date and time must be present and valid
+conversations: 1
+oracle: |
+  welcome_day_date is not None and welcome_day_time is not None
+yields: "Welcome Day date or time is missing."
+```
+
+```yaml
+name: application_fee_positive
+description: Application fee must be a positive amount
+conversations: 1
+oracle: application_fee is not None and application_fee > 0
+yields: "Application fee is missing or not positive."
+```
+
+```yaml
+name: key_text_fields_filled
+description: Key textual fields should not be empty
+conversations: 1
+oracle: |
+  all([
+    grados_available is not None and grados_available != '',
+    cursos_available is not None and cursos_available != '',
+    admission_requirements is not None and admission_requirements != '',
+    enrollment_process is not None and enrollment_process != '',
+    contact_admissions is not None and contact_admissions != ''
+  ])
+yields: "One or more key text fields are missing or empty."
+```
+
+```yaml
+name: chatbot_responds_in_spanish
+description: The chatbot replies in Spanish
+conversations: 1
+oracle: language(chatbot_phrases) == 'SPA'
+yields: "The chatbot response is not in Spanish."
+```
+
+---
+
+These rules cover basic sanity checks on your profile’s outputs and help you verify that your chatbot returns meaningful data for this admission scenario.
+
+If you want, I can help you create more advanced metamorphic rules comparing conversations or checking monotonicity, but these are a solid start to test your profile outputs.
+
+Let me know if you want me to generate those or help with anything else! 🚀

@@ -1,0 +1,33 @@
+Thanks for sharing the details! The main issues I see are:
+
+- Your connector's `base_url` and `path` don't match the example request (`api.1millionbot.com` and `/api/public/messages`).
+- The request payload needs several fixed fields (`conversation`, `sender_type`, `sender`, `bot`, `language`, `url`, and the nested `message.text`).
+- The response path should extract the bot's reply from `response.0.text` (not `request.text`).
+
+Here's a fixed connector YAML based on your example request/response:
+
+```yaml
+name: "Fixed Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+This should match the API you showed and extract the chatbot's reply correctly.  
+If any of those fixed IDs (`conversation`, `sender`, `bot`, `url`) need to be dynamic, you can parameterize them later. For now, this matches your example exactly.
+
+Let me know if you want help making it dynamic or have other questions! 😊

@@ -1,0 +1,69 @@
+Hey! Your profile looks great and quite detailed for the "Usuarios Nuevos y Admisiones" scenario 😊. To help you test it effectively, I can suggest some Sensei-check rules that will validate key aspects of the chatbot's outputs based on your profile's `chatbot.output` fields.
+
+Here are some example rules you can try to ensure your chatbot returns consistent, complete, and sensible information for your admissions use case:
+
+```yaml
+# Rule 1: Check that all required URLs are non-empty strings
+name: required_links_present
+description: All key informational links must be present and non-empty
+conversations: 1
+oracle: |
+  all([
+    admission_to_grados_link and isinstance(admission_to_grados_link, str),
+    waitlist_info_link and isinstance(waitlist_info_link, str),
+    future_students_link and isinstance(future_students_link, str),
+    welcome_day_link and isinstance(welcome_day_link, str)
+  ])
+yields: "One or more required informational links are missing or empty."
+
+---
+
+# Rule 2: Admission deadline and Welcome Day dates must be valid and in the future
+name: valid_dates_for_events
+description: Admission deadline and Welcome Day dates must be valid and not in the past
+conversations: 1
+oracle: |
+  admission_deadline is not None and welcome_day_date is not None and
+  admission_deadline >= date.today() and welcome_day_date >= date.today()
+yields: |
+  f"Admission deadline or Welcome Day date is missing or in the past: admission_deadline={admission_deadline}, welcome_day_date={welcome_day_date}"
+
+---
+
+# Rule 3: Application fee must be non-negative
+name: non_negative_application_fee
+description: The application fee should be zero or positive
+conversations: 1
+oracle: application_fee is not None and application_fee >= 0
+yields: f"Application fee is invalid or negative: {application_fee}"
+
+---
+
+# Rule 4: Consistency between lists of courses and degrees offered
+name: courses_and_degrees_consistency
+description: The lists of courses and degrees offered should not be empty strings
+conversations: 1
+oracle: cursos_available != "" and grados_available != ""
+yields: "Courses or degrees offered lists are empty."
+
+---
+
+# Rule 5: Contact information should be present
+name: contact_info_present
+description: Contact information for admissions must be provided
+conversations: 1
+oracle: contact_admissions is not None and contact_admissions != ""
+yields: "Contact information for admissions is missing."
+
+```
+
+---
+
+### How to use these?
+
+- Save each rule as a separate YAML file under your `rules/` folder or combine them in one file separated by `---`.
+- Run Sensei-check against your profile's generated conversations.
+- These rules will verify presence, validity, and basic sanity of key outputs your profile extracts.
+- You can extend or customize these rules based on your specific needs or add metamorphic rules comparing conversations if you want to check relations between variations.
+
+If you want, I can help you write more advanced metamorphic rules or style checks too! Just let me know 😊

@@ -1,0 +1,70 @@
+conversation ID: graph_based_architecture__p12__alcampo__profile__caa7dc6b
+$$$
+Hey! I can help you create a Sensei profile that simulates a user asking the chatbot for items to add to their shopping cart. 😊
+
+Here's a simple example profile YAML that you can use as a starting point. It defines a user who wants to add various grocery items to their cart, with variables for item categories and quantities. It also specifies what outputs to extract from the chatbot, like confirmation messages or cart summaries.
+
+```yaml
+test_name: "Add Items to Shopping Cart"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a shopper adding items to your online grocery shopping cart.
+    Ask the chatbot to add specific items with quantities to your cart.
+  context:
+    - "You want to buy groceries efficiently and confirm each addition."
+  goals:
+    - "Add {{quantity}} units of {{item_category}} to my shopping cart."
+    - quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - item_category:
+        function: forward()
+        type: string
+        data:
+          - apples
+          - bananas
+          - milk
+          - bread
+          - eggs
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you please specify the item and quantity?"
+  output:
+    - confirmation_message:
+        type: string
+        description: Confirmation that items were added to the cart
+    - cart_total_items:
+        type: int
+        description: Total number of items currently in the cart
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 3
+  interaction_style:
+    - single questions
+```
+
+### Explanation:
+- The user role clearly states the intent to add items.
+- The `goals` include a template sentence with variables `{{quantity}}` and `{{item_category}}`.
+- Variables are defined with `forward()` to iterate through the list and range.
+- The chatbot output expects a confirmation message and the total items count in the cart.
+- The conversation runs 5 times, each with up to 3 steps, asking single questions per interaction.
+
+If you want, I can help you customize this further or add more complex behaviors like changing quantities or categories randomly. Just let me know! 😊
+$$$

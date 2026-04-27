@@ -1,0 +1,27 @@
+Thanks for sharing your rule! I see a few issues that would prevent it from working as intended:
+
+1. The rule uses `conversations: 2` but only references `conv[0]` — this is inconsistent.
+2. The `when` clause compares `conv[0].tune_up_price == 50` but `tune_up_price` is likely a string with currency (e.g., "$50" or "50 USD"), so direct equality won't work.
+3. The `then` clause is a string message, but it should be a boolean expression (an assertion).
+4. The `if` clause checks `conv[0].tune_up_price is not None` but this should be part of the `when` or `if` condition to avoid errors.
+5. The rule should parse the price using `extract_float()` helper to get the numeric value from the string.
+
+Here's a corrected version of your rule that checks if the tune-up price is exactly 50 dollars, assuming the price is in `conv[0].tune_up_price` as a string with currency:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: conv[0].tune_up_price is not None and currency(conv[0].tune_up_price) == 'USD'
+oracle: extract_float(conv[0].tune_up_price) == 50
+on-error: f"Tune-up price is {conv[0].tune_up_price}, expected 50 USD."
+```
+
+### What I changed:
+- Changed `conversations` to 1 since this is a single-conversation check.
+- Used `when` to filter only conversations where `tune_up_price` exists and currency is USD.
+- Used `oracle` (boolean expression) to assert the extracted float value equals 50.
+- Added `on-error` message to help debugging when the rule fails.
+- Removed the `if`/`then` structure because a simple `oracle` suffices here.
+
+Let me know if you want me to help with more complex multi-conversation rules! 😊

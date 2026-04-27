@@ -1,0 +1,40 @@
+conversation ID: agentic_architecture__p51__pizza_shop__documentation__90bed452
+$$$
+Connectors in Chatbot Dojo are used to connect to external chatbot APIs without writing code. They allow you to define in YAML how to send user messages to the chatbot API and how to extract the chatbot's reply from the API response.
+
+### Key fields of a connector YAML configuration:
+
+- `name` (optional): A friendly name for your chatbot.
+- `base_url` (required): The base URL of the chatbot API.
+- `send_message` (required): Defines how to send a message to the API, including:
+  - `path` (required): The API endpoint path appended to the base URL.
+  - `method` (optional, default POST): HTTP method like POST, GET, etc.
+  - `headers` (optional): Custom HTTP headers, e.g., for authentication.
+  - `payload_template` (required): JSON structure with a `{user_msg}` placeholder where the user's message is inserted.
+- `response_path` (required): A dot-separated path to extract the chatbot's reply text from the JSON response.
+
+### How it works:
+
+- When sending a message, the connector constructs the full URL by combining `base_url` and `send_message.path`.
+- It sends the HTTP request using the specified method, headers, and payload with the user's message.
+- It then extracts the chatbot's reply from the JSON response by following the `response_path`.
+
+### Example snippet:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+This setup sends the user message as `message` in JSON and extracts the reply from `json.message` in the response.
+
+---
+
+I based this explanation on the docs `custom-connector-guide.md` and `connector-examples.md`. If you want, I can help you create or modify a connector YAML for your chatbot API! 😊
+$$$

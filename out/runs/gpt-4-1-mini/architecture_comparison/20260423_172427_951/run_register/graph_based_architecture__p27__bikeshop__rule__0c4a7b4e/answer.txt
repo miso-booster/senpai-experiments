@@ -1,0 +1,28 @@
+¡Claro! Para crear una regla en Sensei-check que verifique que si el usuario da dos veces la misma fecha, el asistente rechaza la segunda, necesitamos:
+
+- Al menos 2 conversaciones (para comparar la primera y la segunda fecha).
+- Un filtro `when` que seleccione conversaciones con la misma fecha.
+- Una condición `then` que compruebe que en la segunda conversación el asistente indica rechazo o negativa.
+
+Asumiendo que el perfil expone en `chatbot.output` un campo `date` con la fecha dada por el usuario, y que el texto del asistente está en `chatbot_phrases`, podemos buscar en la segunda conversación alguna frase que indique rechazo (por ejemplo, que contenga "no puedo aceptar", "rechazo", "fecha no válida", etc.).
+
+Aquí tienes un ejemplo de regla en YAML:
+
+```yaml
+name: reject_duplicate_date
+description: Si se da la misma fecha dos veces, el asistente rechaza la segunda
+conversations: 2
+when: conv[0].date == conv[1].date
+if: "True"
+then: utterance_index('assistant', 'no puedo aceptar') > 0 or utterance_index('assistant', 'rechazo') > 0 or utterance_index('assistant', 'fecha no válida') > 0
+```
+
+Explicación:
+
+- `when` filtra pares de conversaciones con la misma fecha.
+- `then` comprueba que en la segunda conversación (`conv[1]`) el asistente tenga un turno donde diga alguna frase indicativa de rechazo.
+- `utterance_index('assistant', 'texto') > 0` busca si el asistente dijo esa frase en algún turno.
+
+Si quieres, puedes ajustar las frases de rechazo según el lenguaje que use tu asistente.
+
+¿Quieres que te ayude a adaptar esta regla a un perfil o contexto específico? 😊

@@ -1,0 +1,26 @@
+conversation ID: graph_based_architecture__p27__bikeshop__rule__d07b668f
+$$$
+¡Claro! Para crear una regla en Sensei-check que verifique que si se le dice al asistente dos veces la misma fecha, este debe rechazar la segunda vez, necesitamos:
+
+- Que la regla trabaje con 2 conversaciones (la primera y la segunda con la misma fecha).
+- Un filtro `when` que seleccione solo pares de conversaciones con la misma fecha.
+- Una condición `then` que compruebe que en la segunda conversación el asistente responde con un rechazo (por ejemplo, detectando que menciona "no puedo aceptar", "fecha inválida", "ya está reservada", o alguna frase similar).
+
+Asumiendo que el perfil expone un campo `date` con la fecha dada por el usuario y que podemos buscar en las respuestas del asistente frases que indiquen rechazo usando `utterance_index('assistant', '<frase_rechazo>')`, aquí tienes un ejemplo de regla:
+
+```yaml
+name: reject_duplicate_date
+description: El asistente rechaza la segunda solicitud si la fecha es la misma
+conversations: 2
+when: conv[0].date == conv[1].date
+if: "True"
+then: utterance_index('assistant', 'no puedo aceptar') > 0 or
+      utterance_index('assistant', 'fecha inválida') > 0 or
+      utterance_index('assistant', 'ya está reservada') > 0 or
+      utterance_index('assistant', 'no disponible') > 0
+```
+
+Esta regla dice: si las dos conversaciones tienen la misma fecha (`conv[0].date == conv[1].date`), entonces en la segunda conversación (`conv[1]`) el asistente debe haber respondido con alguna frase que indique rechazo.
+
+Si quieres que sea más específico o usar otra frase, solo dime y te ayudo a ajustarla 😊. ¿Quieres que te explique cómo adaptarla a tu perfil?
+$$$

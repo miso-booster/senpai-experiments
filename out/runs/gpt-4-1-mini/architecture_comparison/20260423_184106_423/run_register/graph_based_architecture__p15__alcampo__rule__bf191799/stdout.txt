@@ -1,0 +1,34 @@
+conversation ID: graph_based_architecture__p15__alcampo__rule__bf191799
+$$$
+Hey! I see you want to fix your Sensei-check rule named `customer_service_contact_info`. Let's tidy it up and make it work properly 😊.
+
+Here are a few things I noticed:
+
+1. There's a typo in `description` (you wrote `descriptin`).
+2. The rule is missing the `then:` part after the `if:` condition — in Sensei-check, `if` must be paired with `then` to state the expected relation.
+3. The `when:` filter is fine but make sure the fields `user_request`, `contact_options`, and `customer_service_number` exist in your profile’s `chatbot.output`.
+4. You might want to check that the chatbot actually *provides* the contact info in the outputs, so the `then:` should assert something about those fields (e.g., they are not empty or contain expected formats).
+
+Here’s a corrected and improved version of your rule:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: len(conv[0].contact_options) > 0 and len(conv[1].customer_service_number) > 0
+```
+
+Explanation:
+
+- The `if` checks that the fields are present (not None).
+- The `then` asserts that these fields are not empty (length > 0).
+- This ensures that when the user asks for contact options or customer service number, the chatbot actually provides non-empty info.
+
+If your fields are strings, `len(...) > 0` works well. If `contact_options` is a list, it also works.
+
+If you want to be more specific (e.g., check that the customer service number looks like a phone number), you could add a helper function or regex, but that depends on your profile and helpers.
+
+Let me know if you want me to help with that or anything else! 😊
+$$$

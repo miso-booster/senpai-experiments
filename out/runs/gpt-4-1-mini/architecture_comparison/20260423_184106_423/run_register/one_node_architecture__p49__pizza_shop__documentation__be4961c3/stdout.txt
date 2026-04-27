@@ -1,0 +1,72 @@
+conversation ID: one_node_architecture__p49__pizza_shop__documentation__be4961c3
+$$$
+Hey! Great question about the `pairwise()` function in Sensei profiles 😊.
+
+### What is `pairwise()`?
+
+`pairwise()` is a smart way to generate combinations of variables for your user goals without exploding into every possible full combination (which can get huge!). Instead, it ensures that **every possible pair of values across two or more variables appears at least once** in the generated conversations.
+
+---
+
+### Why use `pairwise()`?
+
+Imagine you have two variables:
+
+- `pizza_type`: [Margherita, Pepperoni, Vegetarian]
+- `drink`: [Coke, Sprite, Water]
+
+A full Cartesian product would create 3 × 3 = 9 combinations.
+
+But if you add a third variable, say `size`: [small, medium, large], the full combinations become 3 × 3 × 3 = 27 — which grows quickly with more variables.
+
+`pairwise()` reduces this by only guaranteeing that **every pair of values between any two variables is tested at least once**. So instead of 27, you might get fewer conversations but still cover all pairs like:
+
+- (Margherita, Coke)
+- (Pepperoni, Sprite)
+- (Vegetarian, Water)
+- (small, Coke)
+- (medium, Sprite)
+- (large, Water)
+- (Margherita, small)
+- ... and so on for all pairs
+
+---
+
+### How to use it in a profile?
+
+You declare `pairwise()` as the `function` for two or more variables in your `user.goals`. For example:
+
+```yaml
+goals:
+  - "Order a {{pizza_type}} pizza with a {{drink}}"
+  - pizza_type:
+      function: pairwise()
+      type: string
+      data: [Margherita, Pepperoni, Vegetarian]
+  - drink:
+      function: pairwise()
+      type: string
+      data: [Coke, Sprite, Water]
+```
+
+If you add more variables with `pairwise()`, Sensei will generate a set of conversations covering all pairs across those variables.
+
+---
+
+### Important notes
+
+- You need **at least two variables** with `pairwise()` to use it.
+- `pairwise()` is great for **efficient coverage** without full combinatorial explosion.
+- It’s often nested or combined with other functions like `forward()` for more complex scenarios.
+- The `conversation.number` can be set to `combinations` or `combinations(p)` to control how many pairwise combos to generate.
+
+---
+
+### Simple analogy
+
+Think of `pairwise()` like testing every pair of shoes and socks you own, but not every possible outfit combination. You want to make sure every shoe-sock pair is tested, but you don’t need to test every shirt or hat with them.
+
+---
+
+If you want, I can help you write a small example profile snippet using `pairwise()`! Just ask 😊
+$$$

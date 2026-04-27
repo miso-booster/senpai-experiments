@@ -1,0 +1,21 @@
+Sure! Here's a metamorphic Sensei-check rule that checks if adding a drink increases the total price by exactly 2 dollars. It assumes your profile's `chatbot.output` includes a `drink` field (e.g., drink name or type) and a `price` field (total price as currency).
+
+```yaml
+name: drink_adds_two_dollars
+description: Adding a drink increases the total price by exactly 2 USD
+conversations: 2
+when: conv[0].drink != conv[1].drink and conv[0].size == conv[1].size and conv[0].pizza_type == conv[1].pizza_type and conv[0].number == conv[1].number
+if: conv[0].drink != "" and conv[1].drink != ""
+then: abs(extract_float(conv[0].price) - extract_float(conv[1].price)) == 2 and currency(conv[0].price) == 'USD' and currency(conv[1].price) == 'USD'
+on-error: |
+  f"Price difference between drinks {conv[0].drink} and {conv[1].drink} is {abs(extract_float(conv[0].price) - extract_float(conv[1].price))}, expected 2 USD"
+```
+
+**Explanation:**
+
+- The `when` clause filters pairs of conversations where the drink differs but pizza size, type, and quantity are the same, so we isolate the effect of adding/changing a drink.
+- The `if` clause ensures both drinks are non-empty.
+- The `then` clause asserts the price difference is exactly 2 USD.
+- The `on-error` message helps debugging if the rule fails.
+
+If your profile uses different field names or currency, just adjust `drink`, `price`, and currency accordingly. Let me know if you want me to tailor it to your exact profile fields! 😊

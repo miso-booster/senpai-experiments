@@ -1,0 +1,23 @@
+conversation ID: one_node_architecture__p9__ada_uam__rule__4027660e
+$$$
+¡Claro! Aquí tienes una regla Sensei-check para verificar que el campo `library_hours` del perfil "Préstamos y Recursos de la Biblioteca" indica un horario entre las 9 y las 20 horas. La regla asume que el campo `library_hours` es un texto donde se puede extraer el horario, y usa una expresión simple para verificar que menciona ese rango horario:
+
+```yaml
+name: library_hours_check
+description: El horario de la biblioteca debe ser de 9 a 20 horas
+conversations: 1
+active: true
+oracle: |
+  # Convertimos a minúsculas para evitar problemas de mayúsculas
+  text = conv[0].library_hours.lower()
+  # Buscamos que contenga "9" y "20" y palabras clave de horario
+  contains_hours = ("9" in text or "09" in text) and ("20" in text or "20:00" in text)
+  contains_keywords = any(k in text for k in ["horario", "atención", "abierto", "cierra", "abre"])
+  contains_hours and contains_keywords
+on-error: f"Horario incorrecto o no encontrado en library_hours: '{conv[0].library_hours}'"
+```
+
+Si quieres una regla más estricta que valide formatos horarios específicos (como "09:00 - 20:00"), podríamos usar expresiones regulares, pero esta versión es un buen punto de partida para detectar que el horario esperado está mencionado.
+
+¿Quieres que te ayude a hacerla más precisa? 😊
+$$$
