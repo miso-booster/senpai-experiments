@@ -1,0 +1,23 @@
+Hello there! 😊 I'd be more than happy to help you create this rule for your Ada UAM chatbot! 
+
+Since we want to verify that the chatbot provides specific, absolute values (the CAU's exact email, phone, and address) in a single chat, we will create a **single-conversation rule** (also known as a traditional oracle). 
+
+To make this rule robust, we'll use the `semantic_content` helper function for the phone number and the physical address. Because chatbots sometimes format phone numbers differently (like removing spaces) or rephrase addresses slightly, `semantic_content` uses an LLM under the hood to check if the meaning matches your expected text perfectly, without failing over a missing comma! 🕵️‍♀️✨
+
+Here is the ready-to-use YAML for your Sensei-check rule:
+
+```yaml
+name: cau_information_accuracy
+description: Verifies that the chatbot provides the correct CAU email, phone, and physical address.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and semantic_content(contact_phone, '91 497 4029') and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+### 🧠 A quick breakdown of how this works:
+* **`conversations: 1`**: We only need to look at one conversation at a time to check if the facts are right.
+* **`contact_email == 'cau@uam.es'`**: We do a strict text match for the email, since emails shouldn't have formatting variations.
+* **`semantic_content(...)`**: We use this built-in helper for the `contact_phone` and `physical_address` fields (which come directly from your profile's `chatbot.output`). It ensures the rule passes even if the bot says "914974029" instead of "91 497 4029" or translates the address slightly differently.
+
+Just save this as a `.yaml` file in your `rules/` folder, and Sensei-check will handle the rest! 
+
+Let me know if you need help writing more rules or tweaking your SENSEI Chat profiles. How else can I help you today? 🌸

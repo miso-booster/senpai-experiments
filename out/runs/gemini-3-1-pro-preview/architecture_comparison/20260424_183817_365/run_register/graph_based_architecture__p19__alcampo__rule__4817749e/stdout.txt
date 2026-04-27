@@ -1,0 +1,26 @@
+conversation ID: graph_based_architecture__p19__alcampo__rule__4817749e
+$$$
+Hello there! 😊 I would be more than happy to help you create that rule! 
+
+Since you want a general rule that isn't tied to a specific profile's `chatbot.output` fields (like a `discount_code` or `promo_price` variable), we can use one of Sensei-check's awesome built-in helper functions. 
+
+The **`utterance_index`** function is perfect for this! It uses an LLM under the hood to check if a specific topic was mentioned by a specific role (like the assistant). Because it's semantic, it will catch the chatbot talking about promotions even if it doesn't use those exact words (for example, if it says "We have a 20% discount today!").
+
+Here is the YAML rule you can use:
+
+```yaml
+name: mentions_current_promotions
+description: Checks if the assistant provided information about current promotions at some point in the conversation.
+conversations: 1
+oracle: utterance_index('assistant', 'current promotions') > 0
+```
+
+### 🧠 How it works:
+* **`conversations: 1`**: This tells Sensei-check to evaluate this rule on each conversation individually (it's a traditional oracle, rather than a metamorphic rule).
+* **`oracle`**: This is the condition that must evaluate to `True` for the test to pass.
+* **`utterance_index('assistant', 'current promotions') > 0`**: This function looks through the dialogue. If the assistant mentions "current promotions", it returns the turn number (index) where it happened. By checking if it's `> 0`, we are simply making sure the topic was brought up at least once!
+
+If you ever decide to bind this to a specific profile later on (for example, if your profile extracts a `promo_applied` boolean), we can easily adapt it. 
+
+Let me know if you'd like to tweak this or if you need help with anything else! 🚀
+$$$

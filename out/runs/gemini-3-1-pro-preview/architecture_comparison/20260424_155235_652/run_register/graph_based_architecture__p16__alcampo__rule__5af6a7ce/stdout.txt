@@ -1,0 +1,35 @@
+conversation ID: graph_based_architecture__p16__alcampo__rule__5af6a7ce
+$$$
+Hi there! 😊 I can absolutely help you create that rule! 
+
+Since you are designing the rule *before* the profile exists, we are using what the documentation calls **Rule-first design**. This means we'll invent some variable names right now, but you'll just need to make sure that whoever creates the SENSEI Chat profile later includes these exact fields in their `chatbot.output`. 👀
+
+Here is a clean, single-conversation rule that checks if a lactose-free product is successfully offered when the user asks for one:
+
+```yaml
+name: lactose_free_availability
+description: Ensures that when a user specifically requests a lactose-free product, the assistant offers a valid lactose-free option.
+conversations: 1
+if: requested_dietary_tag == 'lactose-free'
+then: offered_product_lactose_free == True
+```
+
+### 📝 What to remember for your future Profile:
+For this rule to work perfectly later, your future profile's `chatbot.output` will need to extract at least these two fields:
+*   `requested_dietary_tag`: A string representing the user's need (e.g., `'lactose-free'`, `'vegan'`, `'none'`).
+*   `offered_product_lactose_free`: A boolean (`True` or `False`) indicating if the final product the chatbot offered is actually lactose-free.
+
+### ✨ An Alternative (Using Semantic Helpers)
+If you don't want to extract a strict boolean in your future profile, you can use Sensei-check's built-in `semantic_content` helper to have the LLM evaluate the product description directly! 
+
+```yaml
+name: lactose_free_semantic_check
+description: Checks that the offered product description semantically matches a lactose-free requirement.
+conversations: 1
+if: requested_dietary_tag == 'lactose-free'
+then: semantic_content(product_description, 'The product is lactose-free')
+```
+*(For this second one, your profile would just need to output `requested_dietary_tag` and a text field called `product_description`.)*
+
+How does that look to you? Let me know if you'd like to tweak the logic, or if you need help designing the SENSEI Chat profile to match these rules! 🚀
+$$$

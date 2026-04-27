@@ -1,0 +1,20 @@
+conversation ID: agentic_architecture__p19__alcampo__rule__4f7ecea3
+$$$
+Here is a general rule to check if the chatbot provided information about current promotions. Since this rule is not tied to a specific profile's extracted outputs, we can use the built-in `utterance_index` helper, which uses an LLM under the hood to check if a specific topic was mentioned by a specific role.
+
+```yaml
+name: provides_promotions_info
+description: Checks if the chatbot provided information about current promotions or discounts during the conversation.
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'current promotions or discounts') > 0
+on-error: "The chatbot failed to mention any current promotions."
+```
+
+### How this rule works:
+* **`conversations: 1`**: This is a single-conversation oracle (it evaluates each conversation individually, rather than comparing multiple conversations).
+* **`oracle`**: The condition that must be true for the rule to pass.
+* **`utterance_index('assistant', 'current promotions or discounts')`**: This built-in helper scans the conversation and returns the turn index (greater than 0) where the `assistant` talks about the specified topic ("current promotions or discounts"). If the chatbot never mentions it, it returns `0`, causing the rule to fail.
+
+This approach is completely profile-agnostic and doesn't require you to define any specific `chatbot.output` variables in your profile, as it directly analyzes the conversation transcript! 😊
+$$$

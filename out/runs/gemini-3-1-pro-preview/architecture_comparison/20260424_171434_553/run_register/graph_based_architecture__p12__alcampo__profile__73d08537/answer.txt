@@ -1,0 +1,74 @@
+Hello there! I would be absolutely delighted to help you create a Sensei profile for that. 🛒✨ 
+
+Testing how your chatbot handles shopping cart additions is a great use case. To make it dynamic and thorough, we can use **variables** and **fill functions** like `pairwise()` so the simulated user asks for different combinations of items and quantities across multiple conversations.
+
+Here is a complete, ready-to-run YAML profile you can save in your `profiles/` folder (for example, as `shopping_cart_addition.yml`):
+
+```yaml
+test_name: "shopping_cart_addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer doing your weekly grocery shopping online. 
+    You want to add specific items to your shopping cart and check your total.
+  context:
+    - "You are preparing for a weekend dinner party."
+    - "You want to confirm that the items were successfully added to your cart."
+  goals:
+    - "Ask the chatbot to add {{quantity}} units of {{item}} to your shopping cart."
+    - "Ask the chatbot to confirm the current total price of the cart."
+    - item:
+        function: pairwise()
+        type: string
+        data: [organic tomatoes, whole wheat pasta, extra virgin olive oil, fresh basil]
+    - quantity:
+        function: pairwise()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you repeat what you'd like to add to your cart?"
+  output:
+    - item_added:
+        type: string
+        description: "The name of the grocery item the user requested to add"
+    - quantity_added:
+        type: int
+        description: "The number of units the user wanted to add"
+    - cart_total:
+        type: float
+        description: "The total price of the cart after adding the items"
+
+conversation:
+  number: combinations(1.0, pairwise) # This will run enough conversations to test all pairs of items and quantities!
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - single questions
+      - long phrases
+      - make spelling mistakes
+```
+
+### 🧐 Let's break down what makes this profile work:
+
+1. **Dynamic Goals (`user.goals`)**: Instead of hardcoding "add 2 tomatoes", we use `{{quantity}}` and `{{item}}`. Sensei will automatically swap these out using the lists provided. 
+2. **Efficient Testing (`pairwise()`)**: By using the `pairwise()` function for both variables, Sensei will smartly mix and match items and quantities. Setting `conversation.number` to `combinations(1.0, pairwise)` tells Sensei to run exactly enough conversations to cover every pair at least once without creating a massive, unnecessary number of tests.
+3. **Data Extraction (`chatbot.output`)**: At the end of the conversation, Sensei will extract the `item_added`, `quantity_added`, and `cart_total`. This is super helpful because later on, you can write **Sensei Rules** to verify that `conv[i].quantity_added > 0` or that the total price makes sense! 📝
+4. **Human-like Behavior (`interaction_style`)**: To make the test more realistic, the simulated user will randomly use long phrases, ask single questions, or even make spelling mistakes. 
+
+Just drop this into your `profiles/` directory, and you're good to go! Let me know if you'd like to tweak the items, add custom data types (like a specific currency format), or if you need help with anything else! 😊

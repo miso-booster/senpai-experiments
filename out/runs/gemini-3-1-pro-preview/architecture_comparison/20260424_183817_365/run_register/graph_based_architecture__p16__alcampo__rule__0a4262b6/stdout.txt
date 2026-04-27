@@ -1,0 +1,40 @@
+conversation ID: graph_based_architecture__p16__alcampo__rule__0a4262b6
+$$$
+Hello there! 😊 I'd be absolutely delighted to help you create this rule! 
+
+Since you don't have a profile yet, we are using what we call **Rule-first design**. This is a totally valid approach! We will invent some variable names for now, but just remember: when you eventually create your SENSEI Chat profile, you'll need to make sure its `chatbot.output` exposes these exact same field names so the rule can work its magic. 🪄
+
+I've prepared two different rules for you. One is a **metamorphic rule** (comparing two conversations), and the other is a **single-conversation rule** (checking just one). You can use either or both!
+
+### 1. Metamorphic Rule: Lactose-Free Price Premium 🥛
+This rule compares two conversations where the user asks for the *exact same product* and *quantity*, but one is lactose-free and the other is regular. It checks that the lactose-free version costs the same or slightly more than the regular version (a classic monotonicity check!).
+
+```yaml
+name: lactose_free_price_premium
+description: A lactose-free version of the same product should cost the same or more than the regular version.
+conversations: 2
+when: conv[0].product_name == conv[1].product_name and conv[0].quantity == conv[1].quantity
+if: conv[0].is_lactose_free == True and conv[1].is_lactose_free == False
+then: extract_float(conv[0].price) >= extract_float(conv[1].price)
+```
+
+### 2. Single-Conversation Rule: Availability Confirmation ✅
+This rule looks at a single conversation. If the user specifically requests a lactose-free product, it uses our handy LLM-backed `semantic_content` helper to ensure the chatbot actually addresses whether the item is in stock or not.
+
+```yaml
+name: lactose_free_availability_check
+description: If a lactose-free product is requested, the assistant must explicitly confirm its availability.
+conversations: 1
+when: is_lactose_free == True
+oracle: semantic_content(chatbot_phrases, 'confirms if the lactose-free product is available or out of stock')
+```
+
+### 📝 What you'll need in your future profile:
+Whenever you are ready to build the SENSEI Chat profile for this, just make sure your `chatbot.output` includes these fields:
+* `product_name` (string)
+* `quantity` (integer)
+* `is_lactose_free` (boolean)
+* `price` (currency or string, e.g., "3.50 EUR")
+
+How does that look to you? Let me know if you'd like to tweak these, or if you want help drafting the SENSEI Chat profile to match them! 🚀👀
+$$$

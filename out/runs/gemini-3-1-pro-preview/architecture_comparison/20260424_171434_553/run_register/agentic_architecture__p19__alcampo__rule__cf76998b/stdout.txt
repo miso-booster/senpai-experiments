@@ -1,0 +1,32 @@
+conversation ID: agentic_architecture__p19__alcampo__rule__cf76998b
+$$$
+Here are two ways to create this rule, depending on how you prefer to check the conversation. Since this rule is not tied to a specific profile yet, I have designed these based on the SENSEI RULES documentation (`sensei-check-doc.md`).
+
+### Option 1: Using the built-in topic helper (Recommended)
+This is the most robust way to check if the chatbot brought up a specific topic. It uses the `utterance_index` helper, which uses an LLM under the hood to scan the conversation and find the turn where the assistant mentioned promotions. It doesn't require you to define any special variables in your profile!
+
+```yaml
+name: provided_promotions_topic
+description: Checks if the chatbot provided information about current promotions.
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'current promotions or discounts') > 0
+```
+
+### Option 2: Using an extracted variable
+Since you mentioned I could use any variables I want, here is an alternative approach. This rule assumes that your future SENSEI Chat profile will extract a boolean variable (e.g., `promotions_mentioned`) that is set to `true` if the chatbot offered a promotion.
+
+```yaml
+name: provided_promotions_variable
+description: Checks if the chatbot provided information about current promotions using an extracted variable.
+conversations: 1
+active: true
+oracle: promotions_mentioned == True
+```
+
+### How to use this later:
+* **If you use Option 1:** You can use this rule with *any* profile immediately, as it just reads the chat history directly.
+* **If you use Option 2:** When you eventually create a profile for this rule, you will need to make sure its `chatbot.output` section includes a boolean field named `promotions_mentioned`.
+
+Let me know if you'd like to tweak the logic or if you want to create a profile to go along with this! 😊
+$$$

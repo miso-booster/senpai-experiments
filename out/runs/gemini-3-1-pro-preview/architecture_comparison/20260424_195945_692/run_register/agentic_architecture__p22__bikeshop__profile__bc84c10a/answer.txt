@@ -1,0 +1,62 @@
+I have loaded the SENSEI Profiles documentation (`sensei-chat-guide.md`) to ensure the profile is structured correctly. 
+
+Here is the YAML profile tailored to your scenario. It simulates a cyclist experiencing discomfort who wants advice on whether it's a bike fit issue or worn components, without explicitly asking for an appointment.
+
+```yaml
+test_name: "cyclist_discomfort_advice"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who is experiencing discomfort while riding your bike.
+    You are unsure whether the issue is caused by a poor bike fit or worn-out components.
+    You want to ask the bike shop for advice on possible adjustments or services they offer to help resolve this issue.
+  context:
+    - "You feel discomfort in your {{body_part}} after riding for a while."
+    - "You do not explicitly ask to book an appointment; you just want advice and to know what services are available."
+  goals:
+    - "Explain your discomfort in the {{body_part}} and ask if it could be a bike fit issue or worn components."
+    - "Ask what adjustments or services the shop offers to help with this."
+    - body_part:
+        function: random()
+        type: string
+        data: [lower back, knees, neck, saddle area, wrists]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you rephrase?"
+  output:
+    - suggested_services:
+        type: list[string]
+        description: "Services or adjustments suggested by the chatbot (e.g., bike fit, component replacement, suspension tuning)"
+    - appointment_offered:
+        type: string
+        description: "Did the chatbot proactively offer to book an appointment? (Yes/No)"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🚲 How this profile works:
+
+1. **Role & Context**: The `role` clearly defines the user's persona as a cyclist seeking advice. The `context` enforces the constraint that the user should **not** explicitly ask to book an appointment, and it introduces a variable `{{body_part}}` to make the conversations feel more natural and varied.
+2. **Goals & Variables**: The `goals` section instructs the simulator to explain the discomfort and ask about services. The `body_part` variable uses a `random()` function to pick from a list of common cycling pain points (lower back, knees, neck, etc.) for each conversation.
+3. **Chatbot Output**: The `chatbot.output` section extracts two key pieces of information at the end of the conversation:
+   - `suggested_services`: A list of the services the chatbot recommended.
+   - `appointment_offered`: A string (Yes/No) to track if the chatbot proactively tried to book an appointment, which is great for testing if your bot takes the initiative when a user is hesitant!
+4. **Conversation Controls**: It will run `3` conversations using the `all_answered` goal style, meaning the simulator will stop once it has successfully asked about the discomfort and the available services.
+
+Let me know if you'd like to adjust the list of body parts, add any specific interaction styles (like making the user use "long phrases"), or tweak the extracted outputs! 😊

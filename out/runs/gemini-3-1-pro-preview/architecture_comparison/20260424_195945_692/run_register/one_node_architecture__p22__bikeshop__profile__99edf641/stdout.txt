@@ -1,0 +1,67 @@
+conversation ID: one_node_architecture__p22__bikeshop__profile__99edf641
+$$$
+Hello there! 😊 I can definitely help you create this profile. 
+
+This is a fantastic scenario for testing your bike shop chatbot! It will help you see if the bot can provide helpful, empathetic advice without being overly pushy about booking an appointment right away. 
+
+To make the profile even more thorough, I've added a variable (`{{discomfort_type}}`) so the simulated user will test different types of common cycling pain (like knee pain or numb hands) across multiple conversations. I've also set up the `chatbot.output` to extract whether the bot suggested an appointment on its own.
+
+Here is the complete YAML profile for your project:
+
+```yaml
+test_name: bike_discomfort_advice_seeker
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: A cyclist experiencing physical discomfort while riding, seeking advice on whether it's a bike fit issue or worn components.
+  context:
+    - "You are experiencing discomfort when riding your bike and want to figure out why."
+    - "You are unsure if the bike is not fitted correctly to your body, or if some components (like the saddle or grips) are worn out."
+    - "You want advice on possible adjustments or services the shop offers to help with this."
+    - "You are just gathering information and do NOT want to explicitly book an appointment right now."
+  goals:
+    - "Explain that you are experiencing {{discomfort_type}} while riding."
+    - "Ask if this issue is typically caused by a poor bike fit or worn-out components."
+    - "Inquire about what specific adjustments or services the shop recommends to fix this."
+    - discomfort_type:
+        type: string
+        function: forward()
+        data: [lower back pain, knee pain, saddle soreness, numb hands]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - suggested_causes:
+        type: string
+        description: "The chatbot's explanation of what might be causing the user's discomfort (e.g., poor fit, worn saddle, wrong stem length)."
+    - recommended_services:
+        type: string
+        description: "The services or adjustments the chatbot recommends (e.g., professional bike fit, replacing components)."
+    - appointment_mentioned:
+        type: string
+        description: "Note if the chatbot suggested booking an appointment or bringing the bike in, even though the user didn't explicitly ask to book one."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🚲 A quick breakdown of what this does:
+* **`discomfort_type` variable:** By using the `forward()` function with 4 data points, Sensei will run 4 conversations, each testing a different kind of pain.
+* **Context constraints:** We explicitly tell the user simulator *not* to ask for an appointment, keeping it strictly in the "advice-seeking" phase.
+* **Outputs:** The `appointment_mentioned` field is a great hook if you later want to write a **Sensei Rule** to check if the bot is being too aggressive with its sales funnel! 👀
+
+Just save this as a `.yaml` file in your `profiles/` folder, and you'll be ready to run it. Let me know if you need any adjustments or if you'd like to write some metamorphic rules to go with it! 🚀
+$$$

@@ -1,0 +1,21 @@
+Here is the SENSEI rule to verify that the chatbot "ada uam" successfully provided all the required CAU information. 
+
+Since your profile extracts `contact_email`, `contact_phone`, and `physical_address`, we can use the built-in `data_collected()` helper. This function automatically checks that all the slots defined in your `chatbot.output` were successfully filled (i.e., they are not `None`). I've also included the `missing_slots()` helper in the `yields` message so that if the rule fails, it tells you exactly which piece of information was missing!
+
+```yaml
+name: cau_information_complete
+description: Checks that the chatbot provided all the necessary information about the CAU (email, phone, and physical address).
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: f"Missing CAU information: {missing_slots()}"
+```
+
+### How this works:
+* **`conversations: 1`**: This is a single-conversation check (an oracle) because we only need to look at one conversation at a time to see if the data was provided.
+* **`oracle: data_collected() == True`**: This built-in helper returns `True` only if all the fields in your `chatbot.output` (`contact_email`, `contact_phone`, `physical_address`) have been successfully extracted from the conversation.
+* **`yields`**: If the rule fails (meaning the chatbot forgot to give some information), this will output a helpful error message listing exactly which slots were left empty, using the `missing_slots()` helper.
+
+*(Note: If your profile happens to have other fields in `chatbot.output` that are optional and you **only** want to check these three specific fields, you could alternatively write the oracle explicitly as: `oracle: contact_email is not None and contact_phone is not None and physical_address is not None`)*. 
+
+Let me know if you need any adjustments or if you'd like to test this against a specific profile! 😊

@@ -1,0 +1,96 @@
+conversation ID: agentic_architecture__p14__alcampo__profile__958ee779
+$$$
+¡Hola! 😊 Para probar la capacidad del chatbot de Alcampo recomendando recetas y planificando menús, he diseñado un **Perfil de SENSEI** a medida. 
+
+Este perfil simulará a un cliente que busca inspiración para cocinar y necesita organizar sus comidas semanales ajustándose a un presupuesto y a un número de comensales, utilizando productos que se puedan encontrar en el supermercado.
+
+Aquí tienes el código YAML del perfil (puedes guardarlo como `alcampo_recetas_menu.yml` en tu carpeta `profiles/`):
+
+```yaml
+test_name: "alcampo_recipe_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente habitual del supermercado Alcampo. Estás buscando inspiración para cocinar,
+    recomendaciones de recetas y ayuda para planificar tu menú semanal utilizando productos
+    que se puedan comprar en Alcampo.
+  context:
+    - "Quieres recetas fáciles de preparar."
+    - "Te interesa saber si los ingredientes están de oferta o son de la marca Alcampo (Auchan)."
+  goals:
+    - "Recomiéndame una receta de {{meal_type}} que tenga {{ingredient}} como ingrediente principal."
+    - "Planifica un menú para {{family_size}} personas con un presupuesto aproximado de {{budget}} euros."
+    - meal_type:
+        function: random()
+        type: string
+        data: [desayuno, comida, cena]
+    - ingredient:
+        function: random()
+        type: string
+        data: [pollo, salmón, lentejas, garbanzos, ternera, verduras de temporada]
+    - family_size:
+        function: random()
+        type: int
+        data: [1, 2, 3, 4, 5, 6]
+    - budget:
+        function: random()
+        type: int
+        data: [40, 60, 80, 100, 120, 150]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu consulta. ¿Puedes reformularla?"
+  output:
+    - recommended_recipe:
+        type: string
+        description: "Nombre de la receta recomendada por el chatbot"
+    - ingredients_list:
+        type: list[string]
+        description: "Lista de ingredientes necesarios para la receta o el menú"
+    - weekly_menu_included:
+        type: string
+        description: "Indica si el chatbot proporcionó un menú semanal (sí/no)"
+    - total_estimated_cost:
+        type: float
+        description: "Coste total estimado de la compra en euros"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - change your mind
+      - long phrases
+      - default
+```
+
+### 💡 ¿Cómo funciona este perfil y qué evalúa?
+
+1. **Variables Dinámicas (`user.goals`)**: 
+   En lugar de hacer siempre la misma pregunta, el simulador combinará aleatoriamente (`random()`) diferentes tipos de comida (`meal_type`), ingredientes principales (`ingredient`), tamaños de familia (`family_size`) y presupuestos (`budget`). Esto asegura que el chatbot de Alcampo sea puesto a prueba en múltiples escenarios (ej. *un menú para 4 personas con 60€* vs *un menú para 1 persona con 100€*).
+
+2. **Extracción de Datos (`chatbot.output`)**: 
+   Al finalizar cada conversación, SENSEI extraerá automáticamente información clave para que luego puedas validarla con reglas (SENSEI-check). Extraeremos:
+   - El nombre de la receta (`recommended_recipe`).
+   - La lista de ingredientes (`ingredients_list`).
+   - Si realmente logró hacer el menú semanal (`weekly_menu_included`).
+   - El coste estimado para ver si respetó el presupuesto (`total_estimated_cost`).
+
+3. **Estilo de Interacción (`interaction_style`)**: 
+   Para hacerlo más realista, el simulador a veces usará frases largas (`long phrases`) o cambiará de opinión a mitad de la conversación (`change your mind`). ¡Esto es ideal para ver si el chatbot de Alcampo se confunde o si es capaz de recalcular el menú sobre la marcha!
+
+*(Nota: He basado esta estructura en la documentación oficial de `sensei-chat-guide.md`).*
+
+¿Te gustaría que ajustemos algún ingrediente, añadamos restricciones alimentarias (como opciones sin gluten o veganas) en el contexto, o que preparemos alguna **regla de validación** para comprobar que el chatbot respeta el presupuesto? ¡Dime cómo quieres continuar! 👨‍🍳🛒
+$$$

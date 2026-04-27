@@ -1,0 +1,33 @@
+Hello! 😊 
+
+Based on the `custom-connector-guide.md` documentation, **Connectors** are used to link the Chatbot Dojo simulator to any external chatbot API without having to write any code. They act as the transport layer, allowing you to simply create a YAML configuration file that describes exactly how to communicate with your target chatbot's API (like where to send the message and how to read the reply).
+
+Here are the fields you can use in a Connector YAML file:
+
+### 🔹 Top-Level Fields
+*   **`name`** *(Optional)*: A friendly name for your chatbot.
+*   **`base_url`** *(Required)*: The base URL of the chatbot API (e.g., `https://api.mychatbot.com`).
+*   **`response_path`** *(Required)*: A dot-separated path used to extract the bot's reply from the JSON response. For example, if the API returns `{"data": {"text": "Hello!"}}`, your response path would be `data.text`.
+
+### 🔹 `send_message` Fields
+This section defines how the request is sent to the API:
+*   **`path`** *(Required)*: The API endpoint path that gets appended to the `base_url` (e.g., `/chat/send`).
+*   **`method`** *(Optional)*: The HTTP method to use, such as `POST`, `GET`, `PUT`, or `DELETE`. It defaults to `POST`.
+*   **`headers`** *(Optional)*: Any custom headers you need to send, like `Authorization: "Bearer your-api-key"` or `Content-Type`.
+*   **`payload_template`** *(Required)*: The JSON structure of the request body. You must include the `{user_msg}` placeholder here, which the simulator will replace with the actual simulated user's message!
+
+### 📝 A Quick Example
+Here is what a simple connector looks like:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+Let me know if you'd like to see more complex examples or if you need help creating a connector for a specific API! 🚀

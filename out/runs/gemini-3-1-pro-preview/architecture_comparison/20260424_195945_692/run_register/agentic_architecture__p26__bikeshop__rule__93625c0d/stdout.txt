@@ -1,0 +1,25 @@
+conversation ID: agentic_architecture__p26__bikeshop__rule__93625c0d
+$$$
+I have checked the SENSEI documentation and your project files. I found that `tune_up_price` is a valid output field in your `bike_repair_and_maintenance_scheduler.yaml` profile! 
+
+However, there are a few issues with the rule syntax you provided. Here is the corrected version:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+oracle: tune_up_price is not None and extract_float(tune_up_price) == 50
+```
+
+### What I changed and why:
+
+1. **`conversations: 1` instead of `2`**: Your rule is checking an absolute value in a single conversation (an "oracle" rule). Setting `conversations: 2` is meant for "metamorphic" rules where you compare two different conversations against each other.
+2. **Removed `conv[0]`**: Because this is a single-conversation rule, you can reference the `chatbot.output` field directly by its name (`tune_up_price`) instead of using the `conv[0]` array syntax.
+3. **Replaced `when`, `if`, and `then` with `oracle`**: 
+   * `when` is used to filter conversations, not to evaluate the test condition.
+   * `then` must be a Python boolean expression (evaluating to True/False), not a string message. 
+   * For single-conversation checks, it is much simpler and standard to use a single `oracle` statement.
+4. **Added `extract_float()`**: Since `tune_up_price` is defined as a `money` type in your profile, the LLM might extract it as a string like `"$50.00"`. The `extract_float()` helper function safely pulls out the number so you can do a proper mathematical comparison (`== 50`).
+
+Let me know if you'd like to add any other checks to this rule, like verifying the currency! 😊
+$$$

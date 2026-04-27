@@ -1,0 +1,45 @@
+conversation ID: agentic_architecture__p50__pizza_shop__documentation__afbb246e
+$$$
+Based on the **SENSEI RULES** documentation (`sensei-check-doc.md` and `rules-examples.md`), an **oracle** is the core validation condition inside a rule that determines whether a conversation (or a set of conversations) is correct. 
+
+In the SENSEI-check DSL, an oracle is written as a simple boolean expression (using Python syntax). When SENSEI evaluates the rule, if the oracle expression evaluates to `True`, the test passes; if it evaluates to `False`, the test fails.
+
+You can think of it as the "source of truth" that asserts what the expected behavior or output of the chatbot should be. 
+
+### How it is used
+When writing a rule in YAML, you can define the validation logic in two ways:
+1. **Using an `oracle`**: A direct boolean condition.
+2. **Using `if`/`then`**: An implication (if X happens, then Y must be true), which is often preferred for metamorphic rules comparing multiple conversations.
+
+### Examples of Oracles
+
+**1. Single-conversation oracle (Traditional)**
+Checking that a specific condition is met in a single conversation. For example, ensuring that a small pizza costs at least $10:
+```yaml
+name: small_base_price_floor
+description: Small pizzas should cost at least $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+**2. Global oracle (All conversations)**
+Checking a condition across an entire batch of conversations. For example, ensuring that every generated order ID is unique:
+```yaml
+name: unique_order_ids
+description: Every conversation has a unique order_id
+conversations: all
+oracle: is_unique('order_id')
+```
+
+**3. Style/Scope oracle**
+Using built-in helpers to check the chatbot's behavior, such as ensuring it stays on topic or doesn't repeat itself:
+```yaml
+name: scope_guardrails
+description: Assistant does not drift from pizza domain
+conversations: 1
+oracle: only_talks_about('pizza and drink orders, delivery, store info')
+```
+
+In short, the `oracle` is simply the line in your rule where you write the exact condition that the chatbot's outputs must satisfy! 😊 Let me know if you'd like to see how to write an oracle for a specific profile or scenario.
+$$$

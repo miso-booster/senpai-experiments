@@ -1,0 +1,29 @@
+conversation ID: graph_based_architecture__p36__pizza_shop__rule__53455e48
+$$$
+Hello there! 😊 I'd be happy to help you fix this rule. 
+
+I can see exactly why it's not working 👀. Your rule is using a `then:` statement, but it is missing its partner: the **`if:`** statement! 
+
+In Sensei-check, when you write a metamorphic rule using this format, you need both an `if` (the precondition or the thing that changes) and a `then` (the expected outcome). Right now, the rule knows what to check at the end (the price), but it doesn't know what the trigger condition is (the toppings).
+
+Here is the corrected version of your rule:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### 💡 Why this works:
+* **`when`**: This acts as a filter. It tells Sensei-check to only compare conversations where the pizza size and the drink are exactly the same.
+* **`if`**: This is the condition we are testing. It looks for a pair of conversations where the first one has *more* toppings than the second one.
+* **`then`**: This is the rule's assertion. It ensures that the conversation with more toppings also has a higher price.
+
+*(Just a quick reminder: make sure that `size`, `drink`, `toppings`, and `price` exactly match the field names defined in your SENSEI Chat profile's `chatbot.output`!)*
+
+Give that a try and let me know if it runs smoothly! Do you need help with any other rules today? 🍕✨
+$$$

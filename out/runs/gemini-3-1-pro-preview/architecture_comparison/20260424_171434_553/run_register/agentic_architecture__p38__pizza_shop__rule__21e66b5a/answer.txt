@@ -1,0 +1,21 @@
+Based on the SENSEI RULES documentation (specifically `sensei-check-doc.md`), you can create a single-conversation rule (an oracle) that checks if the `order_id` was successfully extracted during the conversation. 
+
+Here is how you would write that rule in YAML:
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide an order ID during the conversation.
+conversations: 1
+active: true
+oracle: |
+  'order_id' in data_output
+yields: "The chatbot failed to provide an order_id."
+```
+
+### How this works:
+* **`conversations: 1`**: This tells SENSEI that this is a standard oracle rule checking a single conversation at a time, rather than comparing multiple conversations.
+* **`oracle`**: This is the condition that must evaluate to `True`. The `data_output` dictionary contains all the fields extracted by the SENSEI Chat profile. By checking `'order_id' in data_output`, we ensure the chatbot actually provided it.
+* **`yields` (optional)**: Provides a helpful error message if the rule fails.
+
+### Connection to the Profile
+For this rule to work correctly, the SENSEI Chat profile you are testing against **must** have `order_id` defined in its `chatbot.output` schema. When the simulator runs, it will try to extract the `order_id` from the chatbot's messages. If the chatbot never gives one, it won't be in the `data_output`, and this rule will catch the failure! 😊

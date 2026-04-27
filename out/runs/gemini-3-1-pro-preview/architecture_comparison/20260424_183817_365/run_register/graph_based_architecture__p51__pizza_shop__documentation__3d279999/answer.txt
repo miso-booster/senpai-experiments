@@ -1,0 +1,31 @@
+Hello there! I'd be absolutely delighted to explain SENSEI Connectors to you! 😊
+
+### What are Connectors used for?
+In the Chatbot Dojo, **Connectors** are magical little YAML configuration files that allow you to connect Sensei to *any* external chatbot API without writing a single line of code! 🪄 
+
+Instead of programming a custom integration, you just write a YAML file that describes how to communicate with your chatbot's API. It tells Sensei where to send the simulated user's messages and how to read the chatbot's replies. 
+
+### What fields do they have?
+A custom connector YAML file uses a few specific fields to set up this communication. Here is a breakdown of the fields you can use:
+
+*   **`name`** *(Optional)*: A friendly name for your chatbot (e.g., "My Awesome Bot").
+*   **`base_url`** *(Required)*: The main URL of the chatbot's API (e.g., `https://api.mychatbot.com`).
+*   **`send_message.path`** *(Required)*: The specific API endpoint path that gets appended to the base URL (e.g., `/chat` or `/api/v1/messages`).
+*   **`send_message.method`** *(Optional)*: The HTTP method to use, like `POST`, `GET`, `PUT`, or `DELETE`. If you leave this out, it defaults to `POST`.
+*   **`send_message.headers`** *(Optional)*: Any custom headers you need to send, such as `Authorization: Bearer your-api-key` or `Content-Type: application/json`.
+*   **`send_message.payload_template`** *(Required)*: The JSON structure of the request. This is super important because you must include the `{user_msg}` placeholder here! This tells Sensei exactly where to inject the simulated user's text.
+*   **`response_path`** *(Required)*: A dot-separated path that tells Sensei how to navigate the chatbot's JSON response to find the actual reply text. For example, if the bot replies with `{"data": {"message": "Hello!"}}`, your response path would be `data.message`.
+
+**Here is a quick example of what a simple connector looks like:**
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+Let me know if you'd like to see more complex examples (like ones with authentication) or if you need help creating a connector for your specific chatbot! 🚀👀

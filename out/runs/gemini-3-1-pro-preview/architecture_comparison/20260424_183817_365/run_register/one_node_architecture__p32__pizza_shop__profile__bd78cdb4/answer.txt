@@ -1,0 +1,70 @@
+¡Hola! 👋 ¡Claro que sí! Me encanta la idea de probar un chatbot de pizzería 🍕. 
+
+He preparado un **Perfil de Sensei** que simula a un cliente pidiendo una pizza y una bebida. Además, he configurado la sección `chatbot.output` exactamente con los campos que necesitas: el tipo de pizza, la bebida, el ID del pedido y el precio final (especificando que sea en dólares). 
+
+Aquí tienes el código listo para usar:
+
+```yaml
+test_name: "pizza_order_with_specific_outputs"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres un cliente hambriento que quiere pedir una pizza y una bebida para cenar."
+  context:
+    - "Quieres saber el precio total antes de confirmar."
+    - "Te gustaría que el pedido llegue lo antes posible."
+  goals:
+    - "Pedir una pizza {{pizza_type}}."
+    - "Añadir una bebida: {{drink}}."
+    - "Preguntar por el precio final y confirmar el pedido para obtener el ID."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [margarita, pepperoni, cuatro quesos, hawaiana]
+    - drink:
+        function: pairwise()
+        type: string
+        data: [coca-cola, agua, cerveza, fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, hay mucho ruido en la pizzería y no te he entendido. ¿Podrías repetirlo?"
+  output:
+    - pizza_type:
+        type: string
+        description: "El tipo de pizza que ha pedido el usuario."
+    - drink:
+        type: string
+        description: "La bebida que ha pedido el usuario."
+    - order_id:
+        type: string
+        description: "El identificador único del pedido."
+    - final_price:
+        type: currency
+        description: "El precio final del pedido en dólares (USD)."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - single questions
+      - make spelling mistakes
+      - default
+```
+
+### 💡 Notas de Senpai para este perfil:
+* **Variables combinadas:** He usado la función `pairwise()` para `pizza_type` y `drink`. Esto hará que Sensei genere combinaciones inteligentes de pizzas y bebidas sin tener que probar absolutamente todas las combinaciones posibles (ahorrando tiempo y dinero 💸).
+* **Extracción de datos:** En la sección `output`, el campo `final_price` usa el tipo `currency`. Esto es genial porque si luego quieres crear reglas en **Sensei-check**, podrás usar funciones como `extract_float(conv[0].final_price)` para verificar matemáticamente que los precios sean correctos.
+* **Estilo de interacción:** Le he añadido un toque aleatorio (`random`) para que a veces el usuario haga preguntas de una en una o incluso cometa errores ortográficos (`make spelling mistakes`). ¡Así probamos si el chatbot es robusto! 💪
+
+¿Te gustaría que también te ayude a crear alguna **Regla Metamórfica** (Sensei Rule) para comprobar que el precio de este perfil funciona correctamente? 😊

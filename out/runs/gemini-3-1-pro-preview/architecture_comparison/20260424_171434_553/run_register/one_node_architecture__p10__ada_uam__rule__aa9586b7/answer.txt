@@ -1,0 +1,53 @@
+Hello there! 😊 That is a very complete and well-structured profile! Since you are extracting a lot of great information like dates, times, links, and procedures, we can write some fantastic **Sensei-check rules** to validate your chatbot's behavior.
+
+Here are a few rule suggestions tailored specifically to your `Usuarios Nuevos y Admisiones` profile. 
+
+### 1. Welcome Day Consistency (Metamorphic Rule)
+Since the "Welcome Day" is a specific university event, its date and time should remain exactly the same regardless of which degree (`grados`) or course (`cursos`) the user asks about. We can use a 2-conversation metamorphic rule to check this invariant!
+
+```yaml
+name: consistent_welcome_day
+description: The Welcome Day date and time should be the same across different degree inquiries.
+conversations: 2
+if: conv[0].grados != conv[1].grados
+then: conv[0].welcome_day_date == conv[1].welcome_day_date and conv[0].welcome_day_time == conv[1].welcome_day_time
+```
+
+### 2. Data Completeness (Single Conversation)
+You have defined a lot of fields in your `chatbot.output`. A great baseline rule is to ensure that the chatbot successfully provides all the requested information before the conversation ends.
+
+```yaml
+name: all_admission_data_collected
+description: Ensures the chatbot provides all the necessary information and fills all output slots.
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: f"Missing slots: {missing_slots()}"
+```
+
+### 3. Language Consistency (Single Conversation)
+Since your user profile is explicitly set to `Spanish`, the chatbot should always reply in Spanish. We can use the built-in `language()` helper to enforce this.
+
+```yaml
+name: responds_in_spanish
+description: The chatbot must always respond in Spanish.
+conversations: 1
+active: true
+oracle: language(chatbot_phrases) == 'SPA'
+```
+
+### 4. Topic Guardrail (Single Conversation)
+To ensure the chatbot doesn't hallucinate or drift into unrelated topics (like sports or movies), you can restrict its scope to admissions and university events.
+
+```yaml
+name: admission_topic_scope
+description: The chatbot should not drift from university admissions, courses, and the welcome day.
+conversations: 1
+active: true
+oracle: only_talks_about('university admissions, degrees, courses, welcome day, waitlists')
+```
+
+### 💡 A quick Senpai tip for your profile:
+I noticed you used `type: money` for the `application_fee` output. Just remember that `money` is not a default Sensei type! Make sure you have a custom type file named `money.yml` inside your `types/` folder. If you don't, you can easily change it to `type: string` or `type: float`, or create the custom type to extract the currency properly. 
+
+Let me know if you need help creating that custom type or if you want to explore more rules! 🚀

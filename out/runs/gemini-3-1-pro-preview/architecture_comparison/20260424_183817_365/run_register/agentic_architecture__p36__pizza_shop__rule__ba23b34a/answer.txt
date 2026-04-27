@@ -1,0 +1,22 @@
+The reason your rule isn't working is that it's missing the logical condition that actually compares the toppings! 
+
+Right now, your rule uses `when` to filter for any two conversations that have the same pizza size and the same drink. But because it jumps straight to the `then` statement, it blindly asserts that the first conversation (`conv[0]`) must cost more than the second (`conv[1]`). This will fail if they have the exact same toppings, or if the second conversation actually has *more* toppings than the first.
+
+To fix this, you need to add an **`if`** clause (the precondition) to specify that `conv[0]` must have more toppings than `conv[1]` before checking the price difference. 
+
+Here is the corrected rule based on the SENSEI documentation (`sensei-check-doc.md`):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### Summary of changes:
+* **Added `if: len(conv[0].toppings) > len(conv[1].toppings)`**: This ensures the rule only triggers the `then` check when the first conversation genuinely has a higher number of toppings than the second conversation. 
+
+Let me know if you need help writing any other metamorphic rules! 😊

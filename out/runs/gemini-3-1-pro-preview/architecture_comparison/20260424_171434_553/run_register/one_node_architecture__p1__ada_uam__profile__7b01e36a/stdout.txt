@@ -1,0 +1,73 @@
+conversation ID: one_node_architecture__p1__ada_uam__profile__7b01e36a
+$$$
+Hello there! I'd be happy to help you create a profile for this eduroam scenario. 📶😊
+
+To make this profile really effective, I've set up a frustrated student persona who urgently needs Wi-Fi. For the variables, I used `device_type` and `setup_method` with the `pairwise()` function. This is a great way to test different combinations (like a MacBook using the CAT installer, or an Android using manual config) without generating an overwhelming number of conversations. I also added a randomized `error_message` to see how the chatbot handles different technical roadblocks!
+
+Here is the ready-to-use YAML profile:
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who urgently needs to connect to the eduroam Wi-Fi network, 
+    but you are completely unable to do so despite trying different methods.
+  context:
+    - "You are currently on campus and using your mobile data, which is running out."
+    - "You are getting frustrated because you followed the official university instructions but it still doesn't work."
+  goals:
+    - "Explain that you are trying to connect your {{device_type}} to eduroam."
+    - "Mention that you tried using the {{setup_method}} but it didn't work at all."
+    - "Ask how to fix the specific error you are getting: {{error_message}}."
+    - device_type:
+        function: pairwise()
+        type: string
+        data: [Windows 11 laptop, MacBook Pro, Android smartphone, iPhone]
+    - setup_method:
+        function: pairwise()
+        type: string
+        data: [eduroam CAT installer, geteduroam app, manual network configuration]
+    - error_message:
+        function: random()
+        type: string
+        data: ["Authentication failed", "Can't connect to this network", "Certificate not trusted", "Invalid credentials"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I couldn't understand that. Could you please rephrase your issue?"
+  output:
+    - provided_solution:
+        type: string
+        description: "The main troubleshooting step or solution offered by the bot"
+    - asked_for_os_version:
+        type: string
+        description: "Did the bot ask for the specific OS version? (Yes/No)"
+    - mentioned_certificates:
+        type: string
+        description: "Did the bot mention downloading or trusting security certificates? (Yes/No)"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 8
+  interaction_style:
+    - random:
+      - single questions
+      - change your mind
+      - make spelling mistakes
+```
+
+### A quick tip 👀
+Notice the `chatbot.output` section? I added fields like `provided_solution` and `mentioned_certificates`. Once you run this profile, you can easily create **Sensei Rules** to check if the chatbot always reminds users to install certificates when they try the "manual network configuration" method! 
+
+Let me know if you'd like to adjust any of the devices, methods, or if you want help writing a rule for this profile! 🚀
+$$$

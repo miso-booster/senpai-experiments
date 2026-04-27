@@ -1,0 +1,38 @@
+Here is the YAML connector based on the request and response you provided. 
+
+I have extracted the base URL, the required headers, and the payload structure, replacing the hardcoded `"hola"` with the `{user_msg}` placeholder as required by the SENSEI connector documentation (`custom-connector-guide.md`). I also set the `response_path` to `response.0.text` to correctly navigate the JSON response array.
+
+To fulfill your requirement of removing HTML tags from the assistant's response, I've included `strip_html: true` at the root level.
+
+```yaml
+name: "Malaga SAIC Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+strip_html: true
+```
+
+### Summary of what was done:
+* **`base_url` & `path`**: Split `https://api.1millionbot.com/api/public/messages` into the base URL and the endpoint path.
+* **`headers`**: Included only the minimal required headers (`Content-Type`, `Authorization`, `Origin`, and `Referer`), ignoring browser-specific ones.
+* **`payload_template`**: Mapped the exact JSON structure from your request, substituting the user's input with the `{user_msg}` placeholder.
+* **`response_path`**: Used dot notation (`response.0.text`) to extract the bot's reply from the nested JSON array.
+* **`strip_html`**: Added this flag to ensure the extracted response (`<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>`) is converted to plain text. 
+
+Let me know if you need to adjust any of the hardcoded IDs (like `conversation` or `sender`) to be dynamic, or if you'd like to test this connector! 😊

@@ -1,0 +1,68 @@
+Hello there! 😊 I'd be more than happy to help you create a Sensei profile for this scenario. 
+
+Testing how a chatbot handles Wi-Fi troubleshooting—especially the notorious eduroam setup—is a great use case! To make this profile effective, I've set up a variable called `setup_method` that uses the `forward()` function. This means Sensei will systematically test every single setup method you define (like the CAT installer, manual config, or the app) across different conversations. I also added a `device_type` variable just to give the chatbot a bit more context to work with.
+
+Here is the complete profile ready for your project:
+
+```yaml
+test_name: "eduroam_setup_issues"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who urgently needs to connect to the eduroam Wi-Fi network, 
+    but you are completely unable to do so despite trying multiple times.
+  context:
+    - "You are slightly frustrated because you need internet access for an upcoming class."
+    - "You want clear, step-by-step help to fix the issue."
+  goals:
+    - "Tell the assistant you are trying to connect to eduroam on your {{device_type}}."
+    - "Explain that you already tried using {{setup_method}} but it gave you an error."
+    - "Ask what you should do next or if there is a different way to connect."
+    - device_type:
+        function: random()
+        type: string
+        data: [Windows laptop, MacBook, Android phone, iPhone, iPad]
+    - setup_method:
+        function: forward()
+        type: string
+        data: 
+          - the eduroam CAT installer
+          - manual network configuration
+          - the geteduroam app
+          - scanning the campus QR code
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you explain your issue again?"
+  output:
+    - troubleshooting_steps:
+        type: string
+        description: "The specific steps the chatbot provided to fix the connection."
+    - requires_it_support:
+        type: string
+        description: "Did the chatbot recommend visiting the IT helpdesk? (Yes/No)"
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 6
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - long phrases
+```
+
+### A quick breakdown of what's happening here 👀:
+* **`conversation.number: 4`**: Since we have 4 items in the `setup_method` list and we are using `forward()`, running 4 conversations ensures every method gets tested exactly once!
+* **`chatbot.output`**: At the end of the chat, Sensei will extract the `troubleshooting_steps` the bot provided, and check if it escalated the issue to IT support (`requires_it_support`). You can later use these fields to write Sensei-check rules!
+* **`interaction_style`**: I added a mix of spelling mistakes and long phrases to simulate a stressed student typing on the go. 
+
+Let me know if you'd like to add any other variables or if you want to write some **Sensei Rules** to validate the chatbot's answers! 🚀

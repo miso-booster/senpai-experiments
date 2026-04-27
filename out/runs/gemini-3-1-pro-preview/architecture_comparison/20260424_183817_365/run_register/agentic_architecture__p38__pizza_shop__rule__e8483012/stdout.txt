@@ -1,0 +1,36 @@
+conversation ID: agentic_architecture__p38__pizza_shop__rule__e8483012
+$$$
+Based on the SENSEI rules documentation (specifically `sensei-check-doc.md`), we can create a single-conversation rule (an oracle) to verify that the chatbot successfully extracted and provided the `order_id`. 
+
+Here is how you would write that rule in YAML:
+
+```yaml
+name: order_id_provided
+description: Checks that the chatbot provided an order ID during the conversation.
+conversations: 1
+active: true
+oracle: |
+  'order_id' in data_output and order_id is not None
+on-error: "The chatbot failed to provide an order_id."
+```
+
+### How this works:
+* **`conversations: 1`**: This tells SENSEI that we are evaluating a single conversation at a time (a standard oracle check), rather than comparing multiple conversations.
+* **`oracle`**: This is the Python-like condition that must evaluate to `True`. We use the special `data_output` dictionary to check if the key exists, and we also ensure the variable `order_id` itself is not `None`.
+* **`on-error`**: An optional helpful message that will be displayed if the rule fails.
+
+### Important Note on Profiles 📝
+For this rule to work, it **must** be tied to a SENSEI Chat profile where `order_id` is explicitly defined in the `chatbot.output` schema. For example, the profile you are testing against should have something like this:
+
+```yaml
+chatbot:
+  output:
+    - order_id:
+        type: string
+        description: The unique identifier for the user's order
+```
+
+If you ever change the name of the output in your profile (e.g., to `ticket_id` or `reference_number`), you will need to update this rule to match the new field name! 
+
+Let me know if you'd like to search your project to see which profiles currently expose this `order_id` output! 😊
+$$$

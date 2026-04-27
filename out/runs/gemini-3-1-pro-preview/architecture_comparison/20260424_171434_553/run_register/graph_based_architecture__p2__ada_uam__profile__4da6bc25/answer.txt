@@ -1,0 +1,81 @@
+Hello there! Welcome to the Dojo! 🥋✨ How can I help you today?
+
+Creating a profile for a newly arrived Erasmus student is a fantastic use case! It’s super important to make sure your chatbot can provide clear, step-by-step support to someone who might be feeling a bit lost. 
+
+Since you want to keep the input variables light but focus heavily on extracting the chatbot's responses for validation, I've designed a profile that does exactly that. I added just one simple variable (`{{device}}`) to give the conversations a tiny bit of realistic variety, and I set up a robust `chatbot.output` section so you can easily write Sensei-check rules later to verify the support provided.
+
+Here is a ready-to-use profile for your Erasmus student:
+
+```yaml
+test_name: "erasmus_student_setup_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus exchange student who just arrived at the university. 
+    You are feeling a bit overwhelmed and need help setting up your digital accounts 
+    like Moodle, Sigma, and the campus Wi-Fi.
+  context:
+    - "You don't know your university credentials yet or how to activate them."
+    - "You need clear, step-by-step instructions because you are unfamiliar with the local systems."
+  goals:
+    - "Ask how to activate your university email and get your initial password."
+    - "Ask how to log in to Moodle to see your classes."
+    - "Ask how to access Sigma to check your academic record."
+    - "Ask how to connect your {{device}} to the campus Wi-Fi (eduroam)."
+    - device:
+        function: random()
+        type: string
+        data: [iPhone, Android phone, Mac laptop, Windows laptop]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you please rephrase your question? I am the IT support bot."
+  output:
+    - credential_activation_steps:
+        type: string
+        description: "Step-by-step instructions on how to activate the university account and get the password."
+    - moodle_link:
+        type: string
+        description: "The URL or instructions provided to access Moodle."
+    - sigma_instructions:
+        type: string
+        description: "Instructions or link provided to access the Sigma platform."
+    - wifi_setup_guide:
+        type: string
+        description: "Instructions for connecting the specific device to the campus Wi-Fi."
+    - support_contact:
+        type: string
+        description: "Email, phone number, or physical office location for the IT helpdesk in case of further issues."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - change language:
+        - Spanish
+      - single questions
+```
+
+### 🧐 Why this setup works perfectly for your needs:
+
+1. **Rich `chatbot.output`:** This is the most important part for your goal! By defining fields like `moodle_link`, `sigma_instructions`, and `support_contact`, Sensei will extract exactly what the bot answered at the end of the conversation. Later, you can write Sensei Rules like `when: conv[0].moodle_link is None then: fail` to ensure the bot is actually doing its job!
+2. **`all_answered` Goal Style:** I set the conversation to run until all the user's goals are answered. I also added `export: true`, which will generate a handy `.csv` dataframe showing exactly which outputs were successfully satisfied during the test.
+3. **Realistic Interaction Styles:** Since they are an Erasmus student, I added a `random` interaction style where they might occasionally switch to Spanish, make spelling mistakes, or ask questions one by one. This mimics a real international student trying to navigate a new environment! 🌍
+4. **Minimal Variables:** We only used one variable (`{{device}}`) with a `random()` function just to make sure the bot can handle Wi-Fi instructions for different operating systems without overcomplicating your test matrix.
+
+You can save this as `profiles/erasmus_setup.yml` in your project folder. 
+
+How does this look to you? Let me know if you'd like to add any specific custom data types or if you need help writing the Sensei Rules to check these outputs! 😊

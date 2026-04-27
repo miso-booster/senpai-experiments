@@ -1,0 +1,30 @@
+¡Hola! ¡Qué gusto saludarte! 😊 Claro que sí, te ayudo a crear esa regla para tu Dojo. 🥋
+
+Para este caso, lo ideal es crear una regla de **una sola conversación** (lo que en SENSEI Check llamamos un oráculo tradicional). Queremos observar si, cuando el usuario repite una fecha, el asistente se da cuenta y le dice que no.
+
+Para lograrlo, nos apoyaremos en una función mágica de SENSEI Check llamada `utterance_index`. Esta función usa inteligencia artificial para leer la conversación y decirnos en qué turno el asistente dijo algo específico (en este caso, rechazar la fecha).
+
+### La Regla (SENSEI Rule)
+
+Antes de escribir la regla, **debemos imaginar cómo se conecta con tu Perfil de SENSEI Chat**. Supongamos que tu perfil tiene en su `chatbot.output` un campo llamado `fechas_solicitadas` (una lista con las fechas que el usuario intentó reservar). 
+
+Aquí tienes el código YAML listo para usar:
+
+```yaml
+name: rechazar_fecha_duplicada
+description: Si el usuario pide la misma fecha dos veces, el asistente debe negar la segunda.
+conversations: 1
+if: len(fechas_solicitadas) >= 2 and fechas_solicitadas[0] == fechas_solicitadas[1]
+then: utterance_index('assistant', 'niega o rechaza la fecha por estar duplicada') > 0
+```
+
+### ¿Cómo funciona esta regla paso a paso? 🧐
+
+1. **`conversations: 1`**: Le decimos a SENSEI Check que evalúe las conversaciones de una en una.
+2. **`if`**: Esta es nuestra condición. Verificamos si el usuario intentó dar al menos dos fechas (`len(fechas_solicitadas) >= 2`) y si la primera es exactamente igual a la segunda (`fechas_solicitadas[0] == fechas_solicitadas[1]`).
+3. **`then`**: Aquí viene la magia. Usamos `utterance_index('assistant', 'niega o rechaza la fecha por estar duplicada') > 0`. Es como pedirle a un árbitro que lea el chat y nos confirme si en algún momento (índice mayor a 0) el asistente rechazó la petición.
+
+### ⚠️ Un pequeño recordatorio de Senpai:
+Para que esta regla funcione perfectamente, recuerda que el campo `fechas_solicitadas` **debe existir** en la sección `chatbot.output` del Perfil de SENSEI Chat que estés evaluando. Si en tu perfil el campo se llama de otra forma (por ejemplo, `intentos_de_reserva` o `fecha_cita`), ¡solo tienes que cambiar el nombre en la regla para que coincidan!
+
+¿Te gustaría que te ayude a configurar también el Perfil de SENSEI Chat para que exponga estas fechas, o tienes alguna otra duda con tus reglas? ¡Aquí estoy para ayudarte! 🌸

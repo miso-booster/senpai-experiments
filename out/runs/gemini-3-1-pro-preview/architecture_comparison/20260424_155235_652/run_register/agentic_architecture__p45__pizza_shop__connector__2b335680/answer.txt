@@ -1,0 +1,35 @@
+Here is the YAML connector configuration based on the HTTP request and response you provided. 
+
+I have included the minimal required headers as requested, mapped the user message to the `{user_msg}` placeholder, and set the `response_path` to extract the bot's reply.
+
+```yaml
+name: "SAIC Malaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Summary of the Configuration
+* **Base URL & Path**: The `Host` header (`api.1millionbot.com`) becomes the `base_url`, and the path is set to `/api/public/messages`.
+* **Headers**: We kept only `Content-Type`, `Authorization`, `Origin`, and `Referer`. Browser-specific headers have been omitted.
+* **Payload Template**: The JSON body is replicated exactly, but the hardcoded `"hola"` is replaced with the `{user_msg}` placeholder so the simulator can inject its messages.
+* **Response Path**: The bot's response text is located inside the `response` array at the first index (`0`), inside the `text` field. Therefore, the dot-notation path is `response.0.text`.
+
+**Note on HTML Stripping:** 
+You mentioned that the assistant response must return plain text with HTML tags removed. According to the current SENSEI Connector documentation (`custom-connector-guide.md`), there isn't a built-in YAML field (like `strip_html: true`) to automatically remove HTML tags at the connector level. The connector will extract the exact string (`"<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>"`) from the JSON. If your testing environment requires plain text, this HTML stripping will likely need to be handled downstream by the Chatbot Dojo platform or within a custom Python wrapper if you are extending the `CustomChatbot` class! 😊

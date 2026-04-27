@@ -1,0 +1,37 @@
+conversation ID: graph_based_architecture__p29__bikeshop__rule__c60a86bc
+$$$
+Hello there! I would absolutely love to help you write that rule! 🚲✨ 
+
+In **Sensei-check**, we can easily verify this by writing a **single-conversation rule**. Depending on how you've set up your SENSEI Chat profile, there are two great ways to do this: checking the actual conversation text, or checking the extracted data. 
+
+Here are two examples you can use!
+
+### Option 1: Checking the conversation text (Using `utterance_index`)
+If you want to make sure the assistant actually *says* something that confirms the appointment, you can use our handy `utterance_index` helper. This uses a bit of LLM magic to check if a specific topic was mentioned by the assistant.
+
+```yaml
+name: confirms_bike_service_appointment
+description: The assistant must explicitly confirm the bike service appointment in the chat.
+conversations: 1
+oracle: utterance_index('assistant', 'appointment confirmation') > 0
+```
+*How it works:* It looks through the conversation and returns the turn index where the assistant confirms the appointment. If it's greater than `0`, it means the bot successfully confirmed it! 🎉
+
+### Option 2: Checking the extracted data (Profile-bound rule)
+In a real project, your **SENSEI Chat profile** probably has a `chatbot.output` section that extracts information from the chat, like an `appointment_date` or `service_type`. 
+
+If your profile extracts an `appointment_date`, you can write a rule to ensure that this field is successfully filled out (which implies the appointment was made):
+
+```yaml
+name: appointment_date_is_extracted
+description: Ensures the chatbot successfully collected the appointment date for the bike service.
+conversations: 1
+oracle: appointment_date is not None
+```
+*(Just remember: for this second option to work, your SENSEI Chat profile must have an output field exactly named `appointment_date`!)* 👀
+
+### A quick tip from Senpai 💡
+If you want to test this across *multiple* conversations (for example, making sure the bot confirms appointments whether the user asks politely or is in a rush), you are already on your way to **metamorphic testing**! 
+
+Do you have a SENSEI Chat profile set up for this bike service bot yet, or would you like some help creating the `chatbot.output` for it? 😊
+$$$

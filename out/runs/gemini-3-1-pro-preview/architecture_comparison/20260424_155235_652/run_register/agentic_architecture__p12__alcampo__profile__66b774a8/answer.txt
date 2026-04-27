@@ -1,0 +1,73 @@
+Here is a SENSEI profile designed to simulate a user asking a chatbot to add items to their shopping cart. 
+
+I have based this on the `sensei-chat-guide.md` documentation. The profile uses random selection for the items and their quantities, and it defines the expected outputs to extract at the end of the conversation.
+
+```yaml
+test_name: "shopping_cart_addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer shopping online. You want to add specific items to your shopping cart."
+  context:
+    - "You are browsing an e-commerce store."
+    - "You want to make sure the items are added correctly."
+  goals:
+    - "Add {{quantity}} units of {{item}} to my shopping cart."
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - item:
+        function: random()
+        type: string
+        data: 
+          - wireless mouse
+          - mechanical keyboard
+          - USB-C cable
+          - monitor stand
+          - laptop sleeve
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please repeat?"
+  output:
+    - added_item:
+        type: string
+        description: "The name of the item added to the cart."
+    - added_quantity:
+        type: int
+        description: "The quantity of the item added to the cart."
+    - total_items_in_cart:
+        type: int
+        description: "The total number of items currently in the cart."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 4
+  interaction_style:
+    - default
+```
+
+### 🛒 Profile Summary
+
+- **Goals & Variables**: The simulated user will ask to add a specific `{{quantity}}` of an `{{item}}`. 
+  - `quantity` is randomly chosen between 1 and 5.
+  - `item` is randomly chosen from a predefined list of tech accessories.
+- **Chatbot Output**: At the end of the conversation, SENSEI will extract three fields:
+  - `added_item`: The name of the product.
+  - `added_quantity`: How many were added.
+  - `total_items_in_cart`: The total count of items in the cart (useful if you want to write rules later to check if the cart math is correct!).
+- **Conversation Controls**: The profile will run 3 separate conversations (`conversation.number: 3`), and each conversation will last for 4 steps (`goal_style.steps: 4`).
+
+Let me know if you'd like to adjust the items, add more complex interaction styles (like making the user change their mind), or if you'd like to create a SENSEI rule to validate these outputs! 😊

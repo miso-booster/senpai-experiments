@@ -1,0 +1,71 @@
+conversation ID: one_node_architecture__p1__ada_uam__profile__5613720c
+$$$
+Hello there! 😊 I'd be happy to help you create a Sensei profile for this scenario. 
+
+Testing how a chatbot handles Wi-Fi troubleshooting is a great use case! To make this profile dynamic, we can use variables for the **device operating system** and the **setup method** the user tried (like the CAT tool, manual config, or the geteduroam app). 
+
+By using the `pairwise()` function for these variables, Sensei will automatically generate conversations testing different combinations of devices and setup methods without creating an overwhelming number of test cases.
+
+Here is the YAML profile ready for your project:
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student or staff member trying to connect to the eduroam Wi-Fi network, but you are unable to do so.
+  context:
+    - "You are currently on campus and urgently need internet access for your work."
+    - "You have your university credentials, but the connection keeps failing, dropping, or showing an authentication error."
+  goals:
+    - "Ask for instructions on how to set up eduroam on your {{device_os}} device."
+    - "Explain that you already tried using the {{setup_method}} but it didn't work."
+    - "Ask if there is any specific security certificate or domain configuration you need to apply."
+    - device_os:
+        function: pairwise()
+        type: string
+        data: [Windows 11, macOS, Android, iOS, Ubuntu Linux]
+    - setup_method:
+        function: pairwise()
+        type: string
+        data: [eduroam CAT tool, geteduroam app, manual configuration]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you please rephrase your question or check our IT service catalog?"
+  output:
+    - troubleshooting_steps:
+        type: string
+        description: "The step-by-step instructions provided by the bot to fix the connection issue"
+    - installer_link:
+        type: string
+        description: "Link to the eduroam CAT tool, geteduroam app, or configuration profiles if provided"
+    - required_credentials_format:
+        type: string
+        description: "Information about the username format (e.g., user@domain.edu) required to log in"
+
+conversation:
+  number: combinations(1.0, pairwise)
+  goal_style:
+    steps: 15
+  interaction_style:
+    - random:
+      - single questions
+      - change your mind
+      - make spelling mistakes
+```
+
+### 👀 A quick look at what this does:
+* **Variables (`device_os` & `setup_method`)**: The simulator will mix and match these. For example, in one conversation, the user might complain that the *geteduroam app* isn't working on *Android*. In another, they might say *manual configuration* failed on *macOS*.
+* **`chatbot.output`**: At the end of the conversation, Sensei will extract the troubleshooting steps, any links the bot provided, and the credential format so you can easily verify if the bot gave the right advice!
+* **Interaction Style**: I added a random mix of `single questions`, `change your mind`, and `make spelling mistakes` to simulate a frustrated user typing on the go. 
+
+Just save this as a `.yaml` file in your `profiles/` folder and you're good to go! Let me know if you'd like to adjust the devices, add more setup methods, or write a Sensei Rule to validate the outputs. 🚀
+$$$

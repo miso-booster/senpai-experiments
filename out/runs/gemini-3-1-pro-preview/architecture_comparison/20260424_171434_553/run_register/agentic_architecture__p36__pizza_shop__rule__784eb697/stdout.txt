@@ -1,0 +1,25 @@
+conversation ID: agentic_architecture__p36__pizza_shop__rule__784eb697
+$$$
+The reason your rule isn't working is that it's missing the **`if`** clause (the precondition). 
+
+In SENSEI-check, when you write a metamorphic rule (comparing 2 or more conversations) using `then`, you must pair it with an `if` statement. 
+
+Right now, your rule filters for two conversations with the same size and drink (`when`), and immediately asserts that the first conversation must cost more than the second (`then`). Because it doesn't specify *why* it should cost more (i.e., that it has more toppings), the rule will fail—especially if the two conversations have the exact same toppings, or if they are evaluated in reverse order!
+
+Here is the fixed rule with the missing `if` clause added, based on the `sensei-check-doc.md` documentation:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### What changed?
+* **Added `if: len(conv[0].toppings) > len(conv[1].toppings)`**: This tells SENSEI to only apply the `then` check when the first conversation actually has more toppings than the second one. 
+
+Now the logic flows perfectly: **When** the size and drink are the same, **if** conversation 0 has more toppings than conversation 1, **then** conversation 0's price must be higher. 😊 Let me know if you need help testing it!
+$$$

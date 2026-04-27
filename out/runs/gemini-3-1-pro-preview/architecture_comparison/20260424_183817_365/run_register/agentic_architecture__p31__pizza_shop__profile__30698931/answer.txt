@@ -1,0 +1,66 @@
+I have reviewed your profile against the SENSEI documentation (`sensei-chat-guide.md`) and found a few structural and formatting issues. 
+
+Here are the main fixes I applied:
+1. **Missing `chatbot` section:** The `is_starter`, `fallback`, and `output` fields were incorrectly indented under the `user` section. They need to be under their own top-level `chatbot` key.
+2. **Incorrect data type:** In your output schema, `custom_pizza_pricing` was set to `type: str`. The correct SENSEI primitive type is `string`.
+3. **Boolean format:** Under `goal_style.all_answered`, `export` was set to `1`. It should be a boolean (`true` or `false`).
+4. **Interaction style typo:** The interaction style was written as `single question`, but the exact reserved keyword is `single questions` (plural).
+5. **Missing fields:** I added `model_prov: openai` under `llm` (best practice) and `number: 1` under `conversation` to ensure the profile knows how many conversations to generate.
+
+Here is the corrected YAML:
+
+```yaml
+test_name: general_information_seeker
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+  - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+  - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+  - Ask what types of questions the chatbot can answer.
+  - Ask what the daily opening hours are.
+  - Ask about the estimated order time, without specifying the number of pizzas.
+  - Ask what drink options are available and their prices.
+  - Ask about the pricing for a custom pizza.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks.`\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE"
+  output:
+  - available_information:
+      type: string
+      description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+  - opening_hours:
+      type: string
+      description: The daily opening hours of the pizza shop, as stated by the chatbot.
+  - estimated_order_time:
+      type: string
+      description: The chatbot's explanation of the estimated order time, including factors that influence it.
+  - drink_options_and_prices:
+      type: string
+      description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+  - custom_pizza_pricing:
+      type: string
+      description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+
+conversation:
+  number: 1
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+  - single questions
+```
+
+Let me know if you need any further adjustments or if you'd like to create a SENSEI rule to validate these outputs! 😊

@@ -1,0 +1,58 @@
+Here is a SENSEI profile designed to ask about subscription services and benefits. As requested, I have omitted variables entirely, so the `goals` section only contains plain text instructions for the simulated user.
+
+I based this on the `sensei-chat-guide.md` documentation.
+
+```yaml
+test_name: "subscription_services_info"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a potential customer interested in subscribing to the company's services.
+    You want to understand the different subscription tiers, what benefits are included in each, and how much they cost.
+  context:
+    - "You are currently comparing different providers."
+    - "You are particularly interested in premium benefits."
+  goals:
+    - "Ask about the available subscription tiers."
+    - "Ask for a detailed list of benefits included in the premium tier."
+    - "Inquire about the pricing for each tier and if there are annual discounts."
+    - "Ask about the cancellation policy."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you rephrase?"
+  output:
+    - mentioned_tiers:
+        type: list[string]
+        description: "The subscription tiers mentioned by the chatbot"
+    - premium_benefits:
+        type: list[string]
+        description: "The benefits included in the premium tier"
+    - annual_discount_offered:
+        type: string
+        description: "Whether an annual discount was offered or explained"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### Summary of the Profile
+* **User Goals**: The goals are straightforward, plain-text prompts instructing the simulator to ask about tiers, premium benefits, pricing, discounts, and cancellation policies. No `{{variables}}` are used.
+* **Chatbot Output**: I defined a few logical fields to extract at the end of the conversation (`mentioned_tiers`, `premium_benefits`, and `annual_discount_offered`). These will be useful if you want to write SENSEI rules later to verify the chatbot's answers.
+* **Conversation Settings**: Because there are no variables to combine, `conversation.number` is set to a fixed number (`3`) instead of using a combination matrix. The `goal_style` is set to `all_answered`, which is perfect for information-gathering profiles, as the simulator will naturally end the conversation once all its questions have been addressed.
+
+Let me know if you'd like to adjust the outputs or add any specific interaction styles (like making the user change their mind or use long phrases)! 😊

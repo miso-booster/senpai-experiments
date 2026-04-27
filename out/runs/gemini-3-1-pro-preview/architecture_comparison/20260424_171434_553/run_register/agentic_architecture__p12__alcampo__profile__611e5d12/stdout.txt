@@ -1,0 +1,63 @@
+conversation ID: agentic_architecture__p12__alcampo__profile__611e5d12
+$$$
+Here is a complete SENSEI profile designed to simulate a user asking the chatbot to add items to their shopping cart. 
+
+I have based this on the `sensei-chat-guide.md` documentation. It uses variables to randomly select items and quantities, and it defines a clear `chatbot.output` schema so you can easily validate the cart contents later with SENSEI rules! 🛒
+
+```yaml
+test_name: "add_to_shopping_cart"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer shopping online. Your main objective is to ask the chatbot to add specific items to your shopping cart.
+  context:
+    - "You are polite and direct."
+    - "You want to make sure the items are successfully added to your cart."
+  goals:
+    - "Add {{quantity}} units of {{item}} to my shopping cart."
+    - item:
+        function: random()
+        type: string
+        data: [apples, milk, bread, eggs, cheese, coffee, chicken]
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you repeat?"
+  output:
+    - added_items:
+        type: list[string]
+        description: "The names of the items the user requested to add to the cart."
+    - total_quantity:
+        type: int
+        description: "The total quantity of items added to the cart."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 4
+  interaction_style:
+    - default
+```
+
+### 📝 Summary of what this profile does:
+* **Goals & Variables**: The user will ask to add a specific `{{quantity}}` of a specific `{{item}}`. The `item` is chosen randomly from a list of groceries, and the `quantity` is a random integer between 1 and 5.
+* **Chatbot Output**: At the end of the conversation, SENSEI will extract `added_items` (a list of strings) and `total_quantity` (an integer). This is perfect if you want to write SENSEI rules later to verify that the bot correctly registered the items!
+* **Conversation Flow**: It will run `3` separate conversations, each lasting `4` steps, using a natural (`default`) interaction style.
+
+You can save this as `add_to_cart_profile.yaml` inside your `profiles/` directory. Let me know if you'd like to adjust the items, add more complex goals, or write a SENSEI rule to test this profile! 😊
+$$$

@@ -1,0 +1,76 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__9add3faf
+$$$
+Here is the SENSEI profile for a user who is struggling to set up the eduroam Wi-Fi network. 
+
+I have included variables for both the **setup method** they attempted and the **device** they are using, as both are highly relevant when troubleshooting network issues.
+
+```yaml
+test_name: "eduroam_setup_failure"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student or staff member trying to connect your device to the eduroam Wi-Fi network. 
+    You have followed the instructions, but it is simply not working. You are a bit frustrated but remain polite.
+  context:
+    - "You are currently on campus and cannot access the internet."
+    - "You need internet access urgently to submit an assignment or check your emails."
+  goals:
+    - "Explain that you are trying to connect to eduroam using your {{device_type}}."
+    - "Mention that you tried to set it up via {{setup_method}} but it failed."
+    - "Ask for help to resolve the issue and get connected."
+    - device_type:
+        function: random()
+        type: string
+        data: [iPhone, Android phone, Windows laptop, MacBook, iPad]
+    - setup_method:
+        function: random()
+        type: string
+        data: 
+          - the official eduroam CAT (Configuration Assistant Tool)
+          - manual configuration with your university credentials
+          - scanning the QR code provided on campus
+          - the university IT portal link
+          - downloading the geteduroam app
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you please rephrase?"
+  output:
+    - device_mentioned:
+        type: string
+        description: "The device the user is trying to connect to eduroam."
+    - method_attempted:
+        type: string
+        description: "The setup method the user tried before asking for help."
+    - issue_resolved:
+        type: string
+        description: "Whether the chatbot successfully helped the user connect (yes/no)."
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 6
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - long phrases
+      - single questions
+```
+
+### 📝 Summary of the Profile
+
+* **Variables (`device_type` & `setup_method`)**: The profile uses the `random()` function to pick a combination of a device (like a MacBook or Android phone) and a setup method (like the eduroam CAT tool, manual config, or the geteduroam app). This ensures the chatbot is tested against various troubleshooting scenarios.
+* **Goals**: The simulated user will explicitly state their device, the method they tried that failed, and ask for help.
+* **Chatbot Output**: At the end of the conversation, SENSEI will extract the `device_mentioned`, the `method_attempted`, and whether the `issue_resolved` was successful. This is perfect if you want to write SENSEI rules later to verify that the chatbot correctly identifies the device and method!
+* **Interaction Style**: To make it realistic, the simulator will randomly apply styles like making spelling mistakes or using long, frustrated phrases.
+
+Let me know if you'd like to adjust the setup methods or add any specific rules to validate this profile! 😊
+$$$

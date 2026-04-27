@@ -1,0 +1,33 @@
+Based on the HTTP request and response you provided, I can see exactly why your connector wasn't working! 
+
+I've checked the `custom-connector-guide.md` and `connector-examples.md` documentation, and here is the corrected YAML for your connector:
+
+```yaml
+name: "Malaga SAIC Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 🛠️ What changed and why:
+
+1. **`base_url` & `path`**: Your original YAML pointed to a generic `https://api.bot.com/api/messages`. The network request shows the actual host is `api.1millionbot.com` and the path is `/api/public/messages`.
+2. **`headers`**: The API requires an `Authorization` header (`64e5d1af081211d24e2cfecd`) to accept the request, which was missing in your original setup.
+3. **`payload_template`**: The API expects several specific fields to identify the session (`conversation`, `sender_type`, `sender`, `bot`, `url`). I added all of these exactly as they appeared in your network payload so the bot knows who is talking to it.
+4. **`response_path`**: Your original path (`request.text`) was actually pointing to the *user's* message in the JSON response! To extract the bot's reply, we need to navigate into the `response` array (at index 0) and grab the `text` field. In dot-notation, this translates to `"response.0.text"`.
+
+Give this updated YAML a try, and it should connect perfectly! Let me know if you need any further adjustments. 😊

@@ -1,0 +1,30 @@
+Hello there! 😊 I'd be happy to explain connectors to you!
+
+In Sensei, **Connectors** (specifically the Custom YAML Connectors) are used to connect your Sensei testing environment to *any* external chatbot API without needing to write a single line of code. You simply create a YAML configuration file that tells Sensei how to send messages to your bot and how to read its replies. 🤖💬
+
+Here is a breakdown of the fields you can use in a connector configuration:
+
+*   **`name`** *(Optional)*: A friendly name for your chatbot.
+*   **`base_url`** *(Required)*: The main URL of your chatbot's API (e.g., `https://api.mychatbot.com`).
+*   **`send_message.path`** *(Required)*: The specific endpoint path where messages are sent (e.g., `/chat`). This gets appended to the `base_url`.
+*   **`send_message.method`** *(Optional)*: The HTTP method to use, like `POST`, `GET`, `PUT`, or `DELETE`. If you leave it out, it defaults to `POST`.
+*   **`send_message.headers`** *(Optional)*: Any custom headers your API needs, such as `Authorization: "Bearer your-api-key"` or `Content-Type: "application/json"`.
+*   **`send_message.payload_template`** *(Required)*: The JSON structure of the request body. You must include the `{user_msg}` placeholder here so Sensei knows exactly where to inject the simulated user's message!
+*   **`response_path`** *(Required)*: A dot-separated path that tells Sensei how to navigate the JSON response to find the bot's actual text reply. For example, if the API returns `{"response": {"text": "Hello!"}}`, your path would be `response.text`.
+
+Here is a quick example of what a simple connector looks like:
+
+```yaml
+name: "My Custom Bot"
+base_url: "https://api.mychatbot.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Authorization: "Bearer my-secret-token"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+Let me know if you'd like to see some real-world examples or if you need help setting one up for your specific chatbot! ✨

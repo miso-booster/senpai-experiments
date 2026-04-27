@@ -1,0 +1,76 @@
+conversation ID: graph_based_architecture__p2__ada_uam__profile__1e3afe76
+$$$
+Hello there! Welcome to the Dojo! 🥋✨
+
+I would absolutely love to help you create this profile! Simulating an Erasmus student is a fantastic use case. They usually need a lot of guidance, so it's the perfect way to test if your chatbot is patient and provides clear, step-by-step support. 
+
+Since you want to keep the input variables minimal but need a robust way to check the support quality, I've included just one variable (`{{device_type}}` for Wi-Fi setup) and focused heavily on the `chatbot.output` section. This will give your Sensei-check rules plenty of structured data to validate later! 🕵️‍♂️
+
+Here is a ready-to-use profile for your Erasmus student:
+
+```yaml
+test_name: "erasmus_student_setup_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus exchange student who just arrived at the university.
+    You are feeling a bit overwhelmed and don't know how to set up your digital accounts like Moodle, Sigma, or the Wi-Fi.
+  context:
+    - "You need clear, step-by-step instructions because the systems are very different from your home university."
+    - "You want to make sure you are fully set up for your classes as soon as possible."
+  goals:
+    - "Ask how to log into Moodle for the first time to see your courses."
+    - "Ask how to access Sigma to check your academic schedule."
+    - "Ask how to connect your {{device_type}} to the university Wi-Fi (eduroam)."
+    - "Ask where you can physically go to get your student ID card."
+    - device_type:
+        function: forward()
+        type: string
+        data: ["MacBook", "Windows laptop", "iPhone", "Android phone"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you rephrase that? I am the IT Helpdesk bot."
+  output:
+    - moodle_setup_steps:
+        type: string
+        description: "Step-by-step instructions provided by the bot to access Moodle."
+    - sigma_access_link:
+        type: string
+        description: "The URL or portal name provided to access Sigma."
+    - wifi_instructions:
+        type: string
+        description: "Instructions provided to connect the specific device to the university Wi-Fi."
+    - student_id_location:
+        type: string
+        description: "The physical location or office where the student can get their ID card."
+    - support_contact:
+        type: string
+        description: "Email or phone number provided for further IT support if they get stuck."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+### 💡 Why this setup works perfectly for your needs:
+
+1. **Minimal Variables:** We only use `{{device_type}}` with a `forward()` function. This means Sensei will generate exactly 4 conversations (one for each device) to ensure your bot knows how to give Wi-Fi instructions for different operating systems.
+2. **Rich Chatbot Outputs:** The `chatbot.output` acts as a strict contract. At the end of the conversation, Sensei will extract the Moodle steps, the Sigma link, the Wi-Fi instructions, and the support contact. Later, you can write **Sensei Rules** like `when: conv[0].sigma_access_link is not None then: ...` to ensure the bot actually did its job! ✅
+3. **Natural Flow:** I set the `interaction_style` to `single questions` so the panicked student asks one thing at a time, and `goal_style` to `all_answered` so the conversation won't stop until the bot has addressed every single worry.
+
+How does this look to you? If you want to make the student a bit more chaotic (maybe they `change language` halfway through because they get frustrated), just let me know and we can tweak it! 😊
+$$$

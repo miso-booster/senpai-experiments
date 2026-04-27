@@ -1,0 +1,72 @@
+Hello there! 😊 Welcome to the Dojo! 
+
+Creating a profile for an Erasmus student is a fantastic use case. Since they are international students, it's a great opportunity to use interaction styles like `make spelling mistakes` or `change language` to simulate that authentic "just arrived and slightly confused" experience! 🌍🎒
+
+To make sure you can validate the support later with Sensei-check rules, I have defined a robust `chatbot.output` section. It extracts the exact steps for Moodle, Sigma, Wi-Fi, and the IT support contact. I also included the exact fallback message from your `ada_uam` project so it fits right in.
+
+Here is your ready-to-use profile:
+
+```yaml
+test_name: "erasmus_digital_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    You are an Erasmus exchange student who just arrived at the university. 
+    You are feeling a bit overwhelmed and don't know how to set up your digital university accounts like Moodle, Sigma, or the Wi-Fi.
+  context:
+    - "You need clear, step-by-step instructions because you are not familiar with the university's systems."
+    - "You want to know where to get in-person help if you can't figure it out."
+  goals:
+    - "Ask how to log into Moodle for the first time to see your classes."
+    - "Ask how to access the Sigma platform to check your academic record."
+    - "Ask how to connect your {{device}} to the university Wi-Fi (eduroam)."
+    - "Ask for the location or contact of the IT support desk for international students."
+    - device:
+        function: random()
+        type: string
+        data: [laptop, smartphone, tablet]
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro\ncatálogo de servicios\n.\nRespondo a preguntas dirigidas al\nCentro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - moodle_setup_steps:
+        type: string
+        description: "Step-by-step instructions provided to access Moodle."
+    - sigma_access_info:
+        type: string
+        description: "Information or link provided to access the Sigma platform."
+    - wifi_instructions:
+        type: string
+        description: "Instructions on how to connect to the university Wi-Fi."
+    - support_contact:
+        type: string
+        description: "Contact information or physical location of the IT support desk."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+  interaction_style:
+    - random:
+      - single questions
+      - make spelling mistakes
+      - change language:
+        - English
+        - French
+        - Italian
+```
+
+### 👀 Why this works perfectly for your needs:
+1. **Minimal Inputs:** We only used one simple variable (`{{device}}`) to keep the setup lightweight, just as you asked.
+2. **Erasmus Behavior:** The `interaction_style` randomly applies spelling mistakes or switches the language to English, French, or Italian, perfectly mimicking an international student!
+3. **Rule-Ready Outputs:** Because we defined fields like `moodle_setup_steps` and `support_contact` in the `chatbot.output`, you can easily write a Sensei-check rule later like `oracle: data_collected() == True` or `oracle: conv[0].support_contact is not None` to ensure the bot is actually providing the help they need.
+
+Let me know if you'd like to adjust any of the outputs or if you want help writing the Sensei-check rules to validate this profile! 🥋✨

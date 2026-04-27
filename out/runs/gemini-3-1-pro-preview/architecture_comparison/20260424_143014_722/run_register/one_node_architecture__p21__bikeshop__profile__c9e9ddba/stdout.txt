@@ -1,0 +1,72 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__c9e9ddba
+$$$
+Hello there! 😊 I'd be happy to help you create a new Sensei profile for this specific scenario. 
+
+Since the user wants to tailor their new bike by changing the seat and handlebar grips, we can set up a profile that systematically asks about different types of seats and grips. I'll use the `forward()` function so the simulator tests various combinations of seat and grip preferences. I'll also make sure the `chatbot.output` extracts the prices and the estimated time for the setup, using the `money` custom type that you already have in your project.
+
+Here is the profile ready to be saved in your `profiles/` folder (for example, as `bike_customization_setup.yaml`):
+
+```yaml
+test_name: "bike_customization_setup"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer who recently bought a new bike and wants to customize the seat and handlebar grips."
+  context:
+    - "You just bought a new bike and want it tailored to your liking."
+    - "You specifically want to change the seat and the handlebar grips to make the ride more comfortable."
+    - "You want to know if the shop provides this installation service, how much the parts cost, and how long it takes."
+  goals:
+    - "Ask if the shop offers custom bike setups and part installations."
+    - "Inquire about the price and availability of a {{seat_type}} seat."
+    - "Ask about the price and availability of {{grip_type}} handlebar grips."
+    - "Ask for the estimated time to complete the installation."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [ergonomic, racing, gel-cushioned]
+    - grip_type:
+        function: forward(seat_type)
+        type: string
+        data: [leather, foam, rubber]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - setup_service_offered:
+        type: string
+        description: "Confirmation of whether the shop offers custom bike setups and part installations."
+    - seat_price:
+        type: money
+        description: "The price quoted for the requested seat type."
+    - grip_price:
+        type: money
+        description: "The price quoted for the requested handlebar grips."
+    - estimated_time:
+        type: string
+        description: "The estimated time provided by the chatbot to complete the installation."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - single question
+```
+
+### A quick breakdown of what this does:
+* **Variables & Combinations:** By using `forward()` on `seat_type` and `forward(seat_type)` on `grip_type`, the simulator will generate a combination matrix (e.g., ergonomic + leather, ergonomic + foam, etc.) and test them systematically since `conversation.number` is set to `combinations`.
+* **Outputs:** It extracts the `seat_price` and `grip_price` using your project's `money` type, which is perfect if you want to write Sensei-check rules later to verify pricing logic! 💸
+* **Interaction Style:** `single question` ensures the simulated user asks about the seat, the grips, and the time in separate turns, mimicking a natural back-and-forth conversation.
+
+Let me know if you'd like to tweak the data options or if you need help writing a metamorphic rule to test these outputs! 🚲✨
+$$$

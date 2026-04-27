@@ -1,0 +1,35 @@
+In SENSEI RULES (specifically within the Sensei-check DSL), an **oracle** is a boolean condition (a Python expression) used to evaluate whether a conversation—or a set of conversations—is correct. 
+
+If the expression evaluates to `True`, the test passes. If it evaluates to `False`, the test fails.
+
+According to the `sensei-check-doc.md` documentation, you can use an `oracle` in a few different ways depending on the scope of your rule:
+
+### 1. Single-Conversation Oracles (Traditional)
+When checking just one conversation at a time, the oracle acts as a traditional test assertion. It checks if the outputs extracted from that specific conversation meet your expectations.
+
+**Example:** Checking that a small pizza costs at least $10.
+```yaml
+name: small_base_price_floor
+description: Small pizzas should cost at least $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+### 2. Global Oracles
+When checking *all* conversations at once, an oracle can be used to enforce global constraints across your entire dataset, such as ensuring no duplicate IDs exist.
+
+**Example:** Checking that every order ID is unique.
+```yaml
+name: unique_order_ids
+description: Every conversation has a unique order_id
+conversations: all
+oracle: is_unique('order_id')
+```
+
+### 3. Metamorphic Oracles (Multiple Conversations)
+When comparing multiple conversations (metamorphic testing), you can use an `oracle` to define the relationship that must hold true between them (e.g., `oracle: extract_float(conv[0].price) == extract_float(conv[1].price)`). 
+
+*Note:* For metamorphic rules, the documentation often recommends using the **`if` / `then`** syntax instead of a single `oracle` line, because it reads more clearly like a logical implication ("If X changes this way, then Y should change that way"). However, both achieve the same goal of validating the chatbot's behavior! 
+
+Do you have a specific rule or condition you'd like to write an oracle for? 😊

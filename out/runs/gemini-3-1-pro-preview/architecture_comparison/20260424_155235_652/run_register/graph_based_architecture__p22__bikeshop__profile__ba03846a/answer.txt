@@ -1,0 +1,60 @@
+Hello there! I'd be more than happy to help you craft this new Sensei Profile! 🚲✨
+
+To make sure our simulated user behaves exactly how you want, we will use the `user.context` field to give them their backstory (the discomfort) and a strict instruction **not** to book an appointment. Then, we'll use `user.goals` to guide them to ask about the fit, the components, and the shop's services.
+
+Here is a complete, ready-to-use YAML profile you can save in your `profiles/` folder (for example, as `bike_discomfort_advice_seeker.yaml`):
+
+```yaml
+test_name: bike_discomfort_advice_seeker
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A cyclist experiencing discomfort while riding, seeking advice on whether it's a bike fit issue or worn components, and asking about relevant shop services.
+  context:
+    - "You feel discomfort in your lower back and knees after riding for more than 30 minutes."
+    - "You are unsure if your saddle is worn out, if the bike size is wrong, or if you just need a professional bike fit."
+    - "You want to know what services the shop offers to help diagnose or fix this."
+    - "Crucially, do NOT explicitly ask to book an appointment. You are just gathering information and advice for now."
+  goals:
+    - "Explain your discomfort and ask if it sounds like a bike fit issue or worn components."
+    - "Ask what specific adjustments or services the shop offers to help with rider comfort."
+    - "Inquire about the price of a bike fitting service or a saddle replacement."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - discomfort_advice:
+        type: string
+        description: "The chatbot's advice regarding whether the discomfort is due to bike fit or worn components."
+    - comfort_services_offered:
+        type: string
+        description: "A list of services or adjustments the shop offers to improve rider comfort (e.g., bike fitting, component replacement)."
+    - service_pricing:
+        type: string
+        description: "Pricing information provided for bike fitting or component replacement."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - single questions
+```
+
+### 🧐 A quick breakdown of what we did here:
+* **Context Constraints:** By explicitly writing *"do NOT explicitly ask to book an appointment"* in the `context`, the LLM acting as the user knows to keep things strictly informational.
+* **Chatbot Output:** I added three fields in `chatbot.output` (`discomfort_advice`, `comfort_services_offered`, and `service_pricing`). Sensei will extract these at the end of the conversation, which is super handy if you want to write **Sensei Rules** later to verify that your chatbot actually gave good advice! 📝
+* **Interaction Style:** I set it to `single question` to match the style of your other bike shop profiles, ensuring the user asks one thing at a time rather than overwhelming the bot.
+
+How does this look to you? Let me know if you'd like to add any custom variables (like different types of pain or specific bike parts) using the `{{variable}}` syntax! 😊

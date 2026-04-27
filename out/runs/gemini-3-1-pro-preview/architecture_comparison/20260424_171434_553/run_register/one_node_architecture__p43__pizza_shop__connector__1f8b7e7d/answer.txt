@@ -1,0 +1,30 @@
+¡Hola! 👋 Claro que sí, estoy aquí para ayudarte con tu conector. 😊
+
+He estado revisando la configuración YAML que me compartes junto con los ejemplos de la petición (request) y la respuesta (response). ¡Tengo muy buenas noticias! Tu configuración en realidad **ya está correcta**. 🎉
+
+Te explico por qué está súper bien planteada:
+1. **`payload_template`**: Al anidar `text` dentro de `message` y usar `"{user_msg}"`, estás replicando exactamente la estructura JSON de tu request.
+2. **`response_path`**: Al usar `"response.text"`, le estás diciendo correctamente a Sensei que entre al objeto `response` de la respuesta y extraiga el valor de `text` (que es justo donde está el mensaje del bot: *"¡Hola! ¿Cómo puedo ayudarte hoy?"*).
+
+A veces, los errores en los conectores ocurren por un simple problema de espacios o indentación (YAML puede ser un poco estricto con eso 😅). Te dejo aquí el bloque de código limpio y validado para que lo copies y pegues directamente:
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+**¿Sigue sin funcionar? 🤔**
+Si al probarlo te sigue dando problemas, el error podría venir de otro lado. Te dejo un par de cosas que puedes revisar:
+* **Autenticación**: ¿La API requiere algún token o API key? Si es así, recuerda agregarlo en los `headers` (por ejemplo: `Authorization: "Bearer tu-token"`).
+* **Conectividad**: Asegúrate de que la URL `https://api.anotherexample.com/api/chat` sea accesible desde donde estás ejecutando Sensei.
+
+¿Te muestra algún mensaje de error específico cuando intentas usarlo? ¡Cuéntame y lo investigamos a fondo! 👀

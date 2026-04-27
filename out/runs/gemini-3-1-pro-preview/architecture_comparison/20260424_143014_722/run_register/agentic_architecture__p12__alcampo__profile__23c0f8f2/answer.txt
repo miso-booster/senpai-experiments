@@ -1,0 +1,72 @@
+Here is a SENSEI profile designed to simulate a user asking the chatbot to add items to their shopping cart. 
+
+I've based this on the `sensei-chat-guide.md` documentation. It uses variables to randomly select different items and quantities, and it defines a `chatbot.output` schema so you can extract the cart details at the end of the conversation.
+
+```yaml
+test_name: "shopping_cart_addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer shopping online. You want to add specific items to your shopping cart.
+  context:
+    - "You are browsing an e-commerce store."
+    - "You want to make sure the items are successfully added to your cart."
+  goals:
+    - "Add {{quantity}} units of {{item}} to my shopping cart."
+    - "Ask the chatbot to confirm the total number of items in the cart."
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - item:
+        function: random()
+        type: string
+        data: 
+          - "wireless mouse"
+          - "mechanical keyboard"
+          - "noise-cancelling headphones"
+          - "laptop stand"
+          - "USB-C hub"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please repeat?"
+  output:
+    - added_item:
+        type: string
+        description: "The name of the item the user requested to add to the cart"
+    - added_quantity:
+        type: int
+        description: "The quantity of the item added to the cart"
+    - cart_total_items:
+        type: int
+        description: "The total number of items currently in the shopping cart after the addition"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 4
+  interaction_style:
+    - default
+```
+
+### 🛒 How this profile works:
+* **`user.goals`**: The simulated user will try to add a specific `{{quantity}}` of a specific `{{item}}`. 
+* **Variables**: 
+  * `quantity` uses the `random()` function to pick an integer between 1 and 5.
+  * `item` uses the `random()` function to pick one of the tech accessories from the provided list.
+* **`chatbot.output`**: At the end of the conversation, Sensei will extract the `added_item`, the `added_quantity`, and the `cart_total_items`. This is extremely useful if you later want to write SENSEI RULES to verify that the chatbot correctly understood the quantity and updated the cart total!
+* **`conversation`**: It will run `3` separate conversations, each lasting up to `4` steps, using a natural (`default`) interaction style.
+
+Let me know if you'd like to adjust the items, add more complex interaction styles (like making spelling mistakes or changing their mind), or if you want to create a SENSEI RULE to validate this profile! 😊

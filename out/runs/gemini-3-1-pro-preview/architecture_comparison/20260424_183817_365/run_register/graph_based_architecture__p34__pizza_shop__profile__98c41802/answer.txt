@@ -1,0 +1,66 @@
+Hello there! 🍕 I can absolutely help you with that! 
+
+To make the simulated user change their mind halfway through the conversation, we can use a super handy feature in Sensei called **`interaction_style`**. Specifically, we'll use the reserved keyword `change your mind`. This tells the user simulator to act a bit indecisive during the chat!
+
+We will also set up the `user.goals` so that the user explicitly starts with a custom pizza and then pivots to a predefined one. 
+
+Here is a complete, ready-to-run profile tailored exactly to what you need:
+
+```yaml
+test_name: "custom_to_predefined_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a hungry customer ordering dinner. You start by wanting a custom pizza, 
+    but you are a bit indecisive and will eventually change your mind to a predefined one.
+  context:
+    - "You are ordering for pickup."
+  goals:
+    - "I want to order a custom pizza with {{toppings}}."
+    - "Actually, change my order to a {{predefined_pizza}} pizza instead."
+    - "Ask for the total price."
+    - toppings:
+        function: random()
+        type: string
+        data: [extra cheese and mushrooms, pepperoni and onions, just olives]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: [Margarita, Hawaiian, BBQ Chicken, Four cheese]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my pizza shop, can you say that again?"
+  output:
+    - final_pizza_ordered:
+        type: string
+        description: "The final pizza type the user settled on after changing their mind."
+    - total_price:
+        type: string
+        description: "The final price of the order."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - change your mind
+```
+
+### 🧐 Why this works so well:
+1. **`interaction_style: [change your mind]`**: This is the magic ingredient! ✨ It instructs the LLM simulating the user to naturally hesitate, backtrack, or alter their choices during the conversation.
+2. **The Goals**: By listing the custom pizza first and the predefined pizza second, we give the simulator the exact path we want it to take. It will use the variables (like `toppings` and `predefined_pizza`) to fill in the blanks dynamically.
+3. **The Output**: I added `final_pizza_ordered` to the `chatbot.output`. This is great for testing because later, you can use **Sensei Rules** to verify that your chatbot actually registered the *new* pizza and didn't accidentally charge them for the custom one! 
+
+You can save this as `custom_to_predefined_switch.yml` inside your `profiles/` folder. 
+
+How does this look to you? Let me know if you'd like to add drinks to the order or tweak anything else! 😊

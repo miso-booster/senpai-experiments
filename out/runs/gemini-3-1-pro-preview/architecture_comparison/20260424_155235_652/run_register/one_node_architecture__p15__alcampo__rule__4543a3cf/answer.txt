@@ -1,0 +1,21 @@
+Hello there! 😊 I'd be happy to help you fix this rule. 
+
+I took a look at your rule and your `customer_service_assistance.yaml` profile, and I found a few little things we need to tweak to make it work perfectly:
+
+1. **Typo in `description`**: You have `descriptin`, which Sensei-check won't recognize.
+2. **Missing `then` clause**: In Sensei-check, whenever you use an `if` condition, you *must* pair it with a `then` statement to tell the rule what the expected outcome is!
+3. **Missing `user_request` field**: Your rule tries to filter using `conv[i].user_request`. However, if we look at your `customer_service_assistance.yaml` profile, `user_request` isn't defined in the `chatbot.output` schema or as a goal variable. Sensei won't know what to look for!
+4. **Conversations count**: Since your profile asks for *both* the contact options and the customer service number in the *same* conversation, we don't actually need `conversations: 2` to test this. We can validate it in just 1 conversation!
+
+Here is the fixed, ready-to-use rule. I simplified it to a 1-conversation rule using an `oracle`, which perfectly matches how your profile is currently set up:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+oracle: contact_options is not None and customer_service_number is not None
+```
+
+**A quick tip:** If you ever *do* want to compare two different conversations based on a specific request type, you'll need to make sure you add that field (like `user_request`) to your profile's `chatbot.output` or define it as a variable in `user.goals`. 
+
+Let me know if you'd like to adjust your profile to support the 2-conversation approach, or if you need help with anything else! 🚀👀

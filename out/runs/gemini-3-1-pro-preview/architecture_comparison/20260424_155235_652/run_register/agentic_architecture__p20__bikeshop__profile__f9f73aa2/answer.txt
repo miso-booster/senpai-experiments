@@ -1,0 +1,65 @@
+Here is a complete SENSEI profile designed to test how your bike shop chatbot handles appointment bookings for different days and times! 🚲
+
+I have used the `pairwise()` function for the `appointment_day` and `appointment_time` variables. This is a great way to test multiple combinations of days and times efficiently without creating an overwhelming number of conversations.
+
+```yaml
+test_name: "bike_shop_wheel_change"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer of a local bike shop. You want to book an appointment 
+    to have the wheels on your bicycle changed.
+  context:
+    - "You need your bike ready for an upcoming cycling trip."
+    - "You want to make sure the shop can accommodate your schedule."
+  goals:
+    - "Book an appointment to change your wheels on {{appointment_day}} at {{appointment_time}}"
+    - appointment_day:
+        function: pairwise()
+        type: string
+        data: [Monday, Wednesday, Friday, Saturday]
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data: ["09:00 AM", "12:30 PM", "03:00 PM", "05:30 PM"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please repeat?"
+  output:
+    - booked_day:
+        type: string
+        description: "The confirmed day for the appointment"
+    - booked_time:
+        type: time("hh:mm a")
+        description: "The confirmed time for the appointment"
+    - service_type:
+        type: string
+        description: "The service requested by the user"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📝 Summary of the Profile
+
+* **Variables & Combinations**: The profile defines `appointment_day` and `appointment_time` as variables in the `user.goals`. By using `pairwise()`, SENSEI will automatically generate a matrix of conversations that pairs different days with different times. 
+* **Conversation Number**: `combinations(1, pairwise)` tells SENSEI to run 100% of the generated pairwise combinations.
+* **Chatbot Output**: At the end of each conversation, SENSEI will extract `booked_day`, `booked_time`, and `service_type`. This is extremely useful because later on, you can write **SENSEI Rules** to verify that the chatbot actually booked the correct day and time that the user requested!
+* **Goal Style**: It uses `all_answered` with a limit of 15 steps, meaning the simulated user will keep talking until the appointment is successfully booked or the 15-message limit is reached.
+
+Let me know if you'd like to add more variables (like different types of wheels) or if you want to create a rule to validate these outputs! 😊

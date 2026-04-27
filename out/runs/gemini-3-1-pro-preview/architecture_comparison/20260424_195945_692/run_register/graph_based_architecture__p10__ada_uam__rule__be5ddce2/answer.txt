@@ -1,0 +1,54 @@
+Hello there! 👋 I would be absolutely delighted to help you test this profile! 
+
+First of all, your profile looks fantastic. You have set up a very clear scenario for a potential student (in Spanish) and defined some excellent data points in your `chatbot.output` (like `application_fee`, `welcome_day_link`, and `admission_deadline`). 
+
+To test this using **SENSEI RULES** (Sensei-check), we can write rules that inspect these exact output fields across the 6 conversations your profile will generate. 
+
+Here are a few rule suggestions ranging from simple data checks to metamorphic relations. You can copy and paste these directly into your project! 😊
+
+### 1. Application Fee Consistency (Metamorphic Rule)
+Since the user is asking about different degrees (`grados`) and courses (`cursos`), the application fee should generally remain the same regardless of what they want to study. This rule compares two conversations and ensures the fee matches.
+
+```yaml
+name: consistent_application_fee
+description: The application fee should be identical across inquiries for different degrees or courses.
+conversations: 2
+oracle: extract_float(conv[0].application_fee) == extract_float(conv[1].application_fee)
+```
+
+### 2. Essential Information Provided (Single-Conversation Oracle)
+Your user's goals explicitly mention asking about the Welcome Day and the admission process. This rule checks that the chatbot successfully extracted and provided the links for these specific topics in every conversation.
+
+```yaml
+name: essential_links_provided
+description: The chatbot must provide the admission link and the Welcome Day link.
+conversations: 1
+oracle: admission_to_grados_link is not None and welcome_day_link is not None
+```
+
+### 3. Language Consistency (Global/Style Rule)
+Since your user profile is configured to speak Spanish (`language: Spanish`), the assistant should politely reply in the same language. We can use a built-in helper to verify this!
+
+```yaml
+name: responds_in_spanish
+description: The assistant should reply in the same language as the user (Spanish).
+conversations: 1
+oracle: responds_in_same_language() is True
+```
+
+### 4. Topic Guardrails (Global/Style Rule)
+Sometimes chatbots get distracted and start talking about unrelated topics. This rule ensures that your bot stays strictly within the domain of university admissions, courses, and the Welcome Day event.
+
+```yaml
+name: admissions_topic_guardrails
+description: The assistant does not drift from university admissions, courses, and events.
+conversations: 1
+oracle: only_talks_about('university admissions, courses, degrees, welcome day') is True
+```
+
+### How to use these:
+1. Save each of these blocks into a `.yaml` file inside your project's `rules/` folder (for example, `rules/consistent_application_fee.yaml`).
+2. Run your SENSEI Chat profile to generate the conversations.
+3. Run SENSEI Check to evaluate these rules against the generated conversations!
+
+Let me know if you'd like to create rules for any other specific fields in your profile, like the `waitlist_procedures` or `welcome_day_date`! I'm here to help. 🎓✨

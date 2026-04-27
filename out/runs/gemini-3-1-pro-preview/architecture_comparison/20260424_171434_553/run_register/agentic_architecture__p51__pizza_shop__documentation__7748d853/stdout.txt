@@ -1,0 +1,36 @@
+conversation ID: agentic_architecture__p51__pizza_shop__documentation__7748d853
+$$$
+Hello! 😊 
+
+Based on the `custom-connector-guide.md` documentation, **Connectors** in SENSEI are used to connect the testing simulator to any external chatbot API without needing to write any code. They act as the transport layer between SENSEI and your target chatbot. By simply creating a YAML configuration file, you can define exactly how to send messages to the chatbot's API and how to extract its replies.
+
+### Connector Fields
+
+A connector YAML file uses the following fields to configure the connection:
+
+*   **`name`** *(Optional)*: A friendly name for your chatbot (e.g., "My Support Bot").
+*   **`base_url`** *(Required)*: The base URL of the chatbot API (e.g., `https://api.mychatbot.com`).
+*   **`send_message`**: A block containing the details of the request:
+    *   **`path`** *(Required)*: The API endpoint path that gets appended to the base URL (e.g., `/chat/send`).
+    *   **`method`** *(Optional)*: The HTTP method to use, such as `POST`, `GET`, `PUT`, or `DELETE`. It defaults to `POST`.
+    *   **`headers`** *(Optional)*: Any custom headers your API needs, like `Authorization` tokens or `Content-Type`.
+    *   **`payload_template`** *(Required)*: The JSON structure of the request body. This **must** include the `{user_msg}` placeholder, which is where SENSEI will inject the simulated user's message.
+*   **`response_path`** *(Required)*: A dot-separated path used to navigate the JSON response and extract the chatbot's text reply. For example, if the API returns `{"data": {"message": "Hello!"}}`, your response path would be `data.message`. You can also use numbers for arrays, like `results.0.content`.
+
+### Quick Example
+
+Here is a simple example of what a connector looks like:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+Let me know if you'd like to see more complex examples (like adding authentication) or if you need help creating a connector for your specific chatbot! 🚀
+$$$

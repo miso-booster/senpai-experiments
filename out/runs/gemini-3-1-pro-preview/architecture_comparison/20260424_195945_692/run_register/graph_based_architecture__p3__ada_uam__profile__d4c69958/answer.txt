@@ -1,0 +1,94 @@
+¡Hola! Qué gusto saludarte. 😊 Estaré encantado de ayudarte a arreglar tu perfil de Sensei. 
+
+He revisado tu YAML y encontré un par de detallitos que estaban causando problemas, principalmente en la sección de `user`. Aquí te explico lo que pasaba:
+
+1. **Faltaba el `role` del usuario:** Sensei necesita saber quién es el usuario simulado para poder interpretar bien su comportamiento. ¡Le he añadido un rol descriptivo!
+2. **Error de formato en la variable `identificador_id_uam`:** En la lista de `goals`, los datos de esta variable estaban "flotando" sin su nombre principal, lo que rompe la estructura del YAML.
+3. **Faltaba la función (`function`) en las variables:** Cuando declaras variables como `{{identificador_id_uam}}` y `{{user_account}}`, Sensei necesita saber cómo elegir esos datos en cada conversación (por ejemplo, usando `random()` o `forward()`). Le he agregado `forward()` para que itere por tu lista de forma ordenada.
+
+Aquí tienes el perfil corregido y listo para la acción 🚀:
+
+```yaml
+test_name: Asistencia Técnica y Cuentas
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: Spanish
+  role: "Usuario con problemas técnicos relacionados con plataformas virtuales y cuentas de usuario." # ¡Añadido!
+  context:
+  - Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad.
+  - Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias.
+  - Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento.
+  goals:
+  - Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU).
+  - Preguntar sobre los procedimientos para obtener una cuenta ID-UAM.
+  - Solicitar los pasos necesarios para establecer la contraseña por primera vez.
+  - Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado.
+  - Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}.
+  - identificador_id_uam: # ¡Corregido el formato!
+      function: forward() # ¡Añadida la función!
+      type: string
+      data:
+      - '123456789'
+      - '987654321'
+      - '112233445'
+      - '556677889'
+      - '998877665'
+  - user_account:
+      function: forward() # ¡Añadida la función!
+      type: string
+      data:
+      - usuario123
+      - maria.garcia
+      - juan_lopez_2023
+      - pedro.salas
+      - sara.martinez
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro\ncatálogo de servicios\n.\nRespondo a preguntas dirigidas al\nCentro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+  - contact_info:
+      type: string
+      description: Detalles de contacto del CAU
+  - operational_hours:
+      type: string
+      description: Horarios operativos del CAU
+  - available_services_list:
+      type: string
+      description: Servicios disponibles para crear cuenta
+  - password_setup_link:
+      type: string
+      description: Enlace para establecer contraseña
+  - contact_information:
+      type: string
+      description: Opciones de asistencia para recuperación de ID-UAM
+  - recovery_steps:
+      type: string
+      description: Pasos para recuperar ID-UAM
+  - activation_code:
+      type: string
+      description: Código de activación para cambiar contraseña
+  - user_account:
+      type: string
+      description: Nombre de usuario para recuperación
+  - identificador_id_uam:
+      type: string
+      description: Identificador único de ID-UAM
+  - password_change_steps:
+      type: string
+      description: Pasos para cambiar la contraseña
+conversation:
+  number: 5
+  goal_style:
+    steps: 30
+  interaction_style: # Opcional, pero ayuda a que el bot haga una pregunta a la vez
+    - single questions
+```
+
+**Un pequeño consejo de Senpai 👀:** 
+Añadí `interaction_style: [single questions]` al final. Esto ayuda a que el simulador haga las preguntas de una en una de forma más natural, en lugar de soltar todos los objetivos de golpe.
+
+¡Pruébalo y me cuentas qué tal te va! Si necesitas ayuda con algo más de tus perfiles, reglas o conectores, aquí estaré. ✨

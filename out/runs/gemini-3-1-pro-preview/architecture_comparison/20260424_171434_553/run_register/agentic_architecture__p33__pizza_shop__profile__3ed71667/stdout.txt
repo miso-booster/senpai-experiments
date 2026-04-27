@@ -1,0 +1,72 @@
+conversation ID: agentic_architecture__p33__pizza_shop__profile__3ed71667
+$$$
+I can certainly help you complete that! 😊
+
+Based on the SENSEI Profiles documentation (`sensei-chat-guide.md`), the `chatbot` field is crucial because it defines the **contract** for what information Sensei should extract at the end of the conversation. This extracted data (defined in `chatbot.output`) is what you will later use if you want to write validation rules.
+
+Since your simulated user's goals are to ask about pizza types, the price of a Margarita, drinks, shop hours, and delivery, we should set up the `chatbot.output` to extract exactly those details. I also added `is_starter: false` and a generic `fallback` message, which are standard best practices.
+
+*(Note: I also slightly corrected your `interaction_style` from `single question` to `single questions`, as that is the exact keyword expected by Sensei!)*
+
+Here is your completed profile:
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - available_pizzas:
+        type: list[string]
+        description: "The types of pizzas available at the shop."
+    - margarita_price:
+        type: string
+        description: "The price of a Margarita pizza."
+    - available_drinks:
+        type: list[string]
+        description: "The available drinks and their prices."
+    - operating_hours:
+        type: string
+        description: "The operating hours of the shop."
+    - delivery_available:
+        type: string
+        description: "Whether the shop offers delivery (e.g., yes or no)."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single questions
+```
+
+### What changed in the `chatbot` section?
+1. **`is_starter: false`**: Tells Sensei that the user should send the first message. (Change to `true` if your chatbot always greets the user first).
+2. **`fallback`**: A string containing your bot's real fallback message. This helps Sensei recognize if the bot gets stuck in a loop.
+3. **`output`**: We defined 5 fields (`available_pizzas`, `margarita_price`, `available_drinks`, `operating_hours`, and `delivery_available`). At the end of the conversation, Sensei will read the chat history and populate these fields based on the chatbot's answers. 
+
+Let me know if you'd like to adjust any of these extracted fields or if you need help writing rules to validate them! 🍕🥤
+$$$

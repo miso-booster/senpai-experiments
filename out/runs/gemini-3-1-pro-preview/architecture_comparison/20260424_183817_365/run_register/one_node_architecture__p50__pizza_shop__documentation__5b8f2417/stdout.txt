@@ -1,0 +1,33 @@
+conversation ID: one_node_architecture__p50__pizza_shop__documentation__5b8f2417
+$$$
+Hello there! 😊 
+
+In the context of Sensei-check, an **oracle** (often called a traditional oracle) is a rule that checks a specific condition over a **single conversation** to determine if the chatbot's behavior is correct. 
+
+Think of it as a baseline sanity check or a "source of truth." It looks at the absolute answer of one interaction rather than comparing multiple conversations against each other (which is what *metamorphic* rules do!).
+
+In your Sensei-check YAML files, you use the `oracle:` keyword to define a Python expression that must evaluate to `True` for the test to pass. 
+
+Here is a simple example of a single-conversation oracle that checks if a small pizza costs at least $10:
+
+```yaml
+name: small_base_price_floor
+description: Small pizzas should cost at least $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+And here is another quick one that just checks if the chatbot successfully returned specific data fields (like `price` and `order_id`) in its output:
+
+```yaml
+name: response_contains_price_and_id
+description: Bot must return price and order ID
+conversations: 1
+oracle: 'price' in data_output and 'order_id' in data_output
+```
+
+Oracles are fantastic for verifying absolute truths (like "the bot must not use negative language" or "the bot must fill all slots"), while metamorphic rules are your go-to for checking relational logic across multiple conversations (like "adding more toppings should increase the price"). 🍕📈
+
+Does that help clear things up? Let me know if you'd like to see more examples or need help writing an oracle for your project! 👀✨
+$$$

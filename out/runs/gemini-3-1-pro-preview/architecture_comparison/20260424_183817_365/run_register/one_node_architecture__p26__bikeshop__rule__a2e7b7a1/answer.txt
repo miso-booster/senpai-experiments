@@ -1,0 +1,23 @@
+Hello there! I'd be happy to help you review and fix your rule. 😊
+
+Looking at your rule, I can see what you're trying to achieve, but there are a few structural issues based on how Sensei-check evaluates rules. Since you want to verify a static price for a single conversation, we need to adjust it to be a **single-conversation oracle** rather than a metamorphic rule.
+
+Here is the corrected version of your rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: tune_up_price is not None
+oracle: extract_float(tune_up_price) == 50
+```
+
+### Here is what I changed and why: 👀
+
+1. **`conversations: 1` instead of `2`**: Setting it to `2` is for *metamorphic* rules where you compare two different conversations against each other. Since you just want to check if the price in a single conversation is $50, we only need `1`.
+2. **Removed `conv[0]`**: In single-conversation rules, you don't need to use the `conv[0]` array prefix. You can just call the field name directly (like `tune_up_price`), which matches the output defined in your `bike_repair_and_maintenance_scheduler` and `bike_service_and_repair_inquirer` profiles!
+3. **Fixed the `when` filter**: In your original rule, `when: conv[0].tune_up_price == 50` would *filter* the dataset so the rule only runs on conversations that already cost $50. That defeats the purpose of the test! I changed it to `when: tune_up_price is not None` so it only evaluates conversations where the bot actually provided a price.
+4. **Swapped `if/then` for `oracle`**: The `then` statement expects a Python boolean expression (like `x == y`), not a text string. For single-conversation checks, it's much cleaner to use an `oracle` statement.
+5. **Added `extract_float()`**: Since your profile defines `tune_up_price` as a `money` type (which might include currency symbols like "$50.00"), using the `extract_float()` helper safely pulls out just the number so we can do a proper math comparison.
+
+Let me know if you need help writing any other rules for your bike shop project! 🚲✨

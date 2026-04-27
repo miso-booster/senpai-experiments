@@ -1,0 +1,30 @@
+Here is the SENSEI rule to check if the chatbot provided information about current promotions. 
+
+Since you mentioned this is not based on any existing profile, I have designed this as a **Rule-First** scenario (Case C from the SENSEI documentation). I used a custom variable named `promotions_info`.
+
+```yaml
+name: provided_promotions_info
+description: Checks if the chatbot provided information about current promotions.
+conversations: 1
+active: true
+oracle: promotions_info is not None and len(promotions_info) > 0
+```
+
+### How this works:
+- **`conversations: 1`**: This is a single-conversation oracle rule. It evaluates each conversation individually.
+- **`oracle`**: It checks that the variable `promotions_info` was successfully extracted (not `None`) and is not empty.
+
+### ⚠️ Requirements for your future profile
+For this rule to work, any SENSEI Chat profile you create or use later **must** expose this exact variable in its `chatbot.output` schema. 
+
+Here is an example of what you will need to include in your future profile's YAML:
+
+```yaml
+chatbot:
+  output:
+    - promotions_info:
+        type: string
+        description: The details of any current promotions or discounts provided by the chatbot.
+```
+
+*(Alternatively, if you prefer not to rely on extracted variables at all, you could use the built-in helper `utterance_index('assistant', 'current promotions') > 0` which uses an LLM to scan the assistant's messages directly! Let me know if you'd prefer that approach.)*

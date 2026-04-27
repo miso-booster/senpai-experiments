@@ -1,0 +1,29 @@
+conversation ID: agentic_architecture__p37__pizza_shop__rule__3644ba93
+$$$
+¡Hola! 😊 
+
+Para comprobar si el asistente confirma que ha añadido la bebida durante la conversación, podemos crear una **regla general** utilizando la función `utterance_index`. Esta función busca semánticamente en qué turno de la conversación ocurre una acción específica.
+
+Aquí tienes la regla en formato YAML. Esta regla verifica que el usuario primero pide una bebida y, posteriormente, el asistente confirma que la ha añadido:
+
+```yaml
+name: assistant_confirms_drink
+description: El asistente confirma que añadió la bebida después de que el usuario la pide
+conversations: 1
+active: true
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms adding the drink')
+```
+
+### ¿Cómo funciona esta regla?
+- **`conversations: 1`**: Es una regla de oráculo simple que evalúa cada conversación de forma individual.
+- **`utterance_index('user', 'ordering a drink')`**: Encuentra el número de turno donde el usuario pide la bebida.
+- **`utterance_index('assistant', 'confirms adding the drink')`**: Encuentra el número de turno donde el asistente confirma que la ha añadido.
+- **`oracle`**: Al usar el operador `<`, nos aseguramos de que la confirmación del asistente ocurre *después* de que el usuario hace la petición. Si solo te interesa saber si el asistente lo confirma en algún momento (sin importar el orden), podrías cambiar el oráculo a: `oracle: utterance_index('assistant', 'confirms adding the drink') > 0`.
+
+### Relación con tus perfiles (SENSEI Chat)
+He buscado en tu proyecto y he visto que tienes un perfil llamado `pizza_and_drink_order_placement.yaml`. 
+
+La regla que te he compartido arriba es **independiente del perfil** (no necesita leer los campos extraídos en `chatbot.output`). Sin embargo, si prefieres que la regla valide esto leyendo directamente el resumen del pedido que extrae ese perfil (por ejemplo, el campo `order_summary`), dímelo y la adaptaremos para que use la función `semantic_content(order_summary, 'includes the drink')`.
+
+¿Te sirve esta regla o prefieres que la ajustemos a algún perfil en particular?
+$$$

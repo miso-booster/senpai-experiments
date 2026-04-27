@@ -1,0 +1,26 @@
+I have checked the documentation (`sensei-check-doc.md` and `rules-examples.md`) and searched your current project profiles. 
+
+While I found some pizza-related profiles (like `pizza_and_drink_order_placement.yaml` and `pizza_order_test_custom.yml`), none of them currently expose an exact `drink` output field alongside a price field in their `chatbot.output`. 
+
+Since you requested the output name to be exactly `"drink"`, I have designed this rule assuming a **future or updated profile** that will expose at least these outputs:
+* `drink`: The drink ordered (e.g., a string like "Coke", or `None` if no drink is ordered).
+* `price` (or `cost`): The total price of the order.
+* `size` / `toppings`: Other fields to hold constant so we ensure the $2 difference is *only* because of the drink.
+
+Here is the metamorphic rule. It compares two conversations (`conversations: 2`) where the pizza details are the same, but one conversation has no drink and the other does:
+
+```yaml
+name: drink_costs_two_dollars
+description: Adding a drink increases the total price by exactly 2 dollars (assuming size and toppings are equal).
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings
+if: conv[0].drink is None and conv[1].drink is not None
+then: extract_float(conv[1].price) == extract_float(conv[0].price) + 2
+```
+
+### 💡 A few quick notes:
+1. **Holding variables constant (`when`)**: To make sure the $2 increase is strictly due to the drink, we use the `when` clause to filter for pairs of conversations where the pizza `size` and `toppings` are identical. You can adjust these fields to match your actual profile's outputs.
+2. **The `drink` field**: This rule assumes `drink` is a string (e.g., "Water") that is `None` when no drink is ordered. If your `drink` field is actually a number (quantity of drinks), you could change the `if` condition to: `int(conv[1].drink) == int(conv[0].drink) + 1`.
+3. **Profile Update**: For this rule to work, please make sure the profile you run it against has `drink`, `price`, `size`, and `toppings` defined in its `chatbot.output`!
+
+Does this look like what you had in mind, or is your `drink` output structured differently (like a boolean or a quantity)? 😊

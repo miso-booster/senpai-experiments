@@ -1,0 +1,75 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__d2d0a2a4
+$$$
+Here is a profile tailored to your exact needs! I've set up a very impatient and rude persona, included 4 goals with 4 variables, and used the `pairwise()` function on two of them so that the total number of conversations is driven by the pairwise combination matrix. 🍕😠
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a very rude and impatient customer ordering from a pizza shop. 
+    You want things done fast, you hate waiting, and you never use pleasantries.
+  context:
+    - "You are in a huge rush and demand immediate service."
+    - "You get easily annoyed if the chatbot asks too many questions or is too slow."
+  goals:
+    - "Give me a {{pizza_size}} pizza immediately."
+    - "I want the {{pizza_type}} one, and don't mess it up."
+    - "Throw in {{drink_qty}} drinks."
+    - "Make the drinks {{drink_type}} and hurry up about it."
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [pepperoni, margherita, meat lovers, hawaiian]
+    - drink_qty:
+        function: random()
+        type: int
+        data: [1, 2, 3, 4]
+    - drink_type:
+        function: random()
+        type: string
+        data: [coke, sprite, water, fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand. Can you please repeat your order?"
+  output:
+    - ordered_size:
+        type: string
+        description: "The size of the pizza ordered"
+    - ordered_type:
+        type: string
+        description: "The type of pizza ordered"
+    - total_price:
+        type: currency
+        description: "The total price of the order"
+
+conversation:
+  number: combinations(1.0, pairwise)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - single question
+```
+
+### A quick breakdown of how this works 👀:
+* **Persona:** The `role` and `context` fields instruct the LLM to act rude and impatient, completely skipping the usual "hello" and "please."
+* **Variables & Pairwise:** The `pizza_size` and `pizza_type` variables use the `pairwise()` function. Sensei will generate an optimized matrix of combinations covering every pair of size and type at least once without doing a full Cartesian explosion.
+* **Conversation Number:** By setting `number: combinations(1.0, pairwise)`, Sensei automatically calculates the required number of conversations to fulfill 100% of that pairwise matrix!
+
+Let me know if you'd like to adjust the outputs or add any specific interaction styles! 😊
+$$$

@@ -1,0 +1,46 @@
+Based on the SENSEI rules documentation (`sensei-check-doc.md` and `rules-examples.md`), here is a rule that checks if the chatbot provided information about current promotions. 
+
+Since you mentioned this is not based on an existing profile and I can choose the variables, I have designed this as a **Rule-first design** (Case C). 
+
+I'll give you two ways to do this: one using a custom extracted variable, and another using a built-in semantic helper.
+
+### Option 1: Using a custom variable (Recommended)
+This rule assumes that your future profile will extract a boolean variable called `promotions_provided` to indicate whether the chatbot shared promotional info.
+
+```yaml
+name: provided_promotions_info
+description: Checks if the chatbot provided information about current promotions.
+conversations: 1
+active: true
+oracle: promotions_provided == True
+on-error: "The chatbot failed to provide information about current promotions."
+```
+
+**What your future profile needs:**
+For this rule to work, the profile you eventually create must include `promotions_provided` in its `chatbot.output` schema. For example:
+```yaml
+chatbot:
+  output:
+    - promotions_provided:
+        type: boolean
+        description: True if the chatbot provided information about current promotions, False otherwise.
+```
+
+---
+
+### Option 2: Using the `utterance_index` helper
+If you prefer not to add a specific variable to your profile's output, you can use SENSEI's built-in `utterance_index` helper. This uses an LLM under the hood to semantically check if the assistant ever mentioned the topic during the conversation.
+
+```yaml
+name: mentioned_promotions
+description: The assistant mentions current promotions at some point in the conversation.
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'information about current promotions') > 0
+on-error: "No utterance from the assistant contained information about current promotions."
+```
+
+**What your future profile needs:**
+Nothing specific! Because `utterance_index` analyzes the raw conversation turns (`chatbot_phrases`), this rule is completely profile-agnostic and will work with any profile out of the box. 
+
+Let me know if you'd like to adjust the logic or if you want help creating the profile to go with this! 😊

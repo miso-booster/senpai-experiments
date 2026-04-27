@@ -1,0 +1,64 @@
+Hello there! 😊 I'd be more than happy to help you create a new profile for adding items to a shopping cart. 
+
+Since I see you are working on the `alcampo` project, I've designed this profile to fit perfectly into a grocery shopping scenario! 🛒✨ 
+
+This profile uses the `pairwise()` function to efficiently test different combinations of **items** and **quantities** without creating an overwhelmingly large number of conversations. It also sets up the `chatbot.output` to extract the item name, the quantity added, and the total items in the cart, which is super useful if you want to write Sensei-check rules later!
+
+Here is your ready-to-use profile:
+
+```yaml
+test_name: "shopping_cart_addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer looking to add specific grocery items to their online shopping cart."
+  context:
+    - "You are doing your weekly grocery shopping."
+    - "You want to make sure the items are successfully added to your cart before proceeding to checkout."
+  goals:
+    - "Ask the chatbot to add {{quantity}} units of {{item}} to your shopping cart."
+    - "Ask the chatbot how many items are currently in the shopping cart."
+    - item:
+        function: pairwise()
+        type: string
+        data: ["milk", "bread", "eggs", "apples", "chicken breast"]
+    - quantity:
+        function: pairwise()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand. Could you repeat what you want to add to your cart?"
+  output:
+    - added_item:
+        type: string
+        description: "The name of the item added to the cart"
+    - added_quantity:
+        type: int
+        description: "The number of units added to the cart"
+    - cart_total_items:
+        type: int
+        description: "The total number of items currently in the shopping cart"
+
+conversation:
+  number: combinations(1.0, pairwise)
+  goal_style:
+    steps: 10
+  interaction_style:
+    - single questions
+```
+
+### A quick tip from Senpai 💡
+Because we defined `added_quantity` and `cart_total_items` in the `chatbot.output`, you could easily create a **Sensei-check rule** later to verify that the math adds up (for example, checking that `cart_total_items` is greater than or equal to `added_quantity`). 
+
+Let me know if you'd like to save this in your `profiles/` folder, or if you want to write a metamorphic rule to test the cart's logic! 👀🚀

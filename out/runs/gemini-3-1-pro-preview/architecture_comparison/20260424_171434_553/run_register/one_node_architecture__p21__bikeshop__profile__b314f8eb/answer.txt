@@ -1,0 +1,67 @@
+Hello there! 😊 I'd be happy to help you create a Sensei profile for this specific scenario. 
+
+It sounds like a very natural use case for a bike shop! To make the test even more robust, I've added some variables (`{{seat_type}}` and `{{grip_type}}`) so the simulated user will ask for different styles of seats and grips across the conversations. I also included an output section so Sensei can extract the prices and appointment details for you to validate later.
+
+Here is the profile ready for your project:
+
+```yaml
+test_name: bike_setup_and_customization
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A customer who recently bought a new bike and wants to customize it to their liking.
+  context:
+    - "You just got a new bike and want to tailor it to your preferences."
+    - "You specifically want to change the seat and the handlebar grips."
+    - "You want to know the prices for these parts and schedule an installation."
+  goals:
+    - "Ask if the shop offers bike setup and customization services."
+    - "Inquire about the price and options for a new {{seat_type}} seat."
+    - "Ask about the price and options for {{grip_type}} handlebar grips."
+    - "Ask to schedule an appointment to get these parts installed."
+    - seat_type:
+        function: random()
+        type: string
+        data: [comfort, sporty, gel, leather]
+    - grip_type:
+        function: random()
+        type: string
+        data: [ergonomic, foam, rubber, lock-on]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - customization_offered:
+        type: string
+        description: "Confirmation from the chatbot regarding whether the shop offers bike setup and customization services."
+    - seat_price:
+        type: money
+        description: "The price of the requested seat type."
+    - grip_price:
+        type: money
+        description: "The price of the requested handlebar grips."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the scheduled appointment for the installation."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - default
+```
+
+You can save this as `bike_setup_and_customization.yaml` inside your `profiles/` folder. 
+
+Let me know if you'd like to adjust the interaction style (for example, making the user ask everything in a `single question`), or if you'd like to write some Sensei-check rules to validate the extracted prices! 🚲✨

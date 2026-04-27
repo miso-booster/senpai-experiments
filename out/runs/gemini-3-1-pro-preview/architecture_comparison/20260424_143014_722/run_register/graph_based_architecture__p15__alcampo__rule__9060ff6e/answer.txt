@@ -1,0 +1,36 @@
+Hello there! 😊 I'd be happy to help you get this rule working perfectly! 
+
+Looking at your YAML, you are super close, but there are two little things we need to fix:
+
+1. **A tiny typo:** `descriptin` should be spelled `description`.
+2. **The missing `then` clause:** In Sensei-check, whenever you use an `if` (which sets up the precondition), you **must** include a `then` clause. The `then` clause is the actual test or assertion that the system evaluates to see if the rule passes or fails.
+
+Depending on exactly what you want to test, here are two ways to fix it:
+
+### Option 1: The Metamorphic Check (2 Conversations)
+If your goal is to verify that the general `contact_options` provided in the first conversation **includes** the specific `customer_service_number` provided in the second conversation, you can add a `then` clause like this:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: conv[1].customer_service_number in conv[0].contact_options
+```
+
+### Option 2: The Simple Oracle (1 Conversation)
+If you just want to ensure that the chatbot successfully extracts and provides *some* data when the user asks for contact info, you might not need 2 conversations at all! You can simplify it into a 1-conversation rule using an `oracle`:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+when: user_request in ['contact options', 'customer service number']
+oracle: contact_options is not None or customer_service_number is not None
+```
+
+### 💡 Senpai's Pro-Tip:
+Whichever option you choose, just make sure that `user_request`, `contact_options`, and `customer_service_number` are actual fields defined in your **SENSEI Chat profile's** `chatbot.output`. Sensei-check pulls directly from those fields, so the names need to match exactly! 👀
+
+Let me know if you need help tweaking this further or if you have any other rules you'd like to look at! 🥋✨

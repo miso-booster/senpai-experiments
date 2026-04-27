@@ -1,0 +1,68 @@
+I have loaded the SENSEI profile documentation and designed a profile tailored for your Erasmus student scenario. 
+
+Here is the YAML profile. It uses a single input variable (`system_name`) to cycle through common university systems, and it defines a robust `chatbot.output` schema so you can easily write rules later to verify if the bot provided links, steps, or IT contact info.
+
+```yaml
+test_name: "erasmus_it_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus student who just arrived at the university. You are confused and do not know how to set up the university's digital systems.
+  context:
+    - "You are polite but a bit stressed because classes are starting soon."
+    - "You need step-by-step help or a link to an official guide."
+  goals:
+    - "Ask how to set up and log into {{system_name}}"
+    - system_name:
+        function: random()
+        type: string
+        data: [Moodle, Sigma, Eduroam, Webmail]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you rephrase?"
+  output:
+    - system_identified:
+        type: string
+        description: "The name of the system the user is asking about (e.g., Moodle, Sigma)."
+    - support_steps_provided:
+        type: string
+        description: "A summary of the steps provided to the user to set up the system."
+    - guide_link:
+        type: string
+        description: "A URL or link to the official setup guide, if provided."
+    - support_contact:
+        type: string
+        description: "Contact information for IT support (email or phone), if provided."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### 📝 Summary of the Profile
+* **Persona & Context:** The user acts as a slightly stressed Erasmus student who needs help setting up their accounts.
+* **Input Variable (`system_name`):** We kept the inputs minimal. The simulator will randomly pick between Moodle, Sigma, Eduroam, or Webmail for each conversation.
+* **Chatbot Outputs:** This is the core of your validation contract. At the end of the conversation, SENSEI will extract:
+  * `system_identified`: To ensure the bot understood which system the student was asking about.
+  * `support_steps_provided`: To check if actual instructions were given.
+  * `guide_link`: To verify if the bot provided a helpful URL.
+  * `support_contact`: To see if the bot offered a fallback IT contact.
+* **Interaction Style:** I added a random mix of `long phrases` and `make spelling mistakes` to simulate a realistic, non-native or stressed typing experience.
+
+You can save this as `erasmus_support.yml` in your `profiles/` directory. Let me know if you'd like to adjust the systems list or if you want to write some **SENSEI Rules** to validate these outputs! 😊

@@ -1,0 +1,64 @@
+Here is the SENSEI profile tailored to test the bike shop's virtual assistant. I've based this on the `sensei-chat-guide.md` documentation.
+
+```yaml
+test_name: "bike_shop_general_info"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer looking for general information about a bike shop and its standard services.
+    You behave like a normal customer and phrase your questions clearly and directly.
+  context:
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or any topic outside of basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices rather than advanced repairs."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - opening_hours:
+        type: string
+        description: "The opening and closing times of the bike shop."
+    - tire_price:
+        type: currency
+        description: "The quoted price for a new bike tire."
+    - tune_up_price:
+        type: currency
+        description: "The quoted price for a standard bike tune-up."
+    - seat_price:
+        type: currency
+        description: "The quoted price for a new bike seat."
+    - maintenance_advice:
+        type: string
+        description: "A summary of the general advice provided for bike care and basic maintenance."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📝 Summary of the Profile
+
+*   **User Persona & Constraints:** The `role` and `context` sections strictly define the user as a standard customer. The negative constraints ensure the simulator won't drift into asking about warranties, specific models, or advanced repairs, keeping the test focused on basic shop info.
+*   **Goals:** The goals are explicitly listed as plain text strings. Since the items you want to ask about are fixed (tire, tune-up, seat, hours, and maintenance), we don't need to use variables or combinations here. The simulator will naturally weave these into the conversation.
+*   **Chatbot Output:** I've defined five fields in `chatbot.output` to extract the exact information the chatbot provides. The prices use the `currency` type, while the hours and advice use `string`. This schema will be very useful later if you want to write SENSEI rules to validate that the bot actually provided prices and didn't hallucinate services.
+*   **Conversation Controls:** The `goal_style` is set to `all_answered` with a safety limit of 15 steps, meaning the conversation will naturally conclude once the simulated user has successfully asked all their questions and received answers. It will run 3 times to ensure consistent behaviour.
+
+Let me know if you'd like to adjust any of the goals or if you want to create a SENSEI rule to validate these outputs! 😊

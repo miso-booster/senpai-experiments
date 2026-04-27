@@ -1,0 +1,80 @@
+Hello there! I'd love to help you set up a Sensei Profile for this scenario. 📶😊
+
+Testing how a chatbot handles Wi-Fi troubleshooting is a classic use case! To make this profile super effective, we can use **variables** to simulate the user trying different devices, operating systems, and setup methods. 
+
+By using the `pairwise()` function for these variables, Sensei will automatically generate a smart mix of combinations without creating an overwhelming number of conversations.
+
+Here is a complete, ready-to-run Sensei Profile YAML for your eduroam scenario:
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who urgently needs to connect to the eduroam Wi-Fi network,
+    but you are completely unable to get it working on your device.
+  context:
+    - "You are currently on campus and need internet access to submit an assignment."
+    - "You are getting frustrated because the connection keeps dropping or rejecting your credentials."
+  goals:
+    - "Tell the chatbot you are trying to connect your {{device_type}} running {{os}} to eduroam."
+    - "Explain that you already tried using {{setup_method}} but it failed with an authentication error."
+    - "Ask for step-by-step manual configuration settings or troubleshooting advice."
+    
+    # --- Variable Declarations ---
+    - device_type:
+        function: pairwise()
+        type: string
+        data: [laptop, smartphone, tablet]
+    - os:
+        function: pairwise()
+        type: string
+        data: [Windows 11, macOS, Android, iOS]
+    - setup_method:
+        function: pairwise()
+        type: string
+        data: [the official eduroam CAT installer, manual network configuration, a QR code profile]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I couldn't understand that. Could you please rephrase your issue?"
+  output:
+    - troubleshooting_steps:
+        type: string
+        description: "The step-by-step instructions provided by the bot to fix the connection."
+    - requires_it_desk:
+        type: string
+        description: "Whether the bot advised the user to visit the physical IT helpdesk (yes/no)."
+    - manual_settings_given:
+        type: string
+        description: "Did the bot provide manual server/certificate settings? (yes/no)"
+
+conversation:
+  number: combinations(1, pairwise) # Uses the pairwise matrix to determine the number of conversations
+  goal_style:
+    steps: 6
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+      - single questions
+```
+
+### 💡 Why this profile works great:
+
+1. **Smart Combinations (`pairwise`)**: Instead of testing every single possible combination of device + OS + setup method (which would be 3 × 4 × 3 = 36 conversations), the `pairwise()` function ensures that every *pair* of variables is tested together at least once. It saves time and API costs while still catching most bugs! 👀
+2. **Dynamic Goals**: The `{{variables}}` in the `user.goals` text match exactly with the declared variables below them. Sensei will seamlessly swap them out (e.g., *"I already tried using the official eduroam CAT installer but it failed..."*).
+3. **Structured Extraction (`chatbot.output`)**: At the end of the chat, Sensei will extract exactly what the bot suggested. Later, you can write **Sensei Rules** (like `when: conv[0].requires_it_desk == "no" then: conv[0].troubleshooting_steps is not None`) to automatically verify if the bot is actually being helpful! 🕵️‍♀️
+4. **Human-like Interaction**: I added a `random` interaction style so the simulated user might occasionally make spelling mistakes or use long, frustrated phrases, just like a real student struggling with Wi-Fi! 😅
+
+You can save this as `eduroam_troubleshooting.yml` inside your `profiles/` folder. 
+
+Let me know if you'd like to add any custom data types to this, or if you want to see how to write the **Sensei Rules** to validate the chatbot's answers! 🚀 How else can I help you today?

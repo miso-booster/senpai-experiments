@@ -1,0 +1,38 @@
+Hello there! 😊 I would be absolutely delighted to help you create a rule for lactose-free products! 
+
+Since you are using a **Rule-first design** (meaning we don't have a SENSEI Chat profile built for this just yet), we get to invent the variables! Just keep in mind that whenever you *do* create the profile, you'll need to make sure its `chatbot.output` exposes the exact same field names we use here. 📝
+
+I've prepared two different rules for you. The first is a simple check for availability, and the second is a fun **metamorphic rule** comparing prices!
+
+### 1. Single-Conversation Rule: Checking Availability Status
+This rule ensures that whenever a user asks for a lactose-free product, the chatbot successfully determines and extracts its availability status.
+
+```yaml
+name: lactose_free_availability_checked
+description: Ensures the bot provides a clear availability status when a lactose-free product is requested.
+conversations: 1
+when: dietary_preference == 'lactose-free'
+oracle: availability_status in ['in stock', 'out of stock', 'check store']
+```
+
+### 2. Metamorphic Rule: Price Monotonicity 🥛
+In the real world, specialized items like lactose-free products usually cost the same or slightly more than their regular counterparts. This metamorphic rule compares *two* conversations asking for the exact same product, ensuring the lactose-free version isn't somehow cheaper than the regular one!
+
+```yaml
+name: lactose_free_price_monotonicity
+description: A lactose-free product should cost the same or more than its regular counterpart.
+conversations: 2
+when: conv[0].product_name == conv[1].product_name
+if: conv[0].dietary_preference == 'lactose-free' and conv[1].dietary_preference == 'regular'
+then: extract_float(conv[0].price) >= extract_float(conv[1].price)
+```
+
+### 💡 Senpai's Tip for your future Profile!
+When you are ready to create the SENSEI Chat profile for this, make sure your `chatbot.output` looks something like this so the rules work perfectly:
+
+*   `product_name` (e.g., "Milk", "Yogurt")
+*   `dietary_preference` (e.g., "lactose-free", "regular")
+*   `availability_status` (e.g., "in stock", "out of stock")
+*   `price` (e.g., "2.50 EUR")
+
+Let me know if you'd like to tweak these, or if you need help writing the profile to match! You're doing great! 🚀

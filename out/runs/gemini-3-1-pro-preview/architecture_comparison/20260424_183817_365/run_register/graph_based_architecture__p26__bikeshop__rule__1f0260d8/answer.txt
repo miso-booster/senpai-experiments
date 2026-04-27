@@ -1,0 +1,33 @@
+Hello there! 😊 I'd be more than happy to help you review and fix your SENSEI RULE. 
+
+It looks like you are trying to check if a specific value (the tune-up price) is exactly $50. Your current draft has a few structural issues because it mixes up concepts from **metamorphic rules** (comparing multiple conversations) and **single-conversation oracles** (checking an absolute value in one conversation).
+
+Here is the corrected version of your rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is exactly $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+on-error: "The tune-up price should be $50, but got {tune_up_price}."
+```
+
+### 👀 What I changed and why:
+
+1. **`conversations: 1` instead of `2`**
+   Since you are just checking if a static price is $50, you only need to look at *one* conversation at a time. `conversations: 2` is used for metamorphic testing, where you compare two different conversations against each other (like checking if adding more toppings increases the price).
+2. **Removed `conv[0].`**
+   In single-conversation rules (`conversations: 1`), you don't need to use the `conv[0].` prefix. You can just write the field name directly (e.g., `tune_up_price`).
+3. **Removed the `when` filter**
+   The `when` clause is used to *filter* which conversations the rule should evaluate. If you put `when: tune_up_price == 50`, Sensei-check will only test conversations that *already* have a price of 50, which defeats the purpose of the test! 
+4. **Switched to `oracle` instead of `if/then`**
+   For a simple absolute check, using `oracle` is much cleaner. The `then` clause expects a Python expression that evaluates to `True` or `False`, not a text string.
+5. **Added `extract_float()`**
+   I wrapped your variable in `extract_float(tune_up_price)`. This is a best practice in Sensei-check! It ensures that if your chatbot outputs something like `"$50.00"` or `"50 USD"`, the rule will smartly extract the number `50` and compare it correctly.
+6. **Moved your text to `on-error`**
+   If you want to display a helpful message when the rule fails, the `on-error` field is exactly what you need.
+
+**💡 One quick reminder:** 
+For this rule to work perfectly, make sure that `tune_up_price` is exactly how the field is named in your **SENSEI Chat profile's** `chatbot.output`. Sensei-check pulls the variables directly from there!
+
+Does this make sense? Let me know if you need help writing any other rules or setting up your profile! 🥋✨

@@ -1,0 +1,31 @@
+conversation ID: agentic_architecture__p6__ada_uam__rule__c8b911c5
+$$$
+¡Hola! 😊
+
+He revisado la documentación de SENSEI RULES (`sensei-check-doc.md` y `rules-examples.md`) y también he buscado en tu proyecto. He encontrado que el perfil `consultante_de_servicios_y_asistencia_del_cau.yaml` encaja perfectamente con lo que mencionas, ya que expone exactamente esas variables en su `chatbot.output` (junto con algunas otras).
+
+Para asegurarnos de que el chatbot (Ada UAM) nos ha proporcionado específicamente el correo electrónico, el teléfono y la dirección física, podemos crear una regla de **una sola conversación** (un oráculo tradicional) que verifique que esas tres variables no estén vacías (`None`).
+
+Aquí tienes la regla en formato YAML:
+
+```yaml
+name: cau_contact_info_provided
+description: Verifica que el chatbot haya proporcionado el email, teléfono y dirección física del CAU.
+conversations: 1
+active: true
+oracle: |
+  contact_email is not None and contact_phone is not None and physical_address is not None
+yields: |
+  f"Falta información de contacto del CAU. Email: {contact_email}, Teléfono: {contact_phone}, Dirección: {physical_address}"
+```
+
+### ¿Cómo funciona esta regla?
+* **`conversations: 1`**: Evalúa cada conversación de forma individual.
+* **`oracle`**: Es la condición que debe cumplirse. Comprueba directamente que las variables extraídas por el perfil (`contact_email`, `contact_phone` y `physical_address`) tengan algún valor y no sean nulas.
+* **`yields`**: (Opcional) Si la regla falla, este mensaje te mostrará exactamente qué valores se extrajeron, ayudándote a identificar rápidamente cuál de los tres datos faltó en la respuesta del chatbot.
+
+**💡 Un consejo extra:**
+Si en algún momento quieres crear una regla más estricta que compruebe que **absolutamente todos** los campos definidos en el `chatbot.output` de tu perfil se han rellenado (incluyendo enlaces, horas de servicio, etc.), puedes usar la función auxiliar `data_collected() == True` en el `oracle`. Pero para este caso específico donde solo nos interesan esos tres datos, la regla de arriba es la ideal.
+
+¿Te gustaría que ajustemos algo más de esta regla o pasamos a crear alguna otra?
+$$$

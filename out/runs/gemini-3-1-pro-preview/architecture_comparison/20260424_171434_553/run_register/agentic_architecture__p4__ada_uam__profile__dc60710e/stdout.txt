@@ -1,0 +1,68 @@
+conversation ID: agentic_architecture__p4__ada_uam__profile__dc60710e
+$$$
+¡Hola! Claro que sí, estaré encantado de ayudarte a crear este perfil 😊. 
+
+He revisado los archivos de tu proyecto y he visto que ya tienes un perfil llamado `consultante_de_servicios_y_asistencia_del_cau.yaml` que hace algo parecido, pero es un poco más complejo e incluye cosas como el catálogo de servicios y el ID-UAM. 
+
+Para ajustarnos exactamente a lo que me pides (conseguir el teléfono, email, dirección física y horarios), he diseñado un perfil nuevo, mucho más directo y enfocado en esos cuatro objetivos. 
+
+Aquí tienes el código YAML que puedes guardar en tu carpeta `profiles/` (por ejemplo, con el nombre `contacto_cau_uam.yaml`):
+
+```yaml
+test_name: "contacto_cau_uam"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario de la UAM (Universidad Autónoma de Madrid) que necesita contactar con el CAU (Centro de Atención a Usuarios) para resolver un problema.
+  context:
+    - "No sabes dónde está el CAU ni cómo contactar con ellos."
+    - "Necesitas obtener su información de contacto completa antes de ir o llamar."
+  goals:
+    - "Preguntar cuál es el número de teléfono del CAU."
+    - "Preguntar cuál es el correo electrónico (email) del CAU."
+    - "Preguntar por la dirección física del CAU."
+    - "Preguntar cuáles son los horarios de atención al público."
+
+chatbot:
+  is_starter: false
+  fallback: "Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - telefono_cau:
+        type: string
+        description: "Número de teléfono del CAU"
+    - email_cau:
+        type: string
+        description: "Correo electrónico del CAU"
+    - direccion_cau:
+        type: string
+        description: "Dirección física del CAU"
+    - horario_cau:
+        type: string
+        description: "Horarios de atención del CAU"
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📝 ¿Qué hace este perfil exactamente? (Basado en la documentación de SENSEI Chat)
+
+1. **`user.goals`**: Le indicamos al simulador de usuario las 4 preguntas exactas que debe hacerle al chatbot de la UAM.
+2. **`chatbot.output`**: Esta es la parte más importante para la validación. Le decimos a SENSEI que, al terminar la conversación, debe extraer esos 4 datos (`telefono_cau`, `email_cau`, `direccion_cau`, `horario_cau`) en formato de texto (`string`). Si en el futuro quieres crear **Reglas (Rules)** para comprobar que el bot da la información correcta, usarás estos mismos nombres de variables.
+3. **`conversation.goal_style`**: He configurado el estilo de finalización como `all_answered` con un límite de 15 turnos. Esto significa que el simulador seguirá hablando con el chatbot hasta que consiga las 4 piezas de información que le hemos pedido, y luego terminará la conversación automáticamente. Además, `export: true` generará un archivo CSV para que puedas ver qué datos se consiguieron extraer con éxito.
+
+¿Qué te parece? Si quieres que el usuario simulado tenga un comportamiento especial (por ejemplo, que cometa faltas de ortografía o que haga todas las preguntas de golpe), dímelo y le añadimos un `interaction_style` diferente. ¡Quedo a tu disposición!
+$$$

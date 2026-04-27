@@ -1,0 +1,67 @@
+¡Hola! ¡Qué excelente idea! 🍱 Planificar el menú semanal y buscar recetas es un caso de uso súper común y perfecto para probar con Sensei. 
+
+Revisando tu proyecto, he visto que ya tienes un perfil llamado **`recipe_management_and_cooking_support.yaml`** que explora la funcionalidad de "La Cocina de Alcampo". Sin embargo, si quieres un perfil **nuevo y mucho más enfocado** específicamente en pedir recomendaciones de recetas dinámicas y armar un menú, te he preparado este YAML. 
+
+He incluido el uso de **variables** (`{{ingrediente_principal}}`) para que en cada conversación el usuario simulado pida una receta con un ingrediente distinto. ¡Así pruebas la creatividad del chatbot! 🧑‍🍳
+
+Aquí tienes el perfil listo para guardar en tu carpeta `profiles/` (por ejemplo, como `menu_planning_and_recipes.yml`):
+
+```yaml
+test_name: "Menu Planning and Recipes"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Un cliente que busca inspiración para cocinar, recomendaciones de recetas y ayuda para planificar su menú semanal."
+  context:
+    - "Quieres organizar tus comidas de la semana para comer más sano y ahorrar tiempo."
+    - "Te interesa saber si el chatbot de Alcampo puede darte ideas de recetas y ayudarte a comprar los ingredientes."
+  goals:
+    - "Pregunta al chatbot si puede sugerirte un menú semanal equilibrado."
+    - "Pide una receta fácil y rápida que tenga {{ingrediente_principal}} como ingrediente principal."
+    - "Pregunta cómo puedes añadir los ingredientes de esa receta directamente a tu lista de la compra o carrito."
+    - ingrediente_principal:
+        function: another()
+        type: string
+        data: [pollo, salmón, calabacín, garbanzos, ternera]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - menu_sugerido:
+        type: string
+        description: "Resumen del menú semanal sugerido por el chatbot o confirmación de si ofrece este servicio."
+    - receta_proporcionada:
+        type: string
+        description: "La receta específica que el chatbot ha recomendado."
+    - instrucciones_carrito:
+        type: string
+        description: "Instrucciones sobre cómo añadir los ingredientes de la receta al carrito de compra."
+
+conversation:
+  number: 5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - single questions
+      - long phrases
+      - make spelling mistakes
+```
+
+### 👀 ¿Por qué este perfil es genial para tu prueba?
+
+1. **Uso de `another()`**: En la variable `ingrediente_principal`, la función `another()` asegura que el simulador elegirá un ingrediente distinto en cada una de las 5 conversaciones sin repetir hasta que se agoten. ¡Ideal para ver si el bot sabe de todo!
+2. **`goal_style: all_answered`**: En lugar de un número fijo de pasos, la conversación terminará de forma natural cuando el chatbot haya respondido a todos los objetivos del usuario (con un límite de seguridad de 15 interacciones). Además, `export: true` te generará un CSV para ver qué objetivos se cumplieron.
+3. **`chatbot.output`**: He definido campos claros (`menu_sugerido`, `receta_proporcionada`, `instrucciones_carrito`). Esto es súper útil por si luego quieres crear **Sensei Rules** (por ejemplo, una regla que verifique que `conv[0].instrucciones_carrito is not None`).
+4. **Estilos de interacción aleatorios**: Le he añadido un toque humano. A veces el usuario hará preguntas directas, otras veces usará frases largas o incluso cometerá errores ortográficos (`make spelling mistakes`).
+
+¡Pruébalo y me cuentas qué tal responde el chatbot de Alcampo a los retos culinarios! Si necesitas ajustar algo más, ¡aquí estoy para ayudarte! ✨

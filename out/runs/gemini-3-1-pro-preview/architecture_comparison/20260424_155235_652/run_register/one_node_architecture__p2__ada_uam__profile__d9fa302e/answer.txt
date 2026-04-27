@@ -1,0 +1,70 @@
+Hello there! 😊 Welcome to the Dojo. 
+
+Creating a profile for an Erasmus student is a great idea! It’s a very realistic scenario, especially since international students often struggle with new university platforms and might mix languages or make typos.
+
+To keep the inputs simple but the validation powerful, I've designed this profile with:
+1. **A single variable (`{{platform}}`)**: It uses `forward()` to cycle through Moodle, Sigma, and the institutional email, generating exactly 3 conversations.
+2. **Targeted `chatbot.output` fields**: It extracts the step-by-step instructions, the required credentials, and the physical/contact info for the IT support desk (CAU). This will make it super easy for you to write Sensei-check rules later (e.g., ensuring the bot *always* provides a physical location when the student asks for in-person help).
+3. **Erasmus-specific interaction styles**: I added a random chance for the simulated user to make spelling mistakes or suddenly switch to English, which perfectly mimics an international student! 🌍
+
+Here is the YAML profile ready for your project:
+
+```yaml
+test_name: "erasmus_digital_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante de intercambio Erasmus que acaba de llegar a la universidad.
+    No estás familiarizado con los sistemas digitales de la universidad y necesitas ayuda para configurarlos.
+  context:
+    - "Es tu primera semana en la universidad y estás un poco perdido con la tecnología."
+    - "Necesitas acceder a tus clases, horarios y correo."
+    - "Tu español es bueno, pero a veces usas términos en inglés cuando no sabes la palabra exacta."
+  goals:
+    - "Preguntar cómo activar tu cuenta institucional (ID-UAM) por primera vez."
+    - "Solicitar instrucciones paso a paso para acceder a {{platform}}."
+    - "Preguntar dónde puedes encontrar ayuda técnica en persona si sigues teniendo problemas."
+    - platform:
+        function: forward()
+        type: string
+        data: [Moodle, Sigma, el correo institucional]
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios."
+  output:
+    - platform_instructions:
+        type: string
+        description: "Instrucciones paso a paso proporcionadas por el bot para acceder a la plataforma solicitada."
+    - credentials_needed:
+        type: string
+        description: "Credenciales mencionadas que el estudiante necesita (ej. ID-UAM, correo, contraseña)."
+    - cau_physical_location:
+        type: string
+        description: "Ubicación física o dirección del Centro de Atención a Usuarios (CAU) para asistencia presencial."
+    - cau_contact_info:
+        type: string
+        description: "Información de contacto (teléfono o email) del soporte técnico."
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 15
+  interaction_style:
+    - random:
+      - single questions
+      - make spelling mistakes
+      - change language:
+        - English
+```
+
+You can save this as `erasmus_digital_setup.yaml` inside your `profiles/` folder. 
+
+Let me know if you'd like to adjust the outputs or if you want help writing a **Sensei-check rule** to validate these extractions! 👀✨

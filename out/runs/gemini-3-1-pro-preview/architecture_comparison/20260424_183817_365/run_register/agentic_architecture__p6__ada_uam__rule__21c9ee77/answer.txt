@@ -1,0 +1,21 @@
+Here is the SENSEI rule to check that the chatbot provided all the necessary contact information for the CAU. 
+
+Since you are checking the outcome of a single conversation, we can create a **single-conversation oracle** (`conversations: 1`). The rule will directly reference the `contact_email`, `contact_phone`, and `physical_address` fields from your profile's `chatbot.output` and verify that none of them are empty (`None`).
+
+```yaml
+name: cau_contact_info_provided
+description: Checks that the chatbot provided the CAU contact email, phone number, and physical address.
+conversations: 1
+active: true
+oracle: contact_email is not None and contact_phone is not None and physical_address is not None
+yields: f"Missing CAU contact info. Email: {contact_email}, Phone: {contact_phone}, Address: {physical_address}"
+```
+
+### How this works:
+* **`conversations: 1`**: This tells SENSEI to evaluate the rule on each conversation individually.
+* **`oracle`**: This is the boolean condition that must be true for the test to pass. It ensures that the LLM successfully extracted a value for all three fields.
+* **`yields`**: If the rule fails (meaning one or more of those fields are missing), SENSEI will output this helpful error message showing exactly which fields were captured and which ones were left as `None`.
+
+*(Note: I also checked your project files and noticed this aligns perfectly with the `consultante_de_servicios_y_asistencia_del_cau.yaml` profile, which extracts these exact fields!)* 
+
+Let me know if you'd like to add any other checks, such as verifying the format of the email or phone number! 😊

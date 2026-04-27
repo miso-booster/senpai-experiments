@@ -1,0 +1,76 @@
+Hello there! Welcome to the Dojo! 🚲✨ 
+
+That sounds like a fantastic scenario to test! Getting a new bike and customizing it is always exciting, and it’s a great way to see how well your chatbot handles specific product inquiries and service requests. 
+
+I can definitely help you craft a **Sensei Profile** for this. Based on our Sensei Profile documentation, we'll want to set up the `user.context` to explain their situation, use `user.goals` to ask about the seat and grips, and define the `chatbot.output` so we can extract the prices and installation times for your rules later!
+
+Here is a ready-to-use YAML profile tailored exactly to your needs:
+
+```yaml
+test_name: "new_bike_customization_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A customer who recently bought a new bike and wants to customize it for better comfort and style.
+  context:
+    - "You just got a brand new bike and you are very excited."
+    - "You want to tailor the bike to your liking by changing the seat and the handlebar grips."
+    - "You want to know about options, pricing, and installation times."
+  goals:
+    - "Ask if the shop offers bike setup and customization services."
+    - "Inquire about the options and price for a new {{seat_type}} seat."
+    - "Ask about replacing the current handlebar grips with {{grip_type}} grips."
+    - "Ask how long it will take to install the new seat and grips."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [ergonomic, gel, racing]
+    - grip_type:
+        function: forward(seat_type)
+        type: string
+        data: [foam, rubber, lock-on]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - customization_offered:
+        type: string
+        description: "Confirmation of whether the shop offers bike setup and customization services."
+    - seat_price:
+        type: money
+        description: "The price provided by the chatbot for the requested seat type."
+    - grip_options_info:
+        type: string
+        description: "Information provided about the requested handlebar grips."
+    - installation_time:
+        type: string
+        description: "The estimated time to install the new seat and grips."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🛠️ A quick breakdown of what makes this profile special:
+
+1. **Dynamic Variables (`user.goals`)**: I added `{{seat_type}}` and `{{grip_type}}` as variables. By using the `forward()` function and nesting `grip_type` to depend on `seat_type` (`forward(seat_type)`), Sensei will test a grid of combinations (e.g., an ergonomic seat with foam grips, a gel seat with rubber grips, etc.).
+2. **Conversation Number**: Because we used nested `forward()` functions, we can set `conversation.number: combinations`. Sensei will automatically calculate the matrix and run enough conversations to cover your options! 🧮
+3. **Chatbot Output**: I noticed in your other profiles (like `bike_repair_and_maintenance_scheduler.yaml`) that you use a custom type called `money`. I included `type: money` for the `seat_price` so it matches your existing project structure perfectly!
+4. **Goal Style**: I used `all_answered` with `export: true`. This ensures the simulated user won't stop talking until the bot has answered all their questions about the seat, grips, and installation time. It will also generate a handy CSV dataframe for you at the end! 📊
+
+You can save this as `bike_customization_setup.yaml` inside your `profiles/` folder. 
+
+How does this look to you? Let me know if you'd like to add any specific interaction styles (like making the user `change your mind` about the grip type) or if you need help writing **Sensei Rules** to validate the extracted outputs! 😊

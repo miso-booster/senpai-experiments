@@ -1,0 +1,19 @@
+Here is the SENSEI rule to verify that the chatbot provides the correct CAU information. 
+
+I have based this rule on the `chatbot.output` schema you provided and the SENSEI-check documentation (`sensei-check-doc.md`). Since the physical address is quite long and could be phrased slightly differently by the chatbot, I used the `semantic_content` helper function, which uses an LLM to check if the meaning matches. For the email and phone number, a simple substring check (`in`) is robust enough to handle minor formatting differences (like spaces or country codes).
+
+```yaml
+name: correct_cau_information
+description: Checks that the chatbot provides the correct CAU contact information (email, phone, and location).
+conversations: 1
+active: true
+oracle: |
+  'cau@uam.es' in contact_email and '91 497 4029' in contact_phone and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+### Summary of what this rule does:
+* **`conversations: 1`**: It evaluates each conversation individually (a single-conversation oracle).
+* **`contact_email` & `contact_phone`**: Checks that the exact email and phone number strings are present in the extracted outputs.
+* **`physical_address`**: Uses the `semantic_content` helper to ensure the extracted address semantically matches the expected location, even if the chatbot translates it to Spanish or formats it slightly differently (e.g., "Escuela Politécnica Superior...").
+
+Let me know if you'd like to adjust the strictness of the checks or if you need help adding this to your project! 😊

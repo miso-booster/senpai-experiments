@@ -1,0 +1,78 @@
+conversation ID: agentic_architecture__p32__pizza_shop__profile__4ea58934
+$$$
+¡Hola! 😊 Claro que sí, te ayudaré a crear el perfil para probar el chatbot de tu pizzería. 
+
+He revisado la documentación de **SENSEI PROFILES** (`sensei-chat-guide.md`) para asegurarme de que la estructura y los campos de extracción (`chatbot.output`) sean exactamente los que necesitas.
+
+Aquí tienes el archivo YAML configurado en español. En este perfil, el usuario simulado pedirá una pizza y una bebida aleatorias, y al final de la conversación, SENSEI extraerá los 4 campos que me pediste:
+
+```yaml
+test_name: "prueba_pizzeria"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente que quiere pedir comida a domicilio en una pizzería.
+    Quieres hacer tu pedido de forma clara y preguntar por el precio total y el número de seguimiento.
+  context:
+    - "Tienes mucha hambre y quieres que el pedido llegue lo antes posible."
+    - "Siempre pides el precio final en dólares."
+  goals:
+    - "Quiero pedir una pizza {{tipo_pizza}} y para beber {{bebida}}."
+    - "Pregunta por el precio total en dólares y el ID del pedido."
+    - tipo_pizza:
+        function: random()
+        type: string
+        data: [margarita, pepperoni, cuatro quesos, hawaiana, barbacoa]
+    - bebida:
+        function: random()
+        type: string
+        data: [agua, coca cola, cerveza, fanta de naranja]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no te he entendido. ¿Puedes repetirlo?"
+  output:
+    - tipo_pizza:
+        type: string
+        description: "El tipo de pizza que ha pedido el cliente"
+    - bebida:
+        type: string
+        description: "La bebida que ha pedido el cliente"
+    - id_pedido:
+        type: string
+        description: "El identificador único o número de seguimiento del pedido"
+    - precio_final:
+        type: float
+        description: "El precio final del pedido en dólares"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🍕 Resumen de lo que hace este perfil:
+1. **Variables Dinámicas (`user.goals`)**: El simulador elegirá aleatoriamente entre 5 tipos de pizza y 4 bebidas en cada conversación.
+2. **Extracción de Datos (`chatbot.output`)**: Al finalizar la charla, SENSEI extraerá estructuradamente:
+   - `tipo_pizza` (texto)
+   - `bebida` (texto)
+   - `id_pedido` (texto)
+   - `precio_final` (número decimal / float, para representar los dólares).
+3. **Control de Conversación**: Hará **3 conversaciones** distintas (`conversation.number: 3`) y se detendrá automáticamente cuando el chatbot haya respondido a todos los objetivos (`all_answered`).
+
+Puedes guardar este código en un archivo dentro de tu carpeta `profiles/` (por ejemplo, `perfil_pizzeria.yml`). 
+
+¿Te gustaría que añadamos alguna regla de validación (SENSEI RULES) para comprobar automáticamente que el precio siempre sea mayor a cero o que el ID del pedido tenga un formato específico? ¡Dime y lo preparamos! 🚀
+$$$

@@ -1,0 +1,67 @@
+Hello there! I can definitely help you with that! 🍕
+
+To make the simulated user change their mind halfway through the conversation, we can use a super handy feature in Sensei Profiles called **`interaction_style`**. Specifically, we will use the **`change your mind`** style! 
+
+Combined with some clever prompting in the `user.context` and `user.goals`, we can create a scenario where the user starts by building a custom pizza, gets indecisive, and switches to a predefined one.
+
+Here is a complete, ready-to-use profile you can save in your `profiles/` folder (for example, as `custom_to_predefined_switch.yml`):
+
+```yaml
+test_name: "custom_to_predefined_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a hungry but indecisive customer ordering a pizza."
+  context:
+    - "You initially want to build your own custom pizza."
+    - "Halfway through the conversation, you realize it's too much effort and decide to just pick a predefined pizza from the menu instead."
+  goals:
+    - "Start by asking for a custom pizza with {{custom_toppings}}."
+    - "Ask what predefined pizzas are available."
+    - "Order a {{predefined_pizza}} pizza instead of the custom one."
+    - "Specify that you want it in a {{size}} size."
+    - custom_toppings:
+        function: random()
+        type: string
+        data: ["pepperoni and mushrooms", "extra cheese, ham, and olives", "onions and bell peppers"]
+    - predefined_pizza:
+        function: random()
+        type: string
+        data: ["Margarita", "Pepperoni", "Hawaiian", "Vegetarian"]
+    - size:
+        function: random()
+        type: string
+        data: ["small", "medium", "large"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Would you like a custom or predefined pizza?"
+  output:
+    - final_pizza_ordered:
+        type: string
+        description: "The actual pizza the user ended up ordering after changing their mind."
+    - size:
+        type: string
+        description: "The size of the final pizza."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      limit: 15
+  interaction_style:
+    - change your mind
+```
+
+### 👀 Why this works so well:
+1. **`interaction_style: [change your mind]`**: This is a reserved keyword in Sensei that instructs the user simulator to naturally hesitate, backtrack, or alter its choices during the chat.
+2. **The `context` and `goals`**: We explicitly tell the user persona to start with `{{custom_toppings}}` but then ask for a `{{predefined_pizza}}`. The `change your mind` style will make this transition feel very natural and human-like!
+3. **`chatbot.output`**: At the end of the conversation, Sensei will extract the `final_pizza_ordered`. This is perfect for testing because later, you can write a **Sensei Rule** to verify that the chatbot correctly registered the *predefined* pizza and discarded the *custom* one! 🕵️‍♂️
+
+Give it a try and let me know how your chatbot handles the indecisive customer! Do you need any help writing a rule to test the extracted output? 😊

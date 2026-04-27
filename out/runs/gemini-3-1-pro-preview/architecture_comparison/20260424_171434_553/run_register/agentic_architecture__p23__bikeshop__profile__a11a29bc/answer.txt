@@ -1,0 +1,69 @@
+I'd be happy to help you fix your profile! 😊
+
+Based on the SENSEI documentation (`sensei-chat-guide.md`), there are a few formatting issues and missing required fields in your YAML file. 
+
+Here is the corrected version of your profile:
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.2
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: you have to act as a user talking to a virtual assistant of a bike shop
+  context:
+    - You are interested in asking the items below.
+    - Just stick to asking opening times, prices of tire, price of tune-up, price of seat, and actions to the care of bike. Do not ask anything else.
+  goals:
+    - "opening and closing time of the bike shop"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: the opening and closing time of the shop
+    - tire:
+        type: string
+        description: the price of a new tire
+    - tune_up:
+        type: string
+        description: the price of a tune-up
+    - seat_price:
+        type: string
+        description: the price of a new seat
+    - care_bike:
+        type: string
+        description: actions to take care of the bike
+
+conversation:
+  number: 5
+  goal_style:
+    all_answered:
+      export: true
+  interaction_style:
+    - default
+```
+
+### 🛠️ What I fixed:
+
+1. **`llm.temperature`**: Changed `low` to `0.2`. The temperature must be a numeric float value.
+2. **Missing `llm` fields**: Added `model_prov: openai` and `format: type: text`. These are required to tell SENSEI which provider to use and how to format the input.
+3. **`chatbot.output` Types**:
+   - Changed `str` to `string` (the correct keyword for text).
+   - Changed `money` to `string`. SENSEI's default types are `int`, `float`, `string`, `time`, `date`, and `list`. Unless you have a custom type file named `money.yml` in your `types/` folder, it will throw an error. *(If you do have a custom type, you can change it back to `money`!)*
+   - Added the missing `type: string` to `seat_price` and `care_bike`. Every output field must declare its type.
+4. **Missing `conversation.goal_style`**: Added this section. SENSEI needs to know when to stop the conversation. Since you have a specific list of questions, I used `all_answered:` so the simulator knows to stop once all your goals have been addressed. I also added `export: true` so it generates a handy CSV report of the answers!
+
+Let me know if you have any questions or if you need help creating rules to validate these outputs! 🚲

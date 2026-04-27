@@ -1,0 +1,68 @@
+conversation ID: one_node_architecture__p14__alcampo__profile__a3f7e309
+$$$
+¡Hola! Claro que sí 😊. Planificar el menú semanal y pedir recetas es un caso de uso fantástico para probar en el chatbot de Alcampo. 
+
+He diseñado un perfil de Sensei que simula a un cliente buscando inspiración culinaria. Este perfil utiliza la función `pairwise()` para combinar eficientemente diferentes ingredientes principales y estilos de dieta, asegurando que pruebes varias combinaciones sin tener que ejecutar cientos de conversaciones. Además, el usuario simulado preguntará cómo añadir esos ingredientes directamente al carrito de la compra.
+
+Aquí tienes el perfil listo para usar. Puedes guardarlo en tu carpeta `profiles/` como `recipe_and_menu_planning.yaml`:
+
+```yaml
+test_name: "recipe_and_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Un cliente de Alcampo que busca inspiración para cocinar y planificar sus menús semanales."
+  context:
+    - "Quieres recetas saludables y fáciles de preparar con ingredientes que puedas comprar en Alcampo."
+    - "Te interesa planificar tus comidas de la semana para ahorrar tiempo y comer mejor."
+  goals:
+    - "Pedir una recomendación de receta para {{meal_type}} que tenga como ingrediente principal {{main_ingredient}}."
+    - "Solicitar una propuesta de menú semanal con un enfoque {{diet_style}}."
+    - "Preguntar cómo puedes añadir los ingredientes de estas recetas directamente a tu carrito de la compra online en Alcampo."
+    - meal_type:
+        function: random()
+        type: string
+        data: ["una cena rápida", "un almuerzo familiar", "un desayuno energético"]
+    - main_ingredient:
+        function: pairwise()
+        type: string
+        data: ["pollo", "salmón", "verduras de temporada", "legumbres"]
+    - diet_style:
+        function: pairwise()
+        type: string
+        data: ["mediterráneo", "vegetariano", "bajo en carbohidratos", "económico"]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro. 😊 ¿En qué puedo ayudarte hoy con tus recetas o compras en Alcampo?"
+  output:
+    - suggested_recipe:
+        type: string
+        description: "El nombre o descripción de la receta sugerida por el chatbot."
+    - weekly_menu_provided:
+        type: string
+        description: "Resumen o confirmación del menú semanal propuesto."
+    - cart_integration_info:
+        type: string
+        description: "Explicación sobre cómo añadir los ingredientes al carrito de compra."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 15
+  interaction_style:
+    - single questions
+```
+
+### ¿Qué hace este perfil? 👀
+1. **Variables dinámicas:** Combina tipos de comida (ej. cena rápida), ingredientes (ej. salmón) y estilos de dieta (ej. vegetariano) para que cada conversación sea única.
+2. **Extracción de datos (`chatbot.output`):** Al final de la conversación, Sensei extraerá la receta sugerida, el menú semanal y las instrucciones para usar el carrito. ¡Esto es súper útil si luego quieres crear **Reglas de Sensei (Rules)** para validar que el bot siempre da instrucciones claras!
+
+Si necesitas ayuda para crear una regla metamórfica que valide los resultados de este perfil (por ejemplo, comprobar que el bot siempre responde en español o que no se sale del tema de las recetas), ¡dímelo y lo preparamos en un momento! 🧑‍🍳✨
+$$$

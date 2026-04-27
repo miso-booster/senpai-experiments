@@ -1,0 +1,68 @@
+Hello there! 🚲✨ I’d be absolutely delighted to help you create this profile! 
+
+Based on your description, we need a straightforward, no-nonsense customer who asks clear questions about basic services and shop hours, while strictly avoiding topics like appointments or advanced repairs. 
+
+To achieve this, I've placed your negative constraints (what *not* to ask) inside the `user.context` section, and I've set the `interaction_style` to `single questions` so the simulated user asks things clearly and directly, one at a time. I also set up the `chatbot.output` so you can easily extract and validate the prices and advice the bot gives!
+
+Here is the complete YAML profile for your test. You can save this as `general_shop_inquiry.yml` inside your `profiles/` folder:
+
+```yaml
+test_name: "general_shop_inquiry"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer looking for general information about the bike shop and its standard services.
+    You phrase your questions clearly and directly.
+  context:
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, or delivery services."
+    - "Stick strictly to basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_hours:
+        type: string
+        description: "The opening and closing times of the bike shop."
+    - tire_price:
+        type: string
+        description: "The price of a new bike tire."
+    - tune_up_price:
+        type: string
+        description: "The price of a standard bike tune-up."
+    - seat_price:
+        type: string
+        description: "The price of a new bike seat."
+    - bike_care_advice:
+        type: string
+        description: "General advice provided on how to properly take care of a bike."
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - single questions
+```
+
+### 💡 A few quick Senpai tips on this profile:
+* **`chatbot.output` Types:** I noticed in some of your other profiles (like `qa.yml`), you use a custom type called `money` for prices! If you have `money.yml` defined in your `types/` folder, feel free to change the `type: string` to `type: money` for `tire_price`, `tune_up_price`, and `seat_price`.
+* **`all_answered` Goal Style:** I used `all_answered` with `export: true`. This means Sensei will keep the conversation going until all 5 of your goals are met, and then it will export a handy CSV dataframe showing exactly what was satisfied! 👀
+* **`single questions`:** This interaction style is perfect for your requirement that the user "phrase questions clearly and directly." It prevents the LLM from bundling all five questions into one massive paragraph.
+
+Let me know if you'd like to tweak any of the goals or if you need help writing some **Sensei Rules** to validate the extracted outputs! How else can I help you today? 😊

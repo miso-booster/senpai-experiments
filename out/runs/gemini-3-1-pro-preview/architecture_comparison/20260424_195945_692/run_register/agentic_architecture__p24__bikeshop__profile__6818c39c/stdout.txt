@@ -1,0 +1,72 @@
+conversation ID: agentic_architecture__p24__bikeshop__profile__6818c39c
+$$$
+Here is the SENSEI profile tailored for testing your bike shop's virtual assistant. 
+
+I have structured it based on the `sensei-chat-guide.md` documentation, ensuring the simulated user behaves exactly as you described and that the chatbot's responses are extracted properly for future validation.
+
+```yaml
+test_name: "bike_shop_general_info"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer looking for general information about a bike shop and its standard services.
+    You behave like a normal customer and phrase your questions clearly and directly.
+  context:
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or any topic outside of basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask about the price of a new bike tire."
+    - "Ask about the price of a standard bike tune-up."
+    - "Ask about the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices rather than advanced repairs."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you rephrase?"
+  output:
+    - shop_hours:
+        type: string
+        description: "The opening and closing times provided by the chatbot."
+    - tire_price:
+        type: string
+        description: "The quoted price for a new bike tire."
+    - tune_up_price:
+        type: string
+        description: "The quoted price for a standard bike tune-up."
+    - seat_price:
+        type: string
+        description: "The quoted price for a new bike seat."
+    - maintenance_advice:
+        type: string
+        description: "The general advice provided on basic bike maintenance."
+    - unrelated_topics_introduced:
+        type: string
+        description: "Any unrelated services, advanced repairs, or unsolicited suggestions introduced by the chatbot. Should be none or empty."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🚲 How this profile matches your requirements:
+
+*   **Role & Tone**: The `user.role` and `interaction_style: [default]` ensure the simulator acts like a normal customer asking clear, direct questions in English.
+*   **Strict Boundaries**: The `user.context` explicitly forbids the simulator from asking about appointments, specific models, warranties, delivery, or advanced repairs. This keeps the conversation tightly focused on your test parameters.
+*   **Specific Inquiries**: The `user.goals` list covers all your required questions (hours, tire price, tune-up price, seat price, and basic maintenance advice).
+*   **Evaluation Readiness**: The `chatbot.output` section is designed to extract exactly what you want to evaluate. It pulls the prices, the shop hours, the maintenance advice, and specifically checks if any `unrelated_topics_introduced` slipped into the chatbot's replies. This makes it very easy to write SENSEI rules later to validate the bot's accuracy and focus! 😊
+
+Let me know if you'd like to adjust any of the goals or if you'd like to write some validation rules for this profile next!
+$$$

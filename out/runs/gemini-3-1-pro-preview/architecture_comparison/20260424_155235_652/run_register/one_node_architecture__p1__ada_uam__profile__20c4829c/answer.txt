@@ -1,0 +1,67 @@
+Hello there! 😊 I'd be happy to help you create a Sensei profile for this scenario. 
+
+Testing how a chatbot handles Wi-Fi troubleshooting is super important, especially for something as universal as **eduroam**! 
+
+To make this profile robust, I've set up two variables: `{{device_os}}` and `{{setup_method}}`. By using the `pairwise()` function on both, Sensei will automatically generate a smart combination of test cases (like trying the *eduroam CAT installer* on *macOS*, or *manual configuration* on *Android*) without creating an overwhelming number of conversations.
+
+Here is your ready-to-use profile:
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student or staff member trying to connect to the eduroam Wi-Fi network, but you are facing technical issues and cannot get it to work.
+  context:
+    - "You are a bit frustrated because you need internet access for your classes/work."
+    - "You have already tried following the standard instructions, but it keeps failing."
+  goals:
+    - "State that you are trying to set up eduroam on your {{device_os}} device."
+    - "Explain that you attempted the setup using the {{setup_method}}, but it didn't work."
+    - "Ask for alternative troubleshooting steps or if there is a known issue with the network today."
+    - device_os:
+        function: pairwise()
+        type: string
+        data: [Windows 11, macOS, Android, iOS, Ubuntu Linux]
+    - setup_method:
+        function: pairwise()
+        type: string
+        data: [eduroam CAT installer, manual configuration, geteduroam app, QR code]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you please rephrase your question?"
+  output:
+    - troubleshooting_steps:
+        type: string
+        description: "The specific troubleshooting steps or alternative methods provided by the chatbot."
+    - requires_it_support:
+        type: string
+        description: "Did the chatbot suggest visiting the IT helpdesk or opening a ticket? (Yes/No)"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - long phrases
+      - change your mind
+```
+
+### A quick breakdown of what's happening here 👀:
+* **Variables:** We defined `device_os` and `setup_method` in the `goals` section. The `pairwise()` function ensures we test a great variety of combinations efficiently!
+* **Conversation Number:** `combinations(1, pairwise)` tells Sensei to run exactly the number of conversations needed to cover all the pairwise combinations (100% of them).
+* **Chatbot Output:** At the end of the chat, Sensei will extract the `troubleshooting_steps` the bot provided, and check if it escalated the issue to human IT support (`requires_it_support`). This is super handy if you want to write a Sensei Rule later!
+* **Interaction Style:** I added a bit of chaos with `random: [make spelling mistakes, long phrases, change your mind]`. Frustrated users often type with typos or ramble, so this makes the simulation much more realistic! 
+
+Let me know if you'd like to tweak the devices, add more setup methods, or if you want to write a **Sensei Rule** to validate the chatbot's answers! 🚀

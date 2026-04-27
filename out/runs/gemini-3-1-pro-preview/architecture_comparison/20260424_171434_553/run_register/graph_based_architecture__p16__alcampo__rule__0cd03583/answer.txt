@@ -1,0 +1,36 @@
+Hello there! 👋 I'd be more than happy to help you create this rule! 
+
+Since you are creating the rule *before* the profile exists, you are using what we call **Rule-first design** in Sensei-check! 📝 This means we can invent the variables now, but whoever creates the SENSEI Chat profile later **must** make sure to include these exact variable names in their `chatbot.output` so the rule works properly.
+
+I've prepared two different rules for you. One is a simple check for a single conversation, and the other is a **metamorphic rule** that compares two conversations. 
+
+Here is the first one! It simply ensures that if a user asks for a lactose-free product, the chatbot actually offers a product flagged as lactose-free:
+
+```yaml
+name: lactose_free_guarantee
+description: If the user explicitly requests a lactose-free product, the offered product must be lactose-free.
+conversations: 1
+if: dietary_preference == 'lactose-free'
+then: is_lactose_free == true
+```
+
+And here is a **metamorphic rule**! This one compares two conversations where the user asks for the same product category and brand, but one asks for regular and the other asks for lactose-free. It checks that the lactose-free variant is not cheaper than the regular one (a common pricing behavior 🥛💸):
+
+```yaml
+name: lactose_free_price_monotonicity
+description: Lactose-free variants of the same product category and brand should cost the same or more than the regular version.
+conversations: 2
+when: conv[0].product_category == conv[1].product_category and conv[0].brand == conv[1].brand
+if: conv[0].dietary_preference == 'none' and conv[1].dietary_preference == 'lactose-free'
+then: extract_float(conv[0].price) <= extract_float(conv[1].price)
+```
+
+### 💡 What you'll need for your future Profile:
+When you or your team get around to creating the SENSEI Chat profile for this, just make sure the `chatbot.output` includes these fields to match the rules above:
+* `dietary_preference` (e.g., 'none', 'lactose-free', 'vegan')
+* `is_lactose_free` (boolean: true/false)
+* `product_category` (e.g., 'milk', 'cheese')
+* `brand` (e.g., 'DairyBest')
+* `price` (e.g., '2.50 EUR')
+
+Let me know if you'd like to tweak these, or if you want me to help you draft the SENSEI Chat profile to go along with them! ✨ How else can I help you today? 😊

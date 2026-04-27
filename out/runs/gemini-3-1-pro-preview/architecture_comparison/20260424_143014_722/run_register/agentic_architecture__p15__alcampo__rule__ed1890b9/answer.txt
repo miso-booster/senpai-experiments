@@ -1,0 +1,51 @@
+Hello! I can definitely help you fix this rule. 😊
+
+I've reviewed the SENSEI-check documentation (specifically `sensei-check-doc.md`) and checked your project files. There are a couple of syntax issues in your YAML, and an important detail about how it connects to your profiles.
+
+### 1. Syntax Fixes
+- **Typo:** `descriptin` needs to be `description`.
+- **Missing `then`:** In SENSEI-check, if you use an `if` statement, you **must** pair it with a `then` statement. Since your condition is just checking if variables are populated (a simple boolean check), you should use the `oracle` keyword instead of `if`.
+
+Here is the syntactically corrected version of your rule:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+oracle: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+```
+
+### 2. Profile Alignment (Important!)
+I searched your project and found the profile `customer_service_assistance.yaml`. This profile correctly extracts `contact_options` and `customer_service_number` in its `chatbot.output`. 
+
+**However, it does NOT extract a field called `user_request`.** 
+Because `user_request` doesn't exist in the profile's outputs, the `when` filter in your rule will fail to find any matching conversations.
+
+### How would you like to proceed?
+
+**Option A: Add `user_request` to your profile**
+If you want to keep the rule exactly as written above, we will need to update `customer_service_assistance.yaml` to extract `user_request` as a string in its `chatbot.output`.
+
+**Option B: Split into two 1-conversation rules (Recommended)**
+Usually, checking if a chatbot answers a specific question is better handled as a single-conversation rule using the built-in `utterance_index` helper. This avoids needing a `user_request` field entirely! 
+
+Here is how that would look:
+
+```yaml
+name: provides_contact_options
+description: Ensure the chatbot provides contact options when asked.
+conversations: 1
+if: utterance_index('user', 'contact options') > 0
+then: contact_options is not None
+```
+
+```yaml
+name: provides_customer_service_number
+description: Ensure the chatbot provides the customer service number when asked.
+conversations: 1
+if: utterance_index('user', 'customer service number') > 0
+then: customer_service_number is not None
+```
+
+Let me know if `customer_service_assistance.yaml` is indeed the profile you are targeting, and which approach you'd prefer!

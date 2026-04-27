@@ -1,0 +1,32 @@
+Hello there! 😊 I'd be happy to explain connectors to you!
+
+**What are connectors used for?**
+In Sensei, a **Custom YAML Connector** acts as a bridge between the Sensei user simulator and your actual chatbot. It allows you to connect to any external chatbot API *without writing a single line of code*! 🚀 
+
+Think of it as an instruction manual you give to Sensei. You just create a simple YAML file that tells Sensei exactly where to send the simulated user's messages and how to extract the chatbot's replies from the API's response.
+
+**What fields do they have?**
+To set up this communication, your connector YAML file will use the following fields:
+
+*   **`name`** *(Optional)*: A friendly, human-readable name for your chatbot.
+*   **`base_url`** *(Required)*: The main URL of the chatbot's API (e.g., `https://api.mychatbot.com`).
+*   **`send_message.path`** *(Required)*: The specific endpoint path where messages are sent (e.g., `/chat`). This gets appended to the `base_url`.
+*   **`send_message.method`** *(Optional)*: The HTTP method to use, like `POST`, `GET`, `PUT`, or `DELETE`. If you leave this out, it defaults to `POST`.
+*   **`send_message.headers`** *(Optional)*: Any custom headers your API needs, such as an `Authorization` token or `Content-Type`.
+*   **`send_message.payload_template`** *(Required)*: The JSON structure of the request body. You must include the **`{user_msg}`** placeholder here so Sensei knows exactly where to inject the simulated user's text!
+*   **`response_path`** *(Required)*: A dot-separated path that tells Sensei how to navigate the JSON response to find the bot's actual reply. For example, if the API returns `{"data": {"text": "Hello!"}}`, your response path would be `data.text`.
+
+Here is a super simple example of what a complete connector looks like (this one just echoes messages back using Postman):
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+Let me know if you'd like help creating or configuring a connector for your specific chatbot! 🤖✨

@@ -1,0 +1,73 @@
+Hello there! 👋 Welcome to the Dojo! 
+
+Creating a profile for an Erasmus student is a fantastic idea. It’s a very realistic scenario where the user is completely lost, needs clear instructions, and might even struggle a bit with the language. 
+
+To keep the inputs simple, I've only added one variable (`sistema_universitario`) that iterates through Moodle, Sigma, and the Institutional Email. For the `chatbot.output`, I've included several fields like `id_uam_instructions`, `system_access_link`, and `support_contact_email` so you can easily write Sensei-check rules later to verify that the bot is actually providing the links and contact info they need.
+
+I also added a fun touch in the `interaction_style`: since they are an Erasmus student, they might randomly switch to English or make spelling mistakes! 🌍
+
+Here is the profile ready for your project:
+
+```yaml
+test_name: "erasmus_student_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la universidad. No estás familiarizado con los sistemas digitales de la institución y necesitas ayuda urgente para configurarlos antes de que empiecen las clases.
+  context:
+    - "No sabes qué es el ID-UAM ni cómo conseguirlo."
+    - "Necesitas acceder a Moodle para ver tus asignaturas."
+    - "Necesitas acceder a Sigma para comprobar tu matrícula."
+    - "Prefieres respuestas claras y paso a paso, ya que el idioma y los sistemas son nuevos para ti."
+  goals:
+    - "Preguntar cómo obtener el ID-UAM y la contraseña por primera vez."
+    - "Solicitar instrucciones paso a paso para acceder a {{sistema_universitario}}."
+    - "Preguntar a quién debes contactar si tienes problemas técnicos con tus cuentas."
+    - sistema_universitario:
+        function: forward()
+        type: string
+        data: ["Moodle", "Sigma", "Correo Institucional"]
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios."
+  output:
+    - id_uam_instructions:
+        type: string
+        description: "Instrucciones proporcionadas para obtener o activar el ID-UAM."
+    - system_access_link:
+        type: string
+        description: "Enlace directo proporcionado para acceder a Moodle, Sigma o el Correo."
+    - step_by_step_guide:
+        type: string
+        description: "Guía paso a paso extraída de la respuesta del bot para configurar el sistema."
+    - support_contact_email:
+        type: string
+        description: "Correo electrónico de soporte técnico (CAU) proporcionado al usuario."
+    - support_contact_phone:
+        type: string
+        description: "Número de teléfono de soporte técnico proporcionado al usuario."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 15
+  interaction_style:
+    - random:
+      - single questions
+      - change language:
+        - English
+      - make spelling mistakes
+```
+
+Save this as a `.yaml` file inside your `profiles/` folder (for example, `profiles/erasmus_student_setup.yaml`). 
+
+Once you run this profile, you'll be able to write some great Sensei-check rules—like making sure `support_contact_email` is never empty when the user asks for help! Let me know if you'd like me to help you write those rules next. 😊👀

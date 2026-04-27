@@ -1,0 +1,77 @@
+Here is the profile for the pizza shop. I have designed it based on the SENSEI profiles documentation (`sensei-chat-guide.md`). 
+
+To capture the "rude and fast" persona, I set up the `role` and `context` to be impatient, and I used the `all questions` interaction style so the user blurts out their entire order at once to save time. 
+
+It includes exactly 4 goals and 4 variables (`size`, `crust`, `toppings`, `drink`). The `size` and `crust` variables use the `pairwise()` function, and the conversation number is set to `combinations(1, pairwise)` so it will automatically run enough conversations to cover all pairs of sizes and crusts.
+
+```yaml
+test_name: "pizza_shop_rude_fast"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a very rude customer ordering from a pizza shop. You are extremely impatient and want things done fast.
+    You don't have time for pleasantries, you demand quick service, and you are easily annoyed.
+  context:
+    - "You are in a huge rush."
+    - "You want your pizza delivered immediately and will complain if it takes too long."
+  goals:
+    - "Order a {{size}} pizza."
+    - "Specify that you want a {{crust}} crust."
+    - "Add {{toppings}} as toppings."
+    - "Include a {{drink}} to drink."
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, family]
+    - crust:
+        function: pairwise()
+        type: string
+        data: [thin, thick, stuffed, gluten-free]
+    - toppings:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, extra cheese, onions, sausage]
+    - drink:
+        function: random()
+        type: string
+        data: [cola, water, beer, lemonade]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you repeat that?"
+  output:
+    - size:
+        type: string
+        description: "The size of the pizza ordered."
+    - crust:
+        type: string
+        description: "The type of crust ordered."
+    - toppings:
+        type: string
+        description: "The toppings added to the pizza."
+    - drink:
+        type: string
+        description: "The drink ordered."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - all questions
+```
+
+### Summary of what this does:
+* **Persona**: The `role` and `context` instruct the LLM to act rude and impatient. The `interaction_style: [all questions]` ensures the user dumps all their demands in a single message to get it done fast.
+* **Goals & Variables**: There are 4 distinct goals, each tied to one of the 4 variables (`size`, `crust`, `toppings`, `drink`).
+* **Pairwise Matrix**: `size` and `crust` use `pairwise()`. Because `conversation.number` is set to `combinations(1, pairwise)`, Sensei will calculate the pairwise matrix for those two variables and run exactly the number of conversations needed to test every combination of size and crust at least once (which is 16 combinations in this case). The other variables (`toppings` and `drink`) will just be picked at random for each run.

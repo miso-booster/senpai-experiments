@@ -1,0 +1,37 @@
+Based on the SENSEI documentation (`sensei-check-doc.md`), there isn't a specific built-in helper function called `pairwise()`. However, it sounds like you are referring to **metamorphic rules**, which are designed exactly for this: they evaluate **pairs (or tuples) of conversations** to see how the chatbot's outputs change when the inputs change.
+
+Here is how pairwise comparison works in SENSEI RULES using metamorphic testing:
+
+### 1. Setting the Number of Conversations
+To compare a pair of conversations, you set the `conversations` field in your rule to `2`.
+
+### 2. Accessing the Pair
+Instead of just referencing a variable directly (like `price`), you access the variables from each conversation in the pair using the `conv` array:
+* `conv[0]` represents the first conversation.
+* `conv[1]` represents the second conversation.
+
+### 3. Filtering Comparable Pairs (`when`)
+You use the `when` clause to ensure you are only comparing apples to apples. For example, you might only want to compare two conversations if the user ordered the exact same size of pizza.
+
+### 4. Defining the Relation (`if` / `then`)
+You define a logical relationship that must hold true between the two conversations. 
+
+### Example: Pairwise Comparison in Action
+Here is a classic example of a metamorphic rule that compares a pair of conversations to ensure that adding more toppings to a pizza increases the price:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+# 1. Filter: Only compare pairs where size, drink, and quantity are identical
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+# 2. Condition: If the first conversation has more toppings than the second...
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+# 3. Assertion: ...then the price in the first conversation must be higher.
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### Summary
+While there is no `pairwise()` function, the entire **metamorphic testing** framework in SENSEI is built around pairwise (or multi-way) comparisons using `conversations: 2` and the `conv[0]` / `conv[1]` syntax! 
+
+Does this cover what you were looking for, or were you thinking of a different specific helper function? 😊

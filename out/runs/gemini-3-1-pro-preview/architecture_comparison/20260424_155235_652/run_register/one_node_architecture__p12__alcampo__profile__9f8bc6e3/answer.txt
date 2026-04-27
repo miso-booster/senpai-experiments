@@ -1,0 +1,64 @@
+Hello there! I'd be happy to help you create a profile for adding items to a shopping cart. 🛒✨
+
+To make this profile dynamic and useful, we can use **variables** in the user's goals. This way, the simulated user will ask for different items and quantities in each conversation. We'll also set up the `chatbot.output` to extract the item name, the quantity, and the total price of the cart so you can easily verify if the bot is doing its job correctly!
+
+Here is a complete, ready-to-use profile:
+
+```yaml
+test_name: "shopping_cart_addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer doing your weekly grocery shopping online and need to add items to your cart."
+  context:
+    - "You are preparing for a family weekend and need to stock up on essentials."
+    - "You want to make sure the items are successfully added to your cart."
+  goals:
+    - "Ask the chatbot to add {{quantity}} units of {{item}} to your shopping cart."
+    - "Inquire about the current total price of the cart after adding the item."
+    - item:
+        function: forward()
+        type: string
+        data: ["milk", "bread", "eggs", "apples", "chicken breast"]
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite get that. What would you like to add to your cart?"
+  output:
+    - added_item:
+        type: string
+        description: "The name of the item added to the cart"
+    - item_quantity:
+        type: int
+        description: "The number of units added to the cart"
+    - cart_total:
+        type: currency
+        description: "The total price of the shopping cart after adding the items"
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+### How this works:
+* **`forward()` for items:** The simulator will go through the list of items ("milk", "bread", etc.) one by one across the 5 conversations.
+* **`random()` for quantity:** It will pick a random number between 1 and 5 for the quantity of each item.
+* **Outputs:** At the end of the chat, Sensei will extract the `added_item`, `item_quantity`, and `cart_total`. 
+
+If you'd like, we can also create a **Sensei Rule** to test this profile later—for example, to check that the `cart_total` is always greater than zero once an item is added! Let me know if you need any tweaks or further help. 😊

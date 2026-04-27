@@ -1,0 +1,77 @@
+Here is the profile for your rude and impatient pizza shop customer! 🍕😠
+
+I have set up the 4 goals with 4 variables (`size`, `crust`, `toppings`, and `drink`). As requested, two of them (`size` and `crust`) use the `pairwise()` function, while the other two use `random()`. 
+
+To ensure the number of conversations is determined by the pairwise matrix, I set `conversation.number: combinations`. This tells Sensei to automatically calculate the required number of conversations to cover every possible pair of `size` and `crust` at least once.
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering from a pizza shop. You are extremely rude, impatient, and want things done fast.
+    You do not tolerate delays, small talk, or incompetence.
+  context:
+    - "You are starving and in a massive hurry."
+    - "You demand immediate answers and use a demanding tone."
+  goals:
+    - "Order a pizza of size {{size}}."
+    - "Specify that you want a {{crust}} crust."
+    - "Demand they add {{toppings}} to your pizza."
+    - "Tell them to include a {{drink}} with the order."
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - crust:
+        function: pairwise()
+        type: string
+        data: [thin, thick, stuffed]
+    - toppings:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, extra cheese]
+    - drink:
+        function: random()
+        type: string
+        data: [cola, water, beer]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you repeat that?"
+  output:
+    - order_size:
+        type: string
+        description: "The size of the pizza"
+    - order_crust:
+        type: string
+        description: "The crust type"
+    - order_toppings:
+        type: string
+        description: "The requested toppings"
+    - order_drink:
+        type: string
+        description: "The requested drink"
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### How the Pairwise Matrix Works Here
+Because we have 3 options for `size` and 3 options for `crust`, a full Cartesian grid would be 9 combinations. The `pairwise()` function ensures that every pair of these two variables is tested at least once. By setting `conversation.number: combinations`, Sensei will calculate the exact number of runs needed to satisfy this pairwise coverage (which in this 3x3 case will be 9 conversations) without you having to hardcode the number! Meanwhile, `toppings` and `drink` will just be picked randomly for each of those conversations.
+
+Let me know if you'd like to adjust the data options or add any specific interaction styles (like `make spelling mistakes` or `long phrases`) to make the user even more difficult! 😊

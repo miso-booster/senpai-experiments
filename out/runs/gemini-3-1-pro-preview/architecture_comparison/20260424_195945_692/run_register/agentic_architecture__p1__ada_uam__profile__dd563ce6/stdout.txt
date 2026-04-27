@@ -1,0 +1,78 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__dd563ce6
+$$$
+Here is a complete SENSEI profile for a user trying to set up **eduroam** but failing to do so. 
+
+Based on the SENSEI Chat documentation (`sensei-chat-guide.md`), I have included variables not only for the **setup methods** (as you requested) but also for the **device type** and the **error message**. To test these efficiently, I used the `pairwise()` function, which generates a smart combination of these variables to cover all pairs without running an excessive number of conversations.
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student or staff member trying to connect your device to the eduroam Wi-Fi network, but you are failing.
+    You are asking the IT support chatbot for help.
+  context:
+    - "You have your university credentials (email and password) ready."
+    - "You are currently using mobile data to talk to the chatbot."
+    - "You are getting frustrated because you need internet access for your classes."
+  goals:
+    - "Explain that you are trying to set up eduroam on your {{device_type}} using the {{setup_method}}."
+    - "Mention that you are getting the error: {{error_message}}."
+    - "Ask for step-by-step help to fix the issue."
+    - device_type:
+        function: pairwise()
+        type: string
+        data: [Android phone, iPhone, Windows laptop, MacBook]
+    - setup_method:
+        function: pairwise()
+        type: string
+        data: [eduroam CAT installer, geteduroam app, manual configuration, QR code]
+    - error_message:
+        function: pairwise()
+        type: string
+        data: [authentication failed, cannot connect to network, certificate not trusted, incorrect password]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - suggested_solution:
+        type: string
+        description: "The solution or troubleshooting step provided by the chatbot"
+    - ticket_created:
+        type: string
+        description: "Whether an IT support ticket was created (yes/no)"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - long phrases
+      - default
+```
+
+### 📝 How this profile works:
+
+1. **Variables (`user.goals`)**: 
+   - `{{setup_method}}`: Tests the different ways a user might try to connect (e.g., *eduroam CAT installer*, *geteduroam app*, *manual configuration*, *QR code*).
+   - `{{device_type}}`: Tests different operating systems, as troubleshooting steps often vary by device.
+   - `{{error_message}}`: Tests how the chatbot handles different failure reasons.
+2. **Pairwise Combinations**: By setting the function to `pairwise()` for these three variables and using `combinations(1, pairwise)` in `conversation.number`, Sensei will automatically calculate the minimum number of conversations needed to test every possible pair of device, setup method, and error message at least once.
+3. **Chatbot Output**: At the end of each conversation, Sensei will extract the `suggested_solution` and whether a `ticket_created` was necessary. You can later use these fields in SENSEI RULES to validate if the chatbot gave the correct advice for a specific device or error!
+4. **Interaction Style**: It randomly applies different user behaviours (like making spelling mistakes or using long phrases) to make the simulation more realistic.
+
+Let me know if you'd like to add more setup methods or if you want to create a SENSEI RULE to validate the chatbot's responses for this profile! 😊
+$$$

@@ -1,0 +1,87 @@
+conversation ID: graph_based_architecture__p12__alcampo__profile__8effaba5
+$$$
+Hello there! 😊 I'd be absolutely delighted to help you create a Sensei Profile for adding items to a shopping cart! 🛒✨
+
+To make this profile super effective, we'll set up a simulated user who asks the chatbot to add a few different items to their cart. We'll use **variables** with the `pairwise()` function so Sensei can test different combinations of groceries and snacks without running an overwhelming number of conversations. 
+
+We'll also set up the `chatbot.output` section so that at the end of the chat, Sensei extracts the items that were added. This is perfect if you want to run Sensei-check rules later to verify your bot's behavior!
+
+Here is a complete, ready-to-use profile. You can save this as `add_to_cart.yml` inside your `profiles/` folder:
+
+```yaml
+test_name: "add_to_shopping_cart_test"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer doing your weekly grocery shopping online. 
+    You want to add various items to your shopping cart quickly and easily.
+  context:
+    - "You are preparing for a weekend family dinner and need specific ingredients."
+    - "You like to double-check that your items were actually added to the cart."
+  goals:
+    - "Please add {{quantity}} of {{grocery_item}} to my shopping cart."
+    - "I also need to add 1 pack of {{snack_item}} to the cart."
+    - "Can you confirm all the items that are currently in my shopping cart?"
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - grocery_item:
+        function: pairwise()
+        type: string
+        data: [apples, milk, whole wheat bread, free-range eggs, chicken breast]
+    - snack_item:
+        function: pairwise()
+        type: string
+        data: [potato chips, dark chocolate, mixed nuts, popcorn]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you repeat what you'd like to add to your cart? 🛒"
+  output:
+    - items_added:
+        type: list[string]
+        description: "The list of food items the user requested to add to the cart."
+    - total_quantity:
+        type: int
+        description: "The total number of items currently in the cart."
+    - cart_confirmed:
+        type: string
+        description: "A short summary or confirmation message from the bot about the cart status."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - single questions
+      - make spelling mistakes
+      - long phrases
+```
+
+### 🧐 A quick breakdown of what's happening here:
+
+1. **Dynamic Goals (`user.goals`)**: 
+   Notice the `{{quantity}}`, `{{grocery_item}}`, and `{{snack_item}}` variables? Sensei will automatically swap these out with the data we provided. 
+2. **Smart Combinations (`pairwise()`)**: 
+   Because we used `pairwise()` on both the grocery items and the snacks, Sensei will mix and match them efficiently. The `combinations(1, pairwise)` setting in the `conversation` block tells Sensei to run just enough conversations to test every pair at least once!
+3. **Data Extraction (`chatbot.output`)**: 
+   At the end of the chat, Sensei will extract a `list[string]` of the items added and an `int` of the total quantity. This is your "contract"—you can later write rules to ensure `conv[i].items_added` isn't empty! 📝
+4. **Human-like Behavior (`interaction_style`)**: 
+   To make the test more realistic, the simulated user will randomly decide to ask single questions, make spelling mistakes, or use long phrases. 
+
+Feel free to tweak the grocery lists or change the language to fit your specific chatbot. Let me know if you need help writing Sensei Rules to validate this cart, or if you have any other questions! Happy testing! 🚀👀
+$$$

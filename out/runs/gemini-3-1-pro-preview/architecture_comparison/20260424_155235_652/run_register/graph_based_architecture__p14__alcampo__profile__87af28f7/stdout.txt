@@ -1,0 +1,90 @@
+conversation ID: graph_based_architecture__p14__alcampo__profile__87af28f7
+$$$
+¡Hola! Qué gran idea 💡. Probar la capacidad de recomendación y planificación de menús es fundamental para un asistente de supermercado. 
+
+He revisado tu proyecto y he visto que ya tienes un perfil llamado `recipe_management_and_cooking_support.yaml` que toca un poco el tema de "La Cocina de Alcampo". Sin embargo, para enfocarnos **específicamente en la planificación de menús y recomendación dinámica de recetas**, he creado un perfil nuevo y a medida para ti.
+
+Aquí tienes el YAML. En este perfil, el usuario simulado pedirá menús basados en diferentes tipos de dietas y recetas con ingredientes específicos usando **variables dinámicas** (`{{diet_type}}` y `{{main_ingredient}}`).
+
+### Perfil: `recipe_and_menu_planning.yml`
+
+```yaml
+test_name: "recipe_and_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Un cliente que busca inspiración para cocinar, recomendaciones de recetas y 
+    ayuda para planificar su menú semanal con productos de Alcampo.
+  context:
+    - "Quieres organizar tus comidas de la semana para comer más sano y ahorrar tiempo."
+    - "Te interesa aprovechar los productos frescos y de temporada que ofrece el supermercado."
+  goals:
+    - "Pídele al chatbot que te sugiera un menú semanal para una dieta {{diet_type}}."
+    - "Pregunta por una receta fácil que tenga {{main_ingredient}} como ingrediente principal."
+    - "Consulta cómo puedes añadir automáticamente los ingredientes de las recetas recomendadas a tu carrito de la compra."
+    - "Pide ideas para cenas rápidas que se preparen en menos de 30 minutos."
+    - diet_type:
+        function: random()
+        type: string
+        data: [mediterránea, vegetariana, sin gluten, alta en proteínas]
+    - main_ingredient:
+        function: random()
+        type: string
+        data: [pollo, salmón, tofu, calabacín, merluza]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - weekly_menu:
+        type: string
+        description: "El menú semanal sugerido por el chatbot."
+    - suggested_recipe:
+        type: string
+        description: "La receta sugerida con el ingrediente principal solicitado."
+    - cart_instructions:
+        type: string
+        description: "Instrucciones sobre cómo añadir ingredientes de recetas al carrito."
+    - quick_dinner_ideas:
+        type: list[string]
+        description: "Lista de ideas proporcionadas para cenas rápidas."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - random:
+      - single questions
+      - long phrases
+      - make spelling mistakes
+```
+
+### 🧑‍🏫 Notas de tu Senpai sobre este perfil:
+
+1. **Variables Dinámicas (`user.goals`)**: He utilizado la función `random()` para que en cada conversación el simulador elija una dieta distinta (ej. vegetariana, sin gluten) y un ingrediente distinto (ej. salmón, tofu). ¡Así pruebas la versatilidad del chatbot de Alcampo!
+2. **Extracción de Datos (`chatbot.output`)**: He definido campos como `weekly_menu` y `quick_dinner_ideas` (este último como `list[string]`). Esto es súper útil porque, si más adelante quieres crear **SENSEI RULES**, podrás escribir reglas como:
+   ```yaml
+name: check_quick_dinner_ideas
+description: If quick dinner ideas are provided, there must be at least 3.
+conversations: 1
+if: conv[0].quick_dinner_ideas is not None
+then: len(conv[0].quick_dinner_ideas) >= 3
+```
+   *(Para asegurarte de que el bot siempre da al menos 3 ideas).*
+3. **Estilo de Conversación (`goal_style` e `interaction_style`)**: Usamos `all_answered` para que la conversación fluya hasta que el bot responda a todas las peticiones. Además, el usuario a veces hará preguntas directas, a veces usará frases largas o incluso cometerá errores ortográficos (`make spelling mistakes`), ¡como un usuario real!
+
+Puedes guardar este código en un archivo llamado `recipe_and_menu_planning.yml` dentro de tu carpeta `profiles/`. 
+
+¿Te gustaría que ajustemos algún ingrediente, o necesitas ayuda para crear una regla (Sensei Rule) que valide las respuestas de este perfil? 👀✨
+$$$

@@ -1,0 +1,68 @@
+Hello there! 😊 I'd be happy to help you create a new Sensei profile for your bikeshop project. 
+
+Customizing a new bike is a very common and realistic scenario! I've designed this profile so the simulated user will ask about the setup service, inquire about different types of seats and grips using variables (to give you a nice variety of test cases), and check if they need an appointment.
+
+Here is the profile ready for your project:
+
+```yaml
+test_name: bike_customization_setup
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: A customer who recently bought a new bike and wants to customize it for a better fit and feel.
+  context:
+    - "You just bought a new bike, but the stock parts aren't very comfortable for you."
+    - "You specifically want to change the seat and the handlebar grips to tailor the bike to your liking."
+    - "You need to know if the shop does this kind of custom setup, how much the parts and labor cost, and if you need to book an appointment."
+  goals:
+    - "Ask if the shop offers custom setup services for new bikes."
+    - "Inquire about the price and options for a new {{seat_type}} seat."
+    - "Ask about replacing the stock handlebar grips with {{grip_type}} grips."
+    - "Ask how long the setup takes and if an appointment is needed."
+    - seat_type:
+        function: random()
+        type: string
+        data: [ergonomic, gel, racing, wide cruiser]
+    - grip_type:
+        function: random()
+        type: string
+        data: [foam, rubber, ergonomic lock-on, leather]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - setup_service_offered:
+        type: string
+        description: "Confirmation from the chatbot regarding whether the shop offers custom setup services for new bikes."
+    - seat_price:
+        type: money
+        description: "The price quoted by the chatbot for the requested seat type."
+    - grip_price:
+        type: money
+        description: "The price quoted by the chatbot for the requested handlebar grips."
+    - appointment_required:
+        type: string
+        description: "Information on whether an appointment is needed and how long the setup takes."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### A quick look at what this does 👀:
+* **Variables (`seat_type` & `grip_type`)**: The simulator will randomly pick from different styles (like a gel seat or leather grips) across the 4 conversations, ensuring your chatbot handles various product inquiries correctly.
+* **Outputs**: It extracts the prices for the seat and grips (using the `money` type), as well as whether the service is offered and if an appointment is needed. This will be super helpful if you want to write Sensei-check rules later!
+
+Let me know if you'd like to adjust any of the options or if you want to write some metamorphic rules to test this profile! 🚲✨

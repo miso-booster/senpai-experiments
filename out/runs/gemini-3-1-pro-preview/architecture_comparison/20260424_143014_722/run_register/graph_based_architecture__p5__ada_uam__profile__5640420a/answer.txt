@@ -1,0 +1,66 @@
+Hello there! I would be absolutely delighted to help you create this profile! 😊 
+
+Since you are testing the UAM chatbot, I've tailored this profile to specifically target the CAU (User Support Center) contact information. I even included the exact fallback message your UAM chatbot uses so that Sensei knows how to handle it if the bot gets confused!
+
+Here is the YAML profile. You can save this as `cau_contact_support.yml` inside your `profiles/` folder:
+
+```yaml
+test_name: "cau_contact_support"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario de la universidad que necesita contactar urgentemente con el 
+    Centro de Atención a Usuarios (CAU) para resolver un problema técnico.
+  context:
+    - "Prefieres tener todas las opciones de contacto a mano antes de decidir cómo comunicarte."
+    - "Necesitas saber si están abiertos ahora mismo y dónde se encuentran físicamente."
+  goals:
+    - "Preguntar por el número de teléfono del CAU."
+    - "Pedir la dirección de correo electrónico del CAU."
+    - "Consultar cuál es la ubicación física o dirección del CAU."
+    - "Preguntar por el horario de atención u horas de apertura del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - cau_phone:
+        type: string
+        description: "El número de teléfono del CAU"
+    - cau_email:
+        type: string
+        description: "El correo electrónico del CAU"
+    - cau_location:
+        type: string
+        description: "La dirección física o ubicación del CAU"
+    - cau_opening_hours:
+        type: string
+        description: "El horario de atención del CAU"
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - single questions
+```
+
+### 💡 A quick breakdown of what's happening here:
+* **`user.goals`**: This is where we tell our simulated user exactly what to ask for (phone, email, location, and hours).
+* **`chatbot.output`**: This is the "contract" for our test! At the end of the conversation, Sensei will extract these four specific fields. Later on, you can easily write **Sensei Rules** to verify that `conv[0].cau_phone is not None`, for example! 👀
+* **`goal_style: all_answered`**: I set the conversation to end as soon as all the goals are met (with a safety limit of 15 turns). It will also export a handy CSV showing which outputs were successfully satisfied.
+* **`interaction_style: single questions`**: This ensures the simulated user asks for one piece of information at a time, which is great for testing how the chatbot handles a back-and-forth flow.
+
+*Fun fact:* Looking at your project, you actually have a very similar profile already called `consultante_de_servicios_y_asistencia_del_cau.yaml`! The one I just made for you is a more focused, streamlined version specifically for those four pieces of contact info. 
+
+Let me know if you'd like to add any custom variables to this, or if you want to learn how to write **Sensei Rules** to validate the extracted data! 🚀 How else can I help you today?

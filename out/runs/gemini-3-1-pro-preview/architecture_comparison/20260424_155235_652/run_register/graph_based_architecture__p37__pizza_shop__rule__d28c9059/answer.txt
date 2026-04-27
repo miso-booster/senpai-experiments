@@ -1,0 +1,32 @@
+¡Hola! 👋 ¡Claro que sí, con mucho gusto te ayudo a crear esa regla! 🥤
+
+Para verificar si el asistente confirma la bebida, podemos usar una regla de **Sensei-check** de una sola conversación (`conversations: 1`). La herramienta perfecta para esto es la función `utterance_index(who, what)`, que busca en qué turno exacto de la conversación un rol (usuario o asistente) habló sobre un tema específico.
+
+Basándome en las reglas que ya tienes en tu proyecto (como `ordering_conversation_turns_assistant`), aquí tienes una regla lista para usar. He añadido una condición `if` para asegurarnos de que la regla solo se evalúe si el usuario efectivamente pidió una bebida:
+
+```yaml
+name: assistant_confirms_drink
+description: El asistente confirma que añadió la bebida después de que el usuario la pide.
+conversations: 1
+if: utterance_index('user', 'ordering a drink') > 0
+then: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms the drink order')
+```
+
+### 🤓 ¿Cómo funciona esta regla?
+1. **`conversations: 1`**: Analiza cada conversación de forma individual.
+2. **`if`**: Primero verifica si el usuario pidió una bebida (`utterance_index > 0` significa que sí lo mencionó en algún turno).
+3. **`then`**: Si lo anterior es cierto, comprueba que el turno donde el usuario pide la bebida ocurrió **antes** (`<`) del turno donde el asistente confirma la orden de la bebida.
+
+### 💡 Un tip extra (Usando tu SENSEI Profile):
+Veo en tus otras reglas (como `more_toppings_cost_more.yaml`) que tienes una variable `drink` en tu perfil. Si quieres ser aún más estricto y verificar que el asistente confirma **la bebida exacta** que se extrajo en el `chatbot.output`, podrías escribir la regla así:
+
+```yaml
+name: assistant_confirms_specific_drink
+description: El asistente confirma la bebida específica que el usuario pidió.
+conversations: 1
+when: drink is not None
+oracle: utterance_index('assistant', f'confirms adding {drink}') > utterance_index('user', 'ordering a drink')
+```
+*(Nota: Aquí usamos una f-string `f'...'` para inyectar el valor real de la variable `drink` en la búsqueda).*
+
+Puedes guardar cualquiera de estos bloques en un nuevo archivo `.yaml` dentro de tu carpeta de reglas. ¿Qué te parece? Si necesitas ajustarla o tienes alguna otra duda, ¡aquí estoy para ayudarte! 😊✨

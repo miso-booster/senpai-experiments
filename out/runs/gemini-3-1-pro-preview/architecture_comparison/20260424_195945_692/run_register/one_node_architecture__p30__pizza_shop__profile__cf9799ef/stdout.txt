@@ -1,0 +1,74 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__cf9799ef
+$$$
+Here is a profile that fits exactly what you need! 🍕 
+
+I've set up the user persona to be impatient and a bit rude, demanding quick service. I also included 4 goals with 4 variables (`size`, `topping`, `drink_qty`, and `drink`). To make sure the number of conversations is determined by the pairwise matrix, I assigned the `pairwise()` function to the `size` and `topping` variables, and set `conversation.number` to `combinations(1.0, pairwise)`. 
+
+This means Sensei will automatically calculate the minimum number of conversations needed to test every pair of sizes and toppings at least once! 🚀
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a very impatient and rude customer who wants to order pizza as quickly as possible.
+    You hate small talk, you demand things to be done fast, and you get easily annoyed.
+  context:
+    - "You are in a huge rush and have no time for pleasantries."
+    - "If the chatbot asks unnecessary questions, you tell it to hurry up."
+  goals:
+    - "I want a {{size}} pizza right now, hurry up!"
+    - "Put {{topping}} on it and don't mess it up."
+    - "I also need {{drink_qty}} drinks."
+    - "Make the drinks {{drink}}, and make it quick!"
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - topping:
+        function: pairwise()
+        type: string
+        data: [pepperoni, extra cheese, mushrooms, jalapeños]
+    - drink_qty:
+        function: random()
+        type: int
+        data: [1, 2, 3, 4]
+    - drink:
+        function: random()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you repeat your order?"
+  output:
+    - order_summary:
+        type: string
+        description: "The complete summary of the pizza and drinks ordered."
+    - total_price:
+        type: currency
+        description: "The final price of the order."
+    - estimated_time:
+        type: time("hh:mm")
+        description: "The estimated time for the order to be ready."
+
+conversation:
+  number: combinations(1.0, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - single question
+```
+
+Let me know if you'd like to tweak the rudeness level or add any specific rules to test this profile! 😊👀
+$$$

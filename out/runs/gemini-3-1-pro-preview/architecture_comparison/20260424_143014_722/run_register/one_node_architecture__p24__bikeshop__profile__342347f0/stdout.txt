@@ -1,0 +1,68 @@
+conversation ID: one_node_architecture__p24__bikeshop__profile__342347f0
+$$$
+Hello there! 😊 I'd be happy to help you create this Sensei profile for your bike shop's virtual assistant. 
+
+To make sure the simulated user behaves exactly as you described, I've placed your negative constraints (like not asking about appointments or specific models) directly into the `user.context` section. I also set up the `chatbot.output` section to extract the specific prices and advice the bot gives, which is perfect if you want to run Sensei-check rules on them later! 🚲
+
+Here is the complete YAML profile. You can save this in your `profiles/` folder (for example, as `bike_shop_general_info.yml`):
+
+```yaml
+test_name: "bike_shop_general_info"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer looking for general information about a bike shop and its standard services.
+  context:
+    - "You must behave like a normal customer and phrase questions clearly and directly."
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or any topic outside of basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you rephrase?"
+  output:
+    - shop_hours:
+        type: string
+        description: "The opening and closing times of the bike shop."
+    - tire_price:
+        type: currency
+        description: "The price of a new bike tire."
+    - tune_up_price:
+        type: currency
+        description: "The price of a standard bike tune-up."
+    - seat_price:
+        type: currency
+        description: "The price of a new bike seat."
+    - bike_care_advice:
+        type: string
+        description: "General advice provided by the chatbot on how to properly take care of a bike."
+
+conversation:
+  number: 2
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### A few quick notes on this setup 👀:
+* **`goal_style: all_answered`**: This ensures the conversation won't end until the user has successfully asked all the questions in the `goals` list.
+* **`type: currency`**: I used the built-in `currency` type for the prices so that Sensei will automatically extract the numeric value and the currency symbol (like `$15.00` or `20 EUR`).
+* **`conversation.number: 2`**: It will run 2 conversations to give you a slightly broader test sample, but you can easily change this to `1` or more!
+
+Let me know if you'd like to adjust any of the goals, or if you want to write some **Sensei Rules** to automatically verify that the extracted prices are correct! 🛠️✨
+$$$

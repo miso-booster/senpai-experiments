@@ -1,0 +1,77 @@
+Here is a SENSEI profile tailored to your cyclist persona. 
+
+I have designed the profile so the simulated user will explain their discomfort, ask whether it might be a fit issue or worn components, and inquire about shop services—all while strictly avoiding asking for an appointment.
+
+```yaml
+test_name: "cyclist_discomfort_advice"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who is experiencing discomfort while riding your bike.
+    You are not sure whether the issue is that your bike is not fit correctly,
+    or if some of your components are worn out. You want to get advice from the
+    bike shop on possible adjustments or services they offer to help you.
+  context:
+    - "You are experiencing pain or discomfort during your rides."
+    - "You want to understand what might be causing the issue (fit vs. wear)."
+    - "You want to know what services or adjustments the shop can provide."
+    - "You MUST NOT explicitly ask to book an appointment."
+  goals:
+    - "Explain your discomfort in your {{body_part}} while riding your {{bike_type}} bike."
+    - "Ask if the issue could be due to bike fit or worn components like the {{component}}."
+    - "Ask what services or adjustments the shop recommends."
+    - body_part:
+        function: random()
+        type: string
+        data: [lower back, knees, neck, saddle area, wrists]
+    - bike_type:
+        function: random()
+        type: string
+        data: [road, mountain, gravel, hybrid]
+    - component:
+        function: random()
+        type: string
+        data: [saddle, cleats, handlebars, pedals, chain]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you rephrase?"
+  output:
+    - recommended_service:
+        type: string
+        description: "The service or adjustment recommended by the shop (e.g., bike fit, component replacement)."
+    - mentioned_cause:
+        type: string
+        description: "Whether the shop suggested the issue was fit-related, wear-related, or both."
+    - appointment_offered:
+        type: string
+        description: "Did the shop offer to book an appointment? (yes/no)"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🚲 How this profile works:
+
+1. **Role & Context**: The `role` sets up the exact scenario you described. The `context` reinforces the constraints, explicitly instructing the LLM **not** to ask for an appointment.
+2. **Goals & Variables**: The user will dynamically mention different body parts (e.g., lower back, knees), bike types (e.g., road, gravel), and components (e.g., saddle, cleats) using the `random()` function. This ensures you get varied conversations across the 3 runs (`conversation.number: 3`).
+3. **Chatbot Output**: I've defined three fields in `chatbot.output` that will be extracted at the end of the conversation:
+   - `recommended_service`: To see what the shop actually suggested.
+   - `mentioned_cause`: To check if the bot addressed the fit vs. wear dilemma.
+   - `appointment_offered`: A great field to use later in SENSEI RULES to verify if your chatbot proactively offered an appointment even though the user didn't ask for one!
+
+Let me know if you'd like to tweak the variables, add any specific interaction styles (like making the user use long phrases), or if you'd like to write a SENSEI rule to test this profile! 😊

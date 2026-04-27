@@ -1,0 +1,26 @@
+¡Hola! 😊 
+
+He revisado la documentación de las reglas de SENSEI (`sensei-check-doc.md`) y el perfil que me has compartido. 
+
+Para comprobar que el horario es correcto, podemos crear una regla de una sola conversación (un *oracle*) que lea el campo `library_hours` que ya tienes definido en el `chatbot.output` de tu perfil. 
+
+Para hacer la comprobación de forma robusta (ya que el bot podría responder "de 09:00 a 20:00", "desde las 9 de la mañana hasta las 8 de la tarde", etc.), utilizaremos la función de ayuda `semantic_content`. Esta función evalúa semánticamente si el contenido extraído coincide con el significado que esperamos.
+
+Aquí tienes la regla en formato YAML:
+
+```yaml
+name: check_library_hours
+description: Comprueba que el horario de atención de la biblioteca es de 9 a 20.
+conversations: 1
+active: true
+oracle: semantic_content(library_hours, 'de 9 a 20')
+yields: f"El horario indicado por el bot es incorrecto. Se obtuvo: {library_hours}"
+```
+
+### ¿Cómo funciona esta regla junto a tu perfil?
+1. **`conversations: 1`**: Indica que la regla se evalúa de forma individual para cada conversación generada.
+2. **`library_hours`**: La regla toma automáticamente el valor de este campo que SENSEI Chat extrae al final de la conversación, tal y como lo definiste en tu perfil.
+3. **`semantic_content(...)`**: Compara el texto extraído con la frase `'de 9 a 20'` para asegurarse de que el significado coincide, sin importar las palabras exactas que haya usado el chatbot.
+4. **`yields`**: Si la regla falla, mostrará un mensaje de error personalizado indicando qué horario devolvió el bot realmente.
+
+¡Avísame si necesitas añadir alguna otra comprobación para los portátiles o la VPN!

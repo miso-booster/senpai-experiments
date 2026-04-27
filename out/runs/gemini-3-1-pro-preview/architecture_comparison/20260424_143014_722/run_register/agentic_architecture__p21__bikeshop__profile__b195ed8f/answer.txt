@@ -1,0 +1,77 @@
+Here is a SENSEI profile tailored for your bikeshop test! 🚴‍♂️
+
+I've designed this profile so the simulated user will explain that they recently got a new bike and want to change both the seat and the handlebar grips. It uses random variables so that across different conversations, the user will ask for different types of seats, grips, and appointment days.
+
+### `bikeshop_setup_profile.yml`
+
+```yaml
+test_name: "bikeshop_bike_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike. You want to visit the bikeshop 
+    to have it set up and tailored to your liking. Specifically, you want to change 
+    the seat and the handlebar grips.
+  context:
+    - "You want to know if you need an appointment or if you can just drop by."
+    - "You are looking for recommendations on seats and grips."
+  goals:
+    - "I want to change my bike seat to a {{seat_type}} one."
+    - "I also want to replace the handlebar grips with {{grip_type}} grips."
+    - "Can I book an appointment for {{day}}?"
+    - seat_type:
+        function: random()
+        type: string
+        data: [comfortable, sporty, gel, leather]
+    - grip_type:
+        function: random()
+        type: string
+        data: [ergonomic, foam, rubber, lock-on]
+    - day:
+        function: random()
+        type: string
+        data: [Monday, Tuesday, Wednesday, Thursday, Friday]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you repeat?"
+  output:
+    - appointment_day:
+        type: string
+        description: "The day the user booked the appointment for"
+    - seat_preference:
+        type: string
+        description: "The type of seat the user wants"
+    - grip_preference:
+        type: string
+        description: "The type of grips the user wants"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### Summary of the Profile
+- **Role & Context**: Sets the persona as a new bike owner looking for a custom setup, asking for recommendations and appointment details.
+- **Goals**: The user will try to achieve three things: ask for a specific seat, ask for specific grips, and book a day. The variables (`{{seat_type}}`, `{{grip_type}}`, and `{{day}}`) will be randomly selected from the provided lists for each conversation.
+- **Chatbot Output**: At the end of the conversation, Sensei will extract three fields:
+  - `appointment_day`
+  - `seat_preference`
+  - `grip_preference`
+  *(These fields are very useful if you later want to write SENSEI RULES to check if your chatbot successfully collected the user's preferences!)*
+- **Conversation Controls**: It will run `3` conversations, stopping when all goals are answered (or hitting a safety limit of 15 messages). 
+
+Let me know if you'd like to adjust the data lists, add any specific interaction styles (like making the user change their mind), or if you'd like to write some validation rules for this profile! 😊

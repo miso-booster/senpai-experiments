@@ -1,0 +1,31 @@
+¡Hola! 😊 He revisado tu conector basándome en la documentación oficial de SENSEI Connectors (`custom-connector-guide.md`).
+
+¡Tengo buenas noticias! La configuración YAML que me has pasado **ya es totalmente correcta** para la estructura de *request* y *response* que me indicas. 
+
+Aquí te explico por qué está perfectamente configurado:
+
+1. **El Request (`payload_template`)**: Tu API espera un JSON con `{"message": {"text": "..."}}`. Tu bloque `payload_template` hace exactamente eso, anidando `text` dentro de `message` e inyectando el mensaje del usuario correctamente con la variable `{user_msg}`.
+2. **El Response (`response_path`)**: Tu API devuelve un JSON donde el texto de respuesta está dentro del objeto `response` y luego en la clave `text`. La ruta `"response.text"` que has puesto en `response_path` es la forma exacta de extraerlo usando la notación de puntos de SENSEI.
+
+Te dejo el código YAML limpio y bien indentado por si acaso el problema que estabas teniendo era por algún espacio en blanco o tabulación invisible en tu archivo original (¡YAML es muy sensible a la indentación!):
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+**Si el conector te está fallando al probarlo, te sugiero revisar estos 3 puntos:**
+1. **Autenticación:** ¿La API requiere algún token o API key para funcionar? Si es así, deberías añadirlo en la sección `headers` (por ejemplo, `Authorization: "Bearer tu-token"`).
+2. **URL Completa:** Asegúrate de que la combinación de `base_url` + `path` (`https://api.anotherexample.com/api/chat`) sea exactamente la correcta y el servidor esté accesible.
+3. **Indentación:** Asegúrate de copiar el bloque de arriba tal cual, respetando los espacios (2 espacios por nivel de indentación).
+
+¿Hay algún error específico que te esté dando el Chatbot Dojo al intentar usarlo? ¡Cuéntame y lo miramos en detalle! 🚀

@@ -1,0 +1,23 @@
+I can absolutely help you with that! 🥤✨
+
+To test this in Sensei-check, we need to write a **metamorphic rule** that compares **two** conversations. The logic is simple: we look for two orders where everything else (like the pizza size, toppings, and quantity) is exactly the same, but one order includes a drink and the other doesn't. Then, we check if the price difference is exactly $2.
+
+Here is the YAML rule you can use:
+
+```yaml
+name: drink_adds_two_dollars
+description: Adding a drink to an order costs exactly 2 dollars extra (holding size, toppings, and quantity constant).
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings and conv[0].number == conv[1].number
+if: conv[0].drink is None and conv[1].drink is not None
+then: extract_float(conv[1].price) == extract_float(conv[0].price) + 2.0
+```
+
+### 🧠 A quick tip from Senpai:
+* **The `when` clause** makes sure we are comparing apples to apples (or pizzas to pizzas! 🍕). It locks in the `size`, `toppings`, and `number` so the *only* difference is the drink.
+* **The `if` clause** checks that the first conversation (`conv[0]`) doesn't have a drink, while the second one (`conv[1]`) does. *Note: Depending on how your SENSEI Chat profile is set up, if your bot outputs a string like `'none'` or `'No'` instead of `None` when there is no drink, you might need to change this to `conv[0].drink == 'none'`!*
+* **The `then` clause** uses the handy `extract_float()` helper to grab the numbers from the price text and ensures the second price is exactly $2.00 more than the first.
+
+Make sure your SENSEI Chat profile exposes `drink`, `size`, `toppings`, `number`, and `price` in its `chatbot.output` for this to work perfectly. 
+
+Let me know if you need help adjusting this or if you'd like to create the profile to match it! 😊

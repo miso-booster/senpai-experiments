@@ -1,0 +1,37 @@
+Hello there! I would be absolutely delighted to help you write that rule! 🚲✨ 
+
+In **Sensei-check**, we can easily create a rule to ensure your chatbot is properly confirming those bike service appointments. Since we are looking at a specific event happening in one chat, we will write a **single-conversation rule**.
+
+There are two great ways to do this, depending on how your **SENSEI Chat profile** is set up. Let's look at both! 👀
+
+### Option 1: Checking the conversation flow directly
+If you want to check the actual dialogue to see if the user asked for a service and the assistant confirmed it, we can use a handy built-in helper called `utterance_index`. Think of it as a smart, AI-powered search that finds *where* a topic was mentioned in the chat!
+
+```yaml
+name: confirm_bike_service_appointment
+description: The assistant must confirm the appointment when the user asks to schedule a bike service.
+conversations: 1
+if: utterance_index('user', 'schedule a bike service') > 0
+then: utterance_index('assistant', 'appointment confirmed') > 0
+```
+*How it works:* The `if` statement checks if the user brought up scheduling a bike service. If they did, the `then` statement ensures the assistant replied with a confirmation. 
+
+### Option 2: Using extracted Profile outputs (Recommended)
+Usually, Sensei-check rules work best when they are tied to the `chatbot.output` defined in your SENSEI Chat profile. Let's say your profile extracts the `service_type` (e.g., "bike service") and the `appointment_status` (e.g., "confirmed"). 
+
+You could write a rule like this:
+
+```yaml
+name: check_appointment_status
+description: If the requested service is a bike service, the appointment status must be confirmed.
+conversations: 1
+when: service_type == 'bike service'
+oracle: appointment_status == 'confirmed'
+```
+*How it works:* The `when` filter selects conversations where the user wanted a bike service. The `oracle` then checks if your chatbot successfully extracted "confirmed" as the status! 🛠️
+
+***
+
+**A quick tip from Senpai:** If you use Option 2, just make sure that `service_type` and `appointment_status` exactly match the field names in your SENSEI Chat profile's `chatbot.output`! 
+
+Do you already have a SENSEI Chat profile set up for this bike shop, or would you like some help creating one? 😊

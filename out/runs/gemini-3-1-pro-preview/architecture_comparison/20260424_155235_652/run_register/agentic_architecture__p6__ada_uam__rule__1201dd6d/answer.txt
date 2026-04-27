@@ -1,0 +1,31 @@
+Based on the SENSEI documentation (`sensei-check-doc.md` and `rules-examples.md`), the most elegant way to check that a chatbot has provided all the required fields defined in your `chatbot.output` is to use the built-in `data_collected()` helper. 
+
+Here is the rule you can use. It will check a single conversation and ensure that none of those three fields are missing.
+
+```yaml
+name: cau_information_provided
+description: Checks that ada uam provided all the necessary CAU information (email, phone, and physical address).
+conversations: 1
+active: true
+oracle: data_collected() == True
+on-error: f"Missing CAU information: {missing_slots()}"
+```
+
+### How this works:
+* **`conversations: 1`**: This is a standard oracle rule that evaluates each conversation individually.
+* **`oracle: data_collected() == True`**: This built-in helper automatically looks at your profile's `chatbot.output` schema. It returns `True` only if `contact_email`, `contact_phone`, and `physical_address` were all successfully extracted (i.e., none of them are `None`).
+* **`on-error`**: If the rule fails, it uses the `missing_slots()` helper to print exactly which pieces of information the chatbot forgot to provide (for example: `Missing CAU information: ['contact_phone']`).
+
+### Alternative (Explicit Check)
+If your profile happens to have *other* fields in `chatbot.output` that are optional, and you only want to strictly enforce these three, you can write the oracle explicitly using the variable names:
+
+```yaml
+name: cau_information_provided_explicit
+description: Checks that ada uam provided the specific CAU contact details.
+conversations: 1
+active: true
+oracle: contact_email is not None and contact_phone is not None and physical_address is not None
+on-error: "The chatbot failed to provide one or more required CAU contact details."
+```
+
+Either approach works perfectly! Let me know if you need help adding this to your project or if you'd like to test any other behaviors. 😊

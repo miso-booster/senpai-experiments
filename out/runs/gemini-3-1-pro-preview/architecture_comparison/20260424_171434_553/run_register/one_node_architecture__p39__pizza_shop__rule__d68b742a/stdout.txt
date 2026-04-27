@@ -1,0 +1,27 @@
+conversation ID: one_node_architecture__p39__pizza_shop__rule__d68b742a
+$$$
+Hello there! Senpai here to help you out 😊
+
+To check that adding a drink increases the price by exactly $2, we need a **metamorphic rule** that compares two conversations (`conversations: 2`). 
+
+For this to work perfectly, we have to make sure that *everything else* in the order (like the pizza size or type) stays exactly the same, so we know the price difference is only because of the drink! 🍕🥤
+
+Here is the rule. I've used `drink` as the output name just as you requested, and `price` for the total cost:
+
+```yaml
+name: drink_costs_2_dollars
+description: Adding a drink increases the total price by exactly 2 dollars when all other factors are equal.
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].pizza_type == conv[1].pizza_type
+if: conv[0].drink is None and conv[1].drink is not None
+then: extract_float(conv[1].price) == extract_float(conv[0].price) + 2
+```
+
+### 💡 Senpai's Tips for this rule:
+* **`when` clause:** This acts as our control filter. It ensures we are only comparing two conversations where the user ordered the exact same pizza. *(Feel free to adjust `size` and `pizza_type` to match the exact output names in your profile!)*
+* **`if` clause:** This checks that the first conversation doesn't have a drink, but the second one does.
+* **`then` clause:** This is where the magic happens! It extracts the numeric value from your `price` output and asserts that the second conversation costs exactly $2 more than the first.
+* **Profile Check:** Make sure your SENSEI Chat profile has both `drink` and `price` (or whatever you name your cost field) defined in the `chatbot.output` section!
+
+Let me know if you need help adjusting this to fit a specific profile in your project! 👀✨
+$$$

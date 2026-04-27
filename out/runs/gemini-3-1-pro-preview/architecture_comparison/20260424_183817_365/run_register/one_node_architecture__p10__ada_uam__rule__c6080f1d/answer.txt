@@ -1,0 +1,65 @@
+Hello there! 👋 That is a fantastic profile for testing a university admissions chatbot. Since your profile extracts a lot of specific details (like dates, links, and procedures), we can create some really useful **Sensei-check rules** to validate its behavior.
+
+Here are a few rule suggestions ranging from simple checks to metamorphic relations. You can save these in your `rules/` folder!
+
+### 1. Topic Adherence (Single Conversation)
+Since this is an admissions bot, we want to make sure it doesn't get distracted and start talking about unrelated topics. We can use the `only_talks_about` helper for this.
+
+```yaml
+name: stays_on_topic_admissions
+description: The chatbot should not drift from university admissions, courses, and events.
+conversations: 1
+oracle: only_talks_about('university admissions, degrees, courses, waitlists, and welcome day events')
+```
+
+### 2. Welcome Day Consistency (Metamorphic)
+The "Welcome Day" is a specific event. Its date and time should remain exactly the same regardless of whether the student is asking about "Psicología" or "Ingeniería". This metamorphic rule compares two conversations to ensure consistency.
+
+```yaml
+name: consistent_welcome_day
+description: The date for the Welcome Day should be the same regardless of the degree or course asked.
+conversations: 2
+if: conv[0].welcome_day_date is not None and conv[1].welcome_day_date is not None
+then: conv[0].welcome_day_date == conv[1].welcome_day_date
+```
+
+### 3. Essential Information Extraction (Single Conversation)
+You have a lot of great fields in your `chatbot.output`. We can write a rule to ensure that the most critical pieces of information (like the admission link and the deadline) are actually being provided by the bot and extracted successfully.
+
+```yaml
+name: provides_essential_admission_details
+description: The chatbot must provide the admission link and the admission deadline.
+conversations: 1
+oracle: admission_to_grados_link is not None and admission_deadline is not None
+```
+
+### 4. Language Consistency (Single Conversation)
+Since your user profile is explicitly set to speak Spanish (`language: Spanish`), the chatbot should be polite and reply in the same language.
+
+```yaml
+name: responds_in_spanish
+description: The chatbot should reply in the same language as the user.
+conversations: 1
+oracle: responds_in_same_language()
+```
+
+---
+
+### 💡 A Quick Tip on Your Profile
+I noticed in your `chatbot.output` that you have a field called `application_fee` with the type `money`:
+
+```yaml
+  - application_fee:
+      type: money
+      description: Costo de la solicitud de admisión
+```
+
+Just a heads-up: `money` is not a default type in Sensei. If you haven't created a custom type file named `money.yml` in your `types/` folder, I highly recommend changing it to the built-in **`currency`** type! Like this:
+
+```yaml
+  - application_fee:
+      type: currency
+      description: Costo de la solicitud de admisión
+```
+
+Let me know if you need help tweaking these rules or if you'd like to test something else! 😊

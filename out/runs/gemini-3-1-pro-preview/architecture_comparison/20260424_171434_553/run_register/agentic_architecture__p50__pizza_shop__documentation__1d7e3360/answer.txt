@@ -1,0 +1,35 @@
+Based on the **SENSEI RULES** documentation (`sensei-check-doc.md`), an **oracle** is a core concept used to validate the correctness of a chatbot's conversations. 
+
+In the Sensei-check DSL (Domain Specific Language), an `oracle` is a field in your rule's YAML file where you define a **simple boolean condition** (a Python expression that evaluates to `True` or `False`). If the condition evaluates to `True`, the conversation passes the test; if `False`, it fails.
+
+Here is how it fits into the different types of rules:
+
+### 1. Single-Conversation Oracles (Traditional Checks)
+When a rule targets just one conversation (`conversations: 1`), the `oracle` acts as a traditional test assertion. It checks if the chatbot's outputs meet a specific baseline requirement.
+
+**Example:** Checking that a small pizza costs at least $10.
+```yaml
+name: small_base_price_floor
+description: Small pizzas should cost at least $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+### 2. Global Oracles (All Conversations)
+When a rule targets an entire batch of conversations (`conversations: all`), the `oracle` is used alongside global helpers to check dataset-wide properties, like uniqueness.
+
+**Example:** Ensuring every order ID generated across all tests is unique.
+```yaml
+name: unique_order_ids
+description: Every conversation has a unique order_id
+conversations: all
+oracle: is_unique('order_id')
+```
+
+### `oracle` vs. `if` / `then`
+While `oracle` is perfect for straightforward boolean checks, SENSEI also offers an `if` / `then` syntax. 
+- **`oracle`** is typically used for absolute checks (e.g., "The language must be English").
+- **`if` / `then`** is often preferred for **metamorphic rules** (comparing 2 or more conversations) because it reads more clearly as a logical implication (e.g., "If conversation A has more toppings than conversation B, then conversation A must cost more").
+
+In short, the `oracle` is the ultimate source of truth in your rule that decides whether the chatbot behaved correctly according to your test criteria! 😊 Let me know if you'd like to see how to write an oracle for a specific scenario.

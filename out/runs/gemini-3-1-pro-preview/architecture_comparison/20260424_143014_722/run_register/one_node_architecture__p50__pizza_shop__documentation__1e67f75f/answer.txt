@@ -1,0 +1,26 @@
+Hi there! 😊 I'd be happy to explain what an oracle is in the Dojo!
+
+In software testing, an **oracle** is essentially the "source of truth"—the mechanism that determines whether a test has passed or failed. 
+
+In the context of **Sensei-check**, an oracle is a specific condition or assertion written in Python that evaluates the correctness of your generated conversations. You use the `oracle:` keyword in your rule's YAML file to define this condition. 
+
+There are generally two ways we use them in Sensei:
+
+1. **Traditional Oracles (Single Conversation):** These look at just *one* conversation at a time to check for baseline sanity. For example, checking if the chatbot responded in the correct language, or if it successfully extracted a price.
+2. **Global Oracles (All Conversations):** These look at the entire batch of conversations at once, like checking if every single `order_id` generated across all tests is unique.
+
+*(Note: For comparing multiple conversations against each other, we usually use **metamorphic relations** with `if`/`then` keywords instead of a single `oracle`!)*
+
+Here is a quick example of a single-conversation oracle that checks if a small pizza costs at least $10:
+
+```yaml
+name: small_base_price_floor
+description: Small pizzas should cost at least $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+In this rule, the `oracle` expression must evaluate to `True` for the test to pass. If the price is less than 10, the oracle fails, and Sensei-check will flag that conversation for you! 👀
+
+Does that help clear things up? Let me know if you'd like to see more examples or need help writing an oracle for your own project! 🥋✨

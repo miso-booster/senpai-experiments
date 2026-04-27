@@ -1,0 +1,83 @@
+¡Hola! 😊 Claro que sí. He revisado la documentación de perfiles de SENSEI (`sensei-chat-guide.md`) para crear un perfil que simule a un cliente de Alcampo buscando recetas y planificación de menús.
+
+Aquí tienes el perfil en formato YAML. Puedes guardarlo en tu carpeta `profiles/` con un nombre como `alcampo_recetas.yml`.
+
+```yaml
+test_name: "alcampo_recipe_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente del supermercado Alcampo que busca ideas de recetas y ayuda para 
+    planificar su menú semanal utilizando los productos disponibles en la tienda.
+  context:
+    - "Quieres recetas fáciles de preparar y que utilicen ingredientes que se puedan comprar en Alcampo."
+    - "Te interesa conocer el precio aproximado de los ingredientes para ajustar tu presupuesto."
+  goals:
+    - "Pide una recomendación de receta para {{meal_type}} que sea {{dietary_preference}}."
+    - "Pide que te planifique un menú para {{days}} días."
+    - "Pregunta si tienen los ingredientes principales en Alcampo y cuál sería el precio estimado de la compra."
+    - meal_type:
+        function: random()
+        type: string
+        data: [la cena, la comida, un desayuno rápido, una ocasión especial]
+    - dietary_preference:
+        function: random()
+        type: string
+        data: [vegetariana, sin gluten, alta en proteínas, baja en calorías, muy económica]
+    - days:
+        function: random()
+        type: int
+        data: [3, 5, 7]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu consulta. ¿Puedes repetirlo?"
+  output:
+    - suggested_recipes:
+        type: list[string]
+        description: "Nombres de las recetas sugeridas por el chatbot."
+    - menu_days:
+        type: int
+        description: "Número de días para los que se ha planificado el menú."
+    - ingredients_list:
+        type: list[string]
+        description: "Lista de ingredientes mencionados para comprar en Alcampo."
+    - estimated_price:
+        type: float
+        description: "Precio total estimado de los ingredientes sugeridos."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📝 Resumen de lo que hace este perfil:
+
+1. **El Usuario (User):** Simula a un cliente que habla en español y quiere planificar sus comidas. Utiliza variables aleatorias (`random()`) para que en cada conversación pida algo distinto: una cena vegetariana, una comida sin gluten, un menú para 3 o 7 días, etc.
+2. **Los Objetivos (Goals):** El simulador intentará conseguir tres cosas en la conversación:
+   - Que le recomienden una receta específica.
+   - Que le planifiquen un menú para un número determinado de días.
+   - Que le confirmen si los ingredientes están en Alcampo y cuánto costarán.
+3. **Extracción de Datos (`chatbot.output`):** Al final de cada conversación, SENSEI extraerá automáticamente:
+   - `suggested_recipes`: Las recetas que el bot de Alcampo haya propuesto.
+   - `menu_days`: Cuántos días abarca el menú finalmente.
+   - `ingredients_list`: Qué ingredientes ha listado el bot.
+   - `estimated_price`: El coste estimado que el bot haya calculado.
+4. **Control de la Conversación:** Hará **3 conversaciones** distintas y se detendrá cuando todos los objetivos hayan sido respondidos (`all_answered`), con un límite de seguridad de 15 turnos para no gastar de más.
+
+*Nota: Si el chatbot de Alcampo tiene un mensaje de error o "fallback" específico cuando no entiende algo, te recomiendo actualizar el campo `fallback` en el YAML con ese mensaje exacto para evitar bucles infinitos.*
+
+¿Te gustaría que ajustemos alguna de las variables, o quieres que creemos alguna **regla de validación (SENSEI Rule)** para comprobar que el chatbot realmente devuelve los precios o las recetas correctamente?

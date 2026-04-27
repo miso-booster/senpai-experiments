@@ -1,0 +1,27 @@
+Hello there! 😊 I can spot the issue right away. Your rule is missing the **`if`** clause!
+
+In Sensei-check, when you write a metamorphic rule using a `then` statement, it **must** be paired with an `if` statement. Here is how the three parts work together:
+* **`when`**: Filters and selects the comparable conversations (e.g., "same size and same drink").
+* **`if`**: Defines the condition or change between the two conversations (e.g., "conversation 0 has more toppings than conversation 1").
+* **`then`**: Asserts the expected outcome (e.g., "conversation 0 should cost more").
+
+Here is the fixed version of your rule:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### 💡 One extra tip for your project!
+Remember the golden rule of Sensei-check: **Any field you reference in your rule must be explicitly defined in your profile's `chatbot.output`.** 
+
+Looking at your project's profiles (like `pizza_order_test_custom.yml`), I noticed that while you have `price` in your `chatbot.output`, you are missing `size`, `drink`, and `toppings`. Even though they are in your `user.goals`, the rule can only read them if the extractor pulls them into the output! 
+
+To make this rule work perfectly, make sure to add `size`, `drink`, and `toppings` to the `chatbot.output` of the profile you are testing. 🍕✨ 
+
+Let me know if you need help updating your profile!

@@ -1,0 +1,69 @@
+Hello there! 😊 I'd be more than happy to help you create this Sensei Profile for your bike shop's virtual assistant. 🚲✨
+
+Based on your description, we need a profile where the simulated user is straightforward, asks a specific set of questions (hours, prices, and basic maintenance), and strictly avoids out-of-scope topics like appointments or warranties. 
+
+Here is a complete, ready-to-run YAML profile tailored exactly to your needs. I've used the `money` custom type for the prices, as I noticed it's already set up in your other bike shop profiles! 👀
+
+```yaml
+test_name: "general_bike_shop_inquiry"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer looking for general information about the bike shop and its standard services. 
+    You phrase your questions clearly and directly.
+  context:
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, or delivery services."
+    - "Stick strictly to basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - shop_hours:
+        type: string
+        description: "The opening and closing times of the bike shop."
+    - tire_price:
+        type: money
+        description: "The price of a new bike tire."
+    - tune_up_price:
+        type: money
+        description: "The price of a standard bike tune-up."
+    - seat_price:
+        type: money
+        description: "The price of a new bike seat."
+    - bike_care_advice:
+        type: string
+        description: "General advice provided on how to properly take care of a bike (basic maintenance and good practices)."
+
+conversation:
+  number: 2
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 💡 A quick breakdown of how this works:
+
+*   **`user.context`**: This is where we place your negative constraints! By explicitly telling the LLM *not* to ask about appointments, warranties, or specific models, we keep the user focused only on what you want to test.
+*   **`chatbot.output`**: I've mapped out the exact fields you want to evaluate (hours, prices, and advice). At the end of the conversation, Sensei will extract these so you can easily check if the bot provided accurate information and clear prices.
+*   **`goal_style.all_answered`**: This ensures the conversation won't end until the user has successfully asked all 5 of their goals. I also set `export: true` so you get a handy CSV dataframe showing which outputs were satisfied! 📊
+
+You can save this as `general_bike_shop_inquiry.yml` inside your `profiles/` folder. 
+
+Let me know if you'd like to add any custom variables to this, or if you need help writing **Sensei Rules** to validate the extracted prices! How else can I help you today? 🌸

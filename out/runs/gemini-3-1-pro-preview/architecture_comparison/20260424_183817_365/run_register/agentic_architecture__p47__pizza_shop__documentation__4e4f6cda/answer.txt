@@ -1,0 +1,28 @@
+In the context of SENSEI (specifically **Sensei-check**), a **metamorphic rule** is a type of test that evaluates the correctness of a chatbot by comparing **pairs or tuples of conversations** against each other, rather than looking at just a single conversation in isolation. 
+
+This approach is based on *metamorphic testing*, which helps solve the "oracle problem" (where it's hard to know the exact correct answer a chatbot should give). Instead of checking for an absolute answer, a metamorphic rule checks the **relation** between inputs and outputs across multiple conversations to see if they behave logically.
+
+### How it works in SENSEI
+According to the `sensei-check-doc.md` documentation, a metamorphic rule typically involves:
+1. **`conversations: N`**: Specifying that the rule needs 2 or more conversations (e.g., `conversations: 2`).
+2. **`when` (Filter)**: An optional condition to select comparable conversations (e.g., "when the pizza size and drinks are the same").
+3. **`if` / `then` (Relation)**: The logical rule that must hold true when comparing them (e.g., "if conversation A has more toppings than conversation B, then conversation A's price must be higher").
+
+When writing these rules, you access the different conversations using the `conv` array (e.g., `conv[0]` and `conv[1]`) and check the fields extracted by your SENSEI Chat profile (like `conv[0].price`).
+
+### Example: Price Monotonicity
+Here is a classic example of a 2-conversation metamorphic rule. It checks that if two users order the exact same size and drink, the one who asks for more toppings should be charged a higher price:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+### Why use them?
+Metamorphic rules are incredibly powerful for testing LLM-based chatbots because you don't need to hardcode every possible price or response. As long as the *relationship* holds true (e.g., more toppings = higher price, or same inputs = same language used), you can be confident the chatbot is behaving correctly! 😊 
+
+Let me know if you'd like to see how to write a metamorphic rule for a specific chatbot profile you are working on!

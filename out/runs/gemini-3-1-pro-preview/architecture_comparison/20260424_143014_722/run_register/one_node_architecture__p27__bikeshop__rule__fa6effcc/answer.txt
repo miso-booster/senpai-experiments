@@ -1,0 +1,23 @@
+¡Hola! 😊 Qué buena pregunta. Para comprobar que un chatbot no acepta reservas duplicadas (como la misma fecha y hora), la mejor estrategia en Sensei-check es utilizar una **regla metamórfica de 2 conversaciones**. 
+
+En lugar de buscar una frase exacta de rechazo (que puede variar mucho), comparamos dos conversaciones distintas. La lógica es: *"Si dos conversaciones logran confirmar la misma fecha, entonces obligatoriamente deben tener una hora distinta"*. Si ambas tienen la misma fecha y la misma hora, significa que el asistente falló y aceptó la reserva duplicada.
+
+Basándome en tu perfil `appointment.yml` (que ya expone los campos `confirmed_date` y `confirmed_time` en su `chatbot.output`), aquí tienes la regla lista para usar:
+
+```yaml
+name: deny_duplicate_appointment
+description: El asistente no permite confirmar la misma fecha y hora en dos reservas distintas.
+conversations: 2
+when: conv[0].confirmed_date is not None and conv[1].confirmed_date is not None
+if: conv[0].confirmed_date == conv[1].confirmed_date
+then: conv[0].confirmed_time != conv[1].confirmed_time
+```
+
+### 👀 ¿Cómo funciona esta regla?
+1. **`conversations: 2`**: Le dice a Sensei-check que evalúe las conversaciones en pares.
+2. **`when`**: Filtra solo aquellas conversaciones donde el asistente efectivamente confirmó una fecha (ignorando aquellas donde el usuario abandonó o no se llegó a un acuerdo).
+3. **`if / then`**: Establece la condición de negocio. Si la fecha confirmada es la misma en ambas conversaciones (`if`), entonces la hora confirmada tiene que ser diferente sí o sí (`then`). 
+
+Si el asistente llega a confirmar la misma fecha y la misma hora para ambas conversaciones, la regla fallará, indicándote que el bot no está validando correctamente la disponibilidad. 🛠️
+
+¡Espero que te sea súper útil! Si necesitas ajustar algo más o quieres probar otra lógica, dímelo y lo miramos juntos. ✨

@@ -1,0 +1,45 @@
+¡Hola! 👋 ¡Claro que sí, vamos a arreglar esa regla en un abrir y cerrar de ojos! ✨
+
+He revisado tu regla y he encontrado un par de detallitos por los que no te está funcionando:
+
+1. **Falta el número de conversaciones:** El campo `conversations:` está vacío. Sensei-check necesita saber cuántas conversaciones debe evaluar al mismo tiempo. Como estás verificando el resultado de una sola conversación a la vez, el valor debe ser `1`.
+2. **El chequeo del valor vacío:** En Sensei-check, cuando el chatbot no logra extraer un dato, el valor suele ser nulo (`None`) en lugar de un texto vacío (`''`). Es mucho más seguro comprobar que el campo no sea `None`.
+
+Aquí tienes la regla corregida y lista para funcionar:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits.
+conversations: 1
+oracle: membership_benefits is not None and membership_benefits != ''
+```
+
+### 💡 ¡Un recordatorio súper importante de Senpai!
+Para que esta regla funcione correctamente, **el campo `membership_benefits` debe existir en el `chatbot.output` de tu Perfil de SENSEI Chat**. 
+
+Sensei-check no inventa las variables; las toma directamente de lo que tu perfil le pide extraer al LLM. Asegúrate de que tu perfil (SENSEI Profile) tenga algo como esto en su configuración:
+
+```yaml
+test_name: "membership_benefits_test"
+
+user:
+  language: English
+  role: "You are a customer asking about the store's membership benefits."
+  goals:
+    - "Ask about the membership benefits."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you rephrase?"
+  output:
+    - membership_benefits:
+        type: string
+        description: The benefits of the membership explained to the user.
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 4
+```
+
+¡Pruébalo y me cuentas qué tal te va! Si necesitas ayuda revisando tu perfil o creando más reglas, ¡aquí estaré! 😊 ¿Te puedo ayudar con algo más?

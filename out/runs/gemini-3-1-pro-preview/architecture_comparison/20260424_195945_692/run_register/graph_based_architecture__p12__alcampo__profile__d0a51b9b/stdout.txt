@@ -1,0 +1,71 @@
+conversation ID: graph_based_architecture__p12__alcampo__profile__d0a51b9b
+$$$
+Hello there! I would be absolutely delighted to help you create a new Sensei Profile for that! 🛒✨
+
+To test adding items to a shopping cart, we can use **variables** in the `user.goals` section. This allows the simulated user to dynamically pick different items and quantities during each conversation. We'll also set up the `chatbot.output` so Sensei can extract the cart details at the end of the test, which is super useful if you want to run Sensei-check rules later!
+
+Here is a ready-to-use profile tailored for your Alcampo project. You can save this as `shopping_cart_addition.yml` inside your `profiles/` folder:
+
+```yaml
+test_name: "Shopping Cart Addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer who wants to add various grocery items to their online shopping cart."
+  context:
+    - "You are doing your weekly grocery shopping."
+    - "You want to make sure the items are successfully added to your cart."
+  goals:
+    - "Ask the chatbot to add {{quantity}} units of {{grocery_item}} to your shopping cart."
+    - "Inquire about the current total price of the cart."
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - grocery_item:
+        function: another()
+        type: string
+        data: [milk, organic eggs, whole wheat bread, bananas, coffee beans]
+
+chatbot:
+  is_starter: false
+  # Using the standard fallback from your Alcampo project
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - added_item:
+        type: string
+        description: "The name of the item added to the cart"
+    - item_quantity:
+        type: int
+        description: "The number of units added to the cart"
+    - cart_total:
+        type: money
+        description: "The total price of the shopping cart after adding the items"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 15
+  interaction_style:
+    - single questions
+```
+
+### 💡 A quick breakdown of what's happening here:
+* **Dynamic Goals (`user.goals`)**: We are using `{{quantity}}` and `{{grocery_item}}`. 
+  * For the quantity, Sensei will use the `random()` function to pick a number between 1 and 5.
+  * For the grocery item, it uses the `another()` function, meaning it will pick a unique item from the list for each conversation without repeating until the list is exhausted! 🍎🍞
+* **Extraction (`chatbot.output`)**: At the end of the chat, Sensei will extract the `added_item`, `item_quantity`, and the `cart_total`. If you ever write Sensei Rules, you can easily check these using expressions like `conv[0].cart_total > 0`.
+* **Interaction Style**: I set it to `single questions` so the user simulator asks things clearly one by one, which is great for testing transactional flows like adding to a cart.
+
+Let me know if you'd like to add any specific interaction styles (like making the user change their mind about an item!) or if you need help with anything else! 😊👀
+$$$

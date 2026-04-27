@@ -1,0 +1,63 @@
+Hello there! 👋 Welcome to the Dojo! I'd be absolutely delighted to help you create this new profile. 
+
+Getting a new bike tailored to your liking is such a relatable scenario, and it makes for a fantastic test case! 🚴‍♂️✨ 
+
+To make this work in Sensei, we will create a **Profile** (a YAML file) that defines this specific user persona. We'll set up the `user.context` to explain their situation (new bike, wants a new seat and grips) and list out their `user.goals` so the simulator knows exactly what to ask the chatbot. We will also define the `chatbot.output` so Sensei can extract the shop's answers for you to validate later.
+
+Here is a ready-to-use YAML profile tailored for your scenario. You can save this as `bike_setup_and_customization.yml` inside your `profiles/` folder:
+
+```yaml
+test_name: "bike_setup_and_customization"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer who recently bought a new bike and wants to get it tailored to their liking."
+  context:
+    - "You recently got a new bike and want to make it more comfortable."
+    - "You specifically want to change the seat and the handlebar grips."
+    - "You need to know if the shop offers this setup service and what the options or prices are."
+  goals:
+    - "Ask if the shop offers bike setup and customization services."
+    - "Inquire about the options and prices for new bike seats."
+    - "Inquire about the options and prices for new handlebar grips."
+    - "Ask to schedule an appointment to get the seat and grips changed."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - setup_service_offered:
+        type: string
+        description: "Confirmation of whether the shop offers bike setup and customization services."
+    - seat_information:
+        type: string
+        description: "Information or pricing provided by the chatbot about bike seats."
+    - grips_information:
+        type: string
+        description: "Information or pricing provided by the chatbot about handlebar grips."
+    - appointment_scheduled:
+        type: string
+        description: "Details of the scheduled appointment for the bike setup, if successful."
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🧐 A quick breakdown of what's happening here:
+* **`user.context` & `user.goals`**: This is the brain of our simulated user! It tells Sensei exactly *why* they are chatting and *what* they need to achieve (asking about services, seats, grips, and booking an appointment).
+* **`chatbot.output`**: At the end of the conversation, Sensei will extract these specific fields. This is super helpful if you want to write **Sensei Rules** later to verify that the bot actually provided prices or successfully booked the appointment! 📝
+* **`goal_style: all_answered`**: This ensures the simulated user won't stop chatting until the bot has addressed all of their goals (or until it hits the safety limit of 15 messages).
+
+How does this look to you? If you'd like to make the user a bit more unpredictable—like having them `change your mind` about the grip colors or `make spelling mistakes`—we can easily add those to the `interaction_style`! Let me know how else I can help you tweak it! 😊🔧

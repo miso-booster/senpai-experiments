@@ -1,0 +1,33 @@
+conversation ID: graph_based_architecture__p19__alcampo__rule__2202b925
+$$$
+Hello there! 😊 
+
+Since you want this rule to be independent of any specific profile, the best approach is to use one of our built-in **global helpers**. Specifically, we can use `utterance_index(who, what)`, which uses an LLM under the hood to read the conversation and find the turn where the assistant mentions a specific topic!
+
+Here is a single-conversation rule that checks if the chatbot ever brought up current promotions:
+
+```yaml
+name: provided_promotions_info
+description: The assistant must provide information about current promotions or special offers at some point in the conversation.
+conversations: 1
+oracle: utterance_index('assistant', 'current promotions or special offers') > 0
+```
+
+### How it works:
+* **`conversations: 1`**: This is a standard oracle rule that evaluates each conversation individually.
+* **`utterance_index('assistant', 'current promotions or special offers')`**: This helper scans the assistant's messages. If it finds that the assistant talked about promotions, it returns the turn number (which is greater than 0). If the assistant never mentions it, it returns `0`, and the rule will fail.
+
+### 💡 A Quick "Rule-First" Alternative
+If you ever decide to create a **SENSEI Chat profile** later on to extract this specific data, you could define a variable in your `chatbot.output` (for example, a boolean called `offered_promotions`). Your rule would then look like this:
+
+```yaml
+name: extracted_promotions_info
+description: Checks if the chatbot successfully provided promotion details based on the profile output.
+conversations: 1
+oracle: offered_promotions is True
+```
+
+But for now, the first option using `utterance_index` is perfect because it works right out of the box without needing any predefined profile variables! 🚀
+
+Let me know if you'd like to tweak this or if you need help creating any other rules! How else can I help you today? 👀
+$$$

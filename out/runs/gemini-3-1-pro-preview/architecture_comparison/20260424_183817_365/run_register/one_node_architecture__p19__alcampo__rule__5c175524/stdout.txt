@@ -1,0 +1,33 @@
+conversation ID: one_node_architecture__p19__alcampo__rule__5c175524
+$$$
+Hello there! 😊 
+
+I can absolutely help you with that! Since you want a rule that isn't tied to a specific profile's `chatbot.output` schema, we have a couple of great ways to approach this. 
+
+The most robust way to check if the chatbot discussed a topic—without relying on extracted variables—is to use the built-in `utterance_index` helper. This function scans the conversation and returns the turn index where the assistant mentioned a specific topic. If it returns a number greater than 0, it means the chatbot successfully provided the information!
+
+Here is the rule using the conversational helper:
+
+```yaml
+name: chatbot_mentions_promotions
+description: Checks if the assistant provided information about current promotions during the conversation.
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'current promotions') > 0
+```
+
+### Alternative: Rule-First Design (Using Variables)
+If you prefer to check an extracted variable (a "rule-first" design where you assume a future profile will extract this data), you can invent a variable name like `promotions_info`. The rule would simply check if that variable was successfully populated:
+
+```yaml
+name: extracted_promotions_info
+description: Ensures that the promotions_info variable was successfully extracted from the chatbot's response.
+conversations: 1
+active: true
+oracle: promotions_info is not None
+```
+
+*Note: If you use the second rule, just remember that whenever you attach it to a profile later, that profile's `chatbot.output` must contain a field exactly named `promotions_info`!* 👀
+
+Let me know if you'd like to tweak this or if you need help creating a profile to go along with it! 🚀
+$$$

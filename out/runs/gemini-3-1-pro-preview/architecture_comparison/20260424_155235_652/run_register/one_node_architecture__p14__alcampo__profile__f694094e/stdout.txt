@@ -1,0 +1,71 @@
+conversation ID: one_node_architecture__p14__alcampo__profile__f694094e
+$$$
+¡Hola! Claro que sí 👨‍🍳. Probar la capacidad del chatbot para recomendar recetas y ayudar con la planificación de menús es una idea genial para un supermercado como Alcampo.
+
+He diseñado un perfil de SENSEI Chat donde el usuario simulado pedirá recetas basadas en diferentes ingredientes y tipos de dieta. Además, preguntará cómo añadir esos ingredientes directamente al carrito de la compra. 
+
+Para que la prueba sea bien completa, he utilizado la función `forward()` anidada en las variables `ingrediente_principal` y `tipo_dieta`. Esto generará una matriz de combinaciones (por ejemplo, pedirá una receta con pollo para una dieta sin gluten, o con verduras para una dieta vegetariana) y ejecutará todas las combinaciones posibles usando `number: combinations`.
+
+Aquí tienes el perfil listo para usar:
+
+```yaml
+test_name: "Recipe Recommendations and Menu Planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Un cliente que busca inspiración para cocinar y ayuda para planificar su menú semanal utilizando productos de Alcampo."
+  context:
+    - "Quieres organizar tus comidas de la semana para comer más sano y ahorrar tiempo."
+    - "Te gustaría descubrir nuevas recetas que utilicen ingredientes frescos y de temporada."
+    - "Necesitas que las recetas sean fáciles de preparar y que los ingredientes se puedan añadir fácilmente a tu lista de la compra."
+  goals:
+    - "Pide al chatbot que te recomiende una receta para una cena rápida usando {{ingrediente_principal}}."
+    - "Pregunta cómo puedes planificar un menú semanal equilibrado."
+    - "Solicita sugerencias de recetas que sean adecuadas para una dieta {{tipo_dieta}}."
+    - "Pregunta si es posible añadir los ingredientes de las recetas directamente a tu carrito de la compra online."
+    - ingrediente_principal:
+        function: forward()
+        type: string
+        data: [pollo, salmón, verduras de temporada, ternera]
+    - tipo_dieta:
+        function: forward(ingrediente_principal)
+        type: string
+        data: [vegetariana, sin gluten, baja en carbohidratos]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recommended_recipe:
+        type: string
+        description: "Nombre o descripción de la receta recomendada por el chatbot"
+    - menu_planning_tips:
+        type: string
+        description: "Consejos dados para la planificación del menú semanal"
+    - dietary_suggestions:
+        type: string
+        description: "Sugerencias de recetas basadas en el tipo de dieta solicitada"
+    - cart_integration_info:
+        type: string
+        description: "Información sobre cómo añadir ingredientes de las recetas al carrito"
+
+conversation:
+  number: combinations
+  max_cost: 0.5
+  goal_style:
+    steps: 25
+  interaction_style:
+    - single questions
+```
+
+### ¿Qué puedes hacer después? 👀
+Una vez que ejecutes este perfil, los resultados se guardarán en los campos definidos en `chatbot.output`. Si quieres, luego podemos crear **Reglas de SENSEI Check** para validar, por ejemplo, que el chatbot siempre devuelva una receta (`data_collected() == True`) o que no se salga del tema de la cocina y las compras (`only_talks_about()`).
+
+¡Pruébalo en tu carpeta `profiles/` y me cuentas qué tal funciona! ¿Te gustaría ajustar algún ingrediente o añadir alguna otra regla? 😊
+$$$

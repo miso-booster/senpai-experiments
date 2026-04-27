@@ -1,0 +1,68 @@
+conversation ID: one_node_architecture__p24__bikeshop__profile__7bb4f4f0
+$$$
+Hello there! 😊 I'd be happy to help you create this profile for your bike shop's virtual assistant. 
+
+To make sure the simulated user behaves exactly as you described, I've added your specific constraints (like avoiding appointments or advanced repairs) directly into the `user.context`. I also set up the `chatbot.output` to extract the prices as `currency` types and the advice/hours as `string` types, which will be super helpful if you want to write Sensei-check rules for them later! 🚲
+
+Here is the complete YAML profile:
+
+```yaml
+test_name: "bike_shop_general_info"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A normal customer looking for general information about the bike shop and its standard services."
+  context:
+    - "You phrase your questions clearly and directly."
+    - "Focus on basic maintenance and good practices rather than advanced repairs."
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or any topic outside of basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in the shop, can you say that again?"
+  output:
+    - shop_hours:
+        type: string
+        description: "The opening and closing times of the bike shop."
+    - tire_price:
+        type: currency
+        description: "The price of a new bike tire."
+    - tune_up_price:
+        type: currency
+        description: "The price of a standard bike tune-up."
+    - seat_price:
+        type: currency
+        description: "The price of a new bike seat."
+    - bike_care_advice:
+        type: string
+        description: "General advice provided on how to properly take care of a bike."
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - single questions
+```
+
+### A quick breakdown of what's happening here: 👀
+* **`user.context`**: This acts as the guardrails for the LLM simulating the user. It explicitly tells it what *not* to talk about, ensuring it stays on topic.
+* **`interaction_style: [single questions]`**: This ensures the user asks one thing at a time rather than dumping all the questions into a single massive paragraph, which feels much more like a natural customer interaction.
+* **`chatbot.output`**: Once the conversation finishes, Sensei will extract the prices and advice so you can easily verify if the chatbot gave accurate information without introducing unrelated services!
+
+Let me know if you'd like to adjust any of the goals or if you need help writing some rules to test these outputs! 🛠️✨
+$$$

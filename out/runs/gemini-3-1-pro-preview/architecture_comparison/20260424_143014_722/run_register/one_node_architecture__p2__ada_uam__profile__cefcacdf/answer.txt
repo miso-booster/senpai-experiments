@@ -1,0 +1,58 @@
+Hello there! 😊 Welcome to the Dojo! 
+
+An Erasmus student profile is a fantastic use case. Since we want to keep the inputs simple but focus heavily on the support quality, I've designed a profile with static, straightforward goals (no complex variables needed). 
+
+To make sure you can validate the support later, I've added a robust `chatbot.output` section. This will extract the specific instructions and contact details the bot provides, which you can later use in your Sensei-check rules (for example, to verify that `moodle_setup_instructions` is never empty).
+
+Here is the ready-to-use profile for your project:
+
+```yaml
+test_name: "erasmus_student_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "An Erasmus exchange student who just arrived at the university and needs help setting up their digital accounts."
+  context:
+    - "You are new to the university and a bit overwhelmed by the different platforms."
+    - "You need clear, step-by-step instructions to access your academic tools."
+  goals:
+    - "Ask how to log into Moodle for the first time as an international student."
+    - "Ask how to access the Sigma platform to check your class schedule."
+    - "Ask how to connect your phone and laptop to the university Wi-Fi (Eduroam)."
+    - "Ask for the IT support contact email or phone number in case you need further assistance."
+
+chatbot:
+  is_starter: false
+  fallback: "Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - moodle_setup_instructions:
+        type: string
+        description: "Step-by-step instructions or links provided to access Moodle."
+    - sigma_access_info:
+        type: string
+        description: "Instructions or links provided to access the Sigma platform."
+    - wifi_connection_steps:
+        type: string
+        description: "Instructions provided to connect to the university Wi-Fi (Eduroam)."
+    - support_contact_email:
+        type: string
+        description: "The email address provided for IT support."
+    - support_contact_phone:
+        type: string
+        description: "The phone number provided for IT support."
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 15
+  interaction_style:
+    - single questions
+```
+
+Just save this as a `.yaml` file inside your `profiles/` folder. Let me know if you'd like to write some Sensei-check rules to validate these outputs next! 👀✨

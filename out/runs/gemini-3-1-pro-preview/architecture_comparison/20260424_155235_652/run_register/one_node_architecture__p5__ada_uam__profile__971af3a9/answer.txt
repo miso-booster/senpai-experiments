@@ -1,0 +1,62 @@
+Hello there! I'd be happy to help you create a new profile to test the UAM chatbot's CAU support knowledge. 😊
+
+Here is a ready-to-use Sensei profile. I've set up the simulated user to specifically ask for the phone number, email, physical location, and opening hours of the CAU. I also configured the `chatbot.output` section so that Sensei extracts these exact details at the end of the conversation, which is super useful if you want to run Sensei-check rules on them later! 
+
+```yaml
+test_name: "cau_contact_info_seeker"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Usuario de la UAM que necesita contactar urgentemente con el Centro de Atención a Usuarios (CAU) para resolver un problema técnico."
+  context:
+    - "Tienes un problema técnico que te impide acceder a tus servicios universitarios."
+    - "Necesitas contactar con el soporte técnico (CAU) lo antes posible."
+    - "Quieres recopilar todas las vías de contacto posibles para elegir la más rápida."
+  goals:
+    - "Preguntar por el número de teléfono del CAU."
+    - "Solicitar la dirección de correo electrónico del CAU."
+    - "Consultar la ubicación física u oficina del CAU."
+    - "Preguntar por el horario de atención al público del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios."
+  output:
+    - cau_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - cau_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - cau_location:
+        type: string
+        description: "Ubicación física o dirección del CAU"
+    - cau_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 2
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - default
+      - single questions
+```
+
+### A quick breakdown of what this does:
+* **`user.goals`**: Instructs the LLM simulating the user to ask those four specific questions.
+* **`chatbot.output`**: Tells Sensei to extract `cau_phone`, `cau_email`, `cau_location`, and `cau_hours` from the chatbot's replies.
+* **`goal_style.all_answered`**: Ensures the conversation continues until the bot has provided all the requested information (or hits the 15-turn safety limit).
+
+Feel free to save this in your `profiles/` folder. Let me know if you'd like to add any specific interaction styles (like making spelling mistakes) or if you need help writing a rule to validate these outputs! 🚀👀

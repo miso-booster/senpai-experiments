@@ -1,0 +1,90 @@
+conversation ID: agentic_architecture__p14__alcampo__profile__0c1540d2
+$$$
+¡Hola! 😊 Claro que sí, te ayudaré a crear un perfil de SENSEI para probar la capacidad del chatbot de Alcampo a la hora de recomendar recetas y planificar menús.
+
+He revisado la documentación de los perfiles de SENSEI (`sensei-chat-guide.md`) y he diseñado un perfil que simula a un cliente buscando ideas de comidas saludables, económicas y con productos que se puedan comprar en el supermercado.
+
+Aquí tienes el código YAML para el perfil. Puedes guardarlo en la carpeta `profiles/` de tu proyecto (por ejemplo, como `alcampo_recetas.yml`):
+
+```yaml
+test_name: "alcampo_recipe_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente del supermercado Alcampo que busca ideas de recetas y 
+    planificación de menús semanales utilizando ingredientes disponibles en la tienda.
+  context:
+    - "Buscas comidas saludables y económicas."
+    - "Prefieres utilizar productos de temporada."
+    - "Quieres saber qué ingredientes necesitas comprar en Alcampo."
+  goals:
+    - "Quiero que me recomiendes una receta para {{meal_type}} que incluya {{ingredient}}."
+    - "Necesito planificar un menú para {{days}} días para {{people}} personas."
+    - meal_type:
+        function: random()
+        type: string
+        data: [la cena, la comida, el desayuno]
+    - ingredient:
+        function: random()
+        type: string
+        data: [pollo, salmón, lentejas, espinacas, ternera, tofu]
+    - days:
+        function: random()
+        type: int
+        data: [3, 5, 7]
+    - people:
+        function: random()
+        type: int
+        data: [1, 2, 4]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no te he entendido. ¿Puedes reformular tu pregunta?"
+  output:
+    - suggested_recipe:
+        type: string
+        description: "Nombre de la receta principal sugerida por el chatbot"
+    - ingredients_list:
+        type: list[string]
+        description: "Lista de ingredientes necesarios para la receta o el menú"
+    - menu_days:
+        type: int
+        description: "Número de días que cubre el menú planificado"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📝 Resumen de lo que hace este perfil:
+
+1. **El Usuario Simulado (`user`)**:
+   - Hablará en **español** y tomará el rol de un cliente de Alcampo interesado en comer sano y barato.
+   - Tiene **dos objetivos principales (`goals`)**: pedir una receta específica (variando el tipo de comida y el ingrediente principal) y pedir un menú para varios días y personas.
+   - Las variables (`meal_type`, `ingredient`, `days`, `people`) usarán la función `random()` para que en cada conversación el simulador pruebe combinaciones distintas (por ejemplo: "receta para la cena con salmón" y "menú de 5 días para 2 personas").
+
+2. **Extracción de Datos (`chatbot.output`)**:
+   - Al finalizar la conversación, SENSEI extraerá tres campos clave para que luego puedas validarlos con reglas (SENSEI-check):
+     - `suggested_recipe`: El nombre de la receta que el bot recomendó.
+     - `ingredients_list`: Una lista de los ingredientes mencionados, ideal para comprobar si el bot realmente sugiere productos de supermercado.
+     - `menu_days`: Los días que abarca el menú, para verificar que el bot cumplió con la cantidad de días solicitados.
+
+3. **Control de la Conversación (`conversation`)**:
+   - Realizará **3 conversaciones** distintas (`number: 3`).
+   - Terminará automáticamente cuando el chatbot haya respondido a todos los objetivos (`all_answered`), con un límite de seguridad de 15 interacciones.
+
+¿Te gustaría que ajustemos algún ingrediente, añadamos algún estilo de interacción (como que el usuario cambie de opinión a mitad de la charla) o que creemos alguna regla de validación para este perfil? ¡Dime qué necesitas! 🚀
+$$$

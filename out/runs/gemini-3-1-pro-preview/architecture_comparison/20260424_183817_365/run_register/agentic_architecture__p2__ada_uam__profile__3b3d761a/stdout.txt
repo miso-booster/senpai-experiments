@@ -1,0 +1,70 @@
+conversation ID: agentic_architecture__p2__ada_uam__profile__3b3d761a
+$$$
+Here is a profile designed for an Erasmus student who needs help setting up their university systems. 
+
+I have kept the input variables minimal (just cycling through different platforms like Moodle, Sigma, etc.) but added a robust `chatbot.output` section. These outputs will allow you to easily write SENSEI rules later to verify that the chatbot actually provided instructions, identified the right platform, and offered further support if needed.
+
+```yaml
+test_name: "erasmus_it_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus exchange student who just arrived at the university. 
+    You are confused and don't know how to set up your digital university accounts.
+  context:
+    - "You are polite but a bit stressed because classes start soon."
+    - "You don't know the difference between the different platforms."
+  goals:
+    - "Ask how to set up and log into {{platform}}"
+    - platform:
+        function: another()
+        type: string
+        data: [Moodle, Sigma, University Email, Eduroam Wi-Fi]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you rephrase?"
+  output:
+    - platform_identified:
+        type: string
+        description: "The name of the platform the user asked about"
+    - setup_instructions_provided:
+        type: string
+        description: "A summary of the steps or link provided by the bot to set up the platform"
+    - support_contact_given:
+        type: string
+        description: "Any email, phone number, or IT desk location provided for further help"
+    - issue_resolved:
+        type: string
+        description: "Whether the chatbot successfully provided the setup information (yes/no)"
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 💡 How this profile works:
+1. **Minimal Inputs (`user.goals`)**: The only variable is `platform`. By using the `another()` function and setting `conversation.number: 4`, Sensei will run 4 conversations, asking about a different platform (Moodle, Sigma, Email, Eduroam) each time without repeating.
+2. **Erasmus Persona (`user.role` & `context`)**: The prompt sets up the simulator to act like a stressed but polite newcomer who doesn't understand the local university tech ecosystem.
+3. **Rich Outputs (`chatbot.output`)**: At the end of each conversation, Sensei will extract these four fields. 
+
+### 🛠️ How you can use these outputs in Rules later:
+Because we defined these specific outputs, you can easily create rules to validate the chatbot's performance. For example:
+* **Check if instructions were given**: `when: conv[0].platform_identified is not None`, `then: conv[0].setup_instructions_provided is not None`
+* **Check resolution**: `oracle: conv[0].issue_resolved == "yes"`
+
+Let me know if you'd like to add more platforms to the list, or if you want to go ahead and create some rules for this profile! 😊
+$$$

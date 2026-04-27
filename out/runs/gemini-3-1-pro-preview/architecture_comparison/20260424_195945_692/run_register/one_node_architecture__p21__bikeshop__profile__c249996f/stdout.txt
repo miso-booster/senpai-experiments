@@ -1,0 +1,67 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__c249996f
+$$$
+Hello there! Welcome to the Chatbot Dojo! 😊 
+
+That sounds like a great scenario to test! Customizing a new bike is a very common request, so it's perfect for your bikeshop project. 
+
+I've crafted a Sensei Profile tailored to this exact situation. It sets up the user's context (having a new bike and wanting to change the seat and grips) and defines the goals they need to achieve during the conversation. I also added the specific outputs the chatbot should extract, like whether the shop offers custom setups and the information about the seats and grips.
+
+Here is the YAML profile for your test:
+
+```yaml
+test_name: bike_setup_and_customization
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A customer who recently got a new bike and wants to customize it to their liking.
+  context:
+    - You recently purchased a new bicycle and want to have it professionally set up.
+    - You specifically want to change the seat for something more comfortable.
+    - You also want to replace the handlebar grips to match your preferred style and feel.
+  goals:
+    - Ask if the shop offers custom bike setups or fittings for new bikes.
+    - Inquire about the options and pricing for new bike seats.
+    - Ask about the options and pricing for new handlebar grips.
+    - Ask how long it usually takes to complete these changes and set up the bike.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - custom_setup_offered:
+        type: string
+        description: "Confirmation of whether the shop offers custom bike setups or fittings."
+    - seat_information:
+        type: string
+        description: "Information or pricing provided by the chatbot regarding new bike seats."
+    - grips_information:
+        type: string
+        description: "Information or pricing provided by the chatbot regarding new handlebar grips."
+    - estimated_time:
+        type: string
+        description: "The estimated time it takes to complete the seat and grip replacement."
+
+conversation:
+  number: 2
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - single question
+```
+
+### A quick look at what this does 👀:
+* **`user.context` & `user.goals`**: This tells the simulator exactly *who* it is and *what* it needs to ask. It will naturally bring up the new bike, the seat, and the grips.
+* **`chatbot.output`**: Once the conversation ends, Sensei will extract these fields. This is super helpful if you later want to write a **Sensei Rule** to check if the bot always provides pricing for the grips or confirms the setup time!
+* **`interaction_style`**: I set it to `single question` so the simulated user asks about the seat, grips, and setup time step-by-step, just like a real customer would.
+
+Feel free to save this in your `profiles/` folder as `bike_setup_and_customization.yaml`. Let me know if you'd like to tweak any of the goals or if you want to create a rule to validate this profile! 🚲✨
+$$$

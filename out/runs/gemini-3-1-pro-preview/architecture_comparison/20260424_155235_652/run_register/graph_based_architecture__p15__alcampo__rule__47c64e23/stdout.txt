@@ -1,0 +1,38 @@
+conversation ID: graph_based_architecture__p15__alcampo__rule__47c64e23
+$$$
+Hi there! I'd be happy to help you fix this rule! 🛠️✨
+
+I took a look at your YAML, and I found a couple of little things preventing it from working properly:
+
+1. **Typo in the key:** You have `descriptin` instead of `description`.
+2. **Missing a `then` clause:** In Sensei-check, if you use an `if` statement to set a precondition, you **must** include a `then` statement to tell the system what the expected outcome is. Alternatively, if you just want to assert a true/false condition directly, you can use `oracle` instead of `if/then`.
+
+Here is the corrected version of your rule keeping your exact 2-conversation logic (using `oracle` instead of `if`):
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+oracle: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+```
+
+### 💡 Senpai's Tip: A simpler approach!
+Because you are just checking if the chatbot successfully extracted/provided information based on a specific request, you don't actually need to compare two conversations together (which is what `conversations: 2` does). 
+
+It is usually much cleaner to write this as a **1-conversation rule** (a traditional oracle). Here is how I would write it using the `if/then` format, which reads very naturally:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+if: user_request in ['contact options', 'customer service number']
+then: contact_options is not None or customer_service_number is not None
+```
+
+*(Or, you could even split it into two separate 1-conversation rules: one for "contact options" and one for "customer service number" to be super precise!)*
+
+**One last reminder:** Make sure that `user_request`, `contact_options`, and `customer_service_number` are actual fields defined in your SENSEI Chat profile's `chatbot.output` (or input selections). Sensei-check relies on those exact names to pull the data! 👀
+
+Let me know if you need help adjusting your profile to match this, or if you have any other rules you'd like me to look at! 😊
+$$$

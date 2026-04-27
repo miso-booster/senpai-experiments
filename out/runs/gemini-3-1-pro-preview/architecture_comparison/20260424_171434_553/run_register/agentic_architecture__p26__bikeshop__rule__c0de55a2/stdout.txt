@@ -1,0 +1,29 @@
+conversation ID: agentic_architecture__p26__bikeshop__rule__c0de55a2
+$$$
+I have reviewed your rule against the SENSEI documentation (`sensei-check-doc.md` and `rules-examples.md`). I also checked the project profiles and confirmed that `tune_up_price` is a valid output field (used in profiles like `bike_repair_and_maintenance_scheduler.yaml`).
+
+Your rule has a few syntax and structural errors. Here is the corrected version:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: tune_up_price is not None
+oracle: extract_float(tune_up_price) == 50
+```
+
+### What I changed and why:
+
+1. **Changed `conversations: 2` to `conversations: 1`**: 
+   Since you are evaluating the absolute price in a single conversation (rather than comparing the price between two different conversations), this is a single-conversation rule.
+2. **Removed `conv[0].` prefixes**: 
+   In single-conversation rules, you don't need the `conv[0].` prefix. You can reference the `chatbot.output` fields directly by their name (e.g., `tune_up_price`).
+3. **Replaced `if`/`then` with `oracle`**: 
+   The `if`/`then` syntax is designed for metamorphic rules (implications across multiple conversations). For a straightforward assertion in a single conversation, you should use `oracle`. Also, the `then` clause must be a Python expression that evaluates to `True` or `False`, not a string like `"The tune-up price is $50."`.
+4. **Added `extract_float()`**: 
+   Because the LLM might extract the price as a string with a currency symbol (e.g., `"$50"`, `"50 USD"`), checking `tune_up_price == 50` directly might fail. The built-in `extract_float()` helper safely pulls the number out for a reliable mathematical comparison.
+5. **Moved the `None` check to `when`**: 
+   Using `when: tune_up_price is not None` acts as a filter. It ensures that the rule only evaluates conversations where the chatbot actually provided a price, preventing errors when trying to extract a float from an empty value.
+
+Let me know if you'd like to add a custom error message to this rule or if you need help with anything else! 😊
+$$$

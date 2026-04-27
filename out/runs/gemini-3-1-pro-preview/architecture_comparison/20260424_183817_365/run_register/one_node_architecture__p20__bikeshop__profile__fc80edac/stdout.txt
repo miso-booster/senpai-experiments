@@ -1,0 +1,76 @@
+conversation ID: one_node_architecture__p20__bikeshop__profile__fc80edac
+$$$
+Hello there! 😊 I'd be happy to help you create a profile to test how your bike shop chatbot handles appointment scheduling. 
+
+To test different dates and times efficiently, we can use the `pairwise()` function in the `goals` section. This will generate a smart combination of the different days and times you provide, ensuring we test a good variety without creating an overwhelming number of conversations. 
+
+I've also set up the `chatbot.output` to extract the `confirmed_day` and `confirmed_time` so you can easily verify if the chatbot understood the requested slots.
+
+Here is the complete profile. You can save this as `wheel_change_appointment.yml` in your `profiles/` folder:
+
+```yaml
+test_name: "wheel_change_appointment"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A cyclist who needs to replace their bike wheels and wants to schedule an appointment."
+  context:
+    - "You have a mountain bike that needs new wheels."
+    - "You are trying to find a suitable time to drop off your bike."
+  goals:
+    - "Ask to schedule a wheel replacement appointment on {{day}} at {{time}}."
+    - day:
+        function: pairwise()
+        type: string
+        data: 
+          - "Monday"
+          - "tomorrow"
+          - "next Friday"
+          - "October 12th"
+    - time:
+        function: pairwise()
+        type: string
+        data: 
+          - "10:00 AM"
+          - "14:30"
+          - "in the afternoon"
+          - "right before closing"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you repeat?"
+  output:
+    - confirmed_day:
+        type: string
+        description: "The date or day of the week confirmed for the appointment."
+    - confirmed_time:
+        type: time("hh:mm")
+        description: "The time confirmed for the appointment."
+    - service_type:
+        type: string
+        description: "The service requested, which should be wheel replacement."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🚲 What's happening in this profile?
+* **Variables (`{{day}}` and `{{time}}`)**: We are feeding the chatbot a mix of exact dates ("October 12th", "14:30") and relative/natural language times ("tomorrow", "in the afternoon"). This is a great way to test the bot's natural language understanding!
+* **`combinations(1, pairwise)`**: This tells Sensei to run enough conversations to test every pair of day and time at least once (100% of the pairwise matrix).
+* **`chatbot.output`**: At the end of the conversation, Sensei will extract the day and time the bot actually confirmed. Later on, you can write a **Sensei Rule** to check if `conv[0].confirmed_day` matches the `day` the user asked for! 👀
+
+Let me know if you'd like to add more variables (like the wheel size) or if you need help writing a rule to validate these appointments! 🛠️✨
+$$$

@@ -1,0 +1,54 @@
+¡Hola! 😊 Claro que sí, te puedo ayudar a crear reglas para probar este perfil. 
+
+Basándome en la documentación de **SENSEI Rules** (`sensei-check-doc.md` y `rules-examples.md`) y en los campos que has definido en el `chatbot.output` de tu perfil, he diseñado varias reglas que te permitirán validar distintos aspectos del comportamiento de tu chatbot.
+
+Aquí tienes **4 sugerencias de reglas** que puedes usar. Puedes guardar cada una en un archivo `.yml` dentro de la carpeta `rules/` de tu proyecto.
+
+### 1. Consistencia del "Welcome Day" (Regla Metamórfica)
+Dado que el *Welcome Day* es un evento general de la universidad, su fecha y hora deberían ser las mismas sin importar por qué curso (`cursos`) o grado (`grados`) pregunte el estudiante. Esta regla compara dos conversaciones diferentes para asegurarse de que el chatbot no se invente fechas distintas.
+
+```yaml
+name: welcome_day_consistency
+description: La fecha y hora del Welcome Day deben ser las mismas independientemente del curso o grado consultado.
+conversations: 2
+if: conv[0].cursos != conv[1].cursos or conv[0].grados != conv[1].grados
+then: conv[0].welcome_day_date == conv[1].welcome_day_date and conv[0].welcome_day_time == conv[1].welcome_day_time
+```
+
+### 2. Validación del costo de admisión (Regla de una conversación)
+En tu perfil, el chatbot debe extraer el `application_fee`. Esta regla verifica que, si el chatbot devuelve un costo, este sea un número positivo (usando la función de ayuda `extract_float`).
+
+```yaml
+name: valid_application_fee
+description: El costo de la solicitud de admisión debe ser un valor positivo.
+conversations: 1
+when: application_fee is not None
+oracle: extract_float(application_fee) >= 0
+```
+
+### 3. Consistencia de Idioma (Regla Global)
+Tu perfil especifica que el usuario habla en español (`language: Spanish`). Esta regla utiliza la función `responds_in_same_language()` para garantizar que el chatbot no cambie de idioma y responda siempre en español.
+
+```yaml
+name: responds_in_same_language
+description: El chatbot debe responder en el mismo idioma que el usuario (Español).
+conversations: 1
+oracle: responds_in_same_language()
+```
+
+### 4. Recolección completa de datos (Regla Global)
+Como tu perfil tiene muchos campos en `chatbot.output` (enlaces, fechas, requisitos, etc.), puedes usar esta regla para comprobar si el chatbot fue capaz de recopilar **toda** la información solicitada durante la conversación sin dejar campos vacíos.
+
+```yaml
+name: all_information_collected
+description: El chatbot debe proporcionar toda la información y enlaces requeridos en el output.
+conversations: 1
+oracle: data_collected() == True
+```
+
+**¿Cómo usarlas?**
+1. Guarda los bloques de código YAML anteriores en archivos separados (por ejemplo, `welcome_day_consistency.yml`, `valid_application_fee.yml`, etc.) dentro de tu directorio `rules/`.
+2. Ejecuta tu perfil con SENSEI Chat para generar las conversaciones.
+3. Luego, SENSEI Check evaluará automáticamente estas reglas sobre las conversaciones generadas.
+
+¿Te gustaría que ajustemos alguna de estas reglas o que creemos alguna otra para un escenario específico de tu perfil? ¡Dime y lo miramos!

@@ -1,0 +1,69 @@
+Here is a SENSEI profile tailored for your bikeshop scenario! 🚴‍♂️
+
+Based on the `sensei-chat-guide.md` documentation, I have created a profile where the simulated user will contact the chatbot to schedule a bike setup. I added some variables for the seat and handlebar grips so that the simulator can test different combinations (e.g., asking for a gel seat and ergonomic grips, or a leather seat and foam grips).
+
+```yaml
+test_name: "bikeshop_setup_test"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike. You are contacting a bikeshop to have it set up and tailored to your liking.
+  context:
+    - "You want to change the seat."
+    - "You want to change the handlebar grips."
+  goals:
+    - "Ask to schedule an appointment for a bike setup."
+    - "Specify that you want to change the seat to a {{seat_type}}."
+    - "Specify that you want to change the handlebar grips to {{grip_type}}."
+    - seat_type:
+        function: random()
+        type: string
+        data: [gel, memory foam, leather, racing]
+    - grip_type:
+        function: random()
+        type: string
+        data: [ergonomic, foam, rubber, lock-on]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that."
+  output:
+    - appointment_scheduled:
+        type: string
+        description: "Whether the appointment was successfully scheduled (yes/no)"
+    - seat_preference:
+        type: string
+        description: "The type of seat the user requested"
+    - grip_preference:
+        type: string
+        description: "The type of grips the user requested"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 📝 Summary of the Profile
+* **User Persona & Goals**: The user will naturally ask to schedule an appointment. The `{{seat_type}}` and `{{grip_type}}` variables use the `random()` function to pick from a list of common bike parts, ensuring your chatbot can handle different requests.
+* **Chatbot Output (`chatbot.output`)**: At the end of the conversation, SENSEI will extract three fields:
+  * `appointment_scheduled`: To verify if the bot successfully booked the setup.
+  * `seat_preference`: To check if the bot correctly captured the requested seat.
+  * `grip_preference`: To check if the bot correctly captured the requested grips.
+* **Conversation Controls**: It will run `3` conversations and stop when all goals are answered (`all_answered`), with a safety limit of 15 interactions.
+
+If you plan to write SENSEI rules later to validate these tests, you can easily reference these outputs (e.g., `conv[0].seat_preference`). 
+
+Let me know if you'd like to adjust the data lists, add more goals, or if you need help saving this into your project! 😊

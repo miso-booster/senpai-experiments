@@ -1,0 +1,87 @@
+conversation ID: graph_based_architecture__p1__ada_uam__profile__9d065fd4
+$$$
+Hello there! 😊 How can I help you today? 
+
+I would absolutely love to help you create this Sensei Profile! Testing Wi-Fi connection issues like eduroam is a classic IT support scenario, and using variables is the perfect way to simulate all the different devices and methods a student might try. 📶
+
+To make this profile super effective, I've created three variables in the `user.goals` section:
+1. **`{{device_type}}`**: The device they are using (Windows, Mac, Android, iPhone).
+2. **`{{setup_method}}`**: How they tried to connect (automatic installer, manual config, QR code).
+3. **`{{security_setting}}`**: The specific technical setting they are stuck on (PEAP, CA certificates, etc.).
+
+By using a mix of `forward()` and `pairwise()` functions, Sensei will automatically generate a matrix of conversations covering these different combinations without creating an overwhelming number of tests! 🪄
+
+Here is your ready-to-use profile. You can save this as `eduroam_troubleshooting.yml` inside your `profiles/` folder:
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who urgently needs to connect to the eduroam Wi-Fi network,
+    but you keep getting connection errors. You are asking the IT support bot for help.
+  context:
+    - "You have an upcoming online exam and need stable internet."
+    - "You already tried following the official university guide but got stuck."
+    - "You are feeling a bit frustrated but remain polite."
+  goals:
+    - "Tell the bot: I am trying to connect my {{device_type}} to eduroam but it keeps failing."
+    - "Explain that you tried using the {{setup_method}} to configure it, but it didn't work."
+    - "Ask if you need to change the {{security_setting}} to make it work."
+    
+    # --- Variables Declaration ---
+    - device_type:
+        function: forward()
+        type: string
+        data: [Windows laptop, MacBook, Android phone, iPhone]
+    - setup_method:
+        function: pairwise()
+        type: string
+        data: [automatic installer tool, manual configuration, QR code scanner]
+    - security_setting:
+        function: pairwise()
+        type: string
+        data: [PEAP authentication, CA certificate, anonymous identity]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you please rephrase your Wi-Fi issue?"
+  output:
+    - troubleshooting_steps:
+        type: string
+        description: "The step-by-step instructions provided by the bot to fix the eduroam connection."
+    - requires_human_agent:
+        type: string
+        description: "Whether the bot suggested escalating to a human IT agent (yes/no)."
+    - mentioned_os:
+        type: string
+        description: "The operating system or device type the bot recognized and provided steps for."
+
+conversation:
+  # We use combinations(1.0, pairwise) because we have at least two pairwise variables declared!
+  number: combinations(1.0, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+      - single questions
+```
+
+### 💡 A quick tip from Senpai:
+* **`chatbot.output`**: Notice how I added fields like `troubleshooting_steps` and `requires_human_agent`? At the end of the run, Sensei will extract this data. If you decide to write **Sensei Rules** later, you can easily check if the bot successfully provided instructions or escalated the ticket by checking `conv[i].requires_human_agent`! 👀
+* **`interaction_style`**: I added a `random` block so the simulated user will sometimes make spelling mistakes or use long phrases, making them feel like a real, frustrated student typing in a hurry. 
+
+Let me know if you'd like to adjust the variables or if you need help writing some Sensei Rules to validate the bot's answers! 🚀
+$$$

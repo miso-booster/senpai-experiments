@@ -1,0 +1,28 @@
+conversation ID: one_node_architecture__p7__ada_uam__rule__c463cc37
+$$$
+Hello there! 😊 I'd be happy to help you create that rule. 
+
+Since chatbots can sometimes format phone numbers differently (like removing spaces) or translate addresses (especially since Ada UAM speaks Spanish!), the safest way to check this is by using the `semantic_content` helper. This built-in function uses an LLM under the hood to verify that the meaning of the text matches your expected information, ignoring minor formatting or translation differences. For the email, a simple text inclusion check works perfectly!
+
+Here is the rule ready for your project:
+
+```yaml
+name: correct_cau_information
+description: Verifies that the chatbot provides the correct email, phone, and physical address for the CAU.
+conversations: 1
+active: true
+oracle: >
+  'cau@uam.es' in contact_email and
+  semantic_content(contact_phone, '91 497 4029') and
+  semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+yields: f"Incorrect CAU info. Got Email: {contact_email}, Phone: {contact_phone}, Address: {physical_address}"
+```
+
+### How it works:
+* **`conversations: 1`**: It evaluates each conversation individually.
+* **`'cau@uam.es' in contact_email`**: Checks that the correct email string is present in the extracted output.
+* **`semantic_content(...)`**: Smartly checks that the phone number and the address match the facts you provided, even if the bot replies with "Escuela Politécnica Superior" or formats the phone as "914974029".
+* **`yields`**: If the rule fails, it will print out exactly what the chatbot extracted so you can easily debug it! 👀
+
+Let me know if you need help applying this to your `consultante_de_servicios_y_asistencia_del_cau.yaml` profile or if you need any other rules! 🚀
+$$$

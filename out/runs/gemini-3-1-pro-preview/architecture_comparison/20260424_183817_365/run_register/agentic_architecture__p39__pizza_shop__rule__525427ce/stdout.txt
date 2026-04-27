@@ -1,0 +1,34 @@
+conversation ID: agentic_architecture__p39__pizza_shop__rule__525427ce
+$$$
+I have created a metamorphic rule for you! 
+
+Since I checked the project and couldn't find a profile that perfectly matches a simple `drink` and `price` output schema, I have designed this rule assuming you either have a profile in mind or will create one later (this is what we call a "Rule-first design" 😊). 
+
+Here is the YAML for your rule. It compares two conversations where everything else is the same, but one includes a drink and the other doesn't:
+
+```yaml
+name: drink_costs_2_dollars_extra
+description: Adding a drink to an order increases the total price by exactly 2 dollars.
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].pizza_type == conv[1].pizza_type
+if: conv[0].drink is not None and conv[1].drink is None
+then: extract_float(conv[0].price) == extract_float(conv[1].price) + 2
+```
+
+### How this rule works:
+* **`conversations: 2`**: This tells SENSEI-check that it's a metamorphic rule comparing a pair of conversations.
+* **`when`**: This is our filter. It ensures we are comparing "apples to apples" (e.g., the pizza `size` and `pizza_type` must be identical in both conversations). *Note: You should adjust these fields to match whatever other items your actual `chatbot.output` tracks!*
+* **`if`**: This is the trigger condition. It looks for a pair where the first conversation (`conv[0]`) has a `drink` and the second conversation (`conv[1]`) does not.
+* **`then`**: This is the relation we are asserting. We use the built-in `extract_float()` helper to safely parse the numbers from the `price` field and check that the first conversation costs exactly $2 more than the second.
+
+### A quick note on your Profile (`chatbot.output`):
+For this rule to work, your SENSEI Chat profile must expose at least these fields in its `chatbot.output`:
+1. `drink` (e.g., the name of the drink, or `None` if no drink was ordered)
+2. `price` (the total cost of the order)
+3. Any fields used in the `when` clause (like `size` or `pizza_type`) to ensure the rest of the order is identical.
+
+If your `drink` output is actually a **list** of drinks rather than a single string, you can easily change the `if` condition to compare the length of the lists instead:
+`if: len(conv[0].drink) == len(conv[1].drink) + 1`
+
+Does this look like what you had in mind? Let me know if you'd like me to help you create or update a profile to match this rule!
+$$$

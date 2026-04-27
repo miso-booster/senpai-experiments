@@ -1,0 +1,72 @@
+conversation ID: graph_based_architecture__p12__alcampo__profile__9ef569ac
+$$$
+Hello there! I'd be super happy to help you create a Sensei Profile for adding items to a shopping cart! 🛒✨
+
+To do this, we'll create a YAML profile where the simulated user asks the chatbot to add specific items and quantities to their cart. I'll use the **`pairwise()`** function for the variables so that Sensei automatically tests different combinations of items and quantities without creating an overwhelming number of conversations.
+
+Here is a ready-to-use profile template for your shopping cart scenario:
+
+```yaml
+test_name: "shopping_cart_addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer doing your weekly grocery shopping online. 
+    You want to add various items to your cart and ensure they are registered correctly.
+  context:
+    - "You prefer fresh and high-quality products."
+    - "You want to make sure the chatbot confirms the items have been added."
+  goals:
+    - "Please add {{quantity}} of {{item}} to my shopping cart."
+    - "Ask the chatbot to confirm the total number of items currently in the cart."
+    - quantity:
+        function: pairwise()
+        type: int
+        data: [1, 2, 3, 4]
+    - item:
+        function: pairwise()
+        type: string
+        data: [organic apples, whole milk, sourdough bread, free-range eggs]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. What would you like to add to your cart?"
+  output:
+    - added_item:
+        type: string
+        description: "The name of the item the user requested to add"
+    - added_quantity:
+        type: int
+        description: "The quantity of the item added to the cart"
+    - cart_total_items:
+        type: int
+        description: "The total number of items currently in the shopping cart"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - single questions
+```
+
+### 💡 A quick breakdown of the magic happening here:
+
+1. **`user.goals` (The Variables):** We set up `{{quantity}}` and `{{item}}` right inside the prompt. Because we assigned the `pairwise()` function to both, Sensei will intelligently mix and match quantities (like `1`, `2`, `3`) with items (like `organic apples`, `whole milk`) to ensure every pair is tested at least once! 🍎🥛
+2. **`chatbot.output`:** This is the schema Sensei will extract at the end of the chat. It pulls out the `added_item`, `added_quantity`, and `cart_total_items`. This is super important because later on, you can write **Sensei Rules** (like `conv[0].added_quantity > 0`) to verify the chatbot actually did its job! 📝
+3. **`conversation.number`:** By setting this to `combinations(1, pairwise)`, we are telling Sensei to run exactly enough conversations to cover 100% of our pairwise combinations. 
+4. **`goal_style`:** Using `all_answered` means the conversation will naturally end once the user has successfully asked to add the items and checked the cart total. The `export: true` flag will even generate a handy CSV for you to review which goals were met! 📊
+
+You can save this as `add_to_cart.yml` inside your project's `profiles/` folder. 
+
+How does this look to you? Let me know if you'd like to add any custom data types (like currencies for prices) or if you want to tweak the interaction styles! 😊👀
+$$$

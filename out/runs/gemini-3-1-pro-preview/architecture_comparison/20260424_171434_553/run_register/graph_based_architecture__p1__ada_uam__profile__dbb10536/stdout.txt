@@ -1,0 +1,82 @@
+conversation ID: graph_based_architecture__p1__ada_uam__profile__dbb10536
+$$$
+Hello there! 😊 I would be absolutely delighted to help you create this Sensei Profile! 
+
+To make this profile really powerful, we can use **two variables**: one for the `setup_method` they tried, and another for the `device_type` they are using. By nesting these variables using the `forward()` function, we can tell Sensei to automatically generate a combination matrix. This way, your chatbot will be tested against different devices and methods without you having to write dozens of separate files! 🚀
+
+Here is a complete, ready-to-run profile for your eduroam troubleshooting scenario:
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who urgently needs to connect to the eduroam Wi-Fi network,
+    but you are completely unable to do so despite trying different methods.
+  context:
+    - "You are currently on campus and using your mobile data, which is running out."
+    - "You are getting frustrated because you have an assignment due soon."
+  goals:
+    - "Tell the chatbot that you are trying to connect to eduroam but it's not working."
+    - "Explain that you already tried using the {{setup_method}} on your {{device_type}} but it failed."
+    - "Ask if there is a step-by-step guide or a different way to configure it."
+    - setup_method:
+        function: forward()
+        type: string
+        data:
+          - "official eduroam CAT (Configuration Assistant Tool) installer"
+          - "manual configuration with PEAP and MSCHAPv2"
+          - "QR code provided in the university welcome email"
+          - "geteduroam app from the app store"
+    - device_type:
+        function: forward(setup_method) # Nested forward to create a combination matrix!
+        type: string
+        data: 
+          - "Android phone"
+          - "iPhone"
+          - "Windows laptop"
+          - "MacBook"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I couldn't understand. Could you please rephrase your question about the Wi-Fi?"
+  output:
+    - troubleshooting_steps:
+        type: string
+        description: "The step-by-step instructions provided by the bot to fix the eduroam connection."
+    - alternative_method_suggested:
+        type: string
+        description: "Any alternative setup method suggested by the bot."
+    - support_contact:
+        type: string
+        description: "Contact details for the IT helpdesk if the issue persists."
+
+conversation:
+  # Using combinations(0.5) will randomly test 50% of the 16 possible device+method combinations
+  number: combinations(0.5) 
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+      - single questions
+```
+
+### 💡 A quick breakdown of what's happening here:
+1. **Variables & Combinations:** Because we used `forward()` on `setup_method` and `forward(setup_method)` on `device_type`, Sensei knows how to mix and match them. We set `conversation.number` to `combinations(0.5)`, meaning Sensei will run 8 conversations (50% of the 16 possible pairs) to save time while still giving you great coverage! 👀
+2. **`chatbot.output`:** I added fields like `troubleshooting_steps` and `support_contact`. At the end of the conversation, Sensei will extract these details. Later on, if you write **Sensei Rules**, you can easily check things like: *"If the bot couldn't solve the issue, did it provide the `support_contact`?"*
+3. **Interaction Style:** I added a `random` block so the simulated user might sometimes make spelling mistakes or use long, frustrated phrases. It makes the simulation feel much more human!
+
+Just save this as a `.yml` file inside your `profiles/` folder, and you'll be ready to test! Let me know if you'd like to adjust anything or if you need help writing some Sensei Rules to validate the chatbot's answers! How else can I help you today? ✨
+$$$

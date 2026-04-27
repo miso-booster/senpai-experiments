@@ -1,0 +1,40 @@
+Hello there! 😊 
+
+The `pairwise()` function is a fantastic tool in **Sensei Profiles** for generating test data efficiently without blowing up your testing budget! 💸
+
+When you are defining variables in your `user.goals`, you might have several options (like different pizza sizes, crusts, and toppings). If you test *every single possible combination* (which is what nested `forward()` functions do), the number of conversations can explode into the hundreds or thousands. 
+
+Instead, `pairwise()` uses a smart combinatorial testing technique. It ensures that **every possible pair of values across your variables is tested together at least once**, without generating the full Cartesian product. This greatly reduces the total number of test cases while still catching the vast majority of interaction bugs! 🐛
+
+### How to use it:
+1. You must assign the `pairwise()` function to **at least two** variables in your `user.goals`.
+2. To actually run these combinations, you need to set your `conversation.number` to use the generated matrix, typically by writing `combinations` or `combinations(1.0, pairwise)`.
+
+Here is a quick example of how it looks inside a profile:
+
+```yaml
+user:
+  goals:
+    - "I want a {{size}} pizza with {{crust}} crust and {{sauce}} sauce."
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - crust:
+        function: pairwise()
+        type: string
+        data: [thin, thick, stuffed]
+    - sauce:
+        function: pairwise()
+        type: string
+        data: [tomato, bbq, alfredo]
+
+conversation:
+  number: combinations(1.0, pairwise)
+  goal_style:
+    steps: 3
+```
+
+In this example, if we used `forward()` for all three variables, Sensei would generate 27 conversations (3 × 3 × 3). By using `pairwise()`, Sensei generates a much smaller set of conversations, but guarantees that every size is paired with every crust, every size with every sauce, and every crust with every sauce at least once. 🍕✨
+
+Let me know if you'd like to see how to apply this to one of your specific pizza shop profiles! 👀

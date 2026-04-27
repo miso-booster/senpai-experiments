@@ -1,0 +1,21 @@
+Here is a rule that verifies the chatbot provides the correct CAU information! 
+
+Since the physical address can be phrased in slightly different ways by the chatbot (or translated), I've used the `semantic_content` helper function for the address. This uses the LLM to check if the meaning matches your target location. For the email and phone, simple text matching works perfectly.
+
+```yaml
+name: cau_correct_information
+description: Checks that the chatbot provides the correct email, phone, and physical address for the CAU.
+conversations: 1
+active: true
+oracle: |
+  'cau@uam.es' in contact_email and '91 497 4029' in contact_phone and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+yields: f"Incorrect CAU info. Got Email: {contact_email}, Phone: {contact_phone}, Address: {physical_address}"
+```
+
+### How it works:
+* **`conversations: 1`**: It evaluates each conversation individually.
+* **`'cau@uam.es' in contact_email`**: Ensures the exact email is present in the extracted `contact_email` field.
+* **`'91 497 4029' in contact_phone`**: Checks that the specific phone number is in the `contact_phone` field. *(Note: If the bot sometimes formats it without spaces like '914974029', you can change this to `'4029' in contact_phone` or use `semantic_content` for the phone too!)*
+* **`semantic_content(...)`**: Flexibly verifies that the extracted `physical_address` means the same thing as your provided location string, ignoring minor formatting or wording differences. 
+
+Let me know if you need to adjust the strictness of the phone number check or anything else! 😊

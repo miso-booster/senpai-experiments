@@ -1,0 +1,54 @@
+Hello there! 😊 That is a wonderfully detailed profile you've put together! It covers a lot of great ground for testing how a university chatbot handles admissions, courses, and events.
+
+Since your profile extracts a lot of specific information in the `chatbot.output` section, we can create some excellent **Sensei-check rules** to validate the chatbot's behavior. 
+
+Here are a few rule suggestions you can use right away. I've included a mix of **metamorphic rules** (comparing multiple conversations) and **single-conversation oracles** (checking general behavior).
+
+### 1. Welcome Day Consistency (Metamorphic)
+Since the "Welcome Day" is a specific university event, its date and time shouldn't change just because the user asks about a different degree (`grados`) or course (`cursos`). This rule compares two conversations to ensure the event details remain consistent.
+
+```yaml
+name: welcome_day_consistency
+description: The date and time for the Welcome Day should be the same regardless of the degree or course asked about.
+conversations: 2
+if: conv[0].welcome_day_date is not None and conv[1].welcome_day_date is not None
+then: conv[0].welcome_day_date == conv[1].welcome_day_date and conv[0].welcome_day_time == conv[1].welcome_day_time
+```
+
+### 2. Topic Guardrail (Single Conversation)
+Your simulated user is very focused on admissions and university resources. We want to make sure the chatbot doesn't get distracted and start talking about unrelated topics.
+
+```yaml
+name: admissions_topic_scope
+description: The chatbot should only talk about university admissions, degrees, courses, waitlists, and the Welcome Day event.
+conversations: 1
+oracle: only_talks_about('university admissions, degrees, courses, waitlists, and the Welcome Day event')
+```
+
+### 3. Language Consistency (Single Conversation)
+Since your user profile is explicitly set to `language: Spanish`, the chatbot should politely reply in the same language.
+
+```yaml
+name: responds_in_spanish
+description: The chatbot must respond in the same language as the user (Spanish).
+conversations: 1
+oracle: responds_in_same_language()
+```
+
+### 4. Application Fee Sanity Check (Single Conversation)
+You are extracting the `application_fee`. We can write a quick rule to ensure that if the bot provides a fee, it is a valid positive number.
+
+```yaml
+name: valid_application_fee
+description: If an application fee is provided, it must be a positive number.
+conversations: 1
+when: application_fee is not None
+oracle: extract_float(application_fee) >= 0
+```
+
+***
+
+👀 **A quick Senpai tip for your profile:** 
+I noticed you used `type: money` for the `application_fee` in your `chatbot.output`. Just keep in mind that Sensei's default type for this is usually **`currency`**. If you haven't created a custom type file named `money.yml` in your `types/` folder, you might want to change that field to `type: currency` so the extractor works perfectly out of the box! 
+
+Let me know if you need help tweaking these or if you'd like to test something else! 🥋✨

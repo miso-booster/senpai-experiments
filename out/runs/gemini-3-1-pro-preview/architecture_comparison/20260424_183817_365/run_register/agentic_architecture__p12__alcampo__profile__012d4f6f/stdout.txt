@@ -1,0 +1,72 @@
+conversation ID: agentic_architecture__p12__alcampo__profile__012d4f6f
+$$$
+I have created a new SENSEI profile for adding items to a shopping cart. I checked the existing project profiles and, while there are some related to product exploration, creating a dedicated one for cart additions makes sense here.
+
+Here is the YAML profile. You can save this as `shopping_cart_addition.yml` in your `profiles/` directory:
+
+```yaml
+test_name: "shopping_cart_addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer shopping online who wants to add specific items to your shopping cart.
+  context:
+    - "You want to make sure the items are added correctly to your cart."
+    - "You are polite but direct."
+  goals:
+    - "Add {{quantity}} units of {{item}} to my shopping cart."
+    - "Ask for the total price of the cart."
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - item:
+        function: random()
+        type: string
+        data: 
+          - "wireless mouse"
+          - "mechanical keyboard"
+          - "USB-C cable"
+          - "laptop stand"
+          - "noise-cancelling headphones"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you please rephrase?"
+  output:
+    - added_item:
+        type: string
+        description: "The name of the item added to the cart"
+    - added_quantity:
+        type: int
+        description: "The number of units added to the cart"
+    - cart_total_price:
+        type: float
+        description: "The total price of the shopping cart after adding the items"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+### Summary of the Profile:
+* **Goals & Variables:** The simulated user will ask to add a specific `{{quantity}}` of an `{{item}}` to their cart. The `quantity` is randomly chosen between 1 and 5, and the `item` is randomly selected from a predefined list of tech accessories.
+* **Chatbot Output:** At the end of the conversation, SENSEI will extract the `added_item`, `added_quantity`, and the `cart_total_price`. This is very useful if you later want to write SENSEI rules to verify that the chatbot correctly registered the requested items and quantities.
+* **Conversation Controls:** It will run 3 conversations (`number: 3`), each capped at 5 steps (`steps: 5`), using a natural interaction style (`default`).
+
+Let me know if you'd like to adjust the items, add more complex interaction styles (like making spelling mistakes or changing their mind), or if you want to write a validation rule for this profile! 😊
+$$$

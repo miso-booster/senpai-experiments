@@ -1,0 +1,25 @@
+conversation ID: one_node_architecture__p26__bikeshop__rule__0b528a72
+$$$
+Hello there! I'd be happy to help you review and fix your rule. 😊
+
+The rule you provided has a few structural issues based on how Sensei-check evaluates conditions. Since you want to check a static condition (that the price is exactly $50) rather than comparing two different conversations, this should be a **single-conversation oracle** rather than a metamorphic rule.
+
+Here is the corrected version of your rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+```
+
+### What I changed and why: 👀
+
+1. **`conversations: 1` instead of `2`**: You only need to look at one conversation at a time to check if the price is $50. Setting it to `2` is used for metamorphic testing (when you want to compare how outputs change between two different conversations).
+2. **Removed the `when` clause**: The `when` clause acts as a filter. If you put `when: conv[0].tune_up_price == 50`, Sensei-check will *only* evaluate conversations where the price is already 50 and ignore the rest! This defeats the purpose of the test, as it would never catch a bot returning $60.
+3. **Replaced `if/then` with `oracle`**: For single-conversation checks, we use the `oracle` keyword. The `then` clause in your original rule was a text string (`"The tune-up price is $50."`), but Sensei-check requires a Python expression that evaluates to `True` or `False`. 
+4. **Used `extract_float()`**: Looking at your project's profiles (like `bike_repair_and_maintenance_scheduler.yaml`), `tune_up_price` is defined as a `money` type. Using the `extract_float()` helper ensures that even if the bot answers "The price is $50.00", the rule will correctly extract the number `50` and compare it mathematically. 
+5. **Removed `conv[0].` prefix**: When working with `conversations: 1`, you don't need the `conv[0].` prefix. You can just call the field name directly!
+
+Let me know if you need help writing any other rules for your bike shop project! 🚲✨
+$$$

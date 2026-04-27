@@ -1,0 +1,76 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__c2313fd1
+$$$
+Hello there! Welcome to the Dojo! 🚲✨ 
+
+I would be absolutely delighted to help you craft a Sensei Profile for this scenario. It sounds like a very realistic and useful test case for your bikeshop chatbot! 
+
+To make this profile robust, we can use **variables** in the `user.goals`. This way, the simulated user can ask for different *types* of seats and grips across multiple conversations, ensuring your chatbot handles variety well. We'll also set up the `chatbot.output` so that Sensei extracts the prices and appointment details at the end of the test.
+
+Here is a ready-to-use YAML profile you can save in your `profiles/` folder (for example, as `bike_tailoring_setup.yml`):
+
+```yaml
+test_name: "bike_tailoring_and_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike. You want to bring it to the shop
+    to have it tailored to your liking, specifically by changing the seat and the handlebar grips.
+  context:
+    - "You want to make sure the shop works on bikes that were purchased elsewhere."
+    - "You are looking to make the bike more comfortable and suited to your personal style."
+  goals:
+    - "Explain that you got a new bike and ask if they offer a setup and tailoring service."
+    - "Ask if they can replace the current seat with a {{seat_type}} seat."
+    - "Ask if they can also install {{grip_type}} handlebar grips."
+    - "Inquire about the estimated total cost for the parts and the installation."
+    - "Ask when you can bring the bike in for these changes."
+    - seat_type:
+        function: random()
+        type: string
+        data: ["more comfortable gel", "sporty leather", "wider commuter"]
+    - grip_type:
+        function: random()
+        type: string
+        data: ["ergonomic", "soft foam", "colorful lock-on"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - setup_service_offered:
+        type: string
+        description: "Confirmation of whether the shop can set up and tailor the new bike."
+    - seat_and_grips_price:
+        type: string
+        description: "The quoted price for the new seat, grips, and installation."
+    - appointment_availability:
+        type: string
+        description: "Information provided by the bot on when the user can bring the bike in."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🧐 What’s happening in this profile?
+
+1. **Dynamic Goals (`user.goals`)**: Instead of just asking for a generic seat and grips, the simulator will use the `random()` function to pick from a list of options (like a "gel seat" and "ergonomic grips"). This tests if your chatbot can understand specific product requests!
+2. **Context (`user.context`)**: We gave the simulator a bit of background—mentioning that the bike is new and they want to know if the shop works on bikes bought elsewhere. This helps the LLM generate very natural, human-like phrasing.
+3. **Extraction (`chatbot.output`)**: At the end of the conversation, Sensei will extract the `setup_service_offered`, `seat_and_grips_price`, and `appointment_availability`. If you ever want to write **Sensei Rules** later (like checking if the price is always provided), these fields will be ready to go! 📝
+4. **Execution (`conversation`)**: It will run `3` separate conversations (`number: 3`), trying different combinations of seats and grips each time. It will stop once all goals are answered, up to a maximum of 15 messages.
+
+Just drop this into your `profiles/` directory, and you'll be ready to test! Let me know if you'd like to add any specific interaction styles (like making the user `change your mind` mid-conversation) or if you need help with anything else! 😊🛠️
+$$$

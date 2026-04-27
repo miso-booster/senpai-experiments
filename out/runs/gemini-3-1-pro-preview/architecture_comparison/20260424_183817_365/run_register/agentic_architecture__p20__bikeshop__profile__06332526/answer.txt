@@ -1,0 +1,75 @@
+Here is a complete SENSEI profile designed to test how your bike shop chatbot handles different date and time formats for a wheel change appointment. 
+
+I've used the `pairwise()` function for the variables, which is a smart way to test various combinations of days and times without running an exhaustive (and expensive) number of conversations.
+
+```yaml
+test_name: "bike_shop_wheel_change_appointment"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer contacting a local bike shop. You need to schedule an appointment 
+    to have your bike's wheels changed.
+  context:
+    - "You want to confirm the exact date and time for the appointment."
+    - "If the shop is not available at your preferred time, you are open to alternatives but prefer your initial choice."
+  goals:
+    - "Set an appointment to change my wheels on {{appointment_day}} at {{appointment_time}}"
+    - appointment_day:
+        function: pairwise()
+        type: string
+        data: 
+          - "Monday"
+          - "Tomorrow"
+          - "Next Friday"
+          - "October 12th"
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data: 
+          - "10:00 AM"
+          - "14:30"
+          - "Evening"
+          - "As soon as you open"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. Could you please repeat?"
+  output:
+    - confirmed_date:
+        type: date(day-month-year)
+        description: "The final confirmed date for the wheel change appointment"
+    - confirmed_time:
+        type: time(hh:mm)
+        description: "The final confirmed time for the appointment"
+    - service_type:
+        type: string
+        description: "The type of service booked (e.g., wheel change)"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - default
+```
+
+### 🚲 How this profile works:
+
+1. **Variables for Dates and Times**: 
+   - `appointment_day`: Tests different ways a user might express a day (a specific weekday like "Monday", a relative day like "Tomorrow", or an exact date like "October 12th").
+   - `appointment_time`: Tests different time formats (12-hour AM/PM, 24-hour format, fuzzy times like "Evening", and contextual times like "As soon as you open").
+2. **Pairwise Combinations**: By setting the function to `pairwise()` for both variables and using `conversation.number: combinations(1, pairwise)`, Sensei will generate a matrix of conversations that pairs these days and times together efficiently. It ensures every day and every time is tested together at least once without running every single possible combination (which saves time and LLM costs).
+3. **Chatbot Output Extraction**: At the end of the conversation, Sensei will extract the `confirmed_date`, `confirmed_time`, and `service_type`. Notice that I used the built-in `date(day-month-year)` and `time(hh:mm)` types so that the extracted data is strictly formatted, making it very easy to validate later with Sensei Rules!
+4. **Goal Style**: `all_answered` ensures the simulated user keeps talking until the chatbot has successfully scheduled the appointment (or until the safety limit of 15 messages is reached).
+
+Let me know if you'd like to add any specific interaction styles (like making the user change their mind mid-conversation) or if you want to write a validation rule for this profile! 😊

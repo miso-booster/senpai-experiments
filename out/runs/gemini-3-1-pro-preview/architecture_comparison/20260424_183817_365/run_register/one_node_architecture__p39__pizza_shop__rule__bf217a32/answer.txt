@@ -1,0 +1,23 @@
+Hello there! 😊 I'd be happy to help you create that metamorphic rule. 
+
+To make sure we are comparing fairly, a metamorphic rule needs to hold other variables constant (like the pizza size or toppings) while only changing the number of drinks. 
+
+Here is the rule assuming your `chatbot.output` exposes `drink` as an integer (the quantity of drinks) and `price` as the total cost:
+
+```yaml
+name: drink_costs_two_dollars
+description: Adding exactly one drink increases the total price by 2 dollars when everything else is equal.
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].pizza_type == conv[1].pizza_type
+if: conv[0].drink == conv[1].drink + 1
+then: extract_float(conv[0].price) == extract_float(conv[1].price) + 2
+```
+
+### 👀 How it works:
+* **`when`**: This acts as our filter. It ensures we only compare two conversations where the user ordered the exact same pizza (`size` and `pizza_type`). You can adjust these fields to match whatever is in your specific profile's `chatbot.output`!
+* **`if`**: This is our trigger condition. It looks for a pair of conversations where the first one has exactly *one more* `drink` than the second one. *(Note: If your `drink` output is actually a list of strings rather than a number, you would change this to `len(conv[0].drink) == len(conv[1].drink) + 1`)*.
+* **`then`**: This asserts our expected outcome. We use the `extract_float()` helper to pull the numeric value out of the price string and check that the first conversation costs exactly $2 more than the second.
+
+Make sure that your SENSEI Chat profile has `drink` and `price` defined in its `chatbot.output` section so the rule can read them properly. 
+
+Let me know if you need any adjustments to fit your exact profile schema! 🍕🥤

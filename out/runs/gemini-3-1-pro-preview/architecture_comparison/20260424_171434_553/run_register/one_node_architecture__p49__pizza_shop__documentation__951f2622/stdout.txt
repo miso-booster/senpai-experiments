@@ -1,0 +1,44 @@
+conversation ID: one_node_architecture__p49__pizza_shop__documentation__951f2622
+$$$
+Hello there! 😊 
+
+The `pairwise()` function is a super smart way to test combinations of variables in your Sensei profiles without having to run a massive, expensive number of conversations. 
+
+Here is how it works:
+
+When you have multiple variables in your `user.goals` (for example: pizza size, crust type, and drink), testing *every single possible combination* (a full Cartesian product) can cause the number of conversations to explode. 
+
+Instead of testing everything, `pairwise()` uses a technique called **all-pairs testing**. It guarantees that **every possible pair of values across your variables is tested together at least once**. This drastically reduces the total number of test cases while still catching the vast majority of interaction bugs! 🐛
+
+### 📝 The Rules for using `pairwise()`
+1. You must assign the `function: pairwise()` to **at least two variables** in your `user.goals`.
+2. To actually execute the generated matrix of combinations, you need to set your `conversation.number` to `combinations` (to run all of them) or something like `combinations(0.5, pairwise)` (to run a fraction, like 50%, of the pairwise matrix).
+
+### 💡 A Quick Example
+Take a look at this snippet. If we used nested `forward()` functions here, we would generate 8 conversations (2 sizes × 2 crusts × 2 drinks). But with `pairwise()`, Sensei optimizes the math to cover all pairs in fewer runs!
+
+```yaml
+user:
+  goals:
+    - "I want a {{size}} pizza with {{crust}} crust and a {{drink}}."
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, large]
+    - crust:
+        function: pairwise()
+        type: string
+        data: [thin, thick]
+    - drink:
+        function: pairwise()
+        type: string
+        data: [coke, water]
+
+conversation:
+  number: combinations  # This tells Sensei to use the pairwise matrix!
+```
+
+Actually, I see you are already using this brilliantly in your project! In your `pizza_order_test_custom.yml` profile, you have `size` and `toppings` both set to `pairwise()`. 
+
+Does that make sense? Let me know if you'd like to see how to mix `pairwise()` with other functions like `forward()` or `random()`! 🍕✨
+$$$
