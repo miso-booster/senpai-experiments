@@ -1,0 +1,85 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__bd885037
+$$$
+Sounds like a fun profile to build! Here’s a draft Sensei profile you can drop into `profiles/` (maybe name it `bike_custom_setup_seeker.yaml`). It simulates a user who just bought a bike and wants the shop to tailor the setup—seat and grips included.
+
+```yaml
+test_name: bike_custom_setup_seeker
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and want the shop to tailor it to your comfort.
+    Focus on getting the seat position dialed in and swapping the handlebar grips
+    for something that matches your preferred feel.
+  context:
+    - You ride several times a week and want the bike fitted before your next long ride.
+    - You are willing to book an in-store session if needed.
+    - You care about comfort and ergonomic upgrades more than speed.
+  goals:
+    - Ask if the shop offers bike fitting or setup services for new bikes.
+    - Ask if they can adjust or replace the seat to match your comfort preferences.
+    - Ask about recommended seat options, highlighting that you prefer {{seat_preference}} saddles.
+    - Ask about changing the handlebar grips and what {{grip_style}} options they carry.
+    - Ask about pricing for the fitting service and grip/seat changes.
+    - Ask to schedule (or confirm) an appointment for the setup session tomorrow afternoon.
+    - seat_preference:
+        function: random()
+        type: string
+        data:
+          - gel-cushioned
+          - performance
+          - ergonomic
+          - memory foam
+    - grip_style:
+        function: random()
+        type: string
+        data:
+          - ergonomic rubber
+          - leather wrap
+          - cork composite
+          - foam comfort
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fitting_service_confirmation:
+        type: string
+        description: Confirmation that bike fitting/setup services are available.
+    - seat_options_response:
+        type: string
+        description: Details the assistant gives about seat adjustment or replacement options.
+    - grip_options_response:
+        type: string
+        description: Information about available handlebar grip options or recommendations.
+    - fitting_service_price:
+        type: money
+        description: Pricing information for the fitting service (or seat/grip changes).
+    - appointment_confirmation:
+        type: string
+        description: Confirmation (date/time) of the scheduled setup session.
+
+conversation:
+  number: 3
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      limit: 18
+      export: false
+  interaction_style:
+    - default
+```
+
+### Why this setup works 😊
+- **User goals** walk the assistant through availability, customization details, pricing, and booking—covering all the intent you described.
+- The **variables** (`seat_preference`, `grip_style`) keep the conversations varied while staying on-topic.
+- The **chatbot output schema** captures everything you’ll want to verify later (service availability, options shared, pricing, appointment info).
+
+Feel free to tweak the tone, add a personality snippet, or adjust `conversation.number` if you need broader coverage. Let me know if you’d like a pairwise setup or additional goals!
+$$$

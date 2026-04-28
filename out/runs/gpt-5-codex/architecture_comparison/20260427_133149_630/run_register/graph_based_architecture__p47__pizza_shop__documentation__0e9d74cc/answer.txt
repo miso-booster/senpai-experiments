@@ -1,0 +1,24 @@
+Great question! 😊 In Sensei, a **metamorphic rule** is a special kind of test written in the **Sensei-check** DSL that checks how your chatbot behaves across **multiple related conversations**, rather than judging a single interaction in isolation.
+
+Here’s the idea in plain terms:
+
+- You generate several conversations with a Sensei profile (each one capturing user inputs and the chatbot’s outputs).
+- A metamorphic rule looks at **pairs or groups** of those conversations that match certain criteria (defined in a `when:` filter).
+- Then it asserts a relationship that should hold between their outputs—like “if two orders are the same size but one has more toppings, its price should be higher.”
+
+So instead of asking “was this one answer right?”, a metamorphic rule asks “did the chatbot respond consistently when the input changed in this specific way?” It’s super helpful when there isn’t a single “correct” response, but you still expect consistent patterns or invariants (such as price monotonicity, language consistency, etc.).
+
+In Sensei-check YAML, it looks something like this:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+This rule grabs two conversations with the same pizza configuration and then checks that the one with more toppings indeed costs more. If the relationship fails, Sensei-check flags it so you know your bot’s behavior might be inconsistent.
+
+Let me know if you’d like to dive deeper into writing one—or tailoring it to your pizza profiles! 🍕

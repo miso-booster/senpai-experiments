@@ -1,0 +1,58 @@
+conversation ID: graph_based_architecture__p10__ada_uam__rule__ceedaa00
+$$$
+¡Hola! Gracias por compartir el perfil 😊. Tiene un montón de campos interesantes, así que te propongo algunas reglas que te ayudarán a comprobar que la respuesta del bot incluye toda la información clave para los potenciales estudiantes de la UAM. Aquí van varias ideas (cada una está lista para copiar en un archivo YAML separado):
+
+---
+
+### 1. Validar que los enlaces críticos estén presentes  
+Queremos asegurarnos de que, cuando el asistente responda, entregue las URLs básicas sobre admisiones, listas de espera, recursos y Welcome Day.
+
+```yaml
+name: admissions_links_available
+description: Las respuestas deben incluir los enlaces principales de admisiones y recursos para futuros estudiantes.
+conversations: 1
+oracle: all(link and link.startswith('http') for link in [admission_to_grados_link, waitlist_info_link, future_students_link, welcome_day_link])
+```
+
+---
+
+### 2. Completar la información del Welcome Day  
+Si el bot menciona el Welcome Day, debería dar fecha, hora y ubicación para que el estudiante pueda asistir sin dudas.
+
+```yaml
+name: welcome_day_details_complete
+description: Si se comparte el enlace del Welcome Day, también deben incluirse fecha, hora y ubicación.
+conversations: 1
+if: welcome_day_link
+then: all(field not in [None, ''] for field in [welcome_day_date, welcome_day_time, event_location])
+```
+
+---
+
+### 3. Asegurar consistencia en admisión por grado  
+Cuando dos conversaciones hablen del mismo conjunto de grados ofrecidos, la fecha límite de admisión debería coincidir.
+
+```yaml
+name: admission_deadline_consistency
+description: Para los mismos grados ofrecidos, la fecha límite de admisión debe ser consistente.
+conversations: 2
+when: conv[0].grados_available == conv[1].grados_available
+oracle: conv[0].admission_deadline == conv[1].admission_deadline
+```
+
+---
+
+### 4. Mantener el idioma en español  
+El usuario está interactuando en español, así que verificamos que el chatbot responda en el mismo idioma.
+
+```yaml
+name: spanish_language_enforcement
+description: El asistente debe responder en español para este perfil.
+conversations: 1
+oracle: language(chatbot_phrases) == 'SPA'
+```
+
+---
+
+Si necesitas ajustar alguno de los campos (por ejemplo, si las URLs no siempre empiezan con `http` o si hay grados con fechas distintas), puedes modificar las condiciones para que se adapten mejor a tu caso real. ¿Quieres que te ayude a conectarlas con pruebas concretas o a activar/desactivar reglas?
+$$$

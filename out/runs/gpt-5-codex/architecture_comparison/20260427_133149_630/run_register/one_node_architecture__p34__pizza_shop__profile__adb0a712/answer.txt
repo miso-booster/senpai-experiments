@@ -1,0 +1,102 @@
+Got it! Here’s a profile that guides the simulator to start a custom pizza order, change their mind mid-way, and finish with a predefined pizza instead 😊👇
+
+```yaml
+test_name: custom_to_predefined_switch
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a hungry customer chatting with the pizza shop bot.
+    You begin by requesting a custom pizza but midway decide to switch to one of their predefined pizzas.
+  context:
+    - You're planning dinner after a long workday and want the process to be quick.
+    - You're initially excited about choosing every topping yourself but later prefer an easier predefined option.
+  goals:
+    - "I want to build a custom pizza: make it {{initial_size}} with {{initial_toppings}}."
+    - "Can you tell me the price for that custom pizza?"
+    - "Actually, forget the custom pie—I'd rather get your {{predefined_pizza}} pizza instead."
+    - "Make the {{predefined_pizza}} a {{predefined_size}}."
+    - "I'll take {{drink_quantity}} {{drink_type}} with that order."
+    - "Please confirm the final price and how long it will take to be ready."
+    - initial_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - initial_toppings:
+        function: forward()
+        type: string
+        data:
+          - mushrooms and olives
+          - pepperoni and jalapeños
+          - spinach and feta
+    - predefined_pizza:
+        function: forward()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken]
+    - predefined_size:
+        function: forward(predefined_pizza)
+        type: string
+        data: [small, medium, large]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coca-Cola, Sprite, Iced Tea, Sparkling Water]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can help you order pizzas and drinks."
+  output:
+    - pizza_type:
+        type: string
+        description: "Final pizza type the customer ended up ordering."
+    - size:
+        type: string
+        description: "Size of the final pizza order."
+    - toppings:
+        type: list[string]
+        description: "List of toppings included in the final pizza."
+    - drink:
+        type: string
+        description: "Type of drink included in the order."
+    - drink_quantity:
+        type: int
+        description: "Number of drinks the customer ordered."
+    - price:
+        type: currency
+        description: "Total price for the finalized order."
+    - estimated_readiness_time:
+        type: time
+        description: "Estimated time until the order is ready."
+    - order_id:
+        type: string
+        description: "Identifier provided for the finalized order."
+    - order_summary:
+        type: string
+        description: "Chatbot's confirmation summary of the final order."
+
+conversation:
+  number: 4
+  max_cost: 1.0
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - change your mind
+    - long phrases
+    - random:
+        - make spelling mistakes
+```

@@ -1,0 +1,21 @@
+¡Claro! 😊 Aquí tienes una regla de Sensei-check (formato YAML) que verifica que, cuando el usuario repite exactamente la misma fecha, el asistente rechaza la segunda solicitud. La he escrito en modo “rule-first”, así que indico los campos que el perfil deberá exponer:
+
+```yaml
+name: repeated_date_must_be_denied
+description: Si el usuario repite la misma fecha, el asistente debe rechazar la segunda solicitud.
+conversations: 1
+if: len(date_requests) >= 2 and date_requests[-1] == date_requests[-2]
+then: second_request_denied is True
+on-error: >
+  Se esperaba que la segunda petición idéntica fuera rechazada, pero second_request_denied = {second_request_denied}
+```
+
+### Supuestos del perfil
+Para que la regla funcione, el perfil asociado debe exponer en `chatbot.output`:
+
+- `date_requests`: lista en orden cronológico con todas las fechas que el usuario pidió.
+- `second_request_denied`: booleano que indique si el bot rechazó explícitamente esa segunda fecha repetida.
+
+Si tu perfil usa otros nombres (por ejemplo, `requested_dates` o `duplicate_date_denied`), solo cámbialos en la regla. También podrías complementar con un chequeo estilo `chatbot_returns('no puedo aceptar')` si buscas asegurar un texto concreto en la respuesta.
+
+¿Te gustaría que ajustemos los nombres a un perfil que ya tengas? ¡Feliz de ayudarte! 💪

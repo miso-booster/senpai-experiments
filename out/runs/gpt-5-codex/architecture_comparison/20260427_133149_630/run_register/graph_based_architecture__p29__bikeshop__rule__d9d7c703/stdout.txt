@@ -1,0 +1,49 @@
+conversation ID: graph_based_architecture__p29__bikeshop__rule__d9d7c703
+$$$
+Absolutely, happy to help! 😊
+
+To enforce that the assistant confirms the appointment whenever the user asks to schedule a bike service, you can use a **single-conversation rule** in Sensei-check. The key is to leverage the fields your SENSEI Chat profile already exposes in `chatbot.output`.
+
+---
+
+### ✅ Option 1 — Using structured output fields (recommended)
+
+If your profile exposes something like `user_intent` and `appointment_status`, the rule can directly check those slots:
+
+```yaml
+name: bike_service_confirmation
+description: Confirms the bike service booking whenever the user requests one
+conversations: 1
+when: user_intent == 'schedule_bike_service'
+oracle: appointment_status in ['confirmed', 'scheduled']
+on-error: f"Expected appointment confirmation but got {appointment_status} for request {user_intent}"
+```
+
+**What this does:**
+
+- `when:` selects conversations where the user intent was to schedule a bike service.
+- `oracle:` asserts that the assistant marked the appointment as confirmed (or scheduled).
+- `on-error:` helps you get a readable failure message.
+
+👉 Make sure those fields (`user_intent`, `appointment_status`) exist in your profile’s `chatbot.output`. If they’re named differently, just swap in the right names.
+
+---
+
+### ✨ Option 2 — If you only have conversation text
+
+If your profile doesn’t expose a structured status yet, you can fall back to checking the assistant’s phrases using Sensei-check helpers like `semantic_content`:
+
+```yaml
+name: bike_service_confirmation_text
+description: Assistant must explicitly confirm the bike service appointment
+conversations: 1
+when: user_intent == 'schedule_bike_service'
+oracle: semantic_content(chatbot_phrases, 'The appointment has been booked or confirmed') is True
+```
+
+This version relies on the assistant’s responses (from `chatbot_phrases`) to confirm that a booking confirmation message appears.
+
+---
+
+Let me know if you need help aligning this with your profile’s exact field names or want to cover edge cases (like missing date/time). Happy to iterate with you! 🚲✨
+$$$

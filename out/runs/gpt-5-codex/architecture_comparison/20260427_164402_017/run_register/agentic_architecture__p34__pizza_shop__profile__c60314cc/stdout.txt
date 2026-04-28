@@ -1,0 +1,117 @@
+conversation ID: agentic_architecture__p34__pizza_shop__profile__c60314cc
+$$$
+Here’s a ready-to-use profile that captures the “custom pizza → predefined pizza” change of heart scenario 😊
+
+```yaml
+test_name: custom_to_predefined_pizza_switch
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+user:
+  language: English
+  role: >
+    You are a detail-oriented diner ordering pizza for pickup to feed friends
+    during a casual game night. You start convinced that a custom pizza is the
+    best way to satisfy everyone, but you are willing to switch to a signature
+    option if it sounds better.
+  context:
+    - You are hosting a game night and want the order ready before guests arrive.
+    - You have a mix of picky and adventurous eaters to please.
+    - You are budget conscious but open to paying more for a crowd-pleasing signature pizza.
+  goals:
+    - Greet the assistant and mention you're planning a game night order for pickup.
+    - Ask to build a custom pizza with a {{pizza_size}} base, {{crust_style}} crust, and toppings like {{custom_topping_combo}}.
+    - Ask about sauce or cheese options to refine the custom pizza.
+    - Request a price quote and estimated prep time for that specific custom pizza.
+    - Then change your mind: ask about their signature pizzas, choose the {{predefined_pizza}}, and explicitly say you're switching from your custom pizza to this predefined option.
+    - Confirm the final order details, including total price, prep time, pickup instructions, and pickup around {{pickup_time}}.
+    - pizza_size:
+        function: forward()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+    - crust_style:
+        function: pairwise()
+        type: string
+        data:
+          - thin
+          - hand-tossed
+          - deep dish
+          - gluten-free
+    - custom_topping_combo:
+        function: another()
+        type: string
+        data:
+          - roasted veggies and feta cheese
+          - spicy pepperoni with jalapeños
+          - mushrooms with caramelised onions
+          - grilled chicken with spinach
+          - artichokes with sundried tomatoes
+    - predefined_pizza:
+        function: pairwise()
+        type: string
+        data:
+          - Pepperoni Feast
+          - BBQ Chicken Deluxe
+          - Veggie Supreme
+          - Truffle Mushroom
+    - pickup_time:
+        function: random()
+        type: string
+        data:
+          - 6:30 PM
+          - 7:00 PM
+          - 7:30 PM
+          - 8:00 PM
+chatbot:
+  is_starter: false
+  fallback: I'm sorry, I didn't catch that. I can help you build a custom pizza or pick one of our signature favourites.
+  output:
+    - initial_custom_request:
+        type: string
+        description: Details the user gave about the original custom pizza (size, crust, toppings, special requests).
+    - final_pizza_choice:
+        type: string
+        description: The predefined pizza the user switched to when changing their mind.
+    - order_summary:
+        type: string
+        description: Final confirmation of the order, including pizza name, size, extras, and any drinks or sides.
+    - total_cost:
+        type: currency
+        description: Total amount quoted for the final order.
+    - estimated_ready_time:
+        type: time("hh:mm")
+        description: When the order will be ready for pickup.
+    - pickup_instructions:
+        type: string
+        description: Address or pickup process the assistant provides.
+    - order_id:
+        type: string
+        description: Any confirmation or order number supplied by the assistant.
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 1.0
+  goal_style:
+    all_answered:
+      limit: 18
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+### Why it fits
+- The goals walk the simulator through a custom build, a price check, and an explicit switch to a predefined pie—perfect for exercising the bot’s flexibility.
+- `interaction_style: change your mind` reinforces the mid-conversation pivot you wanted.
+- `chatbot.output` exposes both the initial custom ask and the final predefined choice so downstream Sensei-check rules can verify the change; `order_summary`, `total_cost`, etc. align with other pizza profiles for consistency.
+
+### Sources & alignment
+- Structure and field choices follow **`sensei-chat-guide.md`** (sections on profile anatomy, goal functions, `conversation` controls, and output schema).
+- Output naming mirrors existing project profiles (`pizza_and_drink_order_placement.yaml`, `user_sim_pizzaorder_predefined.yml`) so any shared rules can still latch onto familiar fields.
+
+Feel free to drop it in `profiles/custom_to_predefined_pizza_switch.yaml`, and let me know if you’d like companion rules or tweaks! 🍕
+$$$

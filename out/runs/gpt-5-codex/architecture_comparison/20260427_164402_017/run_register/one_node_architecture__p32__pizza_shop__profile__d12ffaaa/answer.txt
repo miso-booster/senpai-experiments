@@ -1,0 +1,75 @@
+¡Claro! Aquí tienes un perfil listo para comprobar que el chatbot de tu pizzería entregue el tipo de pizza, la bebida, el ID del pedido y el precio final en dólares 😊👇
+
+```yaml
+test_name: pizza_order_validation_es
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente entusiasmado por organizar una noche de pizza con amigos.
+    Quieres asegurarte de que el chatbot confirme todos los detalles clave
+    antes de finalizar el pedido.
+  context:
+    - "Vas a recoger el pedido en el local y quieres evitar sorpresas."
+    - "Prefieres saber el precio final en dólares estadounidenses."
+  goals:
+    - "Quiero pedir una pizza {{pizza_type}} tamaño {{pizza_size}}."
+    - "Incluye {{drink_units}} {{drink_choice}} en el pedido."
+    - "¿Puedes decirme el precio total en USD, por favor?"
+    - "Confirma el ID del pedido y el resumen antes de finalizar."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margherita, Pepperoni, Cuatro Quesos, Vegetariana]
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data: [pequeña, mediana, grande]
+    - drink_choice:
+        function: pairwise()
+        type: string
+        data: [Refresco de cola, Agua mineral, Té helado, Limonada]
+    - drink_units:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu pedido. ¿Puedes repetirlo?"
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmada en el pedido."
+    - drink_choice:
+        type: string
+        description: "Bebida seleccionada para el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido confirmado por el chatbot."
+    - total_price_usd:
+        type: currency
+        description: "Precio final del pedido en dólares estadounidenses (USD)."
+
+conversation:
+  number: 4
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - random:
+        - change your mind
+        - make spelling mistakes
+        - long phrases
+```

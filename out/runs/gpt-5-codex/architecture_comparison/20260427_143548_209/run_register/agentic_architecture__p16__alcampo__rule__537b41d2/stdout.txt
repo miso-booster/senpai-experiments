@@ -1,0 +1,22 @@
+conversation ID: agentic_architecture__p16__alcampo__rule__537b41d2
+$$$
+Here’s a standalone Sensei-check rule you can use once a profile exists for the lactose-free flow. I based the structure on the guidance in `sensei-check-doc.md` and the single-conversation examples in `rules-examples.md`.
+
+```yaml
+name: lactose_free_availability_reported
+description: Ensure lactose-free requests explicitly mention availability status.
+conversations: 1
+if: requires_lactose_free
+then: lactose_free_availability in ['available', 'unavailable'] and availability_message is not None and 'lactose' in availability_message.lower() and any(word in availability_message.lower() for word in ['available', 'unavailable', 'out of stock'])
+on-error: f"Lactose-free availability not communicated: lactose_free_availability={lactose_free_availability}, availability_message={availability_message}"
+```
+
+### Assumptions for the future profile
+To make this rule operational, the eventual profile should expose at least these `chatbot.output` fields:
+
+- `requires_lactose_free` (boolean) – whether the user asked for a lactose-free option.
+- `lactose_free_availability` (string) – normalized status such as `available` or `unavailable`.
+- `availability_message` (string) – human-readable summary that should mention lactose-free availability.
+
+If you adopt different field names, update the rule to match them. Let me know if you’d like help sketching the companion profile or expanding the availability checks further!
+$$$

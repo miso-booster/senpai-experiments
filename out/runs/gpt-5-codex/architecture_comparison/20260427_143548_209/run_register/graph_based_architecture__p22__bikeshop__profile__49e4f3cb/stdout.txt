@@ -1,0 +1,82 @@
+conversation ID: graph_based_architecture__p22__bikeshop__profile__49e4f3cb
+$$$
+Got it! I pulled together a new Sensei profile that captures the “bike comfort issues” scenario you described. The user focuses on identifying whether poor fit or worn components are causing discomfort, seeks advice or shop services, and never explicitly asks to book an appointment. Here’s the YAML you can drop into your `profiles/` folder ⬇️
+
+```yaml
+test_name: bike_fit_discomfort_inquiry
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist who has started feeling uncomfortable on rides and
+    wants guidance on whether the issue is bike fit or worn components. You want
+    advice but are not ready to schedule an appointment yet.
+  context:
+    - You have been riding more frequently and recently noticed increasing discomfort.
+    - You are unsure if the discomfort comes from poor bike fit or components needing replacement.
+    - You want to explore options and advice before committing to any service booking.
+  goals:
+    - Describe your discomfort, focusing on your {{discomfort_area}}, and ask if bike fit could be the cause.
+    - Request advice on specific adjustments that might improve comfort or posture without booking an appointment.
+    - Ask for signs that the {{component_concern}} might be worn out and need replacement.
+    - Ask what services the shop offers to help diagnose bike fit issues or assess worn components, without requesting an appointment.
+    - Ask if there are at-home checks you can do before deciding to bring the bike in.
+    - discomfort_area:
+        function: forward()
+        type: string
+        data:
+          - lower back
+          - knees
+          - wrists
+          - shoulders
+          - neck
+    - component_concern:
+        function: forward()
+        type: string
+        data:
+          - saddle
+          - handlebar tape
+          - drivetrain
+          - suspension fork
+          - wheel bearings
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: >
+          Guidance the chatbot provides about potential fit adjustments to relieve discomfort.
+    - component_wear_guidance:
+        type: string
+        description: >
+          Information about how to recognize wear on the concerned component.
+    - recommended_services:
+        type: string
+        description: >
+          Services the shop offers related to bike fitting or component inspection/replacement.
+    - self_check_tips:
+        type: string
+        description: >
+          Tips the chatbot gives for checks the user can perform at home before visiting the shop.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - single questions
+```
+
+Let me know if you’d like variations (e.g., different interaction style or extra outputs for Sensei-check rules). Happy to tweak it! 🚲✨
+$$$

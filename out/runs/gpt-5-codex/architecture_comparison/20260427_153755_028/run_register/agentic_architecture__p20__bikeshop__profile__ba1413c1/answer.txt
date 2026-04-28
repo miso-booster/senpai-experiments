@@ -1,0 +1,91 @@
+Here’s a draft profile you can drop into `profiles/bike_wheel_change_appointment.yaml` 👇
+
+```yaml
+test_name: bike_wheel_change_appointment
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A cyclist who needs both wheels replaced and wants to book service at a neighborhood bike shop.
+  context:
+    - You rely on the bike for daily commuting and want the repair completed before an upcoming weekend ride.
+    - You are open to alternative appointment slots but prefer to keep the repair within the next week.
+    - You would like clear confirmation of the scheduled time and any drop-off instructions.
+  goals:
+    - Explain that both wheels need to be replaced and ask about availability.
+    - Request an appointment on {{preferred_date}} at {{preferred_time}} for the wheel change service.
+    - If that slot is unavailable, ask whether {{alternate_date}} at {{alternate_time}} would work instead.
+    - Confirm the final scheduled date and time along with any drop-off or preparation instructions.
+    - Ask whether the service includes checking spoke tension and truing the wheels afterwards.
+    - preferred_date:
+        function: pairwise()
+        type: string
+        data:
+          - next Monday
+          - next Wednesday
+          - this Saturday
+    - preferred_time:
+        function: pairwise()
+        type: string
+        data:
+          - 9:00 AM
+          - 1:30 PM
+          - 4:45 PM
+    - alternate_date:
+        function: another()
+        type: string
+        data:
+          - later this week
+          - early next week
+          - the following Saturday morning
+    - alternate_time:
+        function: another()
+        type: string
+        data:
+          - 8:00 AM
+          - 12:15 PM
+          - 5:30 PM
+
+chatbot:
+  is_starter: false
+  fallback: Sorry, I didn’t catch that—could you repeat the date or time?
+  output:
+    - wheel_service_ack:
+        type: string
+        description: Confirmation that the chatbot can perform a wheel replacement service.
+    - confirmed_date:
+        type: string
+        description: The final appointment date agreed upon with the user.
+    - confirmed_time:
+        type: string
+        description: The final appointment time agreed upon with the user.
+    - alternate_slot_offered:
+        type: string
+        description: Any alternate date or time suggested by the chatbot if the preferred slot was unavailable.
+    - drop_off_instructions:
+        type: string
+        description: Instructions about arrival, prep steps, or turnaround expectations for the service.
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+### Why this setup?
+- **Dates & times coverage:** `preferred_date` and `preferred_time` use `pairwise()` so Sensei will sample diverse combinations (per the guidance in `sensei-chat-guide.md`). The alternate slots use `another()` to cycle through backup options without repetition.
+- **Outputs aimed at scheduling checks:** We capture both the confirmed slot and any alternates the bot suggests, plus service acknowledgement and drop-off instructions so downstream rules can validate scheduling behavior.
+- **Conversation controls:** `combinations(0.6, pairwise)` keeps the run manageable while still exploring many date/time pairings; interaction styles nudge the simulator to renegotiate times if needed.
+
+Let me know if you’d like to tweak the phrasing, add more availability windows, or align the output field names with existing rules!

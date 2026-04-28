@@ -1,0 +1,89 @@
+¡Hola! 😊 Gracias por compartir tanto detalle de tu perfil “Usuarios Nuevos y Admisiones”. Tiene un montón de salidas interesantes, así que es un gran candidato para cubrir varios frentes con reglas de Sensei-check. Te dejo algunas ideas que puedes probar enseguida. Cada bloque es un archivo YAML distinto (o una regla dentro de tu suite), y puedes adaptarlos según lo que observes en tus conversaciones.
+
+---
+
+### 1. Chequeo básico de enlaces clave
+Asegura que el bot siempre devuelva las URLs esenciales cuando el usuario pregunta por admisiones, listas de espera, futuros estudiantes y el Welcome Day.
+
+```yaml
+name: admissions_links_present
+description: Los enlaces principales de admisión, listas de espera, futuros estudiantes y Welcome Day deben estar presentes y con formato de URL.
+conversations: 1
+oracle: all(field and 'http' in field.lower() for field in [admission_to_grados_link, waitlist_info_link, future_students_link, welcome_day_link])
+```
+
+---
+
+### 2. El grado solicitado debe aparecer en la lista ofrecida
+Comprueba que la respuesta del bot incluya el grado específico que el usuario pidió.
+
+```yaml
+name: grados_list_includes_requested
+description: El grado solicitado debe aparecer en la lista de grados ofrecidos que devuelve el bot.
+conversations: 1
+when: grados is not None and grados_available
+oracle: grados.lower() in grados_available.lower()
+```
+
+---
+
+### 3. El curso consultado también debe estar listados
+Similar al anterior, pero para los cursos.
+
+```yaml
+name: cursos_list_includes_requested
+description: El curso consultado debe estar reflejado en la lista de cursos disponibles que ofrece el bot.
+conversations: 1
+when: cursos is not None and cursos_available
+oracle: cursos.lower() in cursos_available.lower()
+```
+
+---
+
+### 4. Logística completa del Welcome Day
+Verifica que la respuesta traiga fecha, hora y ubicación (no nos sirve si alguno se queda vacío).
+
+```yaml
+name: welcome_day_details_complete
+description: La información del Welcome Day incluye fecha, hora y ubicación.
+conversations: 1
+oracle: welcome_day_date is not None and welcome_day_time is not None and bool(event_location)
+```
+
+---
+
+### 5. Regla metamórfica: enlaces coherentes para el mismo grado
+Si dos conversaciones hablan del mismo grado, deberían compartir exactamente el mismo enlace de admisión (y puedes duplicarla para waitlist si quieres).
+
+```yaml
+name: admission_link_consistency_same_degree
+description: El enlace de admisión debe ser consistente para el mismo grado en distintas conversaciones.
+conversations: 2
+when: conv[0].grados == conv[1].grados
+oracle: conv[0].admission_to_grados_link == conv[1].admission_to_grados_link
+```
+
+*(Puedes crear otra gemela para `waitlist_info_link` o `waitlist_procedures` si te interesa asegurarte de esa estabilidad).*
+
+---
+
+### 6. Cobertura total de los campos del bot (opcional, pero útil)
+Esta regla usa el helper `data_collected()` para garantizar que no se olviden de poblar ningún slot de `chatbot.output`.
+
+```yaml
+name: admissions_profile_data_collected
+description: El perfil de admisiones debe llenar todos los campos de chatbot.output.
+conversations: 1
+oracle: data_collected() is True
+```
+
+> Nota: Si descubres que algún campo debería ser opcional, puedes excluirlo del `chatbot.output` o adaptar la regla para permitir excepciones concretas.
+
+---
+
+#### Próximos pasos
+1. **Activa y prueba** estas reglas con tus conversaciones generadas (por ejemplo, 6 variaciones como ya tienes).
+2. **Observa fallos tempranos**: te dirán qué campos están quedando vacíos o inconsistentes.
+3. **Ajusta el perfil o las reglas** según vayas afinando la lógica: quizá quieras ampliar las listas, mejorar textos o añadir más metamórficas (por ejemplo, comparar `waitlist_procedures` cuando el grado es el mismo).
+
+Si necesitas más ideas (como validaciones sobre `application_fee` o coherencia de idioma), dime y te preparo otras variantes. ¡Ánimo con esas pruebas, vas súper bien! 💪✨

@@ -1,0 +1,18 @@
+Hey there! Thanks for sharing the rule—great starting point 😊. I spotted a few issues and cleaned them up for you:
+
+1. **Metamorphic vs. single conversation**: You set `conversations: 2`, but this check only needs one conversation. I switched it to `1`.
+2. **Accessing the value**: `tune_up_price` is a money-type field, so it’s typically stored as a string like “$50”. I wrapped it with `extract_float` to safely compare the numeric value.
+3. **Currency confirmation**: Since you want “$50”, I added a `currency` check to make sure it’s in USD.
+4. **Overall structure**: I replaced the `if/then` with a single `oracle`, which is simpler when you don’t need a conditional implication.
+
+Here’s the revised rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: tune_up_price is not None
+oracle: extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'
+```
+
+Let me know if you want to adapt it to allow a price range or support multiple currencies!

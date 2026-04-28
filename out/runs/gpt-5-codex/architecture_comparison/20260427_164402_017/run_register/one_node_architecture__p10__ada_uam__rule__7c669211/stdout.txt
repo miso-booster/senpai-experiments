@@ -1,0 +1,35 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__7c669211
+$$$
+¡Hola! Tu perfil está súper completo, así que vale la pena crear un pequeño set de reglas que comprueben que el bot entrega la información crítica de admisiones de manera fiable. Aquí tienes cuatro ideas listas para pegar en tu carpeta `rules/` (una por bloque) y ejecutarlas con Sensei-check. 👇
+
+```yaml
+name: admissions_links_are_urls
+description: Las URLs de admisiones deben tener formato de enlace válido
+conversations: 1
+oracle: all((not link) or link.startswith('http') for link in [admission_to_grados_link, waitlist_info_link, future_students_link, welcome_day_link])
+```
+
+```yaml
+name: application_fee_is_non_negative
+description: La tasa de solicitud debe ser un importe numérico mayor o igual a cero
+conversations: 1
+when: application_fee and any(ch.isdigit() for ch in application_fee)
+oracle: extract_float(application_fee) is not None and extract_float(application_fee) >= 0
+```
+
+```yaml
+name: welcome_day_details_are_consistent
+description: Si se menciona el Welcome Day, se deben incluir fecha, hora y ubicación
+conversations: 1
+oracle: not (welcome_day_date or welcome_day_time or event_location) or (welcome_day_date and welcome_day_time and event_location)
+```
+
+```yaml
+name: admissions_scope_guardrail
+description: El asistente se mantiene centrado en admisiones y recursos universitarios
+conversations: 1
+oracle: only_talks_about('admission process, university degree programs, welcome day events, resources for future students')
+```
+
+Con estas reglas podrás chequear enlaces, montos, coherencia de datos y tono temático. Si necesitas combinarlas con metamorphic tests (por ejemplo, comparar respuestas para distintos grados o cursos), dime y te ayudo a diseñarlos. ¡Mucho ánimo con las pruebas! 😊
+$$$

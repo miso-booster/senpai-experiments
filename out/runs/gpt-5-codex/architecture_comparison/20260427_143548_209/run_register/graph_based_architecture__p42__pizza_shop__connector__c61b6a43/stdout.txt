@@ -1,0 +1,32 @@
+conversation ID: graph_based_architecture__p42__pizza_shop__connector__c61b6a43
+$$$
+¡Hola! Gracias por compartir tanta info, me ayuda un montón 😊. Le di una vuelta a tu conector y veo dos cositas que lo estaban frenando:
+
+1. **La URL base y el endpoint**: el tráfico real va contra `https://api.1millionbot.com/api/public/messages`, así que necesitamos ajustar tanto `base_url` como `path`.
+2. **El `response_path`**: la respuesta JSON trae el texto del bot dentro de `response[0].text`, no en `request.text`.
+
+Con esos ajustes (y sumando los campos que el bot espera en el payload), aquí tienes una versión corregida que debería funcionar:
+
+```yaml
+name: "Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Si necesitas que algún valor (por ejemplo `conversation` o `sender`) sea dinámico, dime y vemos cómo parametrizarlo 🙌. ¿Quieres que hagamos alguna prueba extra juntos?
+$$$

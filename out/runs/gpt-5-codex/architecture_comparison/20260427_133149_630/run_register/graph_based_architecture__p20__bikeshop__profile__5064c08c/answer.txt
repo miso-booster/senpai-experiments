@@ -1,0 +1,94 @@
+Sure thing! 😊 Here’s a profile tailored for testing how the chatbot handles wheel-change appointment scheduling, especially focusing on juggling multiple dates and times. I built in separate variables for preferred and alternate slots so you can see how the bot manages those options across conversations.
+
+```yaml
+test_name: wheel_change_appointment_tester
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.3
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are trying to book a bike service appointment specifically to have both wheels
+    changed. You compare different time slots and expect the assistant to confirm the
+    final booking details.
+  context:
+    - You depend on this bike for commuting, so you want the work done promptly.
+    - You would prefer the earliest available appointment but are willing to consider an alternate slot.
+    - You want the assistant to clearly confirm the scheduled date, time, and service.
+  goals:
+    - "I need to schedule a wheel change on {{preferred_date}} at {{preferred_time}}."
+    - "If that time is unavailable, ask whether {{alternate_date}} at {{alternate_time}} works instead."
+    - "Confirm the appointment details for the wheel change service before ending the chat."
+    - preferred_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow morning
+          - next Tuesday
+          - next Friday
+          - October 18th
+    - preferred_time:
+        function: pairwise()
+        type: string
+        data:
+          - "09:00"
+          - "11:30"
+          - "15:00"
+          - "17:45"
+    - alternate_date:
+        function: forward(preferred_date)
+        type: string
+        data:
+          - the following day
+          - next Wednesday
+          - the upcoming Saturday
+          - October 21st
+    - alternate_time:
+        function: pairwise()
+        type: string
+        data:
+          - "10:15"
+          - "13:45"
+          - "16:30"
+          - "18:15"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - scheduled_service:
+        type: string
+        description: "Service the chatbot confirms is booked (should mention wheel change)."
+    - confirmed_date:
+        type: string
+        description: "Final appointment date confirmed by the chatbot."
+    - confirmed_time:
+        type: string
+        description: "Final appointment time confirmed by the chatbot."
+    - confirmation_message:
+        type: string
+        description: "Overall confirmation text acknowledging the booking."
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.9
+  goal_style:
+    all_answered:
+      export: false
+      limit: 14
+  interaction_style:
+    - default
+```
+
+**Why this setup rocks:**
+
+- ✅ **Multiple date & time permutations:** `pairwise()` on both `preferred_time` and `alternate_time` ensures Sensei explores a broad variety of time combinations without blowing up into full Cartesian madness.
+- 🔁 **Fallback slots:** Including `alternate_date` and `alternate_time` lets you see how the bot handles negotiating a second choice.
+- 📋 **Focused outputs:** The `chatbot.output` schema captures the critical confirmation details so Sensei-check rules can zero in on date/time accuracy later on.
+- 🛠️ **Clear goals:** The conversation flow keeps the user intent straightforward—ask, negotiate if needed, then confirm.
+
+If you’d like to tweak the tone (e.g., more insistent user, or adding personality YAML), happy to help adjust!

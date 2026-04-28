@@ -1,0 +1,25 @@
+¡Perfecto! Aquí tienes una regla de Sensei-check que valida que el chatbot Ada UAM devuelva la información oficial del CAU tal como nos la compartiste:
+
+```yaml
+name: cau_contact_details_are_correct
+description: Verifica que Ada UAM proporcione los datos oficiales de contacto del CAU.
+conversations: 1
+active: true
+oracle: |
+  contact_email and contact_phone and physical_address and
+  contact_email.strip().lower() == 'cau@uam.es' and
+  ''.join(filter(str.isdigit, contact_phone)) == '914974029' and
+  physical_address.replace('\r', '').strip() == "Higher Polytechnic School\nC/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107"
+on-error: |
+  f"Información CAU incorrecta -> email: {contact_email!r}, teléfono: {contact_phone!r}, dirección: {physical_address!r}"
+```
+
+Esta regla comprueba:
+- Que los tres campos (`contact_email`, `contact_phone`, `physical_address`) estén presentes.
+- Que el email sea exactamente `cau@uam.es` (ignorando mayúsculas/minúsculas y espacios laterales).
+- Que el teléfono contenga los dígitos `914974029`.
+- Que la dirección coincida con el texto oficial proporcionado (normalizando retornos de carro).
+
+Si algo no coincide, el mensaje de error te mostrará los valores devueltos por el chatbot para que puedas detectarlo enseguida.
+
+¿Quieres que lo integremos en tu proyecto o necesitas revisar alguna otra validación? 😊

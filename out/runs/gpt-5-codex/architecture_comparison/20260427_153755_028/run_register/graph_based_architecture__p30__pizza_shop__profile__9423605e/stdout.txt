@@ -1,0 +1,86 @@
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__9423605e
+$$$
+Here you go! I pulled everything together so you get a rude, speed-obsessed user profile with exactly four goals and four variables—two of them using `pairwise()` so the conversation count comes straight from the pairwise matrix 😉.
+
+```yaml
+test_name: pizza_rush_rude_customer
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: An impatient, rude customer who demands the fastest possible pizza order.
+  context:
+    - personality: personalities/rude-user
+    - You hate waiting and expect the staff to keep up with your pace.
+    - You make it clear that you only care about speed and direct answers.
+  goals:
+    - "Spare me the menu. What's the fastest {{pizza_style}} you can prep?"
+    - "Make it {{pizza_size}} and tell me if that's the quickest option."
+    - "Guarantee it's boxed within {{pickup_time_window}}."
+    - "Tell me upfront if there's a {{rush_fee_policy}} for doing this fast."
+    - pizza_style:
+        function: pairwise()
+        type: string
+        data:
+          - Margarita
+          - Pepperoni
+          - BBQ Chicken
+          - Veggie Supreme
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+    - pickup_time_window:
+        function: random()
+        type: string
+        data:
+          - 10 minutes flat
+          - 15 minutes max
+          - 20 minutes tops
+    - rush_fee_policy:
+        function: forward()
+        type: string
+        data:
+          - no rush fees
+          - rush fee applies
+          - waive the fee for today
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can help you order pizzas quickly if you rephrase."
+  output:
+    - expedited_pizza_option:
+        type: string
+        description: "Pizza style the bot commits to preparing fastest."
+    - expedited_pizza_size:
+        type: string
+        description: "Size confirmed for the speed-focused order."
+    - prep_time_commitment:
+        type: string
+        description: "Quoted preparation or pickup window the bot promises."
+    - rush_fee_details:
+        type: string
+        description: "Any mention of rush fees, discounts, or waivers."
+
+conversation:
+  number: combinations
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - all questions
+```
+
+Let me know if you want to tweak the interaction style, swap in different variable data, or hook this profile into a specific run config. Happy to help! 🚀
+$$$

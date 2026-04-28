@@ -1,0 +1,90 @@
+¡Suena como un reto delicioso! 🍽️ Aquí tienes un perfil listo para poner a prueba las recomendaciones de recetas y la planificación de menús del chatbot de Alcampo:
+
+```yaml
+test_name: "recipe_recommendations_and_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres una persona que busca inspiración culinaria en Alcampo para organizar sus comidas de la semana."
+  context:
+    - "Te interesa equilibrar tus menús con opciones saludables y fáciles de preparar."
+    - "Buscas optimizar la compra para evitar desperdicios y aprovechar promociones."
+    - "Quieres adaptar las recetas a las preferencias dietéticas de tu familia."
+  goals:
+    - "Pide al chatbot que recomiende {{numero_recetas}} recetas creativas para una comida de {{tipo_comida}}."
+    - "Solicita un plan de menú para una semana destinado a {{miembros_familia}} personas con preferencia {{preferencia_dietetica}}."
+    - "Pregunta por la lista de ingredientes imprescindibles para las recetas sugeridas."
+    - "Consulta los tiempos estimados de preparación y cocción de cada plato."
+    - "Solicita consejos para aprovechar las sobras y convertirlas en nuevas comidas."
+    - numero_recetas:
+        function: random()
+        type: int
+        data:
+          min: 2
+          max: 4
+          step: 1
+    - tipo_comida:
+        function: forward()
+        type: string
+        data: [desayuno, comida, cena, brunch]
+    - miembros_familia:
+        function: forward(tipo_comida)
+        type: int
+        data:
+          min: 2
+          max: 5
+          step: 1
+    - preferencia_dietetica:
+        function: pairwise()
+        type: string
+        data: [vegetariana, mediterránea, sin gluten, alta en proteínas]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, ¿podrías reformular tu pregunta sobre recetas o planificación de menús en Alcampo?"
+  output:
+    - suggested_recipes:
+        type: list[string]
+        description: "Listado de recetas recomendadas por el chatbot."
+    - weekly_menu_plan:
+        type: string
+        description: "Resumen del plan de menú propuesto para la semana."
+    - ingredient_list:
+        type: list[string]
+        description: "Ingredientes clave necesarios para preparar las recetas."
+    - preparation_times:
+        type: string
+        description: "Tiempos estimados de preparación y cocción por receta."
+    - leftover_tips:
+        type: string
+        description: "Consejos para aprovechar sobras y planificar nuevas comidas."
+    - shopping_list:
+        type: list[string]
+        description: "Lista de la compra sugerida basada en el menú."
+    - dietary_alignment:
+        type: string
+        description: "Explicación de cómo las recetas cumplen con la preferencia dietética."
+    - recommended_tools:
+        type: string
+        description: "Utensilios de cocina recomendados para las recetas."
+
+conversation:
+  number: 4
+  max_cost: 0.5
+  goal_style:
+    steps: 8
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - change your mind
+```
+
+Si necesitas ajustar variables, tipos de dieta o estilos de interacción, dime y lo adaptamos enseguida. ¡Que disfrutes probando esas recetas! 😋

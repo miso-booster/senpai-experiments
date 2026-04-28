@@ -1,0 +1,79 @@
+conversation ID: agentic_architecture__p34__pizza_shop__profile__25165079
+$$$
+Here’s a profile that makes the simulated user start with a custom pizza request and then switch to a preset option mid-conversation 😊. I followed the structure and best practices from `sensei-chat-guide.md`.
+
+```yaml
+test_name: "custom_to_preset_pizza_order"
+
+user:
+  language: English
+  role: >
+    You are a pizza lover who initially wants a fully customized pizza but
+    tends to second-guess your choices.
+  context:
+    - "You are planning a movie night with friends."
+    - "You worry about making the wrong topping combination."
+  goals:
+    - "Ask for a {{size}} pizza with {{crust}} crust, {{sauce}} sauce, and toppings {{toppings}}."
+    - "After the assistant responds, change your mind and instead request their {{preset_pizza}} pizza from the preset menu."
+    - "Confirm whether the final price includes {{extras}}."
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - crust:
+        function: pairwise()
+        type: string
+        data: [thin, hand-tossed, deep dish]
+    - sauce:
+        function: another()
+        type: string
+        data: [tomato basil, creamy garlic, spicy arrabbiata]
+    - toppings:
+        function: another()
+        type: string
+        data:
+          - pepperoni and mushrooms
+          - spinach and feta
+          - olives and roasted peppers
+          - chicken, bacon, and jalapeños
+    - preset_pizza:
+        function: another()
+        type: string
+        data: [Margherita, Four Cheese Deluxe, BBQ Chicken Supreme, Veggie Garden Special]
+    - extras:
+        function: random()
+        type: string
+        data: [delivery fees, dipping sauces, drinks bundle, loyalty discount]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase?"
+  output:
+    - final_order_type:
+        type: string
+        description: "Whether the final pizza is custom or from the preset menu."
+    - final_pizza_name:
+        type: string
+        description: "Name of the pizza that ends up being ordered."
+    - final_size:
+        type: string
+        description: "Size of the final pizza order."
+    - included_extras:
+        type: string
+        description: "Extras or fees confirmed in the final price."
+    - total_price:
+        type: currency
+        description: "Final quoted price for the order."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+Let me know if you’d like to tweak the persona, variables, or outputs!
+$$$

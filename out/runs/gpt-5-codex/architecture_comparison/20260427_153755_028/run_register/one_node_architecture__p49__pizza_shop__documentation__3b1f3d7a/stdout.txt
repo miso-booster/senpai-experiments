@@ -1,0 +1,42 @@
+conversation ID: one_node_architecture__p49__pizza_shop__documentation__3b1f3d7a
+$$$
+Hey there! Happy to explain 😊
+
+### How `pairwise()` works in Sensei profiles
+
+When you have several goal variables with lots of possible values, running every combination can explode in size (e.g., 6 pizza types × 4 sizes × 5 drinks = 120 conversations). The `pairwise()` function helps by generating a **minimal test set** where **every pair of variable values appears together at least once**, without needing the full Cartesian product.
+
+#### Why that’s useful
+- You still catch most interaction bugs that happen when two variables meet (like “large size” + “sprite”).
+- You avoid running unnecessary conversations, saving time and cost.
+- Sensei builds a **pairwise coverage matrix** behind the scenes and fills conversations until every value pair has been exercised.
+
+#### How to use it
+Mark each variable you want in the pairwise plan with `function: pairwise()`:
+
+```yaml
+- pizza_type:
+    function: pairwise()
+    type: string
+    data: [Margherita, Pepperoni, Veggie]
+
+- pizza_size:
+    function: pairwise()
+    type: string
+    data: [small, medium, large]
+
+- drink:
+    function: pairwise()
+    type: string
+    data: [Water, Soda, Juice]
+```
+
+After you declare at least **two** pairwise variables, set `conversation.number: combinations` (or `combinations(0.6)` for 60%) so the generated matrix actually drives the run.
+
+#### Interaction with other functions
+- Pairwise variables can sit alongside `forward()` or `random()` variables. Mixed functions behave as you’d expect: pairwise variables try to cover all pairs; other functions provide values independently.
+- If a pairwise variable depends on another (e.g., `pairwise(pizza_type)`), Sensei uses that dependency to keep combinations meaningful.
+
+#### TL;DR
+`pairwise()` gives you broad coverage with far fewer conversations by ensuring every value pair shows up at least once. It’s perfect when you want strong testing without the combinatorial overload 🚀.
+$$$

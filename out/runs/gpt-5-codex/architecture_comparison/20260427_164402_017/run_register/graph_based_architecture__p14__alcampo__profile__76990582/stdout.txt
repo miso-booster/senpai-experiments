@@ -1,0 +1,127 @@
+conversation ID: graph_based_architecture__p14__alcampo__profile__76990582
+$$$
+¡Genial idea! Aquí tienes un perfil de Sensei listo para poner a prueba si el chatbot de Alcampo es capaz de recomendar recetas y ayudarte con la planificación de menús semanales. Incluye variables combinatorias para explorar distintas preferencias dietéticas e ingredientes principales, y extrae la información clave que luego podrás verificar con tus reglas 👇
+
+```yaml
+test_name: Recipe Planning and Menu Guidance
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona organizada que busca inspiración culinaria y planificación de menús
+    semanales equilibrados. Quieres recetas variadas, ideas para aprovechar la despensa
+    y sugerencias que se adapten a preferencias dietéticas concretas.
+  context:
+    - personality: personalities/conversational-user
+    - "Tienes poco tiempo entre semana, así que valoras recetas sencillas con pasos claros."
+    - "Prefieres propuestas saludables, con ingredientes fáciles de encontrar en Alcampo."
+    - "Te gusta reciclar sobras para evitar desperdicios."
+  goals:
+    - "Solicita al chatbot una propuesta de menú semanal equilibrado para {{comensales}} personas con enfoque {{preferencia_dietetica}}."
+    - "Pide recomendaciones de recetas para la cena que incluyan {{ingrediente_principal}} y puedan prepararse en menos de {{tiempo_preparacion}} minutos."
+    - "Pregunta por ideas de desayuno que utilicen {{requisito_desayuno}} y sean aptas para días {{dias_ocupados}}."
+    - "Solicita una lista de la compra agrupada por secciones que cubra el menú propuesto."
+    - "Pregunta cómo aprovechar sobras del {{plato_sobras}} para otra comida."
+    - comensales:
+        function: forward()
+        type: int
+        data:
+          min: 2
+          max: 5
+          step: 1
+    - preferencia_dietetica:
+        function: pairwise()
+        type: string
+        data:
+          - mediterránea
+          - vegetariana
+          - sin gluten
+          - baja en carbohidratos
+    - ingrediente_principal:
+        function: pairwise()
+        type: string
+        data:
+          - pollo
+          - garbanzos
+          - salmón
+          - tofu
+    - tiempo_preparacion:
+        function: another()
+        type: int
+        data:
+          min: 15
+          max: 40
+          step: 5
+    - requisito_desayuno:
+        function: random()
+        type: string
+        data:
+          - alto en proteína
+          - sin lactosa
+          - rico en fibra
+    - dias_ocupados:
+        function: random()
+        type: string
+        data:
+          - laborables
+          - fin de semana
+          - días de gimnasio
+    - plato_sobras:
+        function: another()
+        type: string
+        data:
+          - pollo asado
+          - verduras al horno
+          - arroz integral
+          - lentejas guisadas
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para inspirarte con menús y recetas."
+  output:
+    - weekly_menu_plan:
+        type: string
+        description: "Resumen del menú semanal recomendado por el chatbot"
+    - dinner_recipes:
+        type: list[string]
+        description: "Listado de recetas sugeridas para las cenas"
+    - prep_time_notes:
+        type: string
+        description: "Detalle de tiempos de preparación mencionados para las recetas"
+    - breakfast_ideas:
+        type: list[string]
+        description: "Ideas de desayuno alineadas con los requisitos solicitados"
+    - shopping_list_sections:
+        type: list[string]
+        description: "Lista de la compra agrupada por secciones o categorías"
+    - leftovers_strategy:
+        type: string
+        description: "Recomendación para reutilizar las sobras del plato indicado"
+    - dietary_notes:
+        type: string
+        description: "Explicación de cómo el menú se ajusta a la preferencia dietética"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 8
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change your mind
+```
+
+### Por qué te sirve
+- **Cobertura variada:** usa dos variables en `pairwise()` para combinar preferencias dietéticas e ingredientes principales sin explotar combinaciones.
+- **Objetivos claros:** cada objetivo fuerza al bot a cubrir menú semanal, recetas, desayunos, lista de la compra y reutilización de sobras.
+- **Salida preparada:** los campos de `chatbot.output` reúnen todo lo necesario para validar si las respuestas fueron útiles y completas.
+
+Cuando lo tengas guardado dentro de `profiles/`, recuerda validar el YAML con `validation_check.py` antes de lanzar las pruebas. Si necesitas ajustar metas o añadir más campos de salida, dime y lo pulimos juntos. ¡A cocinar con datos! 🍲✨
+$$$

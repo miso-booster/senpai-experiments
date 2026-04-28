@@ -1,0 +1,79 @@
+conversation ID: agentic_architecture__p22__bikeshop__profile__12faa602
+$$$
+Here’s a fresh profile tailored to your “bike fit discomfort” scenario:
+
+```yaml
+test_name: "bike_fit_discomfort_guidance"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a recreational cyclist chatting with a bike shop assistant because recent rides have become uncomfortable.
+  context:
+    - "You commute during the week and take longer rides on weekends."
+    - "You are unsure whether the discomfort comes from an improper bike fit or worn components."
+    - "You prefer to understand adjustment options and available services before committing to an appointment."
+  goals:
+    - "Explain that you ride a {{bike_type}} and feel discomfort in your {{discomfort_area}}, asking whether the cause might be poor fit or worn parts."
+    - "Mention that you ride about {{weekly_mileage}} miles per week and ask for adjustments you could try yourself."
+    - "Ask what services the shop offers to diagnose or fix the issue, while clearly stating you are not ready to book an appointment."
+    - bike_type:
+        function: pairwise()
+        type: string
+        data:
+          - road bike
+          - hybrid
+          - gravel bike
+    - discomfort_area:
+        function: pairwise()
+        type: string
+        data:
+          - hands and wrists
+          - lower back
+          - knees
+          - saddle area
+    - weekly_mileage:
+        function: another()
+        type: int
+        data:
+          min: 40
+          max: 120
+          step: 10
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't follow that. Could you rephrase your question about bike fit or maintenance?"
+  output:
+    - recommended_adjustments:
+        type: list[string]
+        description: "Specific bike fit tweaks or component checks the bot suggests."
+    - service_options:
+        type: list[string]
+        description: "Shop services recommended for assessing fit or component wear."
+    - appointment_prompt:
+        type: string
+        description: "How the bot responds regarding booking or scheduling service."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - long phrases
+    - single questions
+```
+
+### Why it works
+- **Goal coverage:** The three goal prompts capture symptom description, home adjustments, and service exploration while explicitly avoiding an appointment request.
+- **Variable design:** `bike_type` and `discomfort_area` use `pairwise()` so the `conversation.number` setting can sample their combinations efficiently, and `weekly_mileage` varies with an `another()` numeric range (per the guidance in `sensei-chat-guide.md`).
+- **Outputs for later rules:** `recommended_adjustments`, `service_options`, and `appointment_prompt` give you structured hooks to verify the advice quality and ensure the chatbot doesn’t push unwanted bookings.
+
+Let me know if you want to tweak the interaction style, add more context, or expand the outputs! 😊
+$$$

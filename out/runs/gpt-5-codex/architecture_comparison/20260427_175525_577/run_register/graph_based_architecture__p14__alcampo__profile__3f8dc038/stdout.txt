@@ -1,0 +1,123 @@
+conversation ID: graph_based_architecture__p14__alcampo__profile__3f8dc038
+$$$
+¡Claro que sí! Aquí tienes un perfil Sensei listo para poner a prueba la capacidad del chatbot de Alcampo en recomendaciones de recetas y planificación de menús. Está pensado para que el usuario simulado haga preguntas variadas sobre menús equilibrados, ingredientes, tiempos de preparación y organización semanal. 
+
+```yaml
+test_name: "Recipe Planning and Menu Guidance"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona organizada que quiere planificar menús equilibrados y deliciosos
+    aprovechando las recomendaciones del chatbot de Alcampo. Buscas recetas, listas de
+    ingredientes, consejos de preparación y trucos para cocinar por adelantado sin perder sabor.
+  context:
+    - personality: personalities/conversational-user
+    - "Te interesa aprovechar ingredientes de temporada y mantener una dieta variada."
+    - "Quieres optimizar tu tiempo en la cocina, sin renunciar a platos nutritivos."
+    - "Te gustaría contar con sugerencias para compras planificadas y uso eficiente de sobras."
+  goals:
+    - "Pide al chatbot sugerencias de recetas para {{meal_type}} que se adapten a una dieta {{dietary_preference}}."
+    - "Solicita un plan de menú equilibrado para {{servings_count}} personas durante {{planning_horizon}} días."
+    - "Pregunta por ingredientes necesarios y posibles sustituciones para las recetas recomendadas."
+    - "Solicita tiempos estimados de preparación y cocción que no superen {{prep_time_preference}}."
+    - "Pide una lista de la compra agrupada por secciones y recomendaciones de almacenamiento."
+    - "Pregunta cómo aprovechar ingredientes de temporada en {{season}} y consejos para cocinar por adelantado."
+    - meal_type:
+        function: forward()
+        type: string
+        data:
+          - desayuno
+          - comida
+          - cena
+          - brunch
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data:
+          - vegetariana
+          - mediterránea
+          - alta en proteínas
+          - sin gluten
+    - servings_count:
+        function: forward(meal_type)
+        type: int
+        data:
+          - 2
+          - 4
+          - 6
+    - planning_horizon:
+        function: random()
+        type: int
+        data:
+          - 3
+          - 5
+          - 7
+    - prep_time_preference:
+        function: random()
+        type: string
+        data:
+          - 30 minutos
+          - 45 minutos
+          - 60 minutos
+    - season:
+        function: pairwise()
+        type: string
+        data:
+          - primavera
+          - verano
+          - otoño
+          - invierno
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recipe_recommendations:
+        type: list[string]
+        description: "Listado de recetas sugeridas por el chatbot."
+    - menu_plan_outline:
+        type: string
+        description: "Resumen del plan de menú propuesto."
+    - ingredient_list:
+        type: list[string]
+        description: "Ingredientes necesarios agrupados por categorías."
+    - substitution_suggestions:
+        type: string
+        description: "Sugerencias de sustituciones para ingredientes clave."
+    - prep_cook_times:
+        type: string
+        description: "Tiempos estimados de preparación y cocción."
+    - seasonal_ingredient_notes:
+        type: string
+        description: "Recomendaciones sobre ingredientes de temporada."
+    - meal_plan_duration_days:
+        type: int
+        description: "Duración en días del plan de menú."
+    - storage_and_batching_advice:
+        type: string
+        description: "Consejos para conservar, reutilizar y cocinar por lotes."
+    - nutritional_balance_summary:
+        type: string
+        description: "Resumen sobre equilibrio nutricional y variedad del menú."
+    - shopping_list_tips:
+        type: string
+        description: "Recomendaciones para organizar la compra y aprovechar promociones."
+
+conversation:
+  number: combinations(pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+  interaction_style:
+    - single questions
+```
+
+Si necesitas ajustes (por ejemplo, añadir más variables, cambiar el tono del usuario o controlar los estilos de interacción), dime y lo pulimos juntos. 😊
+$$$

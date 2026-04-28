@@ -1,0 +1,94 @@
+Here’s a ready-to-run profile for your bike-fit discomfort scenario:
+
+```yaml
+test_name: "bike_fit_discomfort_advice"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist who recently started feeling discomfort while riding
+    and want to understand whether the issue is an improper bike fit or worn components.
+    You’re polite, detail-oriented, and hoping the shop can guide you on next steps.
+  context:
+    - "You ride several times a week and the discomfort has been getting worse on longer outings."
+    - "You handle basic maintenance but are unsure about professional fit adjustments."
+    - "You want actionable advice before deciding whether to invest in services."
+  goals:
+    - "Explain that you feel discomfort in your {{discomfort_area}} while riding your {{bike_type}}."
+    - "Mention that it becomes noticeable during {{ride_scenario}}."
+    - "Ask if the shop can help determine whether the bike fit is wrong or if components like {{component_concern}} need service."
+    - "Request advice on adjustments you can try yourself and which services the shop offers."
+    - "State that you are not booking an appointment yet but want to understand the options."
+    - discomfort_area:
+        function: pairwise()
+        type: string
+        data:
+          - lower back
+          - knees
+          - shoulders
+          - hands
+    - bike_type:
+        function: random()
+        type: string
+        data:
+          - road bike
+          - commuter bike
+          - gravel bike
+    - ride_scenario:
+        function: random()
+        type: string
+        data:
+          - weekend group rides
+          - long climbs
+          - daily commutes
+          - indoor trainer sessions
+    - component_concern:
+        function: pairwise()
+        type: string
+        data:
+          - saddle
+          - handlebar tape
+          - drivetrain
+          - suspension or fork maintenance
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - recommended_adjustments:
+        type: list[string]
+        description: "User-level adjustments or fit tweaks suggested by the bot."
+    - suggested_services:
+        type: list[string]
+        description: "Bike shop services or packages recommended to address the discomfort."
+    - probable_causes:
+        type: list[string]
+        description: "Possible reasons for the discomfort identified by the bot."
+    - appointment_prompt:
+        type: string
+        description: "Whether the bot encourages booking a service or appointment."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+**What this does (per `sensei-chat-guide.md`):**
+- Captures realistic cyclist concerns and keeps the user from explicitly booking, aligning with the conversation goals section from the guide.
+- Uses two `pairwise()` variables so `conversation.number: combinations(1, pairwise)` covers rich symptom/service combinations without exploding the run.
+- Defines `chatbot.output` fields for later rules to check whether the bot offers self-adjustment tips, shop services, root causes, and if it pushes for a booking.
+
+Let me know if you’d like variations (different languages, more interaction styles, or extra outputs)! 😊

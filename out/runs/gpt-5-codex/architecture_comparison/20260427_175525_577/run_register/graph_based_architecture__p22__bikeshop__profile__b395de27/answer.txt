@@ -1,0 +1,86 @@
+Hey! I put together a fresh Sensei profile that captures the “discomfort while riding” scenario you described. This user shares their pain points, digs into whether it’s fit or worn components, and asks about diagnostic/adjustment services—but never tries to book an appointment. The chatbot outputs focus on the advice and services we’ll want to validate later.
+
+Save it as `profiles/bike_fit_discomfort_advice.yaml`:
+
+```yaml
+test_name: bike_fit_discomfort_advice
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist who recently started feeling
+    uncomfortable on the bike and want guidance on whether the issue
+    comes from bike fit or worn components. You’re only looking for
+    advice and available services—not booking anything yet.
+  context:
+    - You rely on your bike several times a week and want to stay comfortable for longer rides.
+    - You recently adjusted your saddle height on your own but still feel sore.
+    - You’re trying to figure out whether fit adjustments or component maintenance will help.
+  goals:
+    - "I've been having {{pain_area}} discomfort after {{ride_type}}. Could you help determine if my bike fit might be off?"
+    - "What at-home fit checks or adjustments would you suggest I try before coming into the shop?"
+    - "How can I tell if my {{component_concern}} is worn out or contributing to the problem?"
+    - "What services do you offer to diagnose or fix fit-related discomfort?"
+    - "Do you have any guidance on the typical cost or turnaround time for those services?"
+    - pain_area:
+        function: forward()
+        type: string
+        data:
+          - lower back
+          - knees
+          - wrists
+          - neck
+          - shoulders
+    - ride_type:
+        function: another()
+        type: string
+        data:
+          - long weekend rides
+          - daily commuting
+          - evening training sessions
+          - casual neighborhood rides
+    - component_concern:
+        function: forward(pain_area)
+        type: string
+        data:
+          - saddle
+          - handlebars
+          - drivetrain
+          - wheel bearings
+          - suspension fork
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: "Specific recommendations the chatbot provides for bike fit adjustments that address the discomfort."
+    - component_wear_guidance:
+        type: string
+        description: "Guidance on how to check whether the concerned component is worn or needs replacement."
+    - recommended_services:
+        type: string
+        description: "Services offered by the shop to evaluate or correct fit-related issues."
+    - service_cost_or_timeframe:
+        type: money
+        description: "Any pricing or turnaround information the chatbot gives for the recommended services."
+
+conversation:
+  number: 5
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - default
+```
+
+Let me know if you’d like to tweak interaction style, add more variables, or align the output fields with existing Sensei-check rules. Happy to help! 😊

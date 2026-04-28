@@ -1,0 +1,28 @@
+conversation ID: agentic_architecture__p36__pizza_shop__rule__363d7c87
+$$$
+Hey! 👋 I dug into the project and spotted why the rule keeps tripping.
+
+### What’s going wrong
+- Your `when` clause only guarantees that both conversations share the same **size** and **drink**.
+- Because there is no `if` guard, the `then` comparison is enforced for **every** such pair—even if both pizzas have the same (or fewer) toppings. That inevitably makes the rule fail.
+- While checking the available profiles (e.g., `pizza_order_test_custom.yml`, `pizzaorder_ivan_test.yml`), I didn’t see `toppings`, `size`, `drink`, or `price` exposed in `chatbot.output`. If the profile you’re targeting doesn’t export those fields, the rule can’t access them—worth double-checking.
+
+### Fixed rule
+Assuming the profile does expose `size`, `drink`, `toppings`, and `price`, adding the missing `if` precondition brings the rule back in line with the Sensei-check syntax described in `sensei-check-doc.md` and the working example in `rules-examples.md`:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+This way the price comparison only triggers when Conversation 0 actually has more toppings than Conversation 1.
+
+> ✅ Tip: If your profile also tracks pizza quantity (e.g., `conv[i].number`), consider adding that to the `when` clause so you’re comparing truly equivalent orders.
+
+Let me know if you want to update the profile outputs so these slots exist—I’m happy to help!
+$$$

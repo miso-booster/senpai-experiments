@@ -1,0 +1,109 @@
+Hi there! 😊 Here’s a new Sensei Chat profile that simulates a frustrated student trying different ways to configure eduroam:
+
+```yaml
+test_name: "eduroam_setup_support"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who urgently needs to get the campus eduroam
+    Wi-Fi working but every attempt so far has failed. You are polite, detailed,
+    and genuinely seeking technical guidance.
+  context:
+    - "You are physically on campus and need reliable internet access for academic work."
+    - "You have administrator access on your device but limited networking knowledge."
+    - "You worry about missing class deadlines if the issue persists."
+  goals:
+    - "Explain that you already tried to configure eduroam using {{setup_method_primary}} on your {{device_profile}}, but the connection fails."
+    - "Mention that afterward you attempted {{setup_method_secondary}}, which resulted in {{error_symptom}}."
+    - "Ask for step-by-step instructions, making sure to confirm whether you should {{credential_question}} before your next attempt."
+    - "Emphasise that you must get online quickly to {{urgency_reason}}."
+    - setup_method_primary:
+        function: pairwise()
+        type: string
+        data:
+          - "your university's eduroam auto-installer"
+          - "the eduroam CAT configuration tool"
+          - "manual WLAN profile creation using WPA2-Enterprise"
+          - "importing the preconfigured mobile profile from the IT website"
+    - device_profile:
+        function: pairwise()
+        type: string
+        data:
+          - "a Windows 11 laptop"
+          - "a macOS Sonoma MacBook"
+          - "an Android 14 smartphone"
+          - "an iPhone running iOS 17"
+    - setup_method_secondary:
+        function: another()
+        type: string
+        data:
+          - "resetting the Wi-Fi adapter and running the setup wizard again"
+          - "installing the profile through the institution's mobile configuration app"
+          - "downloading the latest security certificates manually"
+          - "changing the authentication method to PEAP with MSCHAPv2 manually"
+    - error_symptom:
+        function: random()
+        type: string
+        data:
+          - "an 'unable to verify certificate' warning"
+          - "a timeout message before it prompts for credentials"
+          - "a repeated password prompt that never accepts the credentials"
+          - "the network disappearing after a few seconds"
+    - credential_question:
+        function: random()
+        type: string
+        data:
+          - "reset my institutional password"
+          - "request a new personal certificate"
+          - "clear any remembered eduroam profiles first"
+          - "generate app-specific credentials"
+    - urgency_reason:
+        function: random()
+        type: string
+        data:
+          - "submit a lab report from campus"
+          - "join a hybrid lecture via video conference"
+          - "download course materials before an exam"
+          - "sync research data to the university servers"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you restate the problem?"
+  output:
+    - diagnosed_issue:
+        type: string
+        description: "Summary of what the chatbot thinks is blocking the eduroam setup"
+    - recommended_setup_method:
+        type: string
+        description: "The main method the chatbot suggests to resolve the issue"
+    - step_by_step_guidance:
+        type: list[string]
+        description: "Ordered troubleshooting or configuration steps provided to the user"
+    - follow_up_action:
+        type: string
+        description: "Any follow-up task such as contacting support or collecting logs"
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 5
+    max_cost: 0.15
+  interaction_style:
+    - make spelling mistakes
+    - long phrases
+```
+
+### Why it’s set up this way
+- I followed the structure recommended in **`sensei-chat-guide.md`**, keeping the profile sections (`user`, `chatbot`, `conversation`) in the documented format.
+- The variables `setup_method_primary` and `setup_method_secondary` capture the different configuration approaches the user has tried, just like you requested. Using `pairwise()` on the primary method and device ensures good coverage across combinations, while `another()` on the secondary method cycles through alternative attempts.
+- Outputs such as `recommended_setup_method` and `step_by_step_guidance` give future rules or analyses something concrete to validate.
+
+I also checked the existing profiles list and didn’t see anything already focused on eduroam, so this one should slot in cleanly. Let me know if you’d like to tweak the conversation style, add more setup methods, or localize it to another language!

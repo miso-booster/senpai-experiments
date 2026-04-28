@@ -1,0 +1,65 @@
+Great question! The `pairwise()` function is one of Sensei’s smartest tools for building profiles. It helps you cover lots of variable combinations **without exploding into hundreds of conversations**. Here’s how it works 🎯
+
+---
+
+### 🧠 What `pairwise()` does
+
+- When you declare `pairwise()` for two or more variables inside `user.goals`, Sensei builds a **pairwise coverage matrix**: every possible **pair** of values appears together at least once across the generated conversations.
+- You get broad testing coverage (every duo of values is exercised) **without** generating the full Cartesian product of all variables.
+
+> Think of it like quality insurance for combinations—each pair gets a turn, but you don’t need every single permutation.
+
+---
+
+### 📄 Where you use it
+
+Inside a goal variable mapping, like in this snippet from your `pizza_order_test_custom.yml` profile:
+
+```yaml
+- size:
+    function: pairwise()
+    type: string
+    data: [small, medium, big, extra large]
+- toppings:
+    function: pairwise()
+    type: string
+    data: [cheese, mushrooms, pepperoni]
+```
+
+Because both `size` and `toppings` use `pairwise()`, Sensei ensures every `size`–`topping` combination appears at least once in the conversation set.
+
+---
+
+### 🤝 Dependencies & Combination Count
+
+To take advantage of `pairwise()` when setting `conversation.number`, you need **at least two variables** in your goals that use `pairwise()` (or nested `forward`). Then you can let Sensei generate the matrix automatically:
+
+```yaml
+conversation:
+  number: combinations(0.5, pairwise)
+```
+
+- `combinations` tells Sensei to use the pairwise matrix instead of a plain repetition.
+- The `0.5` means “use 50% of the full pairwise matrix” (handy when pair counts are still big).
+- Omit the percentage to use the full set.
+
+If you skip `conversation.number`, Sensei still uses pairwise coverage for those variables, but you might want the explicit control for how many runs happen.
+
+---
+
+### 🛠 Tips for best results
+
+1. **Stick to at least two variables** with `pairwise()`—that’s what makes the coverage meaningful.
+2. **Combine with other functions thoughtfully**. For example, you can mix `pairwise()` (for broad coverage) with `forward()` (for deterministic sequences).
+3. **Use descriptive variable names** so the matrix is easier to interpret later.
+4. If you change the list of values, remember the matrix will rebuild next time you run.
+
+---
+
+### 🌟 Why you’ll love it
+
+- **Efficient coverage**: catches most interaction bugs without brute force.
+- **Scales with your options**: add more values, and the matrix adapts.
+- **Plays nicely with rules**: gives you rich conversation data for Sensei-check.
+
+Let me know if you’d like to see the actual combination matrix or use it with a specific profile—you’re doing awesome so far! 😊

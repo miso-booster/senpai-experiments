@@ -1,0 +1,21 @@
+¡Hola! 😊 He revisado las reglas que tienes en tu proyecto y, por ahora, no hay ninguna que verifique explícitamente que el asistente confirme haber añadido la bebida solicitada por el usuario.
+
+Si quieres cubrir ese comportamiento, puedes crear una regla en Sensei-check apoyándote en `utterance_index`, que nos permite localizar en qué turno aparece cierta frase. Te dejo un ejemplo de cómo podrías estructurarla; ajústala a las expresiones reales que use tu bot (las cadenas que pongas deben coincidir con lo que aparece en la conversación):
+
+```yaml
+name: drink_confirmation_after_request
+description: El asistente confirma que añadió la bebida solicitada por el usuario
+conversations: 1
+when: utterance_index('user', 'pide una bebida') >= 0
+oracle: utterance_index('assistant', 'añadí la bebida') >
+        utterance_index('user', 'pide una bebida')
+on-error: 'El asistente no confirmó la bebida tras el turno donde se solicitó (conversación {conversation_id}).'
+```
+
+**Tips para ajustarla:**
+
+- Cambia `'pide una bebida'` por alguna frase o palabra clave que tu usuario realmente diga cuando solicita la bebida.
+- Ajusta `'añadí la bebida'` a la forma en que el asistente confirma la acción.
+- Si necesitas más flexibilidad (por ejemplo, variaciones en la respuesta), puedes sumar más condiciones o usar varias llamadas a `utterance_index`.
+
+¿Te gustaría que te ayude a refinar los textos o a integrarlo en tu conjunto de reglas? Estoy aquí para lo que necesites 🤗.

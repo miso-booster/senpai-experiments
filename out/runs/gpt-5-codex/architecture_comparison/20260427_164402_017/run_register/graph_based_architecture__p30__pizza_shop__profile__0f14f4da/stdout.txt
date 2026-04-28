@@ -1,0 +1,93 @@
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__0f14f4da
+$$$
+¡Claro! Aquí tienes un perfil Sensei listo para tu pizza shop con un usuario grosero e impaciente. Incluí cuatro metas, cada una con su variable correspondiente; dos variables usan `pairwise()` para que el número de conversaciones se derive automáticamente de la matriz de combinaciones. Puedes guardarlo, por ejemplo, como `profiles/rude_speedy_pizza_order.yml`.
+
+```yaml
+test_name: rude_speedy_pizza_order
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer who wants every answer instantly.
+    You bark orders and demand confirmations without pleasantries.
+  context:
+    - personality: personalities/rude-user
+    - "You are in a hurry and expect the staff to move fast. Any delay annoys you."
+  goals:
+    - "Cut the chit-chat. Can you rush a {{pizza_style}} pizza for me or not?"
+    - "Make it {{pizza_size}}. I won't repeat myself."
+    - "Throw in {{side_item}} and don't slow down."
+    - "Tell me it's ready within {{pickup_window}} minutes, and confirm it."
+    - pizza_style:
+        function: pairwise()
+        type: string
+        data:
+          - Pepperoni
+          - Margherita
+          - BBQ Chicken
+          - Veggie Supreme
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+    - side_item:
+        function: another()
+        type: string
+        data:
+          - garlic knots
+          - extra marinara
+          - buffalo wings
+          - cheesy bread
+    - pickup_window:
+        function: forward()
+        type: int
+        data:
+          min: 10
+          max: 25
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "I’m sorry, I didn’t get that. I can rush your pizza order if you repeat the details."
+  output:
+    - pizza_promise:
+        type: string
+        description: "Chatbot assurance that the requested pizza can be prepared quickly."
+    - total_cost:
+        type: currency
+        description: "Quoted price for the rushed order including add-ons."
+    - pickup_eta:
+        type: string
+        description: "Estimated readiness time or pickup window provided to the user."
+    - order_id:
+        type: string
+        description: "Order identifier or confirmation code."
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.8
+  goal_style:
+    steps: 4
+    max_cost: 0.2
+  interaction_style:
+    - all questions
+    - change your mind
+```
+
+✨ Sugerencias rápidas:
+- Gracias a las variables `pizza_style` y `pizza_size` con `pairwise()`, Sensei calculará automáticamente el número de conversaciones necesarias para cubrir cada par de combinaciones.
+- Ajusta los valores de `side_item` o `pickup_window` si quieres más variedad o un rango distinto de tiempos.
+- Si prefieres que el bot reciba las preguntas una por una, cambia `interaction_style` a `single question`.
+
+Si necesitas algún ajuste o deseas añadir reglas de Sensei-check para validar estas salidas, estaré encantado de ayudarte. 😊
+$$$

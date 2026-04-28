@@ -1,0 +1,12 @@
+Hey there! 😊 I took a look at your rule and compared it with the guidance in `sensei-check-doc.md`. A quick note before I rewrite it:
+
+- The rule is most likely targeting the `bike_service_and_repair_inquirer.yaml` profile, which exposes `tune_up_price` (among other outputs like `available_services`, `tire_price`, etc.). Can you confirm this is the profile you’re using?
+
+While reviewing, I spotted a few issues we’ll need to fix:
+
+1. **`conversations: 2`** isn’t necessary because the rule only checks one conversation (`conv[0]`); switching to a single-conversation rule will simplify things.
+2. In a single-conversation rule we refer to fields directly (`tune_up_price`) rather than `conv[0].…`.
+3. The `then` block must evaluate to a boolean expression; right now it’s just a string message. We should use `oracle:` (or a proper `if`/`then`) and add an `on-error` message if needed.
+4. To verify a $50 price we can parse the value with helpers like `extract_float` and `currency` (since `tune_up_price` is a `money` slot).
+
+Once you confirm the target profile, I’ll share the corrected YAML and highlight the exact changes. Let me know!

@@ -1,0 +1,16 @@
+Hey there! Thanks for sharing the rule snippet 😊  
+The reason it isn’t working is that, in Sensei-check, you can only use a `then:` clause when you also define an `if:` clause. Right now the rule is trying to state “this price should be higher” without first specifying the condition under which that comparison applies (i.e., that one pizza actually has more toppings).
+
+Here’s the corrected version. It explicitly sets the precondition (`if:`) that the first conversation has more toppings, and then compares the prices. I also added the pizza quantity check in `when:` to keep the comparisons fair:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Give this version a spin and you should be good to go. If anything else feels off, just let me know—happy to help! 🍕✨

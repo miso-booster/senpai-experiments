@@ -1,0 +1,15 @@
+Hey! The rule is failing because it uses a `then:` clause without a matching `if:` precondition. In Sensei-check, any rule that uses `then:` must also define `if:`—otherwise the rule is ill-formed and gets rejected before it even runs. 
+
+Here’s the fixed version that restores the intended metamorphic relation:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Make sure the profile you’re targeting exposes `size`, `drink`, `toppings`, and `price` in its `chatbot.output`; if any of those fields are missing, the rule won’t have the data it needs. Let me know if you’d like help double-checking the profile slots! 😊

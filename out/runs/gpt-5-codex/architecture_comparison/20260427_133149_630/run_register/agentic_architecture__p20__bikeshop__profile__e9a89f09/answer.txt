@@ -1,0 +1,121 @@
+Here you go! 😊 I put together a bike-shop appointment profile that leans on pairwise combinations to exercise lots of day/time variations while keeping the conversation focused on getting those wheels changed.
+
+**Quick highlights**
+- Covers multiple bike types plus preferred and backup appointment slots so you can see how the bot negotiates schedule changes.
+- `conversation.number` uses `combinations(0.75, pairwise)` to sample from the day/time matrix without exploding the run.
+- Extracts confirmation details (`appointment_date`, `appointment_time`, status, alternates, follow-up channel) for downstream rules or reporting.
+
+**Docs referenced:** `sensei-chat-guide.md`
+
+```yaml
+test_name: "bike_shop_wheel_change_scheduler"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an avid cyclist trying to book a wheel change appointment at your trusted bike shop.
+    You rely on the shop to get you ready for upcoming rides and want quick, clear answers about available time slots.
+  context:
+    - "You commute daily and need the repair done before your weekend group ride."
+    - "You recently noticed wobbling on the front wheel after hitting a pothole."
+    - "You have flexibility for weekday afternoons and one weekend morning."
+  goals:
+    - "Schedule a wheel change appointment for my {{bike_type}} on {{preferred_date}} at {{preferred_time}}."
+    - "If that slot is unavailable, ask for {{alternate_date}} at {{alternate_time}} instead."
+    - "Confirm whether the wheel service includes checking {{additional_service}}."
+    - "Let the shop know you prefer to receive updates via {{contact_method}}."
+    - bike_type:
+        function: another()
+        type: string
+        data:
+          - mountain bike
+          - road bike
+          - gravel bike
+          - e-bike
+    - preferred_date:
+        function: pairwise()
+        type: string
+        data:
+          - "2024-11-05"
+          - "2024-11-06"
+          - "2024-11-08"
+          - "2024-11-12"
+    - preferred_time:
+        function: pairwise()
+        type: string
+        data:
+          - "09:30"
+          - "11:15"
+          - "14:00"
+          - "16:45"
+    - alternate_date:
+        function: another()
+        type: string
+        data:
+          - "2024-11-07"
+          - "2024-11-09"
+          - "2024-11-14"
+          - "2024-11-16"
+    - alternate_time:
+        function: another()
+        type: string
+        data:
+          - "10:30"
+          - "13:15"
+          - "15:30"
+          - "17:00"
+    - additional_service:
+        function: random()
+        type: string
+        data:
+          - brake inspection
+          - gear tuning
+          - chain cleaning
+          - safety check
+    - contact_method:
+        function: random()
+        type: string
+        data:
+          - email
+          - phone call
+          - SMS
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you clarify your appointment request?"
+  output:
+    - appointment_date:
+        type: date("yyyy-mm-dd")
+        description: "Date the chatbot confirms for the wheel change service."
+    - appointment_time:
+        type: time("hh:mm")
+        description: "Time slot the chatbot confirms for the appointment."
+    - appointment_status:
+        type: string
+        description: "How the chatbot summarizes the booking outcome (confirmed, pending, reschedule needed)."
+    - alternate_slot:
+        type: string
+        description: "Any alternate date/time slot proposed by the chatbot."
+    - follow_up_channel:
+        type: string
+        description: "The contact method the chatbot promises to use for reminders or confirmations."
+
+conversation:
+  number: combinations(0.75, pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+Feel free to tweak the date/time pools or interaction styles to match your exact test coverage goals. Let me know if you’d like companion rules or additional profile variants! 🚴‍♂️

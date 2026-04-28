@@ -1,0 +1,78 @@
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__c2d87e0a
+$$$
+Hey! I put together a new Sensei profile that keeps the simulated user rude, impatient, and laser-focused on getting everything done ASAP. The conversation count is driven by the pairwise matrix thanks to the two `pairwise()` variables (`pizza_type` and `pizza_size`), just like you asked. Here’s the full YAML:
+
+```yaml
+test_name: "rushy_rude_pizza_run"
+
+llm:
+  model: gpt-4o-mini
+  model_prov: openai
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer who demands speedy service and has zero tolerance
+    for delays or fluff. You bark orders and expect concise, immediate answers.
+  context:
+    - personality: personalities/rude-user
+    - "You are in a hurry and make it very clear that you want everything confirmed fast."
+  goals:
+    - "Spit out the {{pizza_type}} options you can have ready right now."
+    - "Fine, give me the {{pizza_size}} version of that and don't waste my time."
+    - "Throw in {{topping_option}} as an extra and make sure it's ready when I arrive."
+    - "Add {{drink_choice}} to the order and tell me how much I'm paying."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Pepperoni, Vegetarian, BBQ Chicken, Four Cheese]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - topping_option:
+        function: forward(pizza_type)
+        type: string
+        data: [extra cheese, jalapeños, mushrooms, black olives]
+    - drink_choice:
+        function: another()
+        type: string
+        data:
+          - Cola
+          - Sparkling Water
+          - Lemon Iced Tea
+          - any(3 energy drinks)
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can help you with pizzas and drinks—just be specific."
+  output:
+    - pizza_confirmation:
+        type: string
+        description: "How the bot confirms the selected pizza type and size."
+    - rush_readiness_time:
+        type: time("minutes until ready")
+        description: "The estimated prep or pickup time promised to the user."
+    - total_cost:
+        type: currency
+        description: "Total price for the pizza plus extras and drink."
+    - drink_confirmation:
+        type: string
+        description: "Confirmation of the drink selection."
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.7
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - all questions
+```
+
+Let me know if you want to tweak the bot outputs or adjust how aggressive the user sounds!
+$$$

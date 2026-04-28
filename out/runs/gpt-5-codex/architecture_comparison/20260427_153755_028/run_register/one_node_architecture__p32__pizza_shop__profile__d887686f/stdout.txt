@@ -1,0 +1,95 @@
+conversation ID: one_node_architecture__p32__pizza_shop__profile__d887686f
+$$$
+¡Genial! Aquí tienes un perfil listo para que pruebes el chatbot de la pizzería. Está pensado para pedidos completos y solicita que el bot confirme el precio final expresado en dólares estadounidenses 😊.
+
+```yaml
+test_name: pizza_order_usd_check
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Cliente que quiere realizar un pedido completo en la pizzería,
+    asegurándose de conocer el precio final en dólares estadounidenses.
+  context:
+    - "Estás organizando una cena informal con tus amigos."
+    - "Prefieres que todo el pedido quede confirmado antes de pagar."
+    - "Necesitas que el chatbot indique claramente el precio final en USD."
+  goals:
+    - "Quiero pedir una pizza {{pizza_type}} de tamaño {{pizza_size}}."
+    - "Si se puede, agrega el extra {{extra_toppings}}."
+    - "También quiero {{drink_quantity}} {{drink_type}}."
+    - "Confírmame el precio final y dime si está en dólares estadounidenses."
+    - "¿Me das el identificador del pedido para recogerlo?"
+    - pizza_type:
+        function: forward()
+        type: string
+        data:
+          - Margherita
+          - Pepperoni
+          - Vegetariana
+          - Cuatro quesos
+          - BBQ Chicken
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data:
+          - pequeña
+          - mediana
+          - grande
+    - extra_toppings:
+        function: random()
+        type: string
+        data:
+          - sin extras
+          - extra queso
+          - champiñones adicionales
+          - pepperoni extra
+    - drink_type:
+        function: forward()
+        type: string
+        data:
+          - refresco
+          - agua mineral
+          - té helado
+          - limonada
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, ¿podrías repetirlo? Estoy aquí para ayudarte con tu pedido de pizza y bebidas."
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmado por el chatbot."
+    - drink:
+        type: string
+        description: "Bebida confirmada en el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido proporcionado por el chatbot."
+    - total_price:
+        type: currency
+        description: "Precio final del pedido expresado en dólares estadounidenses (USD)."
+
+conversation:
+  number: 5
+  max_cost: 1.0
+  goal_style:
+    steps: 6
+  interaction_style:
+    - all questions
+    - {random: [long phrases, make spelling mistakes, {change language: [inglés]}]}
+```
+$$$

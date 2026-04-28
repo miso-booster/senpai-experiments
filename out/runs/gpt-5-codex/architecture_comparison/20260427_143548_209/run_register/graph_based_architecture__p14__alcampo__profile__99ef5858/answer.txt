@@ -1,0 +1,108 @@
+¡Hola! 😊 Me encanta la idea de poner a prueba al chatbot con escenarios de recetas y planificación de menús. Aquí tienes un perfil Sensei listo para usar, pensado para que el bot recomiende recetas, organice menús semanales y ayude con la compra de ingredientes.
+
+```yaml
+test_name: "recipe_and_menu_planning_support"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona organizada que busca inspiración culinaria y un plan claro para
+    preparar menús semanales equilibrados. Necesitas ideas adaptadas a diferentes dietas
+    y cantidades de comensales, incluyendo consejos para optimizar la compra y la
+    preparación por adelantado.
+  context:
+    - personality: personalities/conversational-user
+    - "Te entusiasma cocinar con productos frescos y variados, y disfrutas ajustando tus menús según la temporada."
+    - "Quieres que el chatbot responda siempre en español, salvo que se le pida explícitamente cambiar de idioma."
+  goals:
+    - "Pregunta por recetas recomendadas para {{meal_type}} que sigan una dieta {{dietary_preference}}."
+    - "Solicita un plan semanal de menús con opciones para {{servings_count}} personas."
+    - "Pide una lista de ingredientes necesarios para las recetas recomendadas."
+    - "Consulta consejos para aprovechar ingredientes de temporada de {{season}}."
+    - "Pregunta cómo organizar la compra y la preparación adelantada de platos."
+    - meal_type:
+        function: pairwise()
+        type: string
+        data:
+          - desayunos balanceados
+          - comidas familiares
+          - cenas ligeras
+          - snacks saludables
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data:
+          - vegetariana
+          - mediterránea
+          - baja en carbohidratos
+          - sin gluten
+    - servings_count:
+        function: random()
+        type: int
+        data:
+          min: 2
+          max: 6
+          step: 2
+    - season:
+        function: another()
+        type: string
+        data:
+          - primavera
+          - verano
+          - otoño
+          - invierno
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no está relacionado con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - recommended_recipes:
+        type: list[string]
+        description: "Recetas sugeridas relacionadas con la solicitud del usuario"
+    - weekly_menu_plan:
+        type: string
+        description: "Resumen del plan de menús propuesto"
+    - ingredient_list:
+        type: list[string]
+        description: "Ingredientes necesarios para las recetas recomendadas"
+    - prep_tips:
+        type: string
+        description: "Consejos para la preparación anticipada y organización de las recetas"
+    - seasonal_suggestions:
+        type: string
+        description: "Recomendaciones basadas en ingredientes de temporada"
+    - shopping_guidance:
+        type: string
+        description: "Sugerencias para planificar la compra de los ingredientes"
+    - dietary_notes:
+        type: string
+        description: "Consideraciones especiales relacionadas con la dieta solicitada"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.5
+  goal_style:
+    steps: 8
+    max_cost: 0.1
+  interaction_style:
+    - random:
+        - long phrases
+        - change language:
+            - Spanish
+            - English
+        - make spelling mistakes
+        - single questions
+```
+
+### Próximos pasos sugeridos 🙌
+1. Guarda el archivo (por ejemplo, `profiles/recipe_and_menu_planning_support.yaml`).
+2. Ejecuta `validation_check.py` para confirmar que la sintaxis y la matriz de combinaciones están en orden.
+3. Lanza Sensei con este perfil y revisa que el chatbot extraiga todos los campos definidos en `chatbot.output`.
+
+Si necesitas ajustar variables, idiomas o estilos de interacción, dime y lo adaptamos juntos. ¡Listo para cocinar con Sensei! 🍲✨

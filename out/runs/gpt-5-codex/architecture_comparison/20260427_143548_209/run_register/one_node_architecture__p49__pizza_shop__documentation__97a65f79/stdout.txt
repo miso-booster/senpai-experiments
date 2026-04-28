@@ -1,0 +1,53 @@
+conversation ID: one_node_architecture__p49__pizza_shop__documentation__97a65f79
+$$$
+Hey there! Happy to walk you through it 👋
+
+### How `pairwise()` works in Sensei profiles
+
+`pairwise()` is a goal-variable function that helps you cover **all pairwise combinations** across two or more variables without exploding into the full Cartesian product. Think of it as a smart test planner: it makes sure every pair of variable values appears together at least once across your generated conversations.
+
+#### When should you use it?
+- You have several variables (e.g., pizza size, drink type, crust) and want good coverage **without** running hundreds of chats.
+- You care that **every pair of inputs** (size ↔ drink, size ↔ crust, drink ↔ crust, …) is tested together at least once.
+
+#### Key requirements
+- Declare `pairwise()` in *two or more* variables within `user.goals`.
+- Set `conversation.number` to cover the combinations (usually `combinations` or `combinations(<fraction>, pairwise)`).
+
+#### What it actually does
+- Sensei builds a **pairwise matrix** across the variables marked with `pairwise()`.
+- Each row becomes a conversation, guaranteeing every pair appears together in at least one dialogue.
+- Other variables using `forward()` or `random()` can still participate—Sensei merges their values onto those pairwise rows.
+
+#### Quick example
+```yaml
+goals:
+  - "Order a {{pizza_size}} pizza with {{toppings}} and {{drink}}."
+  - pizza_size:
+      function: pairwise()
+      type: string
+      data: [small, medium, large]
+  - toppings:
+      function: pairwise()
+      type: string
+      data: [cheese, mushrooms, pepperoni]
+  - drink:
+      function: pairwise()
+      type: string
+      data: [soda, water, iced tea]
+```
+
+With three pairwise variables, Sensei produces a minimal set of conversations where every pair (size–topping, size–drink, topping–drink) appears at least once. Much lighter than the full 3×3×3 grid, but still thorough 💪.
+
+#### Conversations count
+If you set:
+```yaml
+conversation:
+  number: combinations      # or combinations(0.6, pairwise) for 60% of them
+```
+Sensei reads the pairwise matrix and runs exactly that many conversations.
+
+---
+
+In short: `pairwise()` is your friend when you want **broad coverage with fewer runs**, especially for regression testing or guardrails. Let me know if you want help wiring it into one of your profiles!
+$$$

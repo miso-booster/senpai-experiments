@@ -1,0 +1,76 @@
+¡Hola! Qué gusto ver un perfil tan completo 😊. Para ponerlo a prueba en Sensei-check, te propongo una combinación de reglas individuales y una metamórfica que cubren los puntos clave de la experiencia “Usuarios Nuevos y Admisiones”. Aquí van con su justificación y el YAML listo para pegar:
+
+---
+
+### 1. Verificación básica de los enlaces clave  
+Aprovecha que expones cuatro URLs distintas en `chatbot.output`. Esta regla asegura que realmente se devuelvan y que tengan el formato correcto.
+
+```yaml
+name: admission_links_are_urls
+description: Los enlaces de admisión y recursos deben existir y comenzar por http
+conversations: 1
+oracle: |
+  all(link and link.startswith('http') for link in [
+      admission_to_grados_link,
+      waitlist_info_link,
+      future_students_link,
+      welcome_day_link
+  ])
+```
+
+---
+
+### 2. La lista de espera debe venir con instrucciones  
+Si el bot comparte el enlace de listas de espera, esperamos también una explicación breve (`waitlist_procedures`).
+
+```yaml
+name: waitlist_info_has_procedures
+description: Si hay enlace de lista de espera, debe incluir procedimientos asociados
+conversations: 1
+if: waitlist_info_link
+then: waitlist_procedures and len(waitlist_procedures.strip()) > 0
+```
+
+---
+
+### 3. Paquete completo para el Welcome Day  
+Cuando el bot menciona la fecha del evento, debería aportar también hora y lugar. Esto sostiene la coherencia de la info para estudiantes nuevos.
+
+```yaml
+name: welcome_day_completeness
+description: Fecha del Welcome Day debe acompañarse de hora y ubicación
+conversations: 1
+if: welcome_day_date
+then: welcome_day_time and event_location
+```
+
+---
+
+### 4. Requisitos de admisión ≈ info accionable  
+Si aparecen requisitos, sería extraño que falten deadline, proceso y costo. Esta regla junta esas piezas.
+
+```yaml
+name: admission_package_completeness
+description: Requisitos de admisión deben acompañarse de deadline, proceso y costo
+conversations: 1
+if: admission_requirements
+then: admission_deadline and enrollment_process and application_fee and extract_float(application_fee) > 0
+```
+
+---
+
+### 5. Regla metamórfica: fechas iguales para cohortes iguales  
+Tus conversaciones variarán el `grados` y `cursos`. Si el bot lista la misma oferta de grados, conviene que la fecha límite no cambie arbitrariamente.
+
+```yaml
+name: admission_deadline_consistency
+description: Para el mismo listado de grados, la fecha límite de admisión debe ser consistente
+conversations: 2
+when: conv[0].grados_available == conv[1].grados_available
+if: conv[0].admission_deadline and conv[1].admission_deadline
+then: conv[0].admission_deadline == conv[1].admission_deadline
+```
+
+---
+
+Puedes activarlas de una en una y ver qué tan estable es el perfil. Si notas huecos (por ejemplo, algún campo que rara vez se llena), ajusta la severidad o convierte la regla en un `if/then` más permisivo. ¿Te gustaría que montemos alguna adicional, quizá sobre coherencia idiomática o cobertura de los `cursos`? Estoy aquí para ayudarte. 💪✨

@@ -1,0 +1,16 @@
+¡Perfecto! Aquí tienes una regla de Sensei-check que valida que la asistente “ada uam” entregue los datos oficiales del CAU exactamente como nos los has proporcionado. La regla se asegura de que el perfil complete todos los slots (`data_collected()`), compara el email con coincidencia exacta, y usa `semantic_content` para tolerar ligeras variaciones de formato en el teléfono y la dirección:
+
+```yaml
+name: cau_contact_details_are_correct
+description: ada uam debe devolver el email, teléfono y dirección oficiales del CAU.
+conversations: 1
+oracle: >
+  data_collected()
+  and contact_email.strip().lower() == 'cau@uam.es'
+  and semantic_content(contact_phone, '91 497 4029')
+  and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+on-error: >
+  f"CAU info mismatch. email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+Con esta regla podrás detectar al instante cualquier desajuste en la información crítica de contacto del CAU. Si necesitas afinar la tolerancia del teléfono o la dirección (por ejemplo, exigir formato exacto), dime y lo ajustamos enseguida 😊.

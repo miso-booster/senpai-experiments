@@ -1,0 +1,35 @@
+Hey there! Happy to help 😊
+
+In Sensei, **connectors** are the bridge between your Sensei simulator and the real chatbot you want to test. Think of the connector as a little map that tells Sensei:
+
+- *Where* to send the user’s message (the chatbot’s API endpoint),
+- *How* to send it (HTTP method, headers, payload), and
+- *Where* to grab the chatbot’s reply from the API response.
+
+They’re written in YAML, so you can quickly tweak them without touching code. Perfect when you need to plug Sensei into different bots or environments (staging, production, etc.) 💡
+
+### Core fields you’ll find in every connector
+
+| Field | What it does |
+|-------|---------------|
+| `name` | A friendly label so you recognize the connector. |
+| `base_url` | The root URL of the chatbot’s API. All requests build on top of this. |
+| `send_message` | A block that describes how to talk to the bot. Contains:<br>• `path`: endpoint appended to `base_url`.<br>• `method`: optional (defaults to `POST`).<br>• `headers`: optional key-value pairs (auth tokens, content type…).<br>• `payload_template`: a JSON-like skeleton sent as the request body or parameters. Drop `{user_msg}` wherever the live user input should go. |
+| `response_path` | Dot-separated path telling Sensei where to find the bot’s answer inside the JSON response (e.g., `data.reply.text` or `messages.0.content`). |
+
+Here’s a tiny example to visualize it:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+In this case, every message Sensei sends will hit `https://postman-echo.com/post`, and the connector will extract the reply from the `json.message` field.
+
+Let me know if you’d like to craft or tweak a connector—happy to walk through it with you! 🚀

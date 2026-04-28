@@ -1,0 +1,85 @@
+¡Listo! Aquí tienes un perfil de prueba para un chatbot de pizzería con las extracciones que necesitas 😊. Me basé en la guía `sensei-chat-guide.md`.
+
+```yaml
+test_name: "pizza_order_smoke"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona hambrienta que quiere pedir una pizza a domicilio.
+    Buscas un trato amable y confirmaciones claras sobre lo que vas a recibir.
+  context:
+    - "Es la primera vez que compras en esta pizzería."
+    - "Prefieres que el precio final esté expresado en dólares estadounidenses."
+  goals:
+    - "Saluda y explica que llamas para hacer un pedido."
+    - "Pide una pizza {{pizza_tipo}} tamaño {{tamano}} y confirma si puede personalizarse."
+    - "Añade una bebida {{bebida}} y valida la disponibilidad."
+    - "Pregunta por el precio final en dólares y asegúrate de que incluye todo."
+    - "Solicita el identificador del pedido antes de despedirte con gratitud."
+    - pizza_tipo:
+        function: pairwise()
+        type: string
+        data:
+          - margarita
+          - pepperoni
+          - vegetariana
+          - cuatro quesos
+    - tamano:
+        function: pairwise()
+        type: string
+        data:
+          - pequeña
+          - mediana
+          - grande
+    - bebida:
+        function: random()
+        type: string
+        data:
+          - refresco de cola
+          - limonada
+          - agua mineral
+          - cerveza artesanal
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu pedido. ¿Podrías repetirlo?"
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmada por el chatbot."
+    - beverage:
+        type: string
+        description: "Bebida incluida en el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido."
+    - final_price_usd:
+        type: currency
+        description: "Precio final del pedido expresado en dólares estadounidenses."
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change your mind
+```
+
+### Resumen
+- Configuré al usuario simulador en español, siguiendo la estructura recomendada en `sensei-chat-guide.md`.
+- Los objetivos guían la conversación para que el bot proporcione el tipo de pizza, la bebida, el ID y el precio final en dólares — y esos mismos campos aparecen en `chatbot.output`.
+- Usé variables con `pairwise()` para cubrir combinaciones de pizza y tamaño, mientras que la bebida rota aleatoriamente.
+- El estilo de interacción mezcla frases largas con un toque aleatorio de errores y cambios de opinión para poner al bot a prueba en escenarios realistas.
+
+Si quieres ajustar opciones de pizzas, estilos de interacción o el número de conversaciones, dime y lo adaptamos.

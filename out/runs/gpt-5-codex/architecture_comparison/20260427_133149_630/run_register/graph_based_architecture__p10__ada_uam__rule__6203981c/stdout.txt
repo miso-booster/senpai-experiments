@@ -1,0 +1,81 @@
+conversation ID: graph_based_architecture__p10__ada_uam__rule__6203981c
+$$$
+¡Gracias por compartir el perfil! Se ve súper completo, así que es normal que quieras asegurarte de que todo lo importante salga bien en las conversaciones. Aquí tienes algunas ideas de reglas Sensei-check que encajan con los campos que expone tu `chatbot.output`. Puedes pegarlas tal cual (cada bloque es un archivo YAML separado) y luego ajustarlas si necesitas afinar detalles.
+
+---
+
+**1. Verifica que los links clave estén presentes y con formato de URL**
+
+```yaml
+name: admission_resource_links_present
+description: Cada respuesta debe incluir todas las URLs informativas principales.
+conversations: 1
+oracle: all(link and link.startswith('http') for link in [admission_to_grados_link, waitlist_info_link, future_students_link, welcome_day_link])
+```
+
+*Por qué sirve:* comprueba que el bot devuelva los enlaces imprescindibles para admisiones, listas de espera, recursos para futuros estudiantes y el Welcome Day. Si alguno falta o no parece una URL, la regla falla.
+
+---
+
+**2. Asegura que, cuando se menciona el Welcome Day, el horario y ubicación vengan completos**
+
+```yaml
+name: welcome_day_schedule_complete
+description: Si se proporciona la fecha del Welcome Day, también deben venir la hora y la ubicación.
+conversations: 1
+if: welcome_day_date is not None
+then: welcome_day_time is not None and event_location
+```
+
+*Por qué sirve:* muchas respuestas pueden no incluir la fecha. Pero si aparece, es lógico garantizar que también lleguen la hora y el lugar. Así evitas mensajes a medias.
+
+---
+
+**3. Comprueba que el formulario incluya requisitos y proceso de inscripción**
+
+```yaml
+name: admissions_guidance_is_populated
+description: La respuesta debe incluir requisitos y pasos de inscripción cuando se habla de admisiones.
+conversations: 1
+oracle: admission_requirements and enrollment_process and contact_admissions
+```
+
+*Por qué sirve:* asegura que la información básica (requisitos, proceso y datos de contacto) nunca quede vacía. Si una de esas partes se omite, detectas el hueco enseguida.
+
+---
+
+**4. Mantén estables los enlaces oficiales entre conversaciones**
+
+```yaml
+name: admission_links_consistency
+description: Las URLs oficiales deben mantenerse consistentes entre conversaciones.
+conversations: 2
+oracle: conv[0].admission_to_grados_link == conv[1].admission_to_grados_link and conv[0].waitlist_info_link == conv[1].waitlist_info_link and conv[0].future_students_link == conv[1].future_students_link and conv[0].welcome_day_link == conv[1].welcome_day_link
+```
+
+*Por qué sirve:* si tus recursos oficiales no cambian por grado/curso, esta regla verifica que el asistente no devuelva enlaces inconsistentes (por ejemplo, enlaces rotos o variaciones raras). Si esperas que cambien según el grado, puedes acotar con un `when:` que compare solo conversaciones con el mismo programa.
+
+---
+
+**5. (Opcional) Revisa que la cuota de aplicación sea razonable**
+
+```yaml
+name: application_fee_is_positive
+description: La cuota de solicitud debe venir informada y no ser negativa.
+conversations: 1
+oracle: application_fee and extract_float(application_fee) >= 0
+```
+
+*Por qué sirve:* evita valores nulos o negativos. Si conoces la moneda esperada, puedes extenderlo con `currency(application_fee) == 'EUR'` (o la que corresponda).
+
+---
+
+### Cómo seguir
+
+1. **Activa las reglas** desde tu proyecto Sensei (`active: true` si quieres que corran siempre).
+2. **Genera algunas conversaciones** con esta misión “Usuarios Nuevos y Admisiones”.
+3. **Ejecuta Sensei-check** para ver qué reglas pasan o fallan.
+4. Ajusta descripciones, `when:` o contenidos según lo que realmente quieras asegurar.
+
+Si detectas campos que cambian según el grado/curso elegido, avísame y podemos armar reglas metamórficas que comparen esas variaciones (por ejemplo, asegurando que el grado solicitado aparezca en `grados_available`). ¡Estoy aquí para ayudarte a perfilarlo! 😊
+$$$

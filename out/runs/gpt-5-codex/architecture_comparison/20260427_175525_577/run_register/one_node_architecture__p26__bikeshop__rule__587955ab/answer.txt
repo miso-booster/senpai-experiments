@@ -1,0 +1,19 @@
+Hey there! I took a look at your rule and adjusted it so it lines up with Sensei-check’s expectations and properly verifies the tune-up price. Here are the key fixes I made:
+
+1. **Switched to a single-conversation rule** — since you only read one conversation, `conversations` should be `1`, and we access the field directly (no `conv[0]`).
+2. **Use the presence check in `when`** — this way the rule only runs when the price is actually available.
+3. **Replaced the string in `then` with a boolean oracle** — rules need to evaluate to `True`/`False`, so I used `extract_float` and `currency` to assert it’s exactly $50 USD.
+4. **Added an `on-error` message** — to make debugging easier when it fails.
+
+Here’s the corrected version:
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: tune_up_price is not None
+oracle: extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'
+on-error: f"Expected $50.00 USD but got {tune_up_price}"
+```
+
+Let me know if you’d like to tweak the currency check or allow a tolerance (e.g., if the bot sometimes says “$50.00”). Happy to help! 😊

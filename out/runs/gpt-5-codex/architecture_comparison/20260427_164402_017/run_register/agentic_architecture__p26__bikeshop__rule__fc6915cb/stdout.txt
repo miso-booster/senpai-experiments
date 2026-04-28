@@ -1,0 +1,20 @@
+conversation ID: agentic_architecture__p26__bikeshop__rule__fc6915cb
+$$$
+Hi there! Aquí tienes la versión corregida del rule (basada en `sensei-check-doc.md` y los ejemplos de `rules-examples.md`):
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price equals $50.
+conversations: 1
+when: tune_up_price is not None
+oracle: extract_float(tune_up_price) == 50
+```
+
+### Qué cambié y por qué
+- **`conversations: 1`** – Solo necesitas una conversación para verificar un precio específico; las reglas metamórficas con `conv[0]`, `conv[1]` se reservan para comparar múltiples diálogos (`sensei-check-doc.md`, sección 4).
+- **Uso de `when` + `oracle`** – En reglas de una sola conversación la sintaxis preferida es `when` (si hace falta filtrar) y un `oracle` booleano, en vez del patrón `if/then`. Esto sigue el formato recomendado en los ejemplos oficiales (`rules-examples.md`).
+- **Expresión booleana real** – Eliminé el `then` que devolvía una cadena; las condiciones deben evaluar a True/False.
+- **Chequeo numérico robusto** – `extract_float` permite validar “50”, “$50” o similares sin depender del formato exacto del texto. Si en el futuro también quieres asegurarte de que la moneda sea USD, se puede extender con `currency(tune_up_price) == 'USD'`.
+
+Así, el rule ahora evalúa correctamente si el tune-up price es 50 dólares y se alinea con la sintaxis de Sensei-check. ¿Necesitas que también validemos la moneda u otro detalle?
+$$$

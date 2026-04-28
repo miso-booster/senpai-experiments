@@ -1,0 +1,90 @@
+¡Listo! Aquí tienes un perfil nuevo que fuerza al bot de la pizzería a devolver el tipo de pizza, la bebida, el ID del pedido y el precio final en dólares:
+
+```yaml
+test_name: "pizza_pedido_con_bebida_usd"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona hambrienta que desea pedir una pizza a domicilio.
+    Valoras la claridad con los precios y quieres asegurarte de recibir un comprobante del pedido.
+  context:
+    - "Compartirás la pizza con un amigo que prefiere opciones contundentes."
+    - "Quieres recibir el pedido en menos de 40 minutos si es posible."
+  goals:
+    - "Saluda y pregunta por promociones o recomendaciones vigentes."
+    - "Pide una pizza {{pizza_style}} de tamaño {{size}} con {{extra_topping}}."
+    - "Solicita una bebida {{drink}} para acompañar."
+    - "Confirma el precio final en dólares estadounidenses y solicita el ID del pedido."
+    - pizza_style:
+        function: forward()
+        type: string
+        data:
+          - margherita
+          - pepperoni
+          - cuatro quesos
+    - size:
+        function: pairwise()
+        type: string
+        data:
+          - personal
+          - mediana
+          - familiar
+    - extra_topping:
+        function: random()
+        type: string
+        data:
+          - extra queso
+          - champiñones
+          - aceitunas verdes
+          - jalapeños
+    - drink:
+        function: forward(pizza_style)
+        type: string
+        data:
+          - refresco de cola
+          - limonada
+          - té helado
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu pedido. ¿Podrías repetirlo?"
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmado en el pedido"
+    - beverage:
+        type: string
+        description: "Bebida seleccionada para el pedido"
+    - order_id:
+        type: string
+        description: "Identificador único del pedido"
+    - final_price_usd:
+        type: currency
+        description: "Precio final total del pedido expresado en dólares estadounidenses"
+
+conversation:
+  number: 6
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+```
+
+### Puntos clave
+- Revisé los perfiles existentes para asegurarme de no duplicar nombres ni enfoques.
+- El `chatbot.output` incluye exactamente los campos que solicitaste, con el precio expresamente en dólares.
+- Las metas del usuario guían la conversación para pedir pizza, bebida y exigir precio final + ID.
+
+### Referencias
+- Estructura y mejores prácticas extraídas de `sensei-chat-guide.md`.
+
+Si quieres ajustar valores (p. ej. más tamaños de pizza o estilos de interacción), dime y lo adaptamos 😊.

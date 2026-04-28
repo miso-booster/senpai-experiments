@@ -1,0 +1,21 @@
+Hey! I noticed the existing profile `pizza_and_drink_order_placement.yaml` already exposes an `order_id` slot in `chatbot.output`. I’ll base the rule on that profile—if you were thinking of a different one, just let me know and we can tweak the reference.
+
+Here’s a single-conversation Sensei-check rule that makes sure the chatbot actually returns a usable order ID whenever it produces an order summary:
+
+```yaml
+name: order_id_present
+description: Ensures the pizza-and-drink order profile produces an order ID whenever it summarizes the order.
+active: true
+conversations: 1
+when: order_summary is not None
+oracle: order_id is not None and order_id.strip() != '' and order_id.strip().lower() not in ['n/a', 'none']
+on-error: f"Expected a valid order_id but got {order_id!r}"
+```
+
+**Why it works**
+
+- The `when` guard makes sure we only evaluate conversations where the bot already produced an `order_summary` field, mirroring the idea that an order recap should include the ID (per the profile contract described in `sensei-chat-guide.md`).
+- The `oracle` expression rejects missing, blank, or placeholder values, matching the “order_id must be provided” requirement while staying inside the allowed Python-style expressions (`sensei-check-doc.md`).
+- The optional `on-error` message helps you see the offending value when the rule fails.
+
+If you’d like the rule to apply conditionally (e.g., only for certain pizza types) or report additional context, we can extend the `when` filter or the error message. Just say the word 😊

@@ -1,0 +1,23 @@
+conversation ID: one_node_architecture__p39__pizza_shop__rule__6144c93f
+$$$
+Hey there! I didn’t see a `drink` field in your current `chatbot.output` schemas, so before using the rule below you’ll want to add something like:
+
+```yaml
+- drink:
+    type: int   # or string/bool, as long as it tells you whether a drink was added
+    description: "Number of drinks added to the order"
+```
+
+Once the profile exposes `drink` (and a price field such as `price` or `total_cost`), you can drop this rule into `rules/` to enforce the $2 surcharge whenever a drink is added:
+
+```yaml
+name: drink_adds_two_dollars
+description: Adding a drink increases the price by exactly $2 when the pizza configuration is unchanged
+conversations: 2
+when: conv[0].pizza_type == conv[1].pizza_type and conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings
+if: conv[0].drink == 0 and conv[1].drink == 1
+then: abs(extract_float(conv[1].price) - extract_float(conv[0].price) - 2) <= 0.01
+```
+
+Feel free to tweak the comparison (e.g., different tolerance or additional invariants) to match how your bot reports prices. Let me know if you want help wiring the output field!
+$$$

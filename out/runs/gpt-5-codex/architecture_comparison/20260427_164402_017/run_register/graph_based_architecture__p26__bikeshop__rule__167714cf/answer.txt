@@ -1,0 +1,18 @@
+Hey there! 😊 I took a close look at your rule, and there were a couple of issues keeping it from working as intended:
+
+### What needed fixing
+1. **`conversations: 2`** – Since your check only involves one conversation, we can make this a single-conversation rule. No need for `conv[0]` references unless you're comparing multiple conversations.
+2. **`when` clause** – The original condition used `conv[0]`, which only makes sense if we’re dealing with multiple conversations. I replaced it with a simple check that ensures `tune_up_price` isn’t missing.
+3. **`then` clause** – This has to be a boolean expression in Sensei-check. The string `"The tune-up price is $50."` doesn’t evaluate to true/false, so I updated it to a proper equality check using `extract_float`, which plays nicely whether the price is stored as `50` or `$50`.
+
+### Updated rule
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+when: tune_up_price is not None
+oracle: extract_float(tune_up_price) == 50
+```
+
+Let me know if you’d like to also enforce the currency (e.g., make sure it’s in USD)—happy to help tweak it further! 🙌

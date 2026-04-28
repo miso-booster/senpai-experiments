@@ -1,0 +1,94 @@
+conversation ID: graph_based_architecture__p12__alcampo__profile__d0034989
+$$$
+¡Claro! Aquí tienes un perfil listo para Sensei que simula a una persona pidiéndole al bot recomendaciones concretas para llenar su carrito de la compra. Está pensado para que el chatbot sugiera artículos, indique disponibilidad y detallar precios o pasos para añadirlos al carrito. Ajusta cualquier detalle para adaptarlo a tu proyecto 😊.
+
+```yaml
+test_name: Shopping Cart Item Collection
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are planning an online grocery order and want the chatbot to help you fill
+    your shopping cart with the right items and quantities.
+  context:
+    - You prefer quick answers that include availability and any current deals.
+    - You care about keeping your pantry stocked without overspending.
+    - You're willing to swap items if the chatbot recommends better matches or bundles.
+  goals:
+    - "Ask the chatbot to recommend two items from the {{item_category}} section to add to the cart."
+    - "Request details about pricing and availability for {{primary_item}}."
+    - "Confirm how many units of {{primary_item}} should be added if I need to serve {{serving_size}} people."
+    - "Ask if there are complementary items that pair well with {{primary_item}} for the meal plan."
+    - "Request the steps to finalize adding the suggested items to the shopping cart."
+    - item_category:
+        function: forward()
+        type: string
+        data:
+          - fresh produce
+          - pantry essentials
+          - household goods
+          - beverages
+          - personal care
+    - primary_item:
+        function: forward(item_category)
+        type: string
+        data:
+          - organic bananas
+          - wholegrain bread
+          - eco-friendly detergent
+          - sparkling water pack
+          - hypoallergenic shampoo
+    - serving_size:
+        function: random()
+        type: int
+        data:
+          min: 2
+          max: 6
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu mensaje. ¿Puedes contarme de nuevo qué artículos quieres añadir a tu carrito? 😊"
+  output:
+    - recommended_items:
+        type: list[string]
+        description: "List of items suggested for the shopping cart"
+    - primary_item_price:
+        type: money
+        description: "Price information for the primary item"
+    - primary_item_availability:
+        type: string
+        description: "Availability status for the primary item"
+    - recommended_quantity:
+        type: int
+        description: "Quantity of the primary item advised for the specified serving size"
+    - complementary_items:
+        type: list[string]
+        description: "Additional items that pair well with the primary item"
+    - add_to_cart_steps:
+        type: string
+        description: "Instructions to complete adding items to the cart"
+    - promotion_details:
+        type: string
+        description: "Any promotions or bundle offers mentioned for the suggested items"
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 8
+    max_cost: 0.6
+  interaction_style:
+    - random:
+        - single questions
+        - long phrases
+        - make spelling mistakes
+```
+
+Si necesitas otro tono de usuario, más objetivos o campos extra en `chatbot.output`, dime y lo ajustamos juntos. ¡A seguir testeando con flow! 🛒✨
+$$$

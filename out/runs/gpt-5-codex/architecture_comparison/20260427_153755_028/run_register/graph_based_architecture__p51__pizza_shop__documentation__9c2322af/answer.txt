@@ -1,0 +1,49 @@
+Hey there! 😊 Happy to walk you through connectors.
+
+### What connectors are used for
+Sensei connectors are the “bridge” between Sensei’s user simulator and whatever chatbot API you want to test. Instead of writing custom code, you describe how to talk to your bot via a YAML file. Sensei then:
+
+1. Reads your connector config.
+2. Sends each simulated user message to the chatbot API using the details you provided.
+3. Pulls the bot’s reply from the response so the conversation can continue (and later be checked by Sensei rules).
+
+So connectors are all about defining **how to send** a message and **where to read the reply**.
+
+---
+
+### Key fields in a connector YAML
+
+Here’s the structure you’ll typically see:
+
+| Field | What it means | Required? |
+|-------|---------------|-----------|
+| **`name`** | A friendly label for your connector. Helps identify it when you have several. | No |
+| **`base_url`** | The root URL of your chatbot’s API. Every request is built off this. | **Yes** |
+| **`send_message`** | Section that describes how to send the user’s message. | **Yes** |
+| ├─ `path` | Endpoint (appended to `base_url`). | **Yes** |
+| ├─ `method` | HTTP method (`POST`, `GET`, etc.). Defaults to `POST` if omitted. | No |
+| ├─ `headers` | Optional headers (Authorization, Content-Type…). | No |
+| └─ `payload_template` | JSON payload you want to send. Use `{user_msg}` as the placeholder for the user’s utterance. | **Yes** |
+| **`response_path`** | Dot notation pointing to the bot’s reply inside the JSON response. (E.g., `data.message.text`) | **Yes** |
+
+---
+
+### Tiny example
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+- When Sensei sends “Hello!”, the payload will be `{ "message": "Hello!" }`.
+- It then looks up the bot’s answer at `json.message` in the JSON response.
+
+---
+
+Let me know if you’d like help crafting a connector for a specific API or tweaking an existing one!

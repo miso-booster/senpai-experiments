@@ -1,0 +1,21 @@
+Here’s a general Sensei-check rule that flags conversations where the assistant never mentions current promotions, offers, or discounts:
+
+```yaml
+name: assistant_mentions_current_promotions
+description: Ensures the assistant provides information about current promotions, offers, or discounts.
+active: true
+conversations: 1
+oracle: |
+  len(chatbot_returns('current promotion')) > 0
+  or len(chatbot_returns('current promotions')) > 0
+  or len(chatbot_returns('promotion')) > 0
+  or len(chatbot_returns('special offer')) > 0
+  or len(chatbot_returns('discount')) > 0
+yields: "The assistant did not mention any current promotions, offers, or discounts."
+```
+
+**Why this works (and docs consulted)**  
+- I leaned on the Sensei-check helper catalog in `sensei-check-doc.md` to use the profile-agnostic `chatbot_returns` function for keyword/topic detection.  
+- The structure (single-conversation oracle with a descriptive `yields` message) follows the patterns shown in `rules-examples.md`.  
+
+Because it relies only on generic helpers, the rule is profile-agnostic and can be applied to any conversation set where you expect the assistant to surface promotional info. Let me know if you’d like to fine-tune the keywords or add additional messaging logic!

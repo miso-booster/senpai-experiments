@@ -1,0 +1,84 @@
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__4c2e86f1
+$$$
+Here’s a fresh profile that matches your brief—a rude, hurry-up customer with four goals and exactly four variables, two of which use `pairwise()` so the conversation count can leverage the pairwise matrix. Drop it under `profiles/rude_rush_order.yml` (or any name you prefer):
+
+```yaml
+test_name: rude_rush_order
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    An impatient, rude customer who bullies the staff into rushing every step of the order.
+  context:
+    - personality: personalities/rude-user
+    - "You are starving, in a hurry, and expect immediate confirmations."
+    - "You threaten to walk out if the chatbot hesitates or sounds unsure."
+  goals:
+    - "I'm ordering a {{pizza_style}} pizza, and you're making it now."
+    - "Make it {{pizza_size}}—I don't have time for questions."
+    - "Tell me it's ready in {{pickup_window}} minutes or less."
+    - "Any rush fee better stay under {{rush_fee_cap}}—final warning."
+    - pizza_style:
+        function: pairwise()
+        type: string
+        data: [Pepperoni, Four cheese, BBQ Chicken, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - pickup_window:
+        function: forward()
+        type: int
+        data:
+          min: 10
+          max: 30
+          step: 5
+    - rush_fee_cap:
+        function: another()
+        type: string
+        data:
+          - "$5"
+          - "$7"
+          - "$10"
+          - "ten bucks"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - confirmed_pizza_style:
+        type: string
+        description: "The pizza style the chatbot confirms for the rude customer."
+    - confirmed_pizza_size:
+        type: string
+        description: "The pizza size the chatbot acknowledges."
+    - pickup_eta:
+        type: time
+        description: "The timeframe the bot gives for how soon the order will be ready."
+    - rush_fee_details:
+        type: string
+        description: "Whether a rush fee applies and how it’s handled."
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 4
+  interaction_style:
+    - all questions
+  max_cost: 0.8
+```
+
+Highlights:
+- **Two pairwise variables** (`pizza_style`, `pizza_size`) let `conversation.number: combinations(pairwise)` build the pairwise coverage you requested.
+- The persona leans heavily into being rude + rushed, keeping the tone consistent throughout the run.
+- Outputs capture the essentials you’ll likely validate later with Sensei-check (size, style, ETA, rush fee response).
+
+Let me know if you’d like additional fields, different interaction styles, or a matching rule set! 😊
+$$$

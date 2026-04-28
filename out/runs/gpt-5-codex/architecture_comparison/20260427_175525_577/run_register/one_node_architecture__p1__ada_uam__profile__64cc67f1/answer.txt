@@ -1,0 +1,82 @@
+Aquí tienes un perfil listo para simular a esa persona frustrada con la configuración de eduroam. ¡Ojalá te sirva un montón! 😊
+
+```yaml
+test_name: "Usuario con problemas para configurar eduroam"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres un estudiante que necesita conectarse urgentemente a la red eduroam, pero los intentos de configuración han fallado y buscas ayuda detallada."
+  context:
+    - personality: personalities/impatient-user
+    - "Dependes de eduroam para acceder a clases en línea y recursos académicos, pero cada intento de configuración produce errores."
+    - "Has probado varios métodos según la documentación oficial, sin éxito."
+    - "Necesitas instrucciones claras, enlaces actualizados y un plan de diagnóstico para resolverlo cuanto antes."
+  goals:
+    - "Explicar que estoy intentando configurar eduroam en mi {{dispositivo}} usando {{metodo_configuracion}}, pero sigue fallando y necesito asistencia."
+    - "Solicitar instrucciones paso a paso específicas para {{dispositivo}}."
+    - "Pedir enlaces de descarga o instaladores relacionados con {{metodo_configuracion}}."
+    - "Preguntar qué comprobaciones debo realizar sobre certificados, credenciales y ajustes avanzados."
+    - "Solicitar un resumen de acciones de diagnóstico para entender por qué no funciona."
+    - "Pedir información de contacto del soporte técnico universitario en caso de que siga fallando."
+    - dispositivo:
+        function: pairwise()
+        type: string
+        data:
+          - Windows 11
+          - macOS Sonoma
+          - Android 14
+          - iOS 17
+          - Ubuntu 22.04
+    - metodo_configuracion:
+        function: pairwise()
+        type: string
+        data:
+          - instalador automático eduroam CAT
+          - perfil .mobileconfig proporcionado por la universidad
+          - configuración manual con certificado raíz
+          - asistente nativo de redes del sistema
+          - aplicación móvil UAM App para eduroam
+
+chatbot:
+  is_starter: false
+  fallback: "¿Podrías explicármelo de otra forma? Si prefieres, consulta nuestro catálogo de servicios. Respondo a preguntas sobre el acceso a redes universitarias y soporte del CAU."
+  output:
+    - eduroam_setup_steps:
+        type: string
+        description: "Pasos detallados para configurar eduroam"
+    - method_specific_notes:
+        type: string
+        description: "Recomendaciones o advertencias según el método de configuración"
+    - download_links:
+        type: string
+        description: "Enlaces a instaladores o perfiles necesarios"
+    - credential_requirements:
+        type: string
+        description: "Requisitos de usuario y contraseña para eduroam"
+    - certificate_guidance:
+        type: string
+        description: "Instrucciones sobre certificados o autoridad emisora"
+    - troubleshooting_actions:
+        type: string
+        description: "Acciones de diagnóstico sugeridas para resolver el fallo"
+    - support_contact:
+        type: string
+        description: "Información de contacto del soporte técnico universitario"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+  interaction_style:
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - long phrases
+```

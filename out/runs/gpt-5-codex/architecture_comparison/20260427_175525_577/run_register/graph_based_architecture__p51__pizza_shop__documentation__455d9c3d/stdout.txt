@@ -1,0 +1,42 @@
+conversation ID: graph_based_architecture__p51__pizza_shop__documentation__455d9c3d
+$$$
+Hey there! 💫 Happy to walk you through Sensei Connectors.
+
+### What Connectors Are For
+Connectors are the bridge between Sensei and your chatbot’s API. Instead of writing custom code, you can describe how to talk to your bot in a YAML file. During a test run, Sensei reads that file to know:
+- where to send user messages,
+- how to format the request (headers, payload),
+- and how to grab the bot’s reply from the API response.
+
+Think of them as your “API wiring” instructions—super handy for plugging in different bots quickly.
+
+### Core Fields in a Connector YAML
+Here’s what you’ll typically define:
+
+| Field | Why it matters |
+|-------|----------------|
+| **`name`** | Friendly label so you remember which bot you’re hitting. |
+| **`base_url`** | The root URL for the chatbot’s API (everything else hangs off this). |
+| **`send_message.path`** | Endpoint appended to `base_url` for each user message, e.g., `/chat`. |
+| **`send_message.method`** | HTTP verb (commonly `POST`, but `GET`, `PUT`, etc. work too; default is `POST`). |
+| **`send_message.headers`** | Any extra headers—think `Content-Type`, `Authorization`, user-agent… whatever the API needs. |
+| **`send_message.payload_template`** | JSON payload template. Use `{user_msg}` wherever you want the user’s utterance to go. You can also add fixed fields like session IDs or language codes. |
+| **`response_path`** | Dot notation to pull the bot’s reply from the JSON response. For example, `data.message.text` means “Response → `data` → `message` → `text`”.
+
+Here’s a mini example for context:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"     # this slot gets replaced each turn
+response_path: "json.message" # where the bot’s reply lives in the JSON
+```
+
+Once this file is ready, you just point Sensei to it, and voilà—your tests can talk to the bot hands-free.
+
+If you’ve got a specific connector in mind or want help crafting one, just let me know! 😊
+$$$

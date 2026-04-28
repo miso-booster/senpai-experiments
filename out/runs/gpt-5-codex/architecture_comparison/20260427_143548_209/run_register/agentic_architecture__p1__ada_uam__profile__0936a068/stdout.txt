@@ -1,0 +1,135 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__0936a068
+$$$
+Here’s a new Sensei profile focused on a user struggling to get eduroam working, with the different setup methods captured as variables:
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student trying to connect your device to the eduroam Wi-Fi
+    network but every attempt so far has failed. You are motivated, polite, and a bit
+    anxious because you need network access for coursework.
+  context:
+    - "You are on campus and cannot rely on mobile data for large downloads."
+    - "Classes start soon and many assignments require remote access."
+    - "You are moderately tech-savvy but not a networking expert."
+  goals:
+    - "Explain that you tried to connect to eduroam using {{primary_method}} on your {{device_profile}}, but you keep seeing {{error_symptom}}."
+    - "Ask the assistant to walk you through alternative steps, maybe using {{fallback_method}}, and confirm what you might be missing."
+    - "Mention that your credentials come from {{credentials_source}} and that you need Wi-Fi before {{urgency_deadline}} for coursework."
+    - "Let them know you already consulted {{support_channel}} and still cannot get online, so you are looking for exact troubleshooting guidance."
+    - "Share that {{environment_constraint}} so you cannot easily switch to another network while testing."
+    - primary_method:
+        function: pairwise()
+        type: string
+        data:
+          - the eduroam CAT installer for your institution
+          - the university quick-setup portal
+          - manual Wi-Fi configuration in network settings
+          - configuring wpa_supplicant via the terminal
+          - the mobile device management profile pushed by IT
+    - device_profile:
+        function: pairwise()
+        type: string
+        data:
+          - a Windows 11 laptop
+          - a macOS Sonoma MacBook
+          - an Ubuntu 22.04 laptop
+          - an Android 13 phone
+          - an iOS 17 iPhone
+    - error_symptom:
+        function: random()
+        type: string
+        data:
+          - a certificate validation failed message
+          - repeated prompts for username and password
+          - a network authentication timeout
+          - an unable to verify server identity warning
+          - the connection instantly disconnecting after association
+    - fallback_method:
+        function: another()
+        type: string
+        data:
+          - removing the old profile and downloading a fresh CAT package
+          - manually importing the root certificate before retrying
+          - using a wired connection first to pull updates
+          - resetting network settings and recreating the profile
+          - asking IT to provision a temporary local account
+    - credentials_source:
+        function: random()
+        type: string
+        data:
+          - the university single sign-on portal
+          - the campus identity management console
+          - credentials issued during orientation week
+          - a recent password reset done via the help desk
+          - the institution's eduroam onboarding email
+    - urgency_deadline:
+        function: random()
+        type: string
+        data:
+          - tonight's lab submission deadline
+          - tomorrow morning's remote lecture
+          - an upcoming proctored online quiz
+          - a live coding interview later today
+          - an evening research meeting over video call
+    - support_channel:
+        function: random()
+        type: string
+        data:
+          - the campus IT help desk walk-in counter
+          - the university networking Slack channel
+          - an emailed support ticket to network services
+          - the residence hall tech support assistant
+          - the student union's peer tech mentors
+    - environment_constraint:
+        function: random()
+        type: string
+        data:
+          - the dormitory Ethernet ports are disabled during renovations
+          - mobile data is capped and unreliable inside the library
+          - lab policies prohibit using personal hotspots
+          - your shared workspace has poor cellular reception
+          - security rules block tethering from your phone
+
+chatbot:
+  is_starter: false
+  fallback: "I'm not sure about that. Could you share more details of the issue?"
+  output:
+    - resolution_status:
+        type: string
+        description: "Whether the chatbot resolved or escalated the eduroam setup issue."
+    - recommended_steps:
+        type: list[string]
+        description: "Ordered troubleshooting actions suggested to achieve a working eduroam connection."
+    - support_reference:
+        type: string
+        description: "Ticket number, URL, or contact provided for additional assistance."
+    - root_cause_hypothesis:
+        type: string
+        description: "Chatbot's best guess about why the connection attempts are failing."
+
+conversation:
+  number: combinations(0.7, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+    - change your mind
+```
+
+This profile gives the simulator plenty of variety in the specific setup approaches (CAT installer, manual config, wpa_supplicant, etc.), as you requested, and keeps the conversation centered on troubleshooting eduroam. I leaned on the structure and best practices from `sensei-chat-guide.md`—especially around `user.goals`, variable declarations, and `chatbot.output`—to make sure everything lines up for future rules or analytics.
+
+Let me know if you’d like tweaks (e.g., additional devices, different interaction styles, or custom output types)!
+$$$

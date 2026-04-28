@@ -1,0 +1,20 @@
+conversation ID: graph_based_architecture__p39__pizza_shop__rule__d55a97f1
+$$$
+Sure thing! Here’s a metamorphic Sensei-check rule named **“drink”** that enforces the idea that adding a drink bumps the total price by \$2 while keeping the rest of the order identical:
+
+```yaml
+name: drink
+description: Adding a drink increases the total price by roughly $2 for the same pizza configuration
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].number == conv[1].number and sorted(conv[0].toppings) == sorted(conv[1].toppings)
+if: (conv[0].drink in [None, '', 'none', 'no drink']) != (conv[1].drink in [None, '', 'none', 'no drink'])
+then: 1.99 <= abs(extract_float(conv[0].price) - extract_float(conv[1].price)) <= 2.01
+```
+
+### A couple of notes to keep things smooth:
+- I’m treating `drink` as present whenever it’s **not** one of `[None, '', 'none', 'no drink']`. If your profile uses a different sentinel for “no drink,” tweak those values so the rule picks it up correctly.
+- The price comparison allows a tiny tolerance (±\$0.01) to avoid false alarms from rounding quirks.
+
+Let me know if you’d like to tie this to a specific profile description or adapt it for different drink price deltas. Happy to help! 😊
+$$$

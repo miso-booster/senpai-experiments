@@ -1,0 +1,78 @@
+Here’s a fresh profile you can drop into your project to exercise those appointment-date and time variations for wheel changes. Hope it helps! 🚲✨
+
+```yaml
+test_name: wheel_change_appointment_scheduler
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who wants to schedule a wheel change at the bike shop.
+    You are polite but persistent about getting a clear confirmation of the date,
+    time, and service booked.
+  context:
+    - You rely on your bike for daily commuting and need the wheels swapped soon.
+    - You prefer clear confirmations before ending the chat.
+    - You are flexible but want to verify the appointment slot offered.
+  goals:
+    - "Hi there! I'd like to book a wheel change for my bike on {{appointment_date}} at {{appointment_time}}."
+    - "Please make sure the service is noted as {{service_type}}."
+    - "Before we finish, can you confirm the appointment details you have on file?"
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - "June 12th"
+          - "June 14th"
+          - "June 17th"
+          - "June 20th"
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - "9:00 AM"
+          - "11:30 AM"
+          - "2:00 PM"
+          - "4:30 PM"
+    - service_type:
+        function: forward()
+        type: string
+        data:
+          - "wheel change"
+          - "wheel replacement service"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - appointment_confirmation:
+        type: string
+        description: Full confirmation message covering the scheduled wheel change, including date and time.
+    - confirmed_date:
+        type: string
+        description: The date the chatbot confirms for the appointment.
+    - confirmed_time:
+        type: string
+        description: The time the chatbot confirms for the appointment.
+    - service_confirmation:
+        type: string
+        description: The chatbot's acknowledgement that the wheel change service is booked.
+    - reschedule_guidance:
+        type: string
+        description: Any alternative offered when the requested slot is unavailable or needs adjustment.
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 10
+  interaction_style:
+    - default
+  max_cost: 0.4
+```

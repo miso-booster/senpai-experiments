@@ -1,0 +1,18 @@
+Sure thing! I checked the `pizza_and_drink_order_placement.yaml` profile, which already extracts an `order_id` in `chatbot.output` alongside fields like `order_summary` and `total_cost`. Based on the rule guidance in **sensei-check-doc.md** and the profile schema details from **sensei-chat-guide.md**, here’s a single-conversation rule that passes whenever the chatbot actually returns a non-empty order ID:
+
+```yaml
+name: order_id_provided
+description: Verify that the pizza order placement profile returns a non-empty order ID once the order is summarised.
+conversations: 1
+when: order_summary is not None
+oracle: order_id is not None and order_id.strip() != ''
+on-error: f"Missing order ID for conversation with summary: {order_summary}"
+```
+
+How it works:
+- `conversations: 1` keeps this as a simple per-dialog check.
+- The `when` filter ensures we only evaluate runs where the bot produced an order summary (i.e., the order flow completed).
+- The `oracle` asserts that `order_id` exists and isn’t blank.
+- `on-error` gives you a helpful message if it ever fails.
+
+If you’re targeting a different profile or need extra conditions (e.g., matching a specific format), just let me know and we can tweak it 😊.

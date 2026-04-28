@@ -1,0 +1,54 @@
+conversation ID: agentic_architecture__p51__pizza_shop__documentation__f77330b7
+$$$
+¡Hola! 😊 Aquí tienes una explicación sobre los conectores, basada en `custom-connector-guide.md` y `connector-examples.md`.
+
+---
+
+### ¿Para qué sirven los conectores?
+
+Los **conectores** son la capa de transporte entre Chatbot Dojo y tu chatbot real. Te permiten describir en YAML cómo llamar a la API de tu bot sin escribir código adicional. Una vez configurado el conector, la plataforma puede enviar mensajes al chatbot (vía HTTP) y extraer su respuesta para las simulaciones y pruebas.
+
+---
+
+### Campos principales de un conector
+
+En el YAML de un conector encontrarás estas secciones clave:
+
+| Campo | ¿Para qué sirve? | ¿Obligatorio? |
+|-------|------------------|---------------|
+| `name` | Nombre amigable para reconocer tu chatbot. | Opcional |
+| `base_url` | URL base de la API del chatbot. | Sí |
+| `send_message.path` | Endpoint específico al que se envía cada mensaje (se concatena al `base_url`). | Sí |
+| `send_message.method` | Verbo HTTP (POST, GET, etc.). Si no lo pones, se asume `POST`. | Opcional |
+| `send_message.headers` | Encabezados HTTP adicionales (por ejemplo, autorización). | Opcional |
+| `send_message.payload_template` | Plantilla JSON del cuerpo de la petición. Debe incluir `{user_msg}`, que se reemplaza por el mensaje real del usuario. | Sí |
+| `response_path` | Ruta en notación de puntos para extraer el texto de la respuesta dentro del JSON devuelto por la API. | Sí |
+
+En el ejemplo más sencillo:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+- Se envía el mensaje del usuario dentro de `payload_template`.
+- Después, se usa `response_path` para llegar hasta la parte del JSON (`json.message`) donde está la respuesta que interesa.
+
+---
+
+### Extras útiles
+
+- **Autenticación**: si tu API necesita tokens o claves, agrégalas en `send_message.headers`.
+- **Respuestas anidadas**: Ajusta `response_path` para navegar estructuras complejas como `data.messages.0.content`.
+- **Pruebas rápidas**: puedes probar el conector ejecutándolo con la clase `CustomChatbot` y pasando la ruta del YAML.
+
+---
+
+Si quieres que te ayude a crear o revisar un conector específico, dime qué API tienes y lo armamos juntos.
+$$$

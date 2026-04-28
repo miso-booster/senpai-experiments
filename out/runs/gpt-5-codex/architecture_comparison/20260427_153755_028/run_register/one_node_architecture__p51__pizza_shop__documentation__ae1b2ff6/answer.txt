@@ -1,0 +1,28 @@
+Hi there! 👋 Connectors in Sensei are the bridge between your Sensei profiles and the real chatbot you want to test. Instead of writing custom code, you just describe—using a YAML file—how Sensei should send messages to your bot’s API and where to read the bot’s replies. During a run, Sensei loads this YAML, sends the simulated user’s messages to the connector’s endpoint, and then uses the connector to fetch the chatbot’s response so the conversation can continue.
+
+Every connector YAML follows the same structure. Here are the key fields you’ll work with:
+
+| Field | Purpose | Required? |
+|-------|---------|-----------|
+| `name` | Friendly label for the connector (appears in logs/UI). | Optional |
+| `base_url` | The root URL of your chatbot API. | ✅ Yes |
+| `send_message.path` | Endpoint path appended to the base URL for each message. | ✅ Yes |
+| `send_message.method` | HTTP verb (`POST`, `GET`, etc.). Defaults to `POST` if omitted. | Optional |
+| `send_message.headers` | Any headers your API needs (auth tokens, content type, etc.). | Optional |
+| `send_message.payload_template` | JSON body sent with each request. Use `{user_msg}` as the placeholder for the simulator’s message. | ✅ Yes |
+| `response_path` | Dot-separated path pointing to the bot’s reply inside the JSON response. | ✅ Yes |
+
+A minimal connector can be just:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+And you can extend it with headers, authentication, nested payloads—whatever your API requires. Once that YAML is ready, you point your project’s run configuration to it and Sensei handles the rest. Easy peasy! 😊

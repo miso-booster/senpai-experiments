@@ -1,0 +1,90 @@
+conversation ID: graph_based_architecture__p34__pizza_shop__profile__9b0a4580
+$$$
+Hey there! This profile should do exactly what you asked for: it starts with a custom pizza request, then the user changes their mind mid-conversation and settles on a predefined pizza instead. Drop it into `profiles/` (for example, `profiles/custom_to_predefined_switch.yaml`) and you’ll be good to go.
+
+```yaml
+test_name: custom_to_predefined_switch
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You’re an indecisive pizza lover who starts by crafting a custom pie but
+    quickly rethinks the plan and switches to a predefined option.
+  context:
+    - You're ordering dinner for a small team celebration after work.
+    - You care about the toppings but also want a quick, hassle-free pickup.
+    - You tend to second-guess your choices, especially when you're hungry.
+  goals:
+    - "Hi! I'd love to build a {{custom_size}} custom pizza with {{custom_toppings}}."
+    - "Can you confirm the price for that custom pizza?"
+    - "Actually, what predefined pizzas do you already have on the menu?"
+    - "Forget the custom order—I'll take the {{predefined_size}} {{predefined_pizza}} instead."
+    - "Could you confirm the final order total and pickup time for that predefined pizza?"
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - custom_toppings:
+        function: forward()
+        type: string
+        data:
+          - mushrooms and roasted peppers
+          - pepperoni with extra cheese
+          - spinach, feta, and olives
+    - predefined_size:
+        function: forward(custom_size)
+        type: string
+        data: [small, medium, large]
+    - predefined_pizza:
+        function: another()
+        type: string
+        data: [Margarita, Pepperoni, Vegetarian, BBQ Chicken]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - custom_order_details:
+        type: string
+        description: "How the chatbot acknowledges and summarizes the initial custom pizza request."
+    - custom_order_price:
+        type: currency
+        description: "Quoted price for the initial custom pizza."
+    - predefined_menu_overview:
+        type: string
+        description: "The list or explanation of predefined pizzas shared with the user."
+    - final_order_confirmation:
+        type: string
+        description: "Confirmation of the predefined pizza order chosen after the user changes their mind."
+    - final_order_total:
+        type: currency
+        description: "Total price for the finalized predefined pizza order."
+    - pickup_eta:
+        type: time("hh:mm")
+        description: "Estimated pickup time for the confirmed predefined order."
+
+conversation:
+  number: combinations
+  max_cost: 0.9
+  goal_style:
+    all_answered:
+      export: false
+      limit: 22
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+### Why it fits your scenario
+- **Built-in change of mind**: The goals + `interaction_style: change your mind` guarantee the user pivots from custom to predefined mid-conversation.
+- **Clear extraction points**: The `chatbot.output` fields capture both the initial custom attempt and the final predefined order, so any rules you write later can verify the bot handles the pivot gracefully.
+- **Conversation coverage**: Using `combinations` with `forward`/`another` keeps the run diverse without exploding into too many conversations.
+
+Let me know if you’d like different toppings, sizes, or additional checks (like drinks or delivery)! 😊
+$$$

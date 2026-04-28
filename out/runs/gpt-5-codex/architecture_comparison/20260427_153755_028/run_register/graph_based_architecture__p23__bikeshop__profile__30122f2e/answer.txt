@@ -1,0 +1,59 @@
+Hey there! Thanks for sharing the profile 😊. I spotted a few little hiccups that were probably stopping it from running smoothly:
+
+1. **`llm.temperature` must be a number** – it can’t be the word “low”.
+2. **`seat_price` and `care_bike` were missing their `type` definitions**, which Sensei needs when extracting outputs.
+3. I also slipped in a `goal_style` block so conversations know when they’re “done” after all questions are answered. (Optional, but super handy!)
+
+Here’s the polished version:
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.0
+  model: gpt-4o-mini
+
+user:
+  language: English
+  role: you have to act as a user talking to a virtual assistant of a bike shop
+  context:
+    - You are interested in asking the items below.
+    - Just stick to asking opening times, prices of tire, price of tune-up, price of seat, and actions to the care of bike. Do not ask anything else.
+  goals:
+    - "opening and closing time of the bike shop"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: the opening and closing time of the shop
+    - tire:
+        type: money
+        description: the price of a new tire
+    - tune_up:
+        type: money
+        description: the price of a tune-up
+    - seat_price:
+        type: string
+        description: the price of a new seat
+    - care_bike:
+        type: string
+        description: actions to take care of the bike
+
+conversation:
+  number: 5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 9
+  interaction_style:
+    - default
+```
+
+You’re all set now! Give it another run and let me know if anything else feels off. Happy testing! 🚴‍♀️💬

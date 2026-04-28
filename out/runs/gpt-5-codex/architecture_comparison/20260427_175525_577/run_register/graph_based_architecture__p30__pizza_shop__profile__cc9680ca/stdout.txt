@@ -1,0 +1,71 @@
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__cc9680ca
+$$$
+Hey there! Got the perfect grumpy speedster profile ready for you 😎. Here’s a Sensei profile where the simulated user is downright rude, laser-focused on speed, and uses four goals with four variables—two of them set to `pairwise()` so the conversation count can be driven by the pairwise matrix.
+
+```yaml
+test_name: fast_rude_pickup_order
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: An impatient, rude customer who wants their pizza order handled immediately.
+  context:
+    - personality: personalities/rude-user
+    - You’re in a rush and expect the chatbot to deliver answers without fluff.
+    - You hate waiting and you threaten to leave if things take too long.
+  goals:
+    - "I need a {{pizza_type}} pizza sorted out now—don’t make me repeat myself."
+    - "Confirm you’ve got {{pizza_size}} ready without wasting my time."
+    - "Add {{side_option}} and make it quick."
+    - "Give me the total in {{currency}} immediately and don’t stall."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Pepperoni, Four cheese, BBQ Chicken, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - side_option:
+        function: forward()
+        type: string
+        data: [garlic knots, cheesy bread, buffalo wings, house salad]
+    - currency:
+        function: random()
+        type: string
+        data: [USD, EUR, GBP]
+
+chatbot:
+  is_starter: false
+  fallback: "I’m sorry, I didn’t catch that. I can help you order pizzas fast—try again."
+  output:
+    - order_acknowledgement:
+        type: string
+        description: "The chatbot’s confirmation that it understood and is processing the rude user’s request."
+    - ready_time_estimate:
+        type: time
+        description: "The estimated time until the order will be ready for pickup."
+    - included_side:
+        type: string
+        description: "The side dish the chatbot confirms is added to the order."
+    - total_amount:
+        type: currency
+        description: "The final amount the chatbot quotes for the rushed order."
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 4
+    max_cost: 0.8
+  interaction_style:
+    - all questions
+```
+
+Feel free to drop this into `profiles/fast_rude_pickup_order.yml` (or any name you like) inside your project. Let me know if you’d like matching Sensei rules or tweaks for different connectors!
+$$$

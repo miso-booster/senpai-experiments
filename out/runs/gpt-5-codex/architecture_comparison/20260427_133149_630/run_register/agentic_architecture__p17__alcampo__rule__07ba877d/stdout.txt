@@ -1,0 +1,30 @@
+conversation ID: agentic_architecture__p17__alcampo__rule__07ba877d
+$$$
+¡Hola! Vamos a ver qué pasaba con tu regla 😊
+
+### Por qué no funcionaba
+1. **`conversations` quedó vacío.**  
+   Según `sensei-check-doc.md`, este campo tiene que indicar explícitamente cuántas conversaciones evalúa la regla (`1`, `2`, `all`, …). Dejarlo en blanco hace que la regla no sea válida y se ignore.
+
+2. **La condición del `oracle` no filtraba valores nulos.**  
+   Con `membership_benefits != ''`, si el slot llega como `None` (porque el bot no devolvió nada), la comparación `None != ''` resulta `True` y la regla pasa aunque la información falte.
+
+### Ajuste propuesto
+El perfil relevante es `profiles/general_shopper_and_member_support.yaml`, que expone el campo `membership_benefits`. Necesitamos una regla de una sola conversación que verifique que el slot venga con texto real (ni `None` ni cadenas vacías/espacios).
+
+```yaml
+name: membership_benefits_information
+description: Validates that the chatbot returns Club de Socios membership benefits information.
+conversations: 1
+active: true
+oracle: membership_benefits is not None and membership_benefits.strip() != ''
+on-error: f"membership_benefits slot was empty or missing: {membership_benefits!r}"
+```
+
+### Qué cambia
+- **`conversations: 1`** → La regla pasa a ser un chequeo de conversación individual, tal como exige la guía (`sensei-check-doc.md`).
+- **Guardas adicionales en el `oracle`** → Aseguramos que el campo no sea `None` y que, tras eliminar espacios, quede texto.
+- **`on-error`** opcional pero útil → Te dice exactamente qué llegó en el slot cuando la validación falle.
+
+Con esto deberías detectar correctamente cuando el bot no proporciona los beneficios de membresía. Si necesitas validar otros slots del mismo perfil, podemos extender la lógica sin problema. ¡Avísame si quieres hacerlo!
+$$$

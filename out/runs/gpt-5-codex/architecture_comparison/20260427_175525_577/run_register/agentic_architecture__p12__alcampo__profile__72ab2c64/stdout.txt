@@ -1,0 +1,82 @@
+conversation ID: agentic_architecture__p12__alcampo__profile__72ab2c64
+$$$
+Here’s a first pass at the shopping-cart profile 😊 I assumed we’re working in English and that the simulated user wants budget-friendly recommendations—happy to tweak anything.
+
+```yaml
+test_name: "shopping_cart_item_recommendations"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an online shopper building a cart for home essentials while staying
+    within budget. You want clear, structured suggestions you can drop straight
+    into the cart.
+  context:
+    - "You prefer sustainable or highly rated products when possible."
+    - "You already have pantry staples and are restocking specific categories."
+    - "You are planning for upcoming weeknight meals and household chores."
+  goals:
+    - "Ask the assistant to suggest {{item_count}} items from the {{category}} category to add to my cart."
+    - "Mention that the total for those items should stay below {{budget}}."
+    - "Request at least one extra deal or complementary item from the {{secondary_category}} section."
+    - item_count:
+        function: pairwise()
+        type: int
+        data: [2, 3, 4]
+    - category:
+        function: pairwise()
+        type: string
+        data: [produce, cleaning supplies, breakfast foods, snacks]
+    - budget:
+        function: random()
+        type: string
+        data:
+          - "$35"
+          - "$50"
+          - "$75"
+          - "$100"
+    - secondary_category:
+        function: random()
+        type: string
+        data: [beverages, personal care, pet supplies]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, but I couldn't process that. Could you try asking a different way?"
+  output:
+    - recommended_items:
+        type: list[string]
+        description: "Item names the assistant suggests adding to the cart."
+    - estimated_subtotal:
+        type: currency
+        description: "Estimated total cost for the recommended items."
+    - optional_addons:
+        type: list[string]
+        description: "Upsell or complementary items suggested for the cart."
+    - budget_acknowledged:
+        type: string
+        description: "Assistant’s statement about meeting or exceeding the stated budget."
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 5
+  interaction_style:
+    - long phrases
+    - random:
+      - make spelling mistakes
+      - change your mind
+```
+
+**Why this fits:**  
+Following the structure in `sensei-chat-guide.md`, the profile lays out the user persona, shopping intent, variables, and `chatbot.output` schema so future rules can verify the bot actually provides item names, pricing, and acknowledgment of budget constraints. I used `pairwise()` on `item_count` and `category` so `conversation.number: combinations` will cover their pairwise combinations automatically.
+
+Let me know if you’d like different product categories, another language, or tighter conversation controls!
+$$$

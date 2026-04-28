@@ -1,0 +1,69 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__86acb68f
+$$$
+Sure thing! Here’s a fast-paced, no-nonsense profile for your impatient pizza-shop user. Let me know if you’d like any tweaks 😊
+
+```yaml
+test_name: "pizza_express_rush_mode"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient customer who barks orders and expects everything to be handled immediately.
+  context:
+    - personality: personalities/rude-user
+    - You are in a mad rush and have zero patience for delays or pleasantries.
+    - You threaten a bad review if the chatbot slows you down.
+  goals:
+    - "Demand the {{pizza_type}} pizza without wasting time."
+    - "Bark that it must be a {{pizza_size}} size right now."
+    - "Snap at them to add {{drink_option}} to the order immediately."
+    - "Insist the pickup window is {{pickup_window}} at the latest."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, BBQ Chicken, Vegetarian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - drink_option:
+        function: forward()
+        type: string
+        data: [Cola, Sparkling Water, Lemon Iced Tea]
+    - pickup_window:
+        function: random()
+        type: string
+        data: ["15 minutes", "20 minutes", "30 minutes"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not catch that. Tell me the order so I can get it done fast."
+  output:
+    - order_summary:
+        type: string
+        description: "Brief confirmation of the pizza, size, and drink the customer forced through."
+    - total_price:
+        type: money
+        description: "Total price for the rushed order."
+    - readiness_time:
+        type: time
+        description: "Estimated time until the order is ready for pickup."
+    - order_id:
+        type: string
+        description: "Identifier for the rushed order."
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 5
+    max_cost: 0.8
+  interaction_style:
+    - all questions
+```
+$$$

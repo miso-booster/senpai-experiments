@@ -1,0 +1,91 @@
+conversation ID: agentic_architecture__p12__alcampo__profile__1e761b74
+$$$
+All set! Here’s a shopping-cart-oriented profile you can drop under `profiles/` to simulate a user asking the assistant to propose and add items to their cart:
+
+```yaml
+test_name: "shopping_cart_item_collection"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an organized online shopper building a cart for an upcoming household restock.
+    Be polite but assertive when asking the assistant to add items to your cart.
+  context:
+    - "You prefer mid-range brands that are in stock for delivery within three days."
+    - "You want clear confirmation before approving the cart."
+  goals:
+    - "Ask the assistant to recommend and add {{item_count}} {{category}} items to your cart."
+    - "Request price and availability details for each suggestion."
+    - "Confirm the cart total stays within {{budget}} and ask about {{delivery_window}} shipping."
+    - category:
+        function: forward()
+        type: string
+        data:
+          - household cleaning supplies
+          - healthy snacks
+          - office essentials
+          - pet care products
+    - item_count:
+        function: forward(category)
+        type: int
+        data:
+          min: 2
+          max: 3
+          step: 1
+    - budget:
+        function: random()
+        type: string
+        data:
+          - "$50"
+          - "$75"
+          - "$120"
+    - delivery_window:
+        function: another()
+        type: string
+        data:
+          - "delivery within 2 days"
+          - "delivery by the weekend"
+          - "standard shipping"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch the items you need. Could you restate them?"
+  output:
+    - cart_items:
+        type: list[string]
+        description: "Item names or descriptions the assistant agreed to add to the cart."
+    - cart_quantities:
+        type: list[int]
+        description: "Quantities corresponding to each item in cart_items."
+    - total_estimated_cost:
+        type: string
+        description: "Total cost for the cart as quoted by the assistant, including currency."
+    - delivery_commitment:
+        type: string
+        description: "Promised shipping or delivery window for the cart."
+
+conversation:
+  number: 6
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+```
+
+**What it covers**
+
+- The simulated user rotates through different shopping categories, cart sizes, budgets, and delivery windows.
+- Goals push the assistant to recommend items, provide availability and pricing, and confirm the total before checkout.
+- `chatbot.output` captures cart contents, quantities, cost, and delivery promises—handy for future rules or reporting.
+
+This structure follows the guidance in `sensei-chat-guide.md` so it’s ready for Sensei runs. Feel free to tweak variables, interaction styles, or outputs if you need different coverage. Let me know if you’d like a companion rule or additional variants!
+$$$

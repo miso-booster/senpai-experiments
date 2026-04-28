@@ -1,0 +1,26 @@
+conversation ID: agentic_architecture__p16__alcampo__rule__1cf76cb5
+$$$
+Hey there! Here’s a draft rule that enforces positive availability for lactose-free requests. Since no profile exists yet, I picked descriptive field names and noted the assumptions below.
+
+```yaml
+name: lactose_free_availability_confirmed
+description: Ensures lactose-free product requests are confirmed as available or in stock.
+conversations: 1
+if: lactose_free_requested is True
+then: availability_status and availability_status.lower() in ['available', 'in_stock', 'preorder']
+on-error: f"Lactose-free product request for {product_name} returned availability_status={availability_status}"
+```
+
+### How it works
+- **Precondition (`if`)**: Only runs when the conversation output flags a lactose-free request via `lactose_free_requested`.
+- **Expectation (`then`)**: The chatbot must return an `availability_status` value that maps to an in-stock response (`available`, `in_stock`, or `preorder`). The first part of the expression also guards against missing/empty values.
+- **Error message**: Surfaces the `product_name` and reported status if the rule fails.
+
+### Assumptions for the future profile
+This rule assumes the eventual profile’s `chatbot.output` will expose:
+1. `lactose_free_requested` (boolean) – whether the user asked for a lactose-free option.
+2. `availability_status` (string) – summarized availability result from the bot.
+3. `product_name` (string) – helpful for debugging when the rule fails.
+
+Once you create that profile, make sure these slots exist (per the contract described in `sensei-chat-guide.md`), otherwise update the rule accordingly. The rule structure follows the single-conversation oracle pattern from `sensei-check-doc.md`, using `if`/`then` for clarity. Let me know if you’d like to tweak the accepted availability statuses or add more detailed checks! 😊
+$$$

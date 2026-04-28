@@ -1,0 +1,67 @@
+conversation ID: graph_based_architecture__p48__pizza_shop__documentation__58d7102d
+$$$
+Hey there! Great question 😊  
+Sensei profiles look pretty dense at first glance, but quite a few fields are optional. Here’s a quick tour of what you can leave out (or tailor) without breaking the profile.
+
+---
+
+### ✅ Entire sections you can omit
+| Section | Why it’s optional |
+|---------|-------------------|
+| `llm`   | The guide explicitly says *“Do I have to define llm? No. If omitted, defaults are applied.”* So unless you need a specific model, temp, or speech mode, you can skip it. |
+
+---
+
+### 🧠 User block (`user`)
+- **Must have:** `language`, `role`, and a `goals` list (Sensei needs those to generate the conversation).
+- **Optional nice-to-haves:** the `context` list (personality, backstory, extra constraints). Leave it out if you don’t need extra flavor.
+
+---
+
+### 🤖 Chatbot block (`chatbot`)
+- The block itself is essential (Sensei needs to know the fallback message and what to extract), but inside it:
+  - `chatbot.output` is strongly recommended because it defines the fields your rules will read. If you don’t need structured outputs yet, you can keep it minimal (or even start without entries and add them later).
+  - No need for additional subfields unless your bot requires them (e.g., `is_starter`, speech config).
+
+---
+
+### 🗣 Conversation block (`conversation`)
+- **Required pieces:** typically `number` (how many conversations to run) and a `goal_style` so Sensei knows when to stop.
+- **Optional controls:**  
+  - `interaction_style` (only add if you want quirky behaviors like “change language”).  
+  - `max_cost` at the conversation or goal level (handy, not mandatory).  
+  - `goal_style.max_cost`, `goal_style.export`, `limit`—they’re guardrails you can omit unless you need them.
+
+---
+
+### 🌟 Extras you can plug in (or not)
+- Personality snippets under `personalities/` are optional.
+- Custom types under `types/` are optional unless your variables/outputs need special parsing.
+- Any additional metadata fields beyond the doc’s template are totally up to you.
+
+---
+
+### TL;DR
+You need a minimal skeleton (`test_name`, `user`, `chatbot`, `conversation`). Beyond that, you add detail only when it helps your tests. A very barebones profile might look like:
+
+```yaml
+test_name: "minimal_example"
+
+user:
+  language: English
+  role: "Customer asking something simple."
+  goals:
+    - "Ask about today's specials."
+
+chatbot:
+  fallback: "Sorry, could you rephrase?"
+  output: []  # you can even start empty
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 3
+```
+
+From there, sprinkle in context, extra controls, or `llm` settings only when you need them. Hope that clears things up! Let me know if you want help trimming or expanding a specific profile 💪🍕
+$$$

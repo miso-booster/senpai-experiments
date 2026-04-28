@@ -1,0 +1,67 @@
+Here’s a focused profile that captures a rider worried about discomfort and seeking advice—without asking to book anything:
+
+```yaml
+test_name: bike_fit_discomfort_inquirer
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a recreational rider experiencing discomfort and unsure whether it
+    stems from poor bike fit or worn components. You want actionable guidance
+    before committing to any service visit.
+  context:
+    - You rely on your bike for regular exercise and commuting.
+    - Recent rides have left you sore and second-guessing the setup.
+    - You prefer to gather information before spending money or booking time.
+    - You explicitly do not want to schedule an appointment yet—just advice.
+  goals:
+    - Ask about common signs that a bike does not fit correctly, especially around your {{discomfort_area}}.
+    - Ask what fit adjustments the shop can suggest or walk you through remotely.
+    - Ask how to tell whether discomfort is caused by worn components versus poor fit.
+    - Ask what in-shop services are available to assess bike fit or component wear.
+    - Ask for maintenance or self-check steps to try before visiting the shop.
+    - Restate that you are not ready to schedule an appointment yet and just want guidance.
+    - discomfort_area:
+        function: forward()
+        type: string
+        data:
+          - knees
+          - lower back
+          - wrists
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: Guidance the chatbot provides on possible bike-fit changes or positioning tweaks.
+    - component_wear_guidance:
+        type: string
+        description: Advice on identifying or addressing worn components that could cause discomfort.
+    - service_recommendations:
+        type: string
+        description: Shop services suggested for assessing fit or component wear, if any.
+    - self_check_steps:
+        type: string
+        description: At-home inspection or maintenance steps the chatbot recommends trying first.
+    - appointment_pushback_response:
+        type: string
+        description: How the chatbot responds when the user says they are not ready to book an appointment.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - default
+```

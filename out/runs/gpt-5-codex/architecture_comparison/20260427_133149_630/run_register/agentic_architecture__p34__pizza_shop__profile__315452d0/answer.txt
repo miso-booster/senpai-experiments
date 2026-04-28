@@ -1,0 +1,95 @@
+Here’s a fresh profile that walks the simulator through the “custom pizza → predefined pizza” pivot you described 😊. It follows the structure and field expectations from `sensei-chat-guide.md`.
+
+```yaml
+test_name: "custom_to_predefined_pizza_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a pizza-loving customer who usually crafts custom pies but is open to the
+    shop’s signature combinations if they sound tempting.
+  context:
+    - "You are ordering dinner after a long day and want delivery soon."
+    - "You prefer to keep the total under $30 if possible."
+    - "You always double-check the order summary before confirming."
+  goals:
+    - "Greet the bot and request a custom pizza with size {{custom_size}}, {{crust_style}} crust, {{sauce_option}} sauce, and toppings {{toppings}}."
+    - "Ask for the total price and estimated delivery time for that custom pizza."
+    - "After the bot acknowledges the custom build, change your mind explicitly and ask for the predefined pizza {{preset_pizza}} instead."
+    - "Confirm you are switching to the predefined pizza, ask if you can add {{side}} as a side, and request the updated total."
+    - custom_size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - crust_style:
+        function: random()
+        type: string
+        data: [thin, hand-tossed, stuffed, gluten-free]
+    - sauce_option:
+        function: random()
+        type: string
+        data: [classic tomato, spicy arrabbiata, garlic parmesan, pesto]
+    - toppings:
+        function: random()
+        type: string
+        data:
+          - "pepperoni, mushrooms, and bell peppers"
+          - "grilled chicken, spinach, and feta"
+          - "sun-dried tomatoes, olives, and artichokes"
+          - "sausage, onions, and jalapeños"
+    - preset_pizza:
+        function: random()
+        type: string
+        data: [Mediterranean Supreme, Pepperoni Feast, Garden Fresh Delight, BBQ Chicken Signature]
+    - side:
+        function: random()
+        type: string
+        data: [garlic knots, buffalo wings, caesar salad, chocolate lava cake]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, could you rephrase that?"
+  output:
+    - initial_custom_request:
+        type: string
+        description: "Summary of the custom pizza configuration the user asked for first."
+    - final_pizza_choice:
+        type: string
+        description: "Name of the pizza that ends up being ordered after the user changes their mind."
+    - final_order_type:
+        type: string
+        description: "Whether the final order is custom or predefined."
+    - added_side:
+        type: string
+        description: "Any side item added to the order, if confirmed."
+    - quoted_price:
+        type: currency
+        description: "Total price quoted for the final order."
+    - delivery_eta:
+        type: time(\"hh:mm\")
+        description: "Estimated delivery or pickup time for the final order."
+    - order_confirmation:
+        type: string
+        description: "Order number or confirmation reference provided by the chatbot."
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 8
+  interaction_style:
+    - change your mind
+```
+
+Key points:
+- The goals explicitly script the initial custom order and the mid-convo switch to a menu pizza, while `interaction_style: change your mind` reinforces the behavior.
+- `chatbot.output` captures everything a downstream rule might care about (initial request, final choice/type, side, price, ETA, confirmation), aligned with the schema guidance from `sensei-chat-guide.md`.
+- No existing project profiles needed to be inspected for this scenario; this file is self-contained.
+
+Let me know if you’d like different variable ranges, more conversations, or additional outputs!

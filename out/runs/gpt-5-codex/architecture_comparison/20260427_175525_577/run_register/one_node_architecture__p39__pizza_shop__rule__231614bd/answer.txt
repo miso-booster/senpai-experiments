@@ -1,0 +1,19 @@
+Sure thing! Here’s a metamorphic rule that checks whether adding exactly one more drink increases the price by $2. It assumes your profile’s `chatbot.output` exposes `drink` (as a list of chosen drinks) plus `pizza_type`, `size`, `toppings`, `number`, and `price`.
+
+```yaml
+name: drink_addition_costs_two_dollars
+description: Adding one extra drink should add exactly $2 to an otherwise identical order
+conversations: 2
+when: >
+  conv[0].pizza_type == conv[1].pizza_type
+  and conv[0].size == conv[1].size
+  and conv[0].toppings == conv[1].toppings
+  and conv[0].number == conv[1].number
+  and currency(conv[0].price) == currency(conv[1].price)
+if: isinstance(conv[0].drink, list) and isinstance(conv[1].drink, list) and len(conv[0].drink) + 1 == len(conv[1].drink)
+then: extract_float(conv[1].price) == extract_float(conv[0].price) + 2
+on-error: >
+  f"Expected drink addition to cost $2 extra, but prices were {conv[0].price} vs {conv[1].price} with drinks {conv[0].drink} -> {conv[1].drink}"
+```
+
+If your `drink` field isn’t a list yet, just adjust the rule or the profile accordingly so it captures the drinks in a comparable way. Let me know if you’d like help tweaking either side! 😊

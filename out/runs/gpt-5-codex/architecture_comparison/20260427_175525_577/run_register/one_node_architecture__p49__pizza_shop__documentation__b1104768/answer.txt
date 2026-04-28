@@ -1,0 +1,42 @@
+Hey there! Happy to walk you through it 😊
+
+### What `pairwise()` does
+
+In a Sensei profile, `pairwise()` is a **fill function** you can assign to variables in `user.goals`. Its job is to generate conversation inputs so that **every pair of variables using `pairwise()` appears together at least once**, without exploding into the full Cartesian product.
+
+Think of it like a tester that says, “Let’s make sure every combination of A with B, A with C, and B with C shows up somewhere,” but it doesn’t insist on covering **all** permutations.
+
+### Key points to remember
+
+1. **Use it on 2 or more variables.** Sensei needs at least two variables set to `pairwise()` to build that coverage matrix. If only one variable has `pairwise()`, it can’t form pairs and validation will complain.
+
+2. **Plays nicely with other functions.** You can mix `pairwise()` with `forward()` or `random()` in the same profile. Only the `pairwise()` ones join the coverage matrix; the rest follow their own logic.
+
+3. **Conversation count works with it.** You can ask Sensei to run `conversation.number: combinations` (all pairwise combinations) or even `combinations(0.6, pairwise)` to run just 60% of the generated matrix.
+
+4. **Keeps test suites manageable.** Full grids can get huge; pairwise keeps the suite compact while still catching a large class of interaction bugs.
+
+---
+
+### Tiny example
+
+```yaml
+- pizza_type:
+    function: pairwise()
+    type: string
+    data: [Margherita, Pepperoni, Vegetarian]
+
+- drink_type:
+    function: pairwise()
+    type: string
+    data: [Soda, Water]
+
+- delivery_option:
+    function: pairwise()
+    type: string
+    data: [Pickup, Delivery]
+```
+
+Sensei will craft a set of conversations so that every pair among these three variables shows up at least once (pizza_type + drink_type, pizza_type + delivery_option, drink_type + delivery_option). You’ll end up with far fewer runs than the full 3×2×2 grid.
+
+Hope that clarifies it! Let me know if you’d like to see how it interacts with `forward()` or how to inspect the generated matrix ✨

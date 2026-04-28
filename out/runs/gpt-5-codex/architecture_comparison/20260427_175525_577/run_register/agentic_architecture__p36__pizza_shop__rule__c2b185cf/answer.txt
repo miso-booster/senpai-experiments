@@ -1,0 +1,10 @@
+Hey there! I dug into the docs (`sensei-check-doc.md`, `rules-examples.md`, and `sensei-chat-guide.md`) and took a look at the pizza profiles in the project. Right now, none of the profiles that actually generate pizza orders expose the fields your rule is checking (`size`, `drink`, and `toppings`) in their `chatbot.output`.  
+
+For example, `profiles/pizza_order_test_custom.yml` only extracts `price`, `time`, and `order_id`, so the rule’s filter `when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink` never has real data to work with. That makes the rule fail no matter what.
+
+So we have two ways to fix things:
+
+1. **Update the target profile** (e.g., `pizza_order_test_custom.yml`) so it also extracts `size`, `drink`, and `toppings` in `chatbot.output`. Then we can keep the monotonicity rule exactly as written (adding back the missing `if:` guard while we’re at it).
+2. **Rewrite the rule** so it only references fields that actually exist right now (which would probably mean a different validation goal, since we can’t compare toppings without exposing them).
+
+Could you confirm which profile you want this rule to validate, and whether you’d like to extend that profile’s outputs so the rule can work as intended? Once I know that, I can patch up the YAML for you. 😊

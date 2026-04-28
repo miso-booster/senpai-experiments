@@ -1,0 +1,13 @@
+¡Perfecto! Aquí tienes una regla metamórfica para el perfil **appointment** que comprueba que, si dos conversaciones intentan agendar exactamente la misma fecha y hora, la segunda no quede confirmada:
+
+```yaml
+name: rechaza_segunda_solicitud_misma_fecha
+description: Evita confirmar dos veces la misma fecha y hora de cita en el perfil appointment.
+conversations: 2
+when: conv[0].confirmed_date == conv[1].confirmed_date and conv[0].confirmed_time == conv[1].confirmed_time
+if: conv[0].confirmed_service not in [None, '']
+then: conv[1].confirmed_service in [None, '']
+on-error: f"La cita se confirmó dos veces para {conv[0].confirmed_date} a las {conv[0].confirmed_time}."
+```
+
+Esta regla asumirá que, cuando el asistente rechaza la segunda solicitud, los campos `confirmed_service`, `confirmed_date` o `confirmed_time` permanecen vacíos (`None` o cadena vacía). Si el bot devuelve algún texto específico de rechazo en `confirmed_service`, avísame y lo ajustamos. 😊

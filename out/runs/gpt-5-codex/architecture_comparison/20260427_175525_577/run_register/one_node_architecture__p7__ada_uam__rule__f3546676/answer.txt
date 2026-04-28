@@ -1,0 +1,21 @@
+Got it! Here’s a rule you can drop into your Sensei-check suite to ensure the CAU contact details match the official information you shared. 😊
+
+```yaml
+name: cau_contact_details_correct
+description: Verifica que el perfil consultante_de_servicios_y_asistencia_del_cau devuelve los datos oficiales de contacto del CAU.
+conversations: 1
+oracle: |
+  contact_email and contact_phone and physical_address and
+  contact_email.strip().lower() == 'cau@uam.es' and
+  ''.join(ch for ch in contact_phone if ch.isdigit()).endswith('914974029') and
+  semantic_content(physical_address, "Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107")
+on-error: |
+  f"Expected official CAU contact info (cau@uam.es / 91 497 4029 / Higher Polytechnic School...), got email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+This rule checks:
+- Email exactly matches `cau@uam.es`.
+- Phone number contains the digits `914974029` (ignoring formatting).
+- The physical address is semantically equivalent to the full official address you provided.
+
+Let me know if you’d like to broaden the address check (e.g., to accept the Spanish version) or apply it to other profiles too!

@@ -1,0 +1,70 @@
+conversation ID: agentic_architecture__p2__ada_uam__profile__14700b13
+$$$
+Hi! I put together a focused Erasmus-onboarding profile that keeps the inputs simple while exposing rich `chatbot.output` slots so you can later write rules about the bot’s support coverage. Key choices:
+
+- 🎯 Goals push the bot for step-by-step help with Moodle, Sigma, email, Wi-Fi/VPN, plus troubleshooting and escalation resources.
+- 🧩 Outputs capture per-service setup steps (`moodle_setup_steps`, `sigma_setup_steps`, etc.), general troubleshooting resources, and a human escalation contact—ideal for completeness checks in future rules.
+- 🤓 Interaction style nudges the simulator to ask one item at a time and include a few typos, mirroring a stressed newcomer.
+
+Here’s the profile:
+
+```yaml
+test_name: "erasmus_digital_onboarding_support"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus exchange student who has just arrived on campus and
+    needs help getting access to the university's digital services.
+    You tend to ask for clear, step-by-step guidance in English.
+  context:
+    - "You arrived this week and must activate several digital services (Moodle, Sigma, institutional email)."
+    - "You are still learning how the university works and do not have local contacts yet."
+    - "You feel anxious about missing course-registration or orientation deadlines."
+  goals:
+    - "Ask for help activating and accessing Moodle, Sigma, and your university email."
+    - "Request step-by-step guidance for connecting your laptop to the campus Wi-Fi and VPN."
+    - "Ask what to do if login errors appear for any of the platforms."
+    - "Request official links or contacts in case you still cannot access a service."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you clarify which service you need help with?"
+  output:
+    - moodle_setup_steps:
+        type: list[string]
+        description: "Steps or resources provided to get Moodle working."
+    - sigma_setup_steps:
+        type: list[string]
+        description: "Instructions given to access the Sigma academic portal."
+    - email_setup_steps:
+        type: list[string]
+        description: "Guidance for configuring the institutional email account."
+    - wifi_vpn_setup_steps:
+        type: list[string]
+        description: "Steps shared for connecting to campus Wi-Fi and/or VPN."
+    - troubleshooting_resources:
+        type: list[string]
+        description: "Troubleshooting advice, FAQs, or documentation offered."
+    - human_support_channel:
+        type: string
+        description: "Escalation contact such as help desk, ticket number, or office hours."
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 6
+  interaction_style:
+    - single questions
+    - make spelling mistakes
+```
+
+Let me know if you’d like to tweak the goals, add variable coverage (e.g., different device types), or adjust the outputs—happy to iterate! References: `sensei-chat-guide.md`.
+$$$

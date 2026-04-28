@@ -1,0 +1,84 @@
+¡Perfecto! Aquí tienes un nuevo perfil de Sensei enfocado en un usuario que quiere configurar eduroam pero no lo logra. Usé las diferentes formas de configuración como variables para que Sensei genere conversaciones variadas según cada método y dispositivo. Echale un vistazo 👇:
+
+```yaml
+test_name: "Usuario con dificultades para configurar eduroam"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Usuario universitario que necesita conectarse a la red eduroam pero la configuración siempre falla."
+  context:
+    - personality: personalities/impatient-user
+    - "Llevas varias horas intentando conectar tu dispositivo personal a la red eduroam sin éxito."
+    - "Has seguido distintas guías de la universidad pero no sabes qué paso estás omitiendo."
+    - "Necesitas la conexión para acceder a material académico urgente y estás frustrado por los errores."
+  goals:
+    - "Explicar que ya intenté configurar eduroam utilizando {{setup_method}} en mi {{device_platform}}, pero sigue sin conectarse."
+    - "Solicitar instrucciones paso a paso adaptadas a {{device_platform}} para lograr que eduroam funcione."
+    - "Pedir enlaces de descarga oficiales o certificados necesarios para completar la configuración."
+    - "Preguntar por requisitos previos (contraseña, identidad, certificados) que tal vez me falten."
+    - "Solicitar opciones de soporte técnico en caso de que {{setup_method}} vuelva a fallar."
+    - setup_method:
+        function: pairwise()
+        type: string
+        data:
+          - Asistente de Configuración de eduroam (CAT)
+          - Perfil automático descargado desde la web de la UAM
+          - Configuración manual con certificado raíz
+          - Ajuste avanzado EAP-TTLS/PAP
+          - Script de auto-configuración para Linux
+          - Configuración manual mediante gestor de redes del sistema
+    - device_platform:
+        function: pairwise()
+        type: string
+        data:
+          - Portátil con Windows 11
+          - MacBook con macOS Sonoma
+          - Smartphone Android 13
+          - iPhone con iOS 17
+          - Tablet con iPadOS
+          - Laptop con Ubuntu 22.04
+
+chatbot:
+  is_starter: false
+  fallback: "¿Podrías reformular tu consulta? También puedes revisar nuestro catálogo de servicios. Atiendo dudas para el Centro de Atención a Usuarios de TI."
+  output:
+    - eduroam_troubleshooting_steps:
+        type: string
+        description: "Pasos recomendados para solucionar el problema de conexión a eduroam"
+    - credential_requirements:
+        type: string
+        description: "Credenciales, certificados u otros requisitos previos necesarios"
+    - download_links:
+        type: string
+        description: "Enlaces oficiales a perfiles, asistentes o certificados de eduroam"
+    - platform_specific_notes:
+        type: string
+        description: "Indicaciones específicas según el dispositivo del usuario"
+    - support_contact_info:
+        type: string
+        description: "Información de contacto del CAU o soporte técnico"
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 24
+    max_cost: 0.12
+  max_cost: 0.6
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+```
+
+**Claves del perfil:**
+- `setup_method` y `device_platform` están ambos con `pairwise()`, así Sensei cubre combinaciones realistas entre métodos y dispositivos sin explotar el número de conversaciones.
+- Las metas reflejan la frustración del usuario y piden instrucciones claras, enlaces y alternativas de soporte.
+- La sección `chatbot.output` te deja rastrear si el bot ofrece pasos concretos, requisitos y contactos útiles para cada caso.
+
+Si necesitas ajustar el tono del usuario, añadir más métodos o personalizar los límites de conversación, dime y lo adaptamos juntos 😊.

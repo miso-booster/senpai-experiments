@@ -1,0 +1,49 @@
+conversation ID: graph_based_architecture__p49__pizza_shop__documentation__923071e9
+$$$
+Great question! The `pairwise()` function is one of Sensei’s secret sauces for keeping your test matrices big on coverage but small on runtime 😊. Here’s how it works:
+
+### 1. What `pairwise()` actually does
+- Instead of generating *every possible combination* of your variables (which can explode fast!), `pairwise()` ensures that **every possible pair of variable values appears together at least once** across your conversations.
+- In testing terms, this is called *pairwise coverage* or *2-way combinatorial testing*.
+
+Think of it like planning outfits: you don’t try on every single clothing combo, but you make sure that **every shirt has been paired with every pair of jeans and every pair of shoes at least once**. That way, you catch most mismatches without spending your whole day changing clothes.
+
+### 2. Basic rules to keep in mind
+- You must declare **at least two variables** with `pairwise()`; otherwise there’s nothing to “pair”.
+- Sensei will compute the conversation plan based on those variables, so set `conversation.number` to use combinations, usually like:
+  ```yaml
+  conversation:
+    number: combinations      # or combinations(0.6, pairwise) for 60% of them
+  ```
+  If you use the default `number: 1`, you’ll get only a single conversation and won’t see the pairwise magic.
+
+### 3. How it looks in practice
+In your project, `pizza_order_test_custom.yml` uses `pairwise()` for both `size` and `toppings`, so Sensei will make sure every size meets every topping at least once, while respecting any dependencies you set.
+
+Here’s a tiny example to visualize it:
+
+```yaml
+- size:
+    function: pairwise()
+    data: [small, medium, large]
+- crust:
+    function: pairwise()
+    data: [thin, thick]
+- drink:
+    function: forward(size)    # you can mix functions!
+    data: [Soda, Water, Juice]
+```
+
+Sensei will generate a minimal set of conversations so that:
+- Every size pairs with each crust at least once.
+- The `drink` still follows whatever logic you defined (here it's tied to the `size` through `forward(size)`).
+
+### 4. Why you’ll love it
+- 🧪 **High defect detection**: pairwise coverage catches most interaction bugs.
+- ⏱️ **Fewer runs**: avoids the full cartesian explosion while still being thorough.
+- 📋 **Predictable**: works great when you have many variables but shrinking time/budget.
+
+If you ever need to go beyond pairs (e.g., 3-way coverage), you’d have to manage that manually, but for most chatbot scenarios, `pairwise()` hits the sweet spot.
+
+Let me know if you’d like help applying it to one of your specific profiles—we can walk through the exact combos Sensei will generate for you! 🍕✨
+$$$

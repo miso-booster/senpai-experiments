@@ -1,0 +1,100 @@
+conversation ID: graph_based_architecture__p34__pizza_shop__profile__9037b5a7
+$$$
+Absolutely, I’ve got just the thing! Here’s a Sensei profile that walks the user through asking for a custom pizza, then switching gears mid-conversation to request a predefined option instead. It includes the “change your mind” interaction style so the simulator naturally flips the request halfway through 😊
+
+```yaml
+# File: profiles/custom_to_predefined_switch.yml
+test_name: custom_to_predefined_switch
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You’re ordering dinner for yourself after a long day. You come in with a plan
+    to build a custom pizza, but you’re a bit indecisive and end up switching to one
+    of the shop’s predefined pizzas instead.
+  context:
+    - "You feel a little rushed because you still need to swing by the store after picking up the pizza."
+    - "You like trying new toppings, but you’re worried it might be too much work tonight."
+  goals:
+    - "I’d like to build a custom pizza with a {{custom_size}} crust and toppings: {{custom_toppings}}."
+    - "Can you confirm the price for that custom pizza?"
+    - "Actually, I’ve changed my mind. I’ll take your {{predefined_pizza}} pizza instead."
+    - "Please add {{drink_quantity}} {{drink_type}} to go with it."
+    - "Could you give me the final order summary and how long it’ll take?"
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - custom_toppings:
+        function: random(2)
+        type: string
+        data:
+          - extra cheese
+          - mushrooms
+          - pepperoni
+          - roasted peppers
+          - spinach
+          - sausage
+    - predefined_pizza:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, BBQ Chicken, Vegetarian]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Sparkling Water, Iced Tea]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can help you with pizza and drink orders."
+  output:
+    - custom_order_response:
+        type: string
+        description: "How the chatbot responds to the initial custom pizza request."
+    - predefined_order_confirmation:
+        type: string
+        description: "Confirmation that the predefined pizza order replaced the custom one."
+    - drink_order_confirmation:
+        type: string
+        description: "Details about the drink order and acknowledgment from the chatbot."
+    - final_order_summary:
+        type: string
+        description: "Comprehensive summary of the final order, including pizza, drinks, and any extra info."
+    - total_cost:
+        type: money
+        description: "Total cost for the final order."
+    - estimated_ready_time:
+        type: time
+        description: "Estimated time until the order is ready."
+
+conversation:
+  number: 2
+  max_cost: 0.8
+  goal_style:
+    steps: 7
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+### Why it works nicely
+- **Custom-first, predefined later:** The user explicitly starts with their own build and then pivots to a menu item mid-flow, just like you asked.
+- **Change-your-mind baked in:** The interaction style encourages Sensei to naturally flip the request partway through.
+- **Outputs for rule coverage:** You capture responses for the custom attempt, the final confirmation, drinks, totals, and prep time—perfect for downstream Sensei-check rules.
+
+Feel free to tweak the toppings, drink list, or number of conversations to match your test coverage. Let me know if you’d like a companion rule file or a variant in another language! 🍕✨
+$$$

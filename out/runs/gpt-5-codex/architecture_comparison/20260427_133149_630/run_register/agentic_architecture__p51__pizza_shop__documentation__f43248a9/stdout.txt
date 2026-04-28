@@ -1,0 +1,24 @@
+conversation ID: agentic_architecture__p51__pizza_shop__documentation__f43248a9
+$$$
+Sure thing! Connectors are the “transport layer” between the Chatbot Dojo simulator and whatever external chatbot API you want to test. Instead of writing code, you describe how to call that API in a YAML file. When the simulator needs a chatbot reply, it uses the connector to send the user’s message to the API and pull back the response. (Based on `custom-connector-guide.md` and `connector-examples.md`.)
+
+### Core fields you define in a connector YAML
+
+| Field | What it controls | Required? |
+|-------|------------------|-----------|
+| `name` | Friendly label that appears in the UI/logs. | Optional |
+| `base_url` | Root URL for the external chatbot API. | **Yes** |
+| `send_message.path` | Endpoint path appended to `base_url`. | **Yes** |
+| `send_message.method` | HTTP verb (`POST`, `GET`, etc.). Defaults to `POST` if omitted. | Optional |
+| `send_message.headers` | Any custom headers (auth tokens, content type, etc.). | Optional |
+| `send_message.payload_template` | JSON payload you want to send. Use `{user_msg}` wherever the live user message should be inserted. | **Yes** |
+| `response_path` | Dot‑notation path through the JSON response to extract the chatbot’s reply. | **Yes** |
+
+So, in practice you wire up three things:
+
+1. **Where to send the user message:** `base_url` + `send_message.path` + optional `headers`.
+2. **What the payload should look like:** `payload_template`, with `{user_msg}` as the placeholder.
+3. **How to read the chatbot’s answer:** `response_path`, e.g. `response.0.text` if the API returns an array.
+
+The examples in `connector-examples.md` show variations—simple echo bots, authenticated APIs, nested responses—so you can tailor the YAML to match your target service. Let me know if you’d like me to walk through one of those patterns in more detail!
+$$$

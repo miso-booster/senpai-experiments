@@ -1,0 +1,47 @@
+¡Hola! 😊 Me encanta lo completo que está tu perfil “Usuarios Nuevos y Admisiones”. Como punto de partida, aquí tienes tres reglas pensadas específicamente para los campos que expones en `chatbot.output`. El formato y los helpers están basados en las guías de `sensei-check-doc.md`, los ejemplos de `rules-examples.md`, y la relación perfil↔reglas explicada en `sensei-chat-guide.md`.
+
+### 1. Links clave siempre presentes
+Asegura que el bot devuelve URLs útiles para admisiones, listas de espera, futuros estudiantes y el Welcome Day.
+
+```yaml
+name: admissions_links_not_empty
+description: Comprueba que el bot entrega enlaces clave para admisiones y Welcome Day
+conversations: 1
+oracle: >
+  admission_to_grados_link not in [None, ""] and
+  waitlist_info_link not in [None, ""] and
+  future_students_link not in [None, ""] and
+  welcome_day_link not in [None, ""]
+```
+
+### 2. Detalles mínimos del Welcome Day
+Verifica que la fecha, hora y ubicación del evento estén cubiertas.
+
+```yaml
+name: welcome_day_details_complete
+description: El bot facilita fecha, hora y ubicación del Welcome Day
+conversations: 1
+oracle: >
+  welcome_day_date is not None and
+  welcome_day_time is not None and
+  event_location not in [None, ""]
+```
+
+### 3. Consistencia de idioma (español)
+Comprueba que el asistente siga el idioma del usuario.
+
+```yaml
+name: bot_answers_in_spanish
+description: El asistente responde en el mismo idioma que el usuario (español)
+conversations: 1
+oracle: responds_in_same_language()
+```
+
+---
+
+**Cómo utilizarlas:**  
+1. Guarda cada documento en `rules/` (por ejemplo, `rules/admissions_links_not_empty.yml`).  
+2. Ejecuta Sensei Chat con tu perfil y luego pasa los resultados por Sensei Check.  
+3. Observa qué reglas fallan para detectar huecos en la respuesta del bot.
+
+Si quieres ir un paso más allá, podrías añadir reglas metamórficas: por ejemplo, comparar dos conversaciones donde el usuario pregunta por el mismo `grados` y comprobar que `grados_available` contenga ese programa en ambos casos. ¡Cuando estés listo/a, dime y lo trabajamos juntos!

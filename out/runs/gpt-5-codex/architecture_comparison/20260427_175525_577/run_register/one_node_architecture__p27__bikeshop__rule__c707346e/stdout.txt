@@ -1,0 +1,22 @@
+conversation ID: one_node_architecture__p27__bikeshop__rule__c707346e
+$$$
+¡Vamos a ello! Aquí tienes una regla metamórfica para el perfil `appointment`. Comprueba que, cuando dos conversaciones intentan agendar exactamente la misma fecha y hora, el bot solo confirme una de ellas (la otra debería quedar sin servicio confirmado, indicando que fue rechazada):
+
+```yaml
+name: deniega_citas_duplicadas
+description: Si dos conversaciones piden la misma fecha y hora, solo una debe confirmarse
+conversations: 2
+when: >
+  conv[0].confirmed_date is not None and
+  conv[1].confirmed_date is not None and
+  conv[0].confirmed_time is not None and
+  conv[1].confirmed_time is not None and
+  conv[0].confirmed_date == conv[1].confirmed_date and
+  conv[0].confirmed_time == conv[1].confirmed_time
+oracle: (conv[0].confirmed_service in [None, '']) or (conv[1].confirmed_service in [None, ''])
+on-error: >
+  f"Ambas conversaciones confirmaron la cita para {conv[0].confirmed_date} a las {conv[0].confirmed_time}."
+```
+
+Esta regla se activará solo cuando ambas conversaciones hayan extraído la misma fecha y hora; en ese caso, exige que al menos una no tenga `confirmed_service` (es decir, que el asistente haya negado la segunda reserva). Si detectas que tu chatbot usa otra convención para señalar la negativa (por ejemplo, deja el campo en `None` o responde con una frase concreta), ajusta el `oracle` a tu formato.
+$$$

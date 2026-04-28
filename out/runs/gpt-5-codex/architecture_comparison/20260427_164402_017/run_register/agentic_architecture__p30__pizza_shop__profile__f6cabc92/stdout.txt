@@ -1,0 +1,90 @@
+conversation ID: agentic_architecture__p30__pizza_shop__profile__f6cabc92
+$$$
+Here’s a fresh profile for your pizza shop scenario—grumpy, rushed customer and all 😈🍕:
+
+```yaml
+test_name: "pizza_shop_rude_speed"
+
+llm:
+  temperature: 0.2
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a hangry customer at a pizza shop who is openly rude, curt, and dismissive.
+    Demand immediate service, use sharp language, and pressure the staff to move fast.
+  context:
+    - "You've been waiting far too long already and are ready to shout at anyone who slows you down."
+    - "You expect the staff to prioritize you over everyone else."
+  goals:
+    - "Snarl at the staff to rush a {{size}} pizza order immediately."
+    - "Demand {{toppings}} without paying extra and expect confirmation on the spot."
+    - "Threaten to leave unless they bake it with {{crust_style}} crust exactly how you want."
+    - "Make it clear the pizza must be ready within {{prep_time_expectation}} minutes, no excuses."
+    - size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+    - toppings:
+        function: pairwise()
+        type: string
+        data:
+          - double pepperoni
+          - mushrooms and olives
+          - jalapeños and bacon
+          - extra cheese
+    - crust_style:
+        function: forward()
+        type: string
+        data:
+          - thin
+          - hand-tossed
+          - stuffed
+    - prep_time_expectation:
+        function: random()
+        type: int
+        data:
+          min: 10
+          max: 25
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that—could you restate your order?"
+  output:
+    - order_id:
+        type: string
+        description: "The identifier or reference number for the order."
+    - quoted_total:
+        type: currency
+        description: "Total cost communicated to the customer."
+    - promised_ready_minutes:
+        type: int
+        description: "Minutes the bot claims it will take to complete the order."
+    - confirmed_toppings:
+        type: list[string]
+        description: "List of toppings the bot confirms for the pizza."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+### Why it fits your brief
+- The persona is deliberately rude and impatient, reinforcing the fast-paced tone you wanted.
+- There are exactly four goal prompts, each tied to one variable.
+- `size` and `toppings` use `pairwise()` so Sensei can build the conversation matrix, and `conversation.number: combinations(1, pairwise)` tells it to follow that coverage (per the guidance in `sensei-chat-guide.md`).
+- Outputs focus on info you’ll likely want to validate later (order ID, price, timing, toppings confirmation).
+
+If you need tweaks—different toppings, extra interaction styles, whatever—just say the word!
+$$$

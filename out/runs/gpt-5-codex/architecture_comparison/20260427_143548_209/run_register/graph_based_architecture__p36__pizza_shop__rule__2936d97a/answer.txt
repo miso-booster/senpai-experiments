@@ -1,0 +1,15 @@
+Hey there! Thanks for sharing the rule. I can see why it’s misbehaving. Right now you’ve got a `then` clause but no `if` clause. In Sensei-check, that means the rule tries to enforce the price inequality for *every* pair of conversations that match the `when` filter—regardless of how many toppings each pizza has. So if the first conversation actually has fewer or equal toppings, the rule will still demand a higher price and inevitably fail.
+
+To fix it, we just need to restore the precondition that says “apply this rule only when the first conversation has more toppings.” Here’s the corrected version:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+With that `if:` back in place, Sensei-check will only compare pairs where the difference in toppings actually exists, and the `then:` condition will behave as intended. Let me know if you’d like to double-check anything else! 😊

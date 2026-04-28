@@ -1,0 +1,15 @@
+Hey! The rule is failing because it only has a `then` clause. In Sensei-check’s DSL, `then` must always be paired with an `if`; otherwise the rule can’t evaluate the intended condition and will throw a schema error.
+
+Here’s the fixed version (I also added a tiny `when` safeguard so it only runs when both conversations expose a price):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].price is not None and conv[1].price is not None and conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+This restores the metamorphic relation: same size & drink, more toppings in conversation 0 ⇒ higher price than conversation 1. Let me know if you’d like to tighten the filter to a specific profile or add an error message!

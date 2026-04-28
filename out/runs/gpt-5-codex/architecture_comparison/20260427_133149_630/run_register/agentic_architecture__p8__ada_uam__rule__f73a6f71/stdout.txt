@@ -1,0 +1,19 @@
+conversation ID: agentic_architecture__p8__ada_uam__rule__f73a6f71
+$$$
+Hi there! 😊 I reviewed your rule against the `consultante_de_servicios_y_asistencia_del_cau.yaml` profile, which exposes the `contact_email`, `contact_phone`, and `physical_address` slots.
+
+### What needed fixing (per `sensei-check-doc.md` & `rules-examples.md`)
+- **`when` vs `oracle`**: Using the same condition in both made the rule skip any conversation where the details were wrong—so failures would never be caught. In single-conversation rules, you typically leave `when` out unless you truly need a filter.
+- **Slot access syntax**: For `conversations: 1`, the docs show that slots should be referenced directly (e.g., `contact_email`), not as `conv[0].contact_email`.
+
+### Corrected rule
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+on-error: f"Expected CAU contact info email='cau@uam.es', phone='91 497 4029', address='C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107' but got email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+Now the rule always evaluates the conversation and flags any incorrect contact detail, with a clear error message to help debugging. Let me know if you’d like to add checks for the other fields (service hours, links, etc.) too!
+$$$

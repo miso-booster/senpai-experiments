@@ -1,0 +1,104 @@
+conversation ID: agentic_architecture__p22__bikeshop__profile__5f2c34ed
+$$$
+All set! Here’s a Sensei Chat profile that captures the “discomfort while riding” persona and leaves room to check how the bot advises without pushing an appointment:
+
+```yaml
+test_name: "bike_fit_discomfort_advice"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a dedicated cyclist who wants professional guidance because riding
+    has become uncomfortable. You’re hoping for clear advice on whether the
+    issue is fit-related or due to worn components.
+  context:
+    - "You recently upgraded some bike parts but still feel uncomfortable."
+    - "You want expert input on adjustments or services before committing to anything."
+    - "You prefer to understand your options without booking an appointment yet."
+  goals:
+    - "Hi, I'm feeling {{symptom_pattern}} in my {{discomfort_area}} when riding my {{bike_type}} bike."
+    - "I typically ride for {{ride_frequency}}, and lately it's been uncomfortable."
+    - "I'm not sure if the bike fit is off or if parts like the {{suspected_component}} are wearing out."
+    - "Could you walk me through any adjustments I could try at home?"
+    - "What services does your shop offer that might help diagnose or fix this?"
+    - "I'd like to understand options without booking anything yet."
+    - discomfort_area:
+        function: pairwise()
+        type: string
+        data:
+          - knees
+          - lower back
+          - wrists
+          - shoulders
+    - symptom_pattern:
+        function: pairwise()
+        type: string
+        data:
+          - numbness after 20 minutes
+          - dull ache during climbs
+          - sharp pain when pushing hard
+          - tingling whenever I hit bumps
+    - bike_type:
+        function: random()
+        type: string
+        data:
+          - road
+          - gravel
+          - mountain
+    - ride_frequency:
+        function: random()
+        type: string
+        data:
+          - daily commute
+          - weekend group rides
+          - touring trips every month
+    - suspected_component:
+        function: random()
+        type: string
+        data:
+          - saddle
+          - bottom bracket
+          - handlebar tape
+          - drivetrain
+
+chatbot:
+  is_starter: false
+  fallback: "Could you please rephrase that?"
+  output:
+    - possible_causes:
+        type: list[string]
+        description: "Hypotheses the bot gives about what might be causing the discomfort"
+    - recommended_adjustments:
+        type: list[string]
+        description: "Bike fit tweaks or at-home adjustments suggested to the user"
+    - recommended_services:
+        type: list[string]
+        description: "Shop services or diagnostics the bot recommends"
+    - appointment_push:
+        type: string
+        description: "Any mention of booking or scheduling follow-up actions"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+```
+
+### Why this works (grounded in `sensei-chat-guide.md`)
+- The user persona mirrors the guide’s structure: language, role, and context set expectations for how the simulated user speaks and what they care about.
+- Goals use `{{variables}}` declared later, with two `pairwise()` variables so `conversation.number` can leverage `combinations(0.6, pairwise)` as documented.
+- `chatbot.output` defines the fields future rules can inspect—especially whether the bot offers actionable adjustments, shop services, or pushes appointments—aligning with the contract guidelines in the doc.
+- Interaction style (`long phrases`) nudges the simulator toward detailed queries, matching the scenario’s conversational tone.
+
+Let me know if you’d like variants (e.g., different languages or more aggressive symptom combos)! 😊
+$$$

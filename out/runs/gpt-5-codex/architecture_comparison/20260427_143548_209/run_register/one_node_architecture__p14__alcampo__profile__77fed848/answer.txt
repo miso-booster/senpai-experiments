@@ -1,0 +1,100 @@
+¡Perfecto! Aquí tienes un perfil listo para poner a prueba las recomendaciones de recetas y la planificación de menús del chatbot de Alcampo 🍲✨
+
+```yaml
+test_name: "recipe_and_menu_planning_advisor"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Eres una persona que quiere organizar menús equilibrados para la semana aprovechando los productos de Alcampo."
+  context:
+    - "Te interesa cocinar platos variados que combinen sabor y practicidad."
+    - "Prefieres aprovechar ingredientes de temporada para optimizar tu presupuesto."
+    - "Buscas opciones que se adapten a distintos estilos de alimentación dentro de tu familia."
+  goals:
+    - "Pide al chatbot tres ideas de recetas para {{meal_focus}} que encajen con una dieta {{dietary_preference}}."
+    - "Solicita un plan de menús para tres días con desayuno, comida y cena ajustado a {{cooking_time_goal}}."
+    - "Pregunta por una lista de ingredientes clave que incluya {{seasonal_produce}} y propuestas para reutilizar sobras."
+    - "Solicita consejos de preparación anticipada (meal prep) y sugerencias de almacenamiento seguro."
+    - meal_focus:
+        function: forward()
+        type: string
+        data:
+          - cenas entre semana
+          - brunch de fin de semana
+          - almuerzos para llevar
+          - menús familiares
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data:
+          - vegetariana
+          - flexitariana
+          - sin gluten
+          - alta en proteínas
+    - cooking_time_goal:
+        function: pairwise()
+        type: string
+        data:
+          - menos de 20 minutos
+          - comidas en 30 minutos
+          - recetas para slow cooker
+          - cocina por lotes
+    - seasonal_produce:
+        function: random()
+        type: string
+        data:
+          - calabaza de temporada
+          - espárragos verdes
+          - fresas frescas
+          - setas variadas
+          - tomates locales
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recipe_suggestions:
+        type: list[string]
+        description: "Listado de recetas recomendadas por el chatbot."
+    - meal_plan_outline:
+        type: string
+        description: "Resumen del plan de menús propuesto."
+    - shopping_list:
+        type: list[string]
+        description: "Ingredientes clave agrupados para la compra."
+    - prep_time_breakdown:
+        type: string
+        description: "Indicaciones sobre tiempos de preparación y cocción."
+    - nutritional_highlights:
+        type: string
+        description: "Puntos destacados nutricionales o dietéticos."
+    - leftover_strategies:
+        type: string
+        description: "Ideas para reutilizar sobras o preparar meal prep."
+    - storage_tips:
+        type: string
+        description: "Consejos de conservación y almacenamiento seguro."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+    max_cost: 0.12
+  interaction_style:
+    - random:
+        - long phrases
+        - change your mind
+        - make spelling mistakes
+        - change language:
+            - inglés
+            - catalán
+```
+
+Si necesitas ajustar variables, interacción o salidas para alinearlas con reglas específicas, dime y lo refinamos juntos 😊

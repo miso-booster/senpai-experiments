@@ -1,0 +1,79 @@
+All set! Here’s a spicy new Sensei profile ready to drop into your project 😊👇
+
+```yaml
+test_name: "rude_pizza_rush_profile"
+
+user:
+  language: English
+  role: >
+    You are a hangry regular at a downtown pizza shop. You're impatient,
+    blunt, and easily annoyed. You bark orders and expect instant confirmation,
+    demanding that everything be sped up.
+  context:
+    - "You have been waiting all day and have zero patience."
+    - "You threaten to blast the shop with one-star reviews if they stall."
+    - "You expect VIP treatment because you're a frequent late-night customer."
+  goals:
+    - "Bark an order for a {{pizza_size}} pizza loaded with {{topping_combo}} and tell them to hurry up."
+    - "Snarl that the {{crust_type}} crust better not slow the kitchen down."
+    - "Demand a guarantee that the order is ready within {{prep_expectation}} minutes."
+    - "Remind them your {{pizza_size}} rush order cannot miss the {{prep_expectation}}-minute deadline."
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+          - extra-large
+    - topping_combo:
+        function: pairwise()
+        type: string
+        data:
+          - double pepperoni
+          - extra cheese
+          - spicy sausage and jalapeños
+          - veggie overload
+    - crust_type:
+        function: another()
+        type: string
+        data:
+          - thin
+          - crispy
+          - stuffed
+    - prep_expectation:
+        function: forward()
+        type: int
+        data:
+          min: 5
+          max: 15
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you repeat?"
+  output:
+    - quoted_total:
+        type: currency
+        description: "Total price quoted for the rushed pizza order"
+    - promised_ready_time:
+        type: string
+        description: "Time frame the bot gives for readiness or delivery"
+    - apology_or_compensation:
+        type: string
+        description: "Any apology or compensation the bot offers to calm the user"
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 4
+  interaction_style:
+    - single questions
+```
+
+### Why it fits the brief
+- Two variables (`pizza_size`, `topping_combo`) use `pairwise()` so `conversation.number: combinations(1, pairwise)` pulls its count directly from the pairwise coverage matrix—exactly how the pairing logic is described in **`sensei-chat-guide.md`**.
+- Four goals are laid out with exactly four variables; the user persona is rude, impatient, and obsessed with speed, reflected in both the context and prompt wording.
+- The chatbot output schema captures useful fields for future rules (price, promised timing, apology/compensation), again following the profile anatomy guidance from `sensei-chat-guide.md`.
+
+Let me know if you want to tweak the persona, add more outputs, or chain it to specific rules!

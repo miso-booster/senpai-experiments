@@ -1,0 +1,77 @@
+conversation ID: graph_based_architecture__p32__pizza_shop__profile__88a80e4f
+$$$
+¡Claro que sí! 😊 Aquí tienes un perfil listo para probar tu chatbot pizzero. Lo puedes guardar, por ejemplo, como `profiles/pizza_checkout_usd.yml`.
+
+```yaml
+test_name: "pizza_checkout_usd"
+
+llm:
+  model: gpt-4o-mini
+  model_prov: openai
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona que quiere hacer un pedido completo en la pizzería
+    y asegurarte de recibir un resumen claro con los detalles clave.
+  context:
+    - Estás organizando una cena informal en casa y quieres resolver el pedido con rapidez.
+    - Necesitas confirmar que todo el precio final esté expresado en dólares estadounidenses.
+  goals:
+    - "Saluda y pregunta qué pizzas recomendadas tienen disponibles."
+    - "Elige la pizza {{pizza_type}} en tamaño {{pizza_size}}."
+    - "Pregunta por las bebidas disponibles y pide {{drink_quantity}} {{drink_type}}."
+    - "Confirma el pedido completo y solicita el precio final en dólares, junto con el identificador del pedido."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Cuatro quesos, Vegetariana]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [pequeña, mediana, grande]
+    - drink_type:
+        function: pairwise()
+        type: string
+        data: [Refresco, Agua mineral, Té helado, Cerveza]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu mensaje. Puedo ayudarte con pedidos de pizza y bebidas."
+  output:
+    - selected_pizza_type:
+        type: string
+        description: "Pizza confirmada por el chatbot en el pedido."
+    - selected_drink:
+        type: string
+        description: "Bebida confirmada por el chatbot, incluyendo la cantidad si la menciona."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido."
+    - final_price_usd:
+        type: currency
+        description: "Precio total del pedido expresado en dólares estadounidenses (por ejemplo, $18.50 USD)."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - default
+    - change your mind
+```
+
+✨ Con este perfil, Sensei validará que tu bot entregue la pizza seleccionada, la bebida, el ID del pedido y el precio total en USD dentro de `chatbot.output`. Si necesitas ajustar combinaciones, interacción o añadir más campos, aquí estoy para ayudarte. ¡Mucho éxito con las pruebas! 🍕💬
+$$$

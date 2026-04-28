@@ -1,0 +1,87 @@
+Here’s a fresh profile tailored to your eduroam troubleshooting scenario 😊. It follows the structure and best practices from `sensei-chat-guide.md`, using variables to cover the different setup methods the user has already attempted.
+
+```yaml
+test_name: "eduroam_setup_assistance"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who urgently needs to get the campus eduroam Wi-Fi
+    working but keeps running into configuration problems. You are polite, persistent,
+    and provide detailed context about everything you already tried.
+  context:
+    - "You do not have administrator rights on the university-managed device."
+    - "Classes start in less than an hour and you need a stable connection for a lab submission."
+    - "The campus IT office is crowded, so you hope the chatbot can walk you through a fix remotely."
+  goals:
+    - "Explain that you already attempted {{setup_method}} on your {{device_os}} but eduroam still fails, and ask for step-by-step guidance."
+    - "Mention that you also tried {{secondary_method}} yet the connection keeps disconnecting."
+    - "Ask if there is a way to configure eduroam using {{support_channel}} or if administrator intervention is needed."
+    - device_os:
+        function: pairwise()
+        type: string
+        data:
+          - Windows 11 laptop
+          - macOS Sonoma MacBook
+          - Android 14 phone
+          - iOS 17 iPhone
+          - Ubuntu 22.04 laptop
+    - setup_method:
+        function: pairwise()
+        type: string
+        data:
+          - eduroam CAT installer
+          - manual profile configuration
+          - university IT step-by-step PDF
+    - secondary_method:
+        function: pairwise()
+        type: string
+        data:
+          - forgetting the network and reconnecting
+          - installing root certificates manually
+          - using a configuration wizard
+    - support_channel:
+        function: random()
+        type: string
+        data:
+          - the IT helpdesk portal
+          - the university mobile app
+          - remote desktop support
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you rephrase your question about eduroam?"
+  output:
+    - troubleshooting_steps:
+        type: list[string]
+        description: "Step-by-step actions the bot recommends to fix the eduroam configuration."
+    - escalation_path:
+        type: string
+        description: "Suggested escalation or support channel if self-service fails."
+    - configuration_artifacts:
+        type: list[string]
+        description: "Configuration files, profiles, or certificates the bot references."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+```
+
+**Why this works**
+
+- The user goals leverage variables to cover multiple setup attempts, exactly as you requested.
+- `pairwise()` across the primary methods (`device_os`, `setup_method`, `secondary_method`) keeps coverage broad without exploding combinations, aligned with the guidance in `sensei-chat-guide.md`.
+- `chatbot.output` defines fields you can later validate with rules—again following the contract described in the docs.
+
+If you’d like tweaks (e.g., different variables, extra context, Spanish version), just let me know!

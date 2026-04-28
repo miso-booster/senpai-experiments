@@ -1,0 +1,105 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__8ec0f582
+$$$
+Here’s a fresh profile you can drop into your project (maybe name it `bike_custom_fitting_client.yaml`). Let me know if you’d like tweaks! 🚲✨
+
+```yaml
+test_name: bike_custom_fitting_client
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and want the shop to tailor it so it fits you perfectly.
+    You’re focused on dialing in comfort and control before committing to longer rides.
+  context:
+    - You’re preparing for both weekend rides and daily commuting, so comfort and efficiency matter.
+    - You’re willing to invest in new components if they noticeably improve the fit.
+    - You appreciate detailed explanations from the mechanic so you understand the changes being made.
+  goals:
+    - "Explain that you just purchased a new bike and need a professional setup session."
+    - "Ask to adjust the seat position to match your {{riding_style}} preference."
+    - "Request recommendations for a {{seat_model}} saddle and confirm if it can be swapped during the visit."
+    - "Ask about handlebar grip options, emphasizing {{grip_material}}, and whether they can install them."
+    - "Ask about the cost of the fitting and component installation service."
+    - "Schedule an appointment for {{appointment_date}} at {{appointment_time}} to complete the setup work."
+    - riding_style:
+        function: forward()
+        type: string
+        data:
+          - endurance rides with a more upright posture
+          - urban commuting with balanced comfort
+          - trail riding with extra control
+          - performance training with an aggressive stance
+    - seat_model:
+        function: forward(riding_style)
+        type: string
+        data:
+          - Selle Italia SLR Boost
+          - Brooks Cambium C17
+          - WTB Volt
+          - Specialized Power Comp
+    - grip_material:
+        function: forward()
+        type: string
+        data:
+          - ergonomic rubber grips
+          - cork composite grips
+          - leather wrap grips
+          - silicone foam grips
+    - appointment_date:
+        function: random()
+        type: string
+        data:
+          - this Saturday
+          - next Tuesday
+          - the 15th of next month
+          - two weeks from today
+    - appointment_time:
+        function: another()
+        type: string
+        data:
+          - 9:30 AM
+          - 11:00 AM
+          - 2:30 PM
+          - 5:15 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_adjustment_confirmation:
+        type: string
+        description: Confirmation that the assistant can adjust the seat to the requested riding style and comfort goals.
+    - saddle_option_recommended:
+        type: string
+        description: The saddle recommendation provided, including whether it can be swapped during the session.
+    - handlebar_grip_recommendation:
+        type: string
+        description: Recommended grip options and installation availability.
+    - installation_capability_confirmation:
+        type: string
+        description: Confirmation that the shop can install the requested saddle and grips during the appointment.
+    - fitting_service_price:
+        type: money
+        description: Quoted price for the fitting and component installation service.
+    - appointment_details:
+        type: string
+        description: Confirmed appointment date and time for the setup session.
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - default
+    - long phrases
+```
+$$$

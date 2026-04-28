@@ -1,0 +1,111 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__51527335
+$$$
+Hey there! That new-bike setup sounds exciting 🚴‍♂️✨. Below is a ready-to-drop Sensei profile that simulates a user asking the shop to tailor their fresh ride—focusing on seat swaps, handlebar grips, and getting everything fitted just right.
+
+---
+
+### 📄 `profiles/bike_setup_customization.yaml`
+
+```yaml
+test_name: bike_setup_customization
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and want the shop to help tailor it
+    to your preferences, focusing on seat comfort and handlebar grip feel.
+  context:
+    - "You have a long ride coming up and want the bike dialed in beforehand."
+    - "You are willing to pay for premium components if they improve comfort."
+  goals:
+    - "Mention that I just purchased a new bike and ask if they provide bike fitting or setup services."
+    - "Ask about seat options that suit {{seat_preference}} riding and request pricing."
+    - "Ask about handlebar grips made of {{grip_material}} and whether they can install them for me."
+    - "Confirm whether installation is included or if there is an extra installation fee."
+    - "Schedule a fitting appointment on {{appointment_day}} at {{appointment_time}}."
+    - seat_preference:
+        type: string
+        function: another()
+        data:
+          - endurance
+          - commuter
+          - performance
+    - grip_material:
+        type: string
+        function: another()
+        data:
+          - rubber
+          - cork
+          - foam
+          - leather
+    - appointment_day:
+        type: string
+        function: forward()
+        data:
+          - tomorrow
+          - next Monday
+          - next Saturday
+    - appointment_time:
+        type: string
+        function: another()
+        data:
+          - 10:00 AM
+          - 2:30 PM
+          - 4:00 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - bike_fitting_confirmation:
+        type: string
+        description: "Does the chatbot confirm it offers bike fitting or setup help?"
+    - seat_options_details:
+        type: string
+        description: "Seat recommendations or descriptions tailored to the user's riding preference."
+    - seat_price:
+        type: money
+        description: "Quoted price (or price range) for the suggested seat."
+    - grip_options_details:
+        type: string
+        description: "Handlebar grip options mentioned, including material or features."
+    - grip_price:
+        type: money
+        description: "Quoted price (or price range) for the preferred grips."
+    - installation_fee:
+        type: money
+        description: "Any installation or fitting fee communicated by the chatbot."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the scheduled fitting appointment including date and time."
+
+conversation:
+  number: 3
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - default
+```
+
+---
+
+### 🛠️ What this profile covers
+
+- **Seat & grip deep dive:** The user specifically asks for component options and pricing.
+- **Installation clarity:** Ensures the bot states whether setup fees are included.
+- **Appointment booking:** Pushes the bot to lock in a fitting at a specific time.
+- **Extractor fields:** `chatbot.output` captures the confirmations, prices, and appointment details you’ll want for Sensei rules later.
+
+Feel free to tweak the lists under `seat_preference`, `grip_material`, or the appointment slots to match the scenarios you need most. If you want more coverage, you can switch `conversation.number` to `combinations()` once you add another paired function (e.g., make `grip_material` depend on `seat_preference` with `forward(seat_preference)`), but the current setup keeps things lean and straightforward.
+
+Let me know if you’d like a matching Sensei rule set or extractor type, happy to help 😊
+$$$

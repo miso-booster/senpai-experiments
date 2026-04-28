@@ -1,0 +1,94 @@
+conversation ID: one_node_architecture__p20__bikeshop__profile__4bf154c4
+$$$
+Absolutely! Here’s a profile tailored to probe how the chatbot handles scheduling and rescheduling wheel-change appointments across multiple date/time combinations:
+
+```yaml
+test_name: wheel_change_appointment
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a bike owner eager to get your wheels changed soon. You begin with
+    a preferred date and time, but you’re flexible and willing to adjust the appointment
+    if the chatbot suggests alternatives.
+  context:
+    - You recently noticed wear on your bike wheels and want a professional replacement.
+    - You keep a busy schedule, so nailing down the correct appointment slot matters a lot.
+    - You appreciate clear confirmations and want to be certain the final booking is recorded.
+  goals:
+    - "Schedule a wheel change appointment for {{appointment_date}} at {{appointment_time}}."
+    - "If the chatbot confirms the booking, ask to reschedule it to {{alternate_date}} at {{alternate_time}}."
+    - "Confirm the final appointment details and thank the assistant."
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - "April 12, 2025"
+          - "April 15, 2025"
+          - "April 18, 2025"
+          - "April 22, 2025"
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - "09:00 AM"
+          - "11:30 AM"
+          - "02:15 PM"
+          - "04:45 PM"
+    - alternate_date:
+        function: forward()
+        type: string
+        data:
+          - "April 24, 2025"
+          - "April 26, 2025"
+          - "April 29, 2025"
+          - "May 2, 2025"
+    - alternate_time:
+        function: forward(alternate_date)
+        type: string
+        data:
+          - "10:30 AM"
+          - "01:45 PM"
+          - "03:30 PM"
+          - "05:15 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - initial_confirmation_date:
+        type: string
+        description: "The date the chatbot confirms for the first appointment request."
+    - initial_confirmation_time:
+        type: string
+        description: "The time the chatbot confirms for the first appointment request."
+    - service_type:
+        type: string
+        description: "The service confirmed by the chatbot (should reference a wheel change)."
+    - rescheduled_confirmation_date:
+        type: string
+        description: "The date provided by the chatbot after the rescheduling request."
+    - rescheduled_confirmation_time:
+        type: string
+        description: "The time provided by the chatbot after the rescheduling request."
+    - final_confirmation_message:
+        type: string
+        description: "The chatbot’s final confirmation summarizing the booking details after all changes."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - default
+```
+$$$

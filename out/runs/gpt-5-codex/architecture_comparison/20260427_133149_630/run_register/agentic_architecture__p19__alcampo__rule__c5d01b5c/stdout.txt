@@ -1,0 +1,24 @@
+conversation ID: agentic_architecture__p19__alcampo__rule__c5d01b5c
+$$$
+Here’s a profile-agnostic Sensei-check rule that flags conversations where the assistant never brings up current promos or similar offers:
+
+```yaml
+name: promotion_information_present
+description: Ensures the assistant mentions current promotions, discounts, or offers.
+conversations: 1
+active: true
+oracle: |
+  len(chatbot_returns('current promotion')) > 0
+  or len(chatbot_returns('current promotions')) > 0
+  or len(chatbot_returns('discount')) > 0
+  or len(chatbot_returns('special offer')) > 0
+  or len(chatbot_returns('deal')) > 0
+on-error: "Assistant never mentioned any current promotions or discounts."
+```
+
+### Why this works
+- **Profile-agnostic**: It relies only on the `chatbot_returns` helper, so it can run against any profile. No custom `chatbot.output` fields are required.
+- **Doc grounding**: The logic and helper usage follow the guidance from `sensei-check-doc.md` (section on general rules and conversation helpers) and the examples in `rules-examples.md`, which showcase `chatbot_returns` for pattern detection.
+
+If you’d like to tighten the keywords or add more nuanced checks (e.g., ensuring the bot also confirms availability), just let me know and we can iterate 😊.
+$$$

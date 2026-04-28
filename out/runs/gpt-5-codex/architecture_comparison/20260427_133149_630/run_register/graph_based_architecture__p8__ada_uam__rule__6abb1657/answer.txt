@@ -1,0 +1,25 @@
+Hey there! Thanks for sharing the rule 😊 Let’s walk through it quickly:
+
+### What’s not quite right
+1. **`when` clause repeats the oracle**  
+   Because your `when` condition is identical to the `oracle`, the rule only runs when every field already matches the expected value. If anything is wrong, the `when` filter blocks the conversation, and the rule never even evaluates—so it can’t catch mistakes.
+
+2. **`conv[0]` isn’t needed for single-conversation rules**  
+   When `conversations: 1`, you can reference the fields directly (`contact_email`, etc.). The `conv[...]` accessor is meant for multi-conversation (metamorphic) rules.
+
+### Fixed rule
+Here’s the adjusted version that actually checks the outputs:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the expected contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works now
+- The rule evaluates on every conversation, so if any value differs, it will fail.
+- Without the `when` filter, we don’t “filter away” negative cases.
+- Referencing the fields directly matches Sensei-check’s syntax for single conversations.
+
+If you also want to ensure those fields are present before checking, we can add `data_collected()` or a `missing_slots()` check—just let me know!

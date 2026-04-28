@@ -1,0 +1,74 @@
+conversation ID: agentic_architecture__p10__ada_uam__rule__82fa0e32
+$$$
+¡Hola! 😊 Gracias por compartir el perfil, está súper completo. Estuve revisando la guía de Sensei-chat y el manual de Sensei-check (`sensei-chat-guide.md`, `sensei-check-doc.md`, además de los ejemplos en `rules-examples.md`) y te propongo un set de reglas iniciales para ponerlo a prueba. Las diseñé pensando en los campos que ya expone tu `chatbot.output`, así que no necesitarías cambiar el perfil.
+
+---
+
+### 1. Enlace básico para cada bloque de información
+
+Esta regla asegura que los cuatro enlaces principales no queden vacíos y parezcan URLs válidas.
+
+```yaml
+name: admission_links_present
+description: Links clave de admisiones, listas de espera y welcome day deben existir y lucir como URLs válidas.
+conversations: 1
+oracle: |
+  all([
+    admission_to_grados_link not in [None, ""] and admission_to_grados_link.lower().startswith("http"),
+    waitlist_info_link not in [None, ""] and waitlist_info_link.lower().startswith("http"),
+    future_students_link not in [None, ""] and future_students_link.lower().startswith("http"),
+    welcome_day_link not in [None, ""] and welcome_day_link.lower().startswith("http")
+  ])
+on-error: >
+  f"Faltan links o no lucen como URL: {{
+    [slot for slot, value in [
+      ('admission_to_grados_link', admission_to_grados_link),
+      ('waitlist_info_link', waitlist_info_link),
+      ('future_students_link', future_students_link),
+      ('welcome_day_link', welcome_day_link)
+    ] if value in [None, ''] or not value.lower().startswith('http')]
+  }}"
+```
+
+---
+
+### 2. Detalles completos del Welcome Day
+
+Si el bot comparte el enlace del evento, también debería aportar fecha, hora y lugar.
+
+```yaml
+name: welcome_day_details_complete
+description: Si se comparte el enlace de Welcome Day, también deben venir fecha, hora y ubicación.
+conversations: 1
+if: welcome_day_link not in [None, ""] and welcome_day_link.lower().startswith("http")
+then: welcome_day_date is not None and welcome_day_time is not None and event_location not in [None, ""]
+on-error: >
+  f"Faltan detalles de Welcome Day: fecha={welcome_day_date}, hora={welcome_day_time}, lugar={event_location}"
+```
+
+---
+
+### 3. Tarifas y requisitos coherentes
+
+Comprueba que, cuando el bot entregue la cuota de admisión, tenga sentido que sea un valor no negativo y que también entregue los requisitos de admisión.
+
+```yaml
+name: admission_fee_and_requirements
+description: La cuota de admisión debe ser un valor válido y acompañarse de los requisitos.
+conversations: 1
+if: application_fee not in [None, ""]
+then: extract_float(application_fee) >= 0 and admission_requirements not in [None, ""]
+on-error: >
+  f"application_fee={application_fee}, admission_requirements={admission_requirements}"
+```
+
+---
+
+#### ¿Cómo usarlas?
+
+1. Guarda cada regla en `rules/` como archivos separados (`admission_links_present.yml`, etc.).
+2. Ejecuta Sensei con tu perfil y luego corre `validation_check.py` o el flujo de Sensei-check sobre esas conversaciones para ver los reportes.
+3. Ajusta la severidad según tu realidad (por ejemplo, si algún campo puede ser opcional, relaja la condición).
+
+Si tienes el perfil con otro nombre o hay campos que deban ser opcionales, dime y lo ajustamos. También podemos añadir reglas metamórficas (comparando conversaciones) una vez veamos cómo responde el bot con combinaciones de `grados` y `cursos`. ¿Te gustaría que armemos alguna de ese estilo?
+$$$

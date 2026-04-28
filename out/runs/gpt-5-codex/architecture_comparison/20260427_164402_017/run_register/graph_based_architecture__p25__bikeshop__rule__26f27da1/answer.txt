@@ -1,0 +1,23 @@
+Hey there! I’ve put together a Sensei-check rule that enforces those expected business hours and prices for the bike shop profile you shared. It assumes the profile’s `chatbot.output` fields are exactly the ones you listed (`opening_and_closing`, `tire`, `tune_up`, `seat_price`, `care_bike`). Feel free to tweak the description or comparisons if your assistant uses a different phrasing (e.g., currency symbols or words like “twenty dollars”).
+
+```yaml
+name: bike_shop_expected_values
+description: Confirms the bike shop profile returns the agreed hours and prices.
+conversations: 1
+oracle: |
+  (
+    '10' in opening_and_closing and
+    '20' in opening_and_closing and
+    extract_float(tire) == 20 and
+    extract_float(tune_up) == 50 and
+    extract_float(seat_price) == 20 and
+    care_bike is not None
+  )
+```
+
+A quick rundown:
+- The first two checks make sure the opening hours mention both “10” and “20”.
+- The `extract_float` calls confirm the tire, tune-up, and seat price match 20 / 50 / 20.
+- The last line ensures the assistant actually fills in the bike-care guidance slot.
+
+Let me know if you’d like to add stricter wording checks (e.g., a specific phrase like “10:00 to 20:00”) or cover additional scenarios. Happy to help you iterate! 😊

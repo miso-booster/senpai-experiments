@@ -1,0 +1,31 @@
+conversation ID: agentic_architecture__p19__alcampo__rule__68d76f12
+$$$
+Here’s a global Sensei-check rule that looks for an assistant reply mentioning promotions whenever the user asks about them:
+
+```yaml
+name: promotion_inquiry_answered
+description: Ensures the assistant shares current promotions when the user asks about them
+active: true
+conversations: 1
+if: |
+  any(idx >= 0 for idx in [
+    utterance_index('user', 'promotion'),
+    utterance_index('user', 'discount'),
+    utterance_index('user', 'special offer')
+  ])
+then: |
+  any(idx >= 0 for idx in [
+    utterance_index('assistant', 'promotion'),
+    utterance_index('assistant', 'discount'),
+    utterance_index('assistant', 'special offer')
+  ])
+on-error: >
+  "User asked about promotions or discounts, but the assistant never mentioned one."
+```
+
+### How it works
+- **Profile-agnostic:** It relies only on conversation text helpers (`utterance_index`) rather than profile-specific outputs, so it can apply to any profile where users might ask about promotions.
+- **Logic:** When a user turn contains keywords like “promotion,” “discount,” or “special offer,” the rule expects at least one assistant turn with one of the same terms. If the assistant never mentions a promotion-related keyword, the rule fails with a clear error message.
+
+This follows the guidance from `sensei-check-doc.md` on creating profile-agnostic rules using generic helpers and `if/then` implications. Feel free to tweak the keyword list to match the exact phrases your bot and users typically use. Let me know if you’d like a variant that checks for more specific promotion details!
+$$$

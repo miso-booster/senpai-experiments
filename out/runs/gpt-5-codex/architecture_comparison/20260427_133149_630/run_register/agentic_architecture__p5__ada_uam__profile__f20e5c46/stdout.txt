@@ -1,0 +1,63 @@
+conversation ID: agentic_architecture__p5__ada_uam__profile__f20e5c46
+$$$
+Hey! Here’s a focused profile for a UAM user who just needs the CAU’s core contact details 😊. I double-checked the existing `consultante_de_servicios_y_asistencia_del_cau.yaml` profile so this new one doesn’t overlap and keeps the scope tight on phone, email, address, and opening hours.
+
+```yaml
+test_name: "cau_contact_information_lookup"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >-
+    Eres un miembro de la comunidad de la Universidad Autónoma de Madrid que
+    necesita contactar con el Centro de Atención a Usuarios (CAU) para resolver
+    una incidencia urgente.
+  context:
+    - Tienes prisa por resolver un problema relacionado con tu acceso institucional.
+    - Prefieres recibir la información de contacto oficial directamente de la fuente.
+    - No quieres navegar por múltiples páginas; buscas respuestas claras y verificables.
+  goals:
+    - Solicitar el número de teléfono del CAU.
+    - Preguntar por la dirección de correo electrónico oficial del CAU.
+    - Pedir que te indiquen la ubicación física del CAU dentro del campus.
+    - Preguntar por el horario de atención del CAU.
+
+chatbot:
+  is_starter: false
+  fallback: "Perdona, ¿podrías reformular tu consulta sobre el CAU?"
+  output:
+    - cau_phone:
+        type: string
+        description: Número de teléfono oficial del CAU
+    - cau_email:
+        type: string
+        description: Correo electrónico de contacto del CAU
+    - cau_location:
+        type: string
+        description: Ubicación física del CAU
+    - cau_opening_hours:
+        type: string
+        description: Horario de atención del CAU
+
+conversation:
+  number: 2
+  max_cost: 0.3
+  goal_style:
+    all_answered:
+      limit: 12
+  interaction_style:
+    - single questions
+```
+
+### Why this setup works
+- Built following the structure from `sensei-chat-guide.md`, keeping the persona, goals, and conversation controls aligned with best practices.
+- The user goals map 1:1 to the `chatbot.output` fields so future rules can easily validate each contact detail.
+- `goal_style: all_answered` ensures the run keeps going until all four contact points are addressed (or we hit the safety limit).
+
+Let me know if you’d like this profile to reference a specific personality file or if we should add more variation to the interaction style!
+$$$

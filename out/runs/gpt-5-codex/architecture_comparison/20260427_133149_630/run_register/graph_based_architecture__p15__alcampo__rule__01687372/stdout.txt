@@ -1,0 +1,26 @@
+conversation ID: graph_based_architecture__p15__alcampo__rule__01687372
+$$$
+¡Claro! Vamos a pulir esa regla para que Sensei-check la entienda y valide justo lo que buscas 😊. El principal detalle es que faltaba la cláusula `then`, que es la que define la relación metamórfica que queremos comprobar. También corregí el campo `description`.
+
+Aquí tienes una versión funcional:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides consistent contact options and phone number for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: str(conv[1].customer_service_number) in str(conv[0].contact_options)
+on-error: f"Contact options {conv[0].contact_options} do not include the customer service number {conv[1].customer_service_number}"
+```
+
+### ¿Qué comprueba esta regla?
+
+- **Selección (`when`)**: compara dos conversaciones, una donde el usuario pide “contact options” y otra donde pide “customer service number”.
+- **Condición previa (`if`)**: se asegura de que ambos outputs estén presentes (nada de valores `None`).
+- **Relación (`then`)**: verifica que el número de atención al cliente mostrado en la segunda conversación también aparezca dentro de las opciones de contacto de la primera.
+
+Si el número no está incluido, la regla falla y tienes un mensaje claro en `on-error` para saber qué se desalineó. 
+
+¿Quieres extenderla para validar también correo electrónico u otros canales? ¡Dímelo y lo ajustamos juntos! 💪✨
+$$$

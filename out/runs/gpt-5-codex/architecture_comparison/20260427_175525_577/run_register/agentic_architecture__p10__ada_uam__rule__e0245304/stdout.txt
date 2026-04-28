@@ -1,0 +1,64 @@
+conversation ID: agentic_architecture__p10__ada_uam__rule__e0245304
+$$$
+¡Hola! Gracias por compartir el perfil, está súper completo 😊. Revisé la guía de perfiles (`sensei-chat-guide.md`) y las referencias de reglas (`sensei-check-doc.md`, `rules-examples.md`) y, con base en los campos expuestos en `chatbot.output`, aquí tienes tres reglas que te ayudarán a ejercitar este perfil:
+
+---
+
+### 1. Cobertura mínima de enlaces y texto clave  
+Verifica que el bot entregue los enlaces críticos, textos explicativos y una tasa válida para la solicitud.
+
+```yaml
+name: admissions_response_completeness
+description: Confirma que la respuesta sobre admisiones incluye enlaces, guías y una cuota válida.
+conversations: 1
+oracle: |
+  all(
+    isinstance(link, str) and link.lower().startswith('http')
+    for link in [
+      admission_to_grados_link,
+      waitlist_info_link,
+      future_students_link,
+      welcome_day_link
+    ]
+  ) and all(
+    field not in [None, ""]
+    for field in [
+      admission_requirements,
+      enrollment_process,
+      future_students_info,
+      contact_admissions
+    ]
+  ) and isinstance(application_fee, str) and extract_float(application_fee) > 0
+```
+
+---
+
+### 2. Paquete completo para el Welcome Day  
+Si el bot da un enlace del evento, debe acompañarlo con fecha, hora y lugar.
+
+```yaml
+name: welcome_day_details_complete
+description: Si se anuncia el Welcome Day, también se debe informar fecha, hora y lugar.
+conversations: 1
+if: isinstance(welcome_day_link, str) and welcome_day_link.lower().startswith('http')
+then: all(field not in [None, ""] for field in [welcome_day_date, welcome_day_time, event_location])
+```
+
+---
+
+### 3. Consistencia en la guía de lista de espera  
+Para conversaciones que apuntan al mismo recurso de lista de espera, la descripción de procedimientos debe ser coherente.
+
+```yaml
+name: waitlist_guidance_consistency
+description: Dos conversaciones con el mismo enlace de lista de espera deben describir los mismos pasos.
+conversations: 2
+when: conv[0].waitlist_info_link and conv[1].waitlist_info_link
+if: conv[0].waitlist_info_link == conv[1].waitlist_info_link
+then: conv[0].waitlist_procedures == conv[1].waitlist_procedures and conv[0].waitlist_procedures not in [None, ""]
+```
+
+---
+
+Con este combo cubres: (1) que la respuesta tenga la información mínima indispensable, (2) que el evento especial no quede a medias y (3) que las instrucciones de lista de espera no se contradigan entre ejecuciones. Si quieres afinar algo (por ejemplo, controlar qué campos son opcionales) o probar variantes metamórficas adicionales, dime y lo iteramos.
+$$$

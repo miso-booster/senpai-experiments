@@ -1,0 +1,98 @@
+conversation ID: graph_based_architecture__p14__alcampo__profile__6c06f0dc
+$$$
+¡Genial! Aquí tienes un perfil Sensei listo para poner a prueba si el chatbot de Alcampo sabe recomendar recetas y planificar menús. 😊
+
+```yaml
+test_name: Recomendaciones de Recetas y Planificación de Menús
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Persona que busca ayuda culinaria combinando menús equilibrados,
+    recetas variadas y consejos prácticos para organizar la semana.
+  context:
+    - personality: personalities/conversational-user
+    - "Quieres optimizar tu tiempo en la cocina con opciones saludables y factibles."
+    - "Te interesa equilibrar nutrientes y aprovechar ingredientes de temporada."
+    - "Necesitas ideas que se adapten a tu nivel de habilidad y al equipo de tu cocina."
+  goals:
+    - "Solicita al chatbot un plan de comidas de {{planning_horizon}} días orientado a la preferencia {{dietary_preference}}."
+    - "Pide dos recetas para {{meal_type}} que cumplan la preferencia indicada, mencionando ingredientes clave."
+    - "Pregunta por la lista básica de ingredientes y cantidades para {{servings}} personas."
+    - "Solicita sugerencias de preparación anticipada (batch cooking) para los platos recomendados."
+    - "Pregunta cómo adaptar las recetas si falta algún ingrediente clave."
+    - "Pide recomendaciones nutricionales que complementen la preferencia {{dietary_preference}}."
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data: [vegetariana, sin gluten, rica en proteínas, mediterránea]
+    - meal_type:
+        function: pairwise()
+        type: string
+        data: [desayuno, comida, cena]
+    - planning_horizon:
+        function: forward()
+        type: int
+        data: [3, 5, 7]
+    - servings:
+        function: random()
+        type: int
+        data:
+          min: 2
+          max: 6
+          step: 2
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no está relacionado con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - weekly_menu_outline:
+        type: list[string]
+        description: "Resumen propuesto del plan de comidas por día y momento"
+    - recipe_recommendations:
+        type: list[string]
+        description: "Recetas concretas sugeridas para la preferencia y el tipo de comida solicitados"
+    - ingredient_list:
+        type: string
+        description: "Ingredientes y cantidades que el chatbot recomienda para cubrir las recetas"
+    - servings_alignment:
+        type: string
+        description: "Cómo se ajustan las recetas al número de comensales solicitado"
+    - batch_cooking_tips:
+        type: string
+        description: "Consejos de preparación anticipada o conservación"
+    - substitution_guidance:
+        type: string
+        description: "Sugerencias para sustituir ingredientes faltantes o no disponibles"
+    - nutritional_advice:
+        type: string
+        description: "Consejos nutricionales ligados a la preferencia alimentaria indicada"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 10
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change language:
+            - Spanish
+            - English
+```
+
+📌 Recomendaciones rápidas:
+- Guarda este archivo en `profiles/` (por ejemplo, `profiles/recipe_planning_test.yaml`).
+- Asegúrate de tener la personalidad `personalities/conversational-user` disponible, o ajusta ese campo.
+- Si necesitas más cobertura, puedes subir `conversation.number` a `combinations(1, pairwise)` para probar todas las combinaciones.
+
+¿Quieres que también prepare un `run.yml` o un conjunto de reglas Sensei-Check para validar las respuestas del bot? Estoy aquí para ayudarte. 🍽️💡
+$$$

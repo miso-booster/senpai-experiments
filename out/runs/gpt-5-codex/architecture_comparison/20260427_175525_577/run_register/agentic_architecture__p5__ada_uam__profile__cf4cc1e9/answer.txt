@@ -1,0 +1,58 @@
+Here’s a focused profile you can drop into `profiles/` to exercise the CAU contact-information flow for the UAM chatbot:
+
+```yaml
+test_name: uam_cau_contact_info
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona usuaria de la UAM que necesita ponerse en contacto con el
+    Centro de Atención a Usuarios (CAU) para resolver incidencias o dudas.
+  context:
+    - Estás recopilando los datos de contacto del CAU para compartirlos con otras personas usuarias.
+    - No conoces los canales oficiales y quieres confirmarlos directamente con el CAU.
+    - Te interesa recibir información clara y actualizada.
+  goals:
+    - Solicitar el número de teléfono oficial del CAU.
+    - Pedir la dirección de correo electrónico de contacto del CAU.
+    - Preguntar por la ubicación física donde atiende el CAU.
+    - Confirmar el horario de atención presencial y/o telefónica del CAU.
+
+chatbot:
+  is_starter: false
+  fallback: Lo siento, no he podido ayudarte con eso. ¿Podrías reformular tu consulta sobre el CAU?
+  output:
+    - cau_phone_number:
+        type: string
+        description: Número de teléfono del CAU.
+    - cau_email_address:
+        type: string
+        description: Correo electrónico oficial del CAU.
+    - cau_physical_location:
+        type: string
+        description: Dirección física del CAU.
+    - cau_opening_hours:
+        type: string
+        description: Horario de atención del CAU.
+
+conversation:
+  number: 1
+  max_cost: 0.5
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+### What changed & why
+- I checked the existing `consultante_de_servicios_y_asistencia_del_cau.yaml` profile to avoid duplication. That profile covers a broader set of CAU services, while this new one zeroes in on contact details only.
+- The structure follows the guidance in `sensei-chat-guide.md`: clear `user.role/context`, explicit goals, and an output schema that matches the fields you’ll want to validate later (phone, email, location, hours).
+- Conversation controls keep it concise (`steps: 8`, `single questions`) so the simulator focuses on gathering each piece of contact info clearly.
+
+Feel free to tweak the fallback text or interaction style if you need a different tone or more varied conversations. Let me know if you’d like a rule to validate these outputs next! 😊

@@ -1,0 +1,17 @@
+conversation ID: one_node_architecture__p15__alcampo__rule__ada8074b
+$$$
+Hey! I rewrote the rule so it now checks the fields that actually exist in your `customer_service_assistance` profile. Since `user_request` isn’t part of the `chatbot.output`, the original `when` clause could never match. This version just makes sure both `contact_options` and `customer_service_number` are filled in every conversation. (Quick heads-up: fix the profile YAML by adding the missing colons after `user:` and `goals:` so the fields are available.)
+
+```yaml
+name: customer_service_contact_info
+description: Ensures the chatbot shares contact options and a customer service number.
+conversations: 1
+oracle: |
+  contact_options is not None and contact_options.strip() != "" and
+  customer_service_number is not None and customer_service_number.strip() != ""
+on-error: |
+  f"Incomplete customer service info -> contact_options={contact_options!r}, customer_service_number={customer_service_number!r}"
+```
+
+Give it a whirl once the profile loads correctly, and let me know if you’d like to extend it to other outputs too! 😊
+$$$

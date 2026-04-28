@@ -1,0 +1,104 @@
+conversation ID: agentic_architecture__p20__bikeshop__profile__b13385d7
+$$$
+Here’s a fresh profile tailored to your bike-shop appointment scenario 🚲😊
+
+```yaml
+test_name: bike_wheel_change_appointment_scheduler
+
+llm:
+  temperature: 0.65
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a commuter who needs both bike wheels replaced at your local bike shop.
+    You are detail-oriented about scheduling and follow up on specifics.
+  context:
+    - "You depend on the bike for daily rides and cannot be without it for long."
+    - "You prefer morning slots but can accept late afternoon if needed."
+    - "You have previously visited this shop and expect professional guidance."
+  goals:
+    - "Explain that you need both wheels changed and request an appointment on {{preferred_date}} at {{preferred_time}}."
+    - "If that slot is unavailable, ask whether {{alternate_date}} at {{alternate_time}} is possible."
+    - "Confirm how long the wheel change will take and if same-day pickup can happen."
+    - "Ask what details about the bike or wheels the shop needs, including mentioning your {{bike_model}}."
+    - preferred_date:
+        function: pairwise()
+        type: string
+        data:
+          - "next Tuesday"
+          - "next Thursday"
+          - "the first Saturday of next month"
+    - preferred_time:
+        function: pairwise()
+        type: string
+        data:
+          - "8:30 am"
+          - "1:00 pm"
+          - "4:30 pm"
+    - alternate_date:
+        function: forward(preferred_date)
+        type: string
+        data:
+          - "next Wednesday morning"
+          - "next Friday afternoon"
+          - "the second Saturday of next month"
+    - alternate_time:
+        function: forward(preferred_time)
+        type: string
+        data:
+          - "10:00 am"
+          - "3:30 pm"
+          - "9:30 am"
+    - bike_model:
+        function: random()
+        type: string
+        data:
+          - "2019 Trek FX 2"
+          - "2021 Giant Escape 3"
+          - "Specialized Sirrus X 4.0"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, it's a bit noisy in the shop—could you repeat that?"
+  output:
+    - scheduled_date:
+        type: date
+        description: "Confirmed appointment date for the wheel change service."
+    - scheduled_time:
+        type: time("hh:mm a")
+        description: "Confirmed appointment time for the wheel change."
+    - alternate_slot:
+        type: string
+        description: "Any alternate date or time the shop offers."
+    - service_duration:
+        type: string
+        description: "Estimated turnaround time for replacing both wheels."
+    - confirmation_details:
+        type: string
+        description: "Appointment confirmation, reference number, or summary provided by the shop."
+
+conversation:
+  number: combinations
+  max_cost: 0.6
+  goal_style:
+    steps: 6
+    max_cost: 0.2
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+### Why this fits your needs
+- **Date & time coverage:** `preferred_date` and `preferred_time` use `pairwise()` so Sensei will generate varied day/time combinations. The alternate slots follow those values to stress-test rescheduling.
+- **Appointment focus:** The goals keep the conversation centered on securing a wheel-change appointment and validating how the bot handles availability, turnaround, and confirmation.
+- **Outputs ready for rules:** `scheduled_date` and `scheduled_time` (plus alternates and confirmation details) make it easy to write rules later that check how the bot handled scheduling.
+
+I leaned on the guidance from `sensei-chat-guide.md` and reviewed the existing `bike_repair_and_maintenance_scheduler.yaml` to ensure this profile adds new coverage (wheels + multiple date/time scenarios). Save it as something like `profiles/bike_wheel_change_appointment.yml`, and you’re good to start testing!
+$$$

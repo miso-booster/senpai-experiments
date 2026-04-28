@@ -1,0 +1,39 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__0e6503b9
+$$$
+¡Hola! 😊 Tu perfil está súper completo, así que puedes arrancar con algunas reglas que verifiquen que la información clave aparece y que se mantiene coherente entre conversaciones.
+
+Aquí tienes tres reglas de ejemplo:
+
+1. **URLs críticas presentes**  
+   Verifica que los principales enlaces de admisiones estén presentes y tengan pinta de URL válida.
+
+```yaml
+name: admissions_links_are_urls
+description: Las URLs principales de admisiones deben estar presentes y usar http(s)
+conversations: 1
+oracle: all(link and link.lower().startswith('http') for link in [admission_to_grados_link, waitlist_info_link, future_students_link, welcome_day_link])
+```
+
+2. **Consistencia del Welcome Day**  
+   Asegura que la fecha, hora y lugar del Welcome Day no cambien entre escenarios comparables.
+
+```yaml
+name: welcome_day_info_consistency
+description: La información del Welcome Day no debe variar entre conversaciones
+conversations: 2
+if: conv[0].welcome_day_date and conv[1].welcome_day_date
+then: conv[0].welcome_day_date == conv[1].welcome_day_date and conv[0].welcome_day_time == conv[1].welcome_day_time and conv[0].event_location == conv[1].event_location
+```
+
+3. **Cuota de solicitud bien formada**  
+   Comprueba que el chatbot devuelva una tarifa positiva y en euros.
+
+```yaml
+name: application_fee_is_positive_eur
+description: La cuota de solicitud debe tener valor positivo y expresarse en EUR
+conversations: 1
+oracle: application_fee and extract_float(application_fee) > 0 and currency(application_fee) == 'EUR'
+```
+
+Puedes guardarlas en `rules/` y ejecutarlas con Sensei-check después de generar conversaciones con ese perfil. ¿Quieres que te ayude con el comando para correrlas o revisar los resultados?
+$$$

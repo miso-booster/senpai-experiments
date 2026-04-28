@@ -1,0 +1,61 @@
+conversation ID: agentic_architecture__p10__ada_uam__rule__9c801cda
+$$$
+¡Hola! Basándome en lo que explica la guía de reglas (`sensei-check-doc.md`) y los ejemplos prácticos (`rules-examples.md`), aquí van algunas reglas sencillas para empezar a probar tu perfil “Usuarios Nuevos y Admisiones”. Todas apuntan a los slots que el perfil ya expone, así que puedes pegarlas tal cual en `rules/` y ejecutarlas con Sensei-check.
+
+---
+
+### 1. Asegurar que el bot responde en español
+La documentación recomienda comenzar con comprobaciones generales de estilo; este caso usa el helper `responds_in_same_language()` que aparece en `rules-examples.md`.
+
+```yaml
+name: responde_en_espanol
+description: La asistente debe contestar en español igual que el usuario simulador.
+conversations: 1
+active: true
+oracle: responds_in_same_language()
+```
+
+---
+
+### 2. Verificar que los enlaces principales parecen URLs válidas
+Siguiendo la sugerencia de `sensei-check-doc.md` de crear oráculos simples por conversación, esta regla comprueba que cada enlace clave comience con `http`, evitando respuestas vacías.
+
+```yaml
+name: enlaces_admisiones_validos
+description: Los enlaces principales de admisión deben contener una URL con protocolo HTTP/HTTPS.
+conversations: 1
+active: true
+oracle: all(
+  link and isinstance(link, str) and link.lower().startswith('http')
+  for link in [
+    admission_to_grados_link,
+    waitlist_info_link,
+    future_students_link,
+    welcome_day_link
+  ]
+)
+```
+
+---
+
+### 3. Coherencia en la información del Welcome Day
+Inspirado por el patrón “if/then” descrito en `sensei-check-doc.md`, esta regla sólo se activa cuando el bot ofrece el enlace del evento y, en ese caso, exige que complete fecha, hora y ubicación.
+
+```yaml
+name: welcome_day_detalles_completos
+description: Si el chatbot ofrece información del Welcome Day, debe incluir fecha, hora y ubicación.
+conversations: 1
+active: true
+if: welcome_day_link and isinstance(welcome_day_link, str) and welcome_day_link.lower().startswith('http')
+then: bool(welcome_day_date) and bool(welcome_day_time) and bool(event_location)
+```
+
+---
+
+### Próximos pasos sugeridos 😊
+1. Guarda las reglas (por ejemplo en `rules/responde_en_espanol.yaml`, etc.).
+2. Ejecuta tu suite con Sensei-check para ver cómo responde el bot bajo las metas generadas por el perfil.
+3. Si quieres ir más allá, podemos diseñar reglas metamórficas que comparen conversaciones con distintos `grados`/`cursos` y ver si el bot adapta los enlaces o la información que proporciona.
+
+¿Quieres que preparemos alguna otra regla (por ejemplo, sobre requisitos de admisión o tasas) o que revisemos las ejecuciones una vez que las hayas corrido? Estoy aquí para ayudarte.
+$$$

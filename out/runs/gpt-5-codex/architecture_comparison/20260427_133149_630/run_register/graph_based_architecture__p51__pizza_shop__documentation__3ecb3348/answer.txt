@@ -1,0 +1,57 @@
+Hey there! 😊  
+**Sensei connectors** are little YAML “bridges” that tell Sensei how to talk to your chatbot’s API. Instead of writing custom code, you describe the API in a config file, and Sensei uses that to send user messages and capture the bot’s replies during testing.
+
+---
+
+### 🧩 What do connectors do?
+
+- **Send messages**: Define the HTTP request Sensei should make (method, path, headers, payload).
+- **Receive and parse replies**: Show Sensei where in the JSON response the chatbot’s answer lives.
+- **Keep tests flexible**: You can swap connectors if you move from staging to production, change vendors, etc., without touching your Sensei profiles or rules.
+
+---
+
+### 🗂️ Key fields inside a connector YAML
+
+| Field | Required? | What it controls |
+| --- | --- | --- |
+| `name` | optional | Friendly label for the connector (“Echo Bot”, “Metro Madrid”, …). Handy when you manage several configs. |
+| `base_url` | **required** | The main URL Sensei will hit. Every request uses this as the root. |
+| `send_message` | **required** | Parent section with all request details. |
+| `send_message.path` | **required** | Endpoint path appended to `base_url` (e.g., `/api/chat`). |
+| `send_message.method` | optional (defaults to `POST`) | HTTP verb to use (`POST`, `GET`, etc.). |
+| `send_message.headers` | optional | HTTP headers like `Authorization`, `Content-Type`, etc. |
+| `send_message.payload_template` | **required** | JSON body Sensei sends. Include `{user_msg}` wherever the user’s text should go. |
+| `response_path` | **required** | Dot-path to extract the chatbot’s reply from the JSON response (e.g., `response.0.text`). |
+
+> 🔁 `payload_template` can contain static values plus `{user_msg}` as a placeholder. Sensei swaps it with each turn of the conversation.
+
+---
+
+### 📄 Mini example (from your project)
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+Here’s what happens:
+1. Sensei sends your user message to `https://postman-echo.com/post` in a JSON `{ "message": "Hi" }`.
+2. It reads the reply from `response["json"]["message"]` (thanks to `response_path`).
+
+---
+
+### 🛠️ Why it’s awesome
+
+- No hard-coding API calls.
+- Easy to switch environments or vendors.
+- Works with any REST-ish chatbot API.
+- Keeps profile/rule logic focused on user behavior, not plumbing.
+
+If you ever need help crafting a connector for a specific bot, just ping me! 💌

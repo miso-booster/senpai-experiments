@@ -1,0 +1,21 @@
+conversation ID: one_node_architecture__p26__bikeshop__rule__05bc9843
+$$$
+Hey! I spotted a few things to tweak so the rule actually enforces that $50 requirement. Here’s the corrected version:
+
+```yaml
+name: check_tune_up_price
+description: Tune-up price must be exactly $50 USD.
+conversations: 1
+if: tune_up_price is not None
+then: extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'
+on-error: f"Tune-up price returned {tune_up_price}, expected $50 USD."
+```
+
+**What changed (and why):**
+- ➖ Switched `conversations` from 2 to 1 since we only need one conversation to validate this.
+- ✂️ Removed the `conv[0]` references; with a single conversation you can refer to slots directly.
+- ✅ Replaced the string in `then` with an actual boolean condition, using `extract_float` and `currency` to check both the numeric value and currency.
+- 🛟 Added an `on-error` message so failures explain what price was observed.
+
+This should now correctly flag any tune-up price that isn’t exactly `$50 USD`. Let me know if you’d like to enforce a range instead of a fixed price!
+$$$

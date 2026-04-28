@@ -1,0 +1,112 @@
+Sure thing! Here’s a ready-to-use Sensei profile that focuses on asking the chatbot to add items to the user’s shopping cart. Drop it into your project’s `profiles/` folder whenever you’re ready 🙌
+
+```yaml
+test_name: "shopping_cart_item_addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are organizing a weekly shopping haul and want the chatbot to help you build a
+    cart quickly by recommending items, confirming availability, and summarizing the order.
+  context:
+    - You prefer to rely on the chatbot to suggest the best options in each category.
+    - You need confirmations for quantities and substitutions to avoid surprises during delivery.
+    - You are mindful of promotions and want to know if any apply to the current cart.
+  goals:
+    - "Ask the chatbot to recommend a trio of staples from the {{primary_category}} section for my cart."
+    - "Request to add {{item_one}} to the cart and confirm if I can take {{quantity_one}} units."
+    - "If {{item_one}} is unavailable, ask for a suitable substitution before proceeding."
+    - "Add {{item_two}} and {{item_three}} to the cart and request their current prices."
+    - "Confirm the updated cart total and check whether any deals apply to {{primary_category}}."
+    - "Ask the chatbot to lock in {{delivery_preference}} for this order."
+    - primary_category:
+        function: forward()
+        type: string
+        data:
+          - fresh produce
+          - pantry staples
+          - beverages
+          - household essentials
+    - item_one:
+        function: forward(primary_category)
+        type: string
+        data:
+          - ripe avocados
+          - whole grain sandwich bread
+          - sparkling water pack
+          - biodegradable dish soap
+    - quantity_one:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - item_two:
+        function: forward(primary_category)
+        type: string
+        data:
+          - baby spinach bag
+          - specialty pasta
+          - cold brew coffee
+          - eco-friendly kitchen towels
+    - item_three:
+        function: forward(primary_category)
+        type: string
+        data:
+          - seasonal berry mix
+          - organic tomato sauce
+          - vitamin-enriched juice
+          - plant-based surface cleaner
+    - delivery_preference:
+        function: another()
+        type: string
+        data:
+          - home delivery
+          - Click & Collect pickup
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - recommended_items:
+        type: list[string]
+        description: Items the chatbot suggested for the cart
+    - cart_items_added:
+        type: list[string]
+        description: Items confirmed as added to the cart
+    - cart_quantities:
+        type: list[int]
+        description: Quantities for each cart item
+    - cart_total:
+        type: money
+        description: Current total amount for the shopping cart
+    - available_promotions:
+        type: string
+        description: Promotions or discounts applicable to the current cart
+    - substitution_plan:
+        type: string
+        description: Agreed substitutions if requested items are unavailable
+    - delivery_selection:
+        type: string
+        description: Delivery or pickup option chosen for the order
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+Let me know if you’d like a matching Sensei rule or tweaks to the interaction style!

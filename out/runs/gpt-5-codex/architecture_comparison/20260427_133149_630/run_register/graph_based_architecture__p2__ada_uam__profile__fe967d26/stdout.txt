@@ -1,0 +1,85 @@
+conversation ID: graph_based_architecture__p2__ada_uam__profile__fe967d26
+$$$
+¡Hola! 😊 Qué gusto verte por aquí. Entiendo que necesitas un perfil nuevo para simular a un estudiante Erasmus que acaba de llegar y está bastante perdido con Moodle, Sigma y demás plataformas. La idea es tener pocos parámetros de entrada pero un buen conjunto de **outputs** que luego nos permitan verificar si el chatbot dio el soporte adecuado.
+
+Aquí tienes una propuesta completa que puedes guardar como `profiles/erasmus_setup_support.yaml`:
+
+```yaml
+test_name: "Erasmus setup support"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an Erasmus exchange student who just arrived at the university.
+    You need help setting up access to digital platforms (Moodle, Sigma, email)
+    and you have limited knowledge about internal procedures.
+  context:
+    - personality: personalities/anxious-user
+    - "You arrived this week and classes start very soon."
+    - "You only have a temporary student ID and still need to finish your enrollment."
+    - "You feel a bit overwhelmed by unfamiliar systems and local language differences."
+  goals:
+    - "Ask for the exact steps to get access to Moodle, including account activation or password setup."
+    - "Request guidance to log into the Sigma academic portal for class registration and grades."
+    - "Confirm whether a temporary student ID is enough to start using these platforms."
+    - "Ask where to find official documentation or videos that explain the onboarding process for international students."
+    - "Request direct contact information (email/phone) for technical support if something fails."
+
+chatbot:
+  is_starter: false
+  fallback: "Could you please rephrase your question? Alternatively, you can check our service catalog for more details."
+  output:
+    - moodle_setup_instructions:
+        type: string
+        description: "Detailed steps (links or instructions) for Moodle access."
+    - sigma_access_steps:
+        type: string
+        description: "Instructions for accessing and configuring the Sigma academic portal."
+    - account_activation_requirements:
+        type: string
+        description: "Information needed to activate the institutional account (ID, documents, timing)."
+    - temporary_id_policy:
+        type: string
+        description: "Clarification on whether a provisional ID is enough to log in."
+    - onboarding_resources:
+        type: list[string]
+        description: "Links or references to guides, videos, or FAQs for international students."
+    - support_contact_channels:
+        type: list[string]
+        description: "Official channels to contact technical support (email, phone, desks)."
+    - follow_up_confirmation:
+        type: string
+        description: "Confirmation that additional help or tickets were offered if needed."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 18
+  interaction_style:
+    - long phrases
+    - change language:
+        - Spanish
+  max_cost: 0.45
+```
+
+### ¿Por qué esta configuración?
+
+- **Sin variables**: todas las metas están en texto plano, así cumplimos el requisito de no complicarnos con datos dinámicos.
+- **Outputs bien definidos**: cada campo sirve para comprobar si el bot entregó instrucciones completas, enlaces útiles y contactos de soporte.
+- **Contexto creíble**: el estudiante Erasmus está nervioso, con prisa y puede cambiar al español si se le complica—eso nos ayuda a evaluar la adaptación del chatbot.
+
+### Próximos pasos
+
+1. Guarda el archivo en `profiles/erasmus_setup_support.yaml`.
+2. Ejecuta Sensei con este perfil (vía CLI o `run.yml`).
+3. Revisa el extracto de `chatbot.output` en los logs o junto con tus reglas de Sensei-check para validar que el bot responde como esperas.
+
+¿Quieres que también preparemos reglas específicas para este perfil más adelante? Estoy aquí para ayudarte con lo que necesites 😄
+$$$

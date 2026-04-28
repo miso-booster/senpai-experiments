@@ -1,0 +1,28 @@
+conversation ID: agentic_architecture__p25__bikeshop__rule__011585b5
+$$$
+Here’s a rule tailored to the profile/schema you described (opening_and_closing, tire, tune_up, seat_price, care_bike). It checks that the bike shop consistently reports the expected opening hours and price points:
+
+```yaml
+name: bike_shop_expected_hours_and_prices
+description: Ensures the bike shop profile returns expected opening hours and price points.
+conversations: 1
+active: true
+oracle: |
+  data_collected() and
+  opening_and_closing.find('10') != -1 and
+  opening_and_closing.find('20', opening_and_closing.find('10')) != -1 and
+  abs(extract_float(tune_up) - 50) < 0.01 and
+  abs(extract_float(tire) - 20) < 0.01 and
+  abs(extract_float(seat_price) - 20) < 0.01
+on-error: |
+  f"Got opening_and_closing={opening_and_closing}, tire={tire}, tune_up={tune_up}, seat_price={seat_price}"
+```
+
+### How it works
+- `data_collected()` guarantees all the output slots are filled before we check their values (per **sensei-check-doc.md** and the helper overview in **rules-examples.md**).
+- The opening-hours check looks for “10” followed by “20” anywhere in the string, so it covers formats like “10 to 20” or “10:00 – 20:00”. If your bot returns a different phrasing (e.g., “10am–8pm”), let me know and we can tighten that condition.
+- `extract_float()` (documented in **sensei-check-doc.md**) turns the money strings into numbers so we can verify tune-up = 50, tire = 20, and seat price = 20 with a small tolerance.
+- I assumed this rule targets the profile you sketched (see the contract between `chatbot.output` and rules in **sensei-chat-guide.md**). If the slot names or formats differ in your actual profile file, just shout and I’ll adjust the rule accordingly 😊.
+
+Want any extra checks (e.g., that `care_bike` isn’t empty)? Happy to extend it!
+$$$

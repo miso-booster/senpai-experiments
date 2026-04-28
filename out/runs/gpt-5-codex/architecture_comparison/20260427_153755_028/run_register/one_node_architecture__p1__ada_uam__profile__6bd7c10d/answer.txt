@@ -1,0 +1,70 @@
+Aquí tienes el perfil listo para que Sensei simule a ese usuario que está peleándose con eduroam 😅. Si quieres ajustarlo más tarde (e.g. añadir más métodos o cambiar los outputs), dime y lo pulimos.
+
+```yaml
+test_name: "Configuración de Eduroam en Dispositivo Personal"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante frustrado porque no logras conectar tu dispositivo personal
+    a la red eduroam de la universidad. Buscas instrucciones claras, enlaces de descarga
+    y alternativas cuando un método falla.
+  context:
+    - personality: personalities/impatient-user
+    - "Has seguido varias guías, pero ninguna ha funcionado y necesitas una explicación paso a paso."
+    - "Quieres confirmar credenciales, certificados y ajustes específicos según el método elegido."
+    - "Te interesa saber qué hacer si un método falla y con quién contactar en soporte técnico."
+  goals:
+    - "Explicar que no he conseguido configurar eduroam en mi dispositivo y necesito ayuda paso a paso."
+    - "Solicitar asistencia para configurar eduroam usando {{metodo_configuracion}}."
+    - "Pedir enlaces o archivos necesarios para instalar eduroam según el método indicado."
+    - "Preguntar qué credenciales y requisitos debo verificar antes de intentar de nuevo."
+    - "Solicitar alternativas si el método {{metodo_configuracion}} vuelve a fallar."
+    - metodo_configuracion:
+        function: forward()
+        type: string
+        data:
+          - instalador oficial de eduroam para Windows 11
+          - asistente eduroamCAT en Android
+          - perfil de configuración automatizado en iOS
+          - asistente de red en macOS Sonoma
+          - configuración manual con NetworkManager en Linux
+
+chatbot:
+  is_starter: false
+  fallback: "¿Podrías reformular tu consulta? También puedes revisar nuestro catálogo de servicios en línea."
+  output:
+    - configuration_steps:
+        type: string
+        description: "Instrucciones detalladas para configurar eduroam"
+    - method_requirements:
+        type: string
+        description: "Requisitos previos y credenciales necesarias para el método elegido"
+    - download_links:
+        type: string
+        description: "Enlaces o archivos necesarios para completar la configuración"
+    - troubleshooting_tips:
+        type: string
+        description: "Sugerencias para resolver errores comunes durante la configuración"
+    - support_contact:
+        type: string
+        description: "Información de contacto del soporte técnico universitario"
+
+conversation:
+  number: 5
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+```

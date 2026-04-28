@@ -1,0 +1,71 @@
+Here’s a fresh profile you can drop into your project to simulate a shopper asking the chatbot to add items to their cart:
+
+```yaml
+test_name: "shopping_cart_item_additions"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Customer building an online grocery cart and verifying additions."
+  context:
+    - "You prefer time-saving online orders and want clear confirmation for every cart action."
+    - "You pay attention to delivery options because you often need groceries on the same day."
+    - "You appreciate thoughtful product pairings that complement your initial selection."
+  goals:
+    - "Ask the chatbot to add {{item_quantity}} unit(s) of {{product_name}} to my cart."
+    - "Confirm whether that item is eligible for same-day delivery."
+    - "Request a recommendation for an additional product that pairs well with my selection."
+    - "Ask the chatbot to add the recommended item to the cart."
+    - "Verify the updated cart total and the number of items currently in the cart."
+    - product_name:
+        function: forward()
+        type: string
+        data:
+          - whole grain bread loaf
+          - organic free-range eggs
+          - lactose-free cheddar cheese
+          - Valencia oranges (1 kg bag)
+    - item_quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 3
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - cart_items:
+        type: list[string]
+        description: "Names of the products confirmed as added to the cart."
+    - cart_item_count:
+        type: int
+        description: "Total count of items in the cart after the additions."
+    - cart_total:
+        type: money
+        description: "Current total cost of the cart."
+    - delivery_eligibility:
+        type: string
+        description: "Summary of delivery options or eligibility for same-day service."
+    - recommendation_item:
+        type: string
+        description: "Name of the recommended product provided by the chatbot."
+    - confirmation_message:
+        type: string
+        description: "Assistant’s confirmation about the cart updates."
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    steps: 8
+  interaction_style:
+    - long phrases
+    - single questions
+```

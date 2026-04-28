@@ -1,0 +1,24 @@
+Hey there! Thanks for sharing the rule 😊 Let’s walk through it together.
+
+### What needed attention
+1. **`conv[0]` usage**: Because the rule targets a *single* conversation (`conversations: 1`), you can (and should) refer to the slots directly (e.g., `contact_email`) instead of using `conv[0].contact_email`. The `conv[...]` notation is only for multi-conversation rules.
+
+2. **Redundant `when` clause**: As written, the `when` condition is identical to the `oracle`. That means the rule only runs when everything is already correct, so it can never actually fail. We want the `when` to filter only when those fields are present, and then let the `oracle` confirm they match the expected values.
+
+### Polished rule
+Here’s a cleaned-up version that keeps the intent intact:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the expected contact details.
+conversations: 1
+when: contact_email is not None and contact_phone is not None and physical_address is not None
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works better
+- The `when` clause now just ensures the contact details are present before the rule runs.
+- The `oracle` verifies that all three fields match the official info exactly.
+- And yep, no more `conv[0]`, so it respects Sensei-check’s single-conversation syntax.
+
+Let me know if you want to make the rule more flexible (e.g., tolerating minor formatting variations) — happy to help! 😊

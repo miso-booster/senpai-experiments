@@ -1,0 +1,75 @@
+conversation ID: one_node_architecture__p20__bikeshop__profile__d777dbb6
+$$$
+Here’s a fresh profile that focuses on wheel-change appointments while cycling through multiple date/time combos to stress-test scheduling logic. Hope it helps! 🚴‍♂️✨
+
+```yaml
+test_name: wheel_change_appointment_scheduler
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a bike owner who needs both wheels changed and wants to lock in an appointment.
+    You care about getting a confirmed date and time, plus any prep advice before the visit.
+  context:
+    - You recently noticed uneven wear on your wheels and want them swapped out soon.
+    - You rely on your bike for daily commuting and prefer morning or early afternoon slots.
+    - You would like to know if there is anything you should do before bringing the bike in.
+  goals:
+    - "I need to schedule a wheel change appointment for {{appointment_date}} at {{appointment_time}}."
+    - "Please confirm that the wheel change service covers both wheels."
+    - "Is there anything I should do to prepare my bike before the appointment?"
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - tomorrow
+          - next Tuesday
+          - next Friday
+          - May 25th
+          - June 3rd
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - 9:00 AM
+          - 10:30 AM
+          - 1:15 PM
+          - 3:45 PM
+          - 5:00 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop—could you repeat that?"
+  output:
+    - appointment_date_confirmation:
+        type: string
+        description: "The confirmed appointment date provided by the chatbot."
+    - appointment_time_confirmation:
+        type: string
+        description: "The confirmed appointment time provided by the chatbot."
+    - wheel_change_confirmation:
+        type: string
+        description: "Confirmation that both wheels will be changed during the appointment."
+    - preparation_instructions:
+        type: string
+        description: "Any preparation advice the chatbot gives before the wheel change visit."
+    - alternate_slot_offered:
+        type: string
+        description: "If the chatbot proposes a different slot, capture the suggested date/time."
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    all_answered:
+      limit: 12
+      export: false
+  interaction_style:
+    - default
+```
+$$$

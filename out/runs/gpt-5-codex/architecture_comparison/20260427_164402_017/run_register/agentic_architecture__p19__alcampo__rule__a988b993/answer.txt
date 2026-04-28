@@ -1,0 +1,33 @@
+Here’s a profile-agnostic Sensei-check rule that flags conversations where the assistant never mentions current promotions or similar deals:
+
+```yaml
+name: mentions_current_promotions
+description: Ensures the assistant shares information about current promotions, deals, or discounts.
+active: true
+conversations: 1
+oracle: |
+  any(
+    keyword in ' '.join(chatbot_phrases).lower()
+    for keyword in [
+      'current promotion',
+      'current promotions',
+      'promotion',
+      'promotions',
+      'deal',
+      'deals',
+      'discount',
+      'discounts',
+      'special offer',
+      'special offers'
+    ]
+  )
+on-error: "The assistant never mentioned a current promotion, deal, discount, or special offer."
+```
+
+### Why this works
+- It relies only on `chatbot_phrases`, so it stays profile-agnostic as requested.
+- The Python expression scans the assistant’s messages (lowercased) for keywords tied to promotions.
+- The friendly `on-error` message makes debugging easier if a conversation fails the check.
+
+### References
+Grounded in the guidance from **`sensei-check-doc.md`** (structure for general rules and helper usage) and the keyword-pattern examples from **`rules-examples.md`**. Let me know if you’d like to tighten or expand the keyword list!

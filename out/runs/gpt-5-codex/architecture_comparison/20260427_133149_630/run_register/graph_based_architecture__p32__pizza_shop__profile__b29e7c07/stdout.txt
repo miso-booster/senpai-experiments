@@ -1,0 +1,87 @@
+conversation ID: graph_based_architecture__p32__pizza_shop__profile__b29e7c07
+$$$
+¡Perfecto! Aquí tienes un perfil listo para Sensei que valida exactamente lo que necesitas: tipo de pizza, bebida, ID del pedido y precio final en dólares. Puedes guardarlo como `profiles/pizza_checkout_output_usd.yml` dentro de tu proyecto.
+
+```yaml
+test_name: pizza_checkout_output_usd
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Actúas como una persona que quiere hacer un pedido completo en la pizzería.
+    Tu objetivo es seleccionar una pizza, añadir una bebida y confirmar todos los detalles antes de pagar.
+  context:
+    - "Estás organizando una cena informal con amistades esta noche."
+    - "Quieres asegurarte de que el pedido quede listo para recogerlo camino a casa."
+  goals:
+    - "Hola, ¿qué pizzas tienen disponibles?"
+    - "Perfecto, quiero una pizza {{pizza_type}} tamaño {{pizza_size}}."
+    - "También agregaré {{drink_quantity}} {{drink_type}}."
+    - "¿Cuál es el precio final en dólares y me das el número de pedido?"
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Vegetariana, BBQ Chicken]
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data: [pequeña, mediana, grande]
+    - drink_type:
+        function: forward()
+        type: string
+        data:
+          - Refresco de cola
+          - Agua mineral
+          - Limonada
+          - Té helado
+    - drink_quantity:
+        function: forward(drink_type)
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu mensaje. Puedo ayudarte con pizzas y bebidas."
+  output:
+    - selected_pizza_type:
+        type: string
+        description: "Tipo de pizza confirmado en el pedido."
+    - selected_drink:
+        type: string
+        description: "Bebida confirmada en el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido."
+    - final_price_usd:
+        type: currency
+        description: "Precio total del pedido expresado en dólares estadounidenses."
+
+conversation:
+  number: combinations(0.6)
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      limit: 20
+  interaction_style:
+    - default
+    - change your mind
+    - random:
+        - make spelling mistakes
+```
+
+### Detallitos clave ✨
+- **Salida en dólares**: el campo `final_price_usd` usa el tipo `currency` con una descripción que deja claro que esperamos USD.
+- **Cobertura de combinaciones**: `pairwise()` en `pizza_size` nos permite variar pizzas y tamaños sin disparar el número de runs, y `conversation.number: combinations(0.6, pairwise)` toma un 60% de la matriz pairwise para mantener el costo moderado.
+- **Interacción natural pero desafiante**: la mezcla de estilos (`change your mind` + errores aleatorios) ayuda a ver si el bot sostiene la coherencia del pedido.
+
+Si quieres ajustar algo (por ejemplo, agregar más bebidas o cambiar el idioma de las metas), dime y lo afinamos juntos 😊.
+$$$

@@ -1,0 +1,110 @@
+conversation ID: agentic_architecture__p21__bikeshop__profile__bf80f146
+$$$
+Hey there! I put together a fresh Sensei profile for a customer who just bought a new bike and wants the shop to dial in the seat and handlebar grips. Here’s what it covers:
+
+- Establishes a user persona focused on comfort tailoring (seat height, tilt, and ergonomic grips).
+- Guides the conversation toward services, appointment scheduling, pricing, and prep tips.
+- Extracts structured outputs for future rules (fitting services offered, adjustment plan, grip recommendations, cost, appointment details, preparation checklist).
+
+References: I relied on the official profile guide in `sensei-chat-guide.md` and reviewed the existing `bike_service_and_repair_inquirer.yaml` so this scenario complements rather than duplicates what you already have.
+
+```yaml
+test_name: bike_custom_fitting_profile
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a new bike owner seeking a professional fitting to tailor the seat position and handlebar grips
+    for comfort and control.
+  context:
+    - You recently upgraded from a basic commuter bike to a higher-end model and are still dialing it in.
+    - You ride to work several times a week and take longer weekend rides, so long-term comfort matters.
+    - You experience mild wrist fatigue and want more cushioning from new grips.
+    - You prefer expert guidance over DIY adjustments and are ready to schedule a fitting soon.
+  goals:
+    - Mention you recently bought a {{bike_type}} bike for {{ride_style}} and want a professional fitting.
+    - Explain that you need help dialing in the seat height, setback, and tilt for comfort.
+    - Ask what fitting services the shop offers for seat setup and handlebar customization.
+    - Request recommendations on ergonomic handlebar grips and whether they can install them during the fitting.
+    - Ask for an estimated cost covering seat adjustments, new grips, and labor.
+    - Ask if they have availability on {{preferred_day}} at {{preferred_time}} for a fitting appointment.
+    - Ask what measurements, clothing, or information you should bring to make the fitting efficient.
+    - Confirm the appointment details and what will be adjusted before ending the chat.
+    - bike_type:
+        function: pairwise()
+        type: string
+        data:
+          - road
+          - mountain
+          - gravel
+          - hybrid
+    - ride_style:
+        function: pairwise()
+        type: string
+        data:
+          - daily commute
+          - weekend endurance rides
+          - trail adventures
+          - casual neighborhood rides
+    - preferred_day:
+        function: another()
+        type: string
+        data:
+          - Tuesday
+          - Wednesday
+          - Thursday
+          - Saturday
+    - preferred_time:
+        function: random()
+        type: string
+        data:
+          - "10:00 AM"
+          - "11:30 AM"
+          - "2:00 PM"
+          - "4:30 PM"
+
+chatbot:
+  is_starter: false
+  fallback: Sorry, I didn't catch that. Could you please repeat?
+  output:
+    - fitting_services:
+        type: string
+        description: Summary of the fitting services available for seat adjustments and handlebar customizations.
+    - seat_adjustment_plan:
+        type: string
+        description: Recommended steps or measurements for dialing in seat height, setback, and tilt.
+    - grip_recommendations:
+        type: list[string]
+        description: Suggested handlebar grip options or upgrades suited to the rider’s comfort goals.
+    - fitting_cost:
+        type: currency
+        description: Estimated total cost for the fitting session, including parts and labor.
+    - appointment_details:
+        type: string
+        description: Confirmed appointment date, time, and any services scheduled during the visit.
+    - preparation_tips:
+        type: string
+        description: Guidance on what to bring or do before the fitting (e.g., riding gear, bike measurements).
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 25
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+Let me know if you’d like the persona to lean more technical, add budget considerations, or tweak the outputs for future rules. Happy to adapt it!
+$$$

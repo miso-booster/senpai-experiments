@@ -1,0 +1,90 @@
+Hey! Here’s the new pizza-shop profile you asked for, tuned for that rude, speed-obsessed customer vibe 👇
+
+```yaml
+test_name: "pizza_shop_rude_rush"
+
+llm:
+  temperature: 0.65
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, foul-mouthed customer calling a pizza shop. You bark orders,
+    interrupt the staff, and make it clear you want everything fast with zero excuses.
+  context:
+    - "You are on a 10-minute break and hate wasting time."
+    - "You threaten bad reviews and refunds whenever the bot hesitates."
+  goals:
+    - "Snarl for a {{pizza_size}} pizza right now."
+    - "Demand extra toppings: {{topping_combo}}."
+    - "Growl that the crust must be {{crust_type}}."
+    - "Warn them it has to be ready in {{rush_minutes}} minutes or you'll cancel."
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data:
+          - personal
+          - medium
+          - large
+          - extra-large
+    - topping_combo:
+        function: pairwise()
+        type: string
+        data:
+          - double pepperoni
+          - spicy veggie riot
+          - meat overload
+          - truffle mushroom mix
+    - crust_type:
+        function: another()
+        type: string
+        data:
+          - thin crust
+          - stuffed crust
+          - gluten-free crust
+    - rush_minutes:
+        function: forward()
+        type: int
+        data:
+          min: 10
+          max: 20
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you repeat that order?"
+  output:
+    - quoted_total:
+        type: currency
+        description: "Quoted total price for the pizza order."
+    - estimated_ready_minutes:
+        type: int
+        description: "Minutes the bot promises until the order is ready."
+    - fulfillment_mode:
+        type: string
+        description: "Whether the order will be pickup, curbside, or delivery."
+    - order_reference:
+        type: string
+        description: "Order confirmation code or identifier."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - all questions
+    - random:
+        - make spelling mistakes
+        - change your mind
+```
+
+**Why it fits:**
+- Two variables (`pizza_size`, `topping_combo`) use `pairwise()`; with `conversation.number: combinations(1, pairwise)` the run size comes straight from the pairwise matrix, just like the guide recommends.
+- The goals bake in exactly four rude, time-sensitive demands while keeping the variable list to four items.
+- The chatbot outputs cover pricing, timing, fulfillment mode, and confirmation so future rules have plenty to validate.
+
+Reference: all structure and combo logic follow the conventions in `sensei-chat-guide.md`. Let me know if you’d like variants in another language or with different goal styles!

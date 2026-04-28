@@ -1,0 +1,36 @@
+conversation ID: graph_based_architecture__p51__pizza_shop__documentation__60bd8204
+$$$
+Hi there! 😊
+
+In Sensei, **connectors** are the YAML files that tell the platform *how to talk to your chatbot’s API*. Think of them as little instruction manuals: they specify where to send user messages, the HTTP method to use, any headers (like auth tokens), how to build the JSON payload, and where to find the bot’s reply in the response. Once you have a connector, you can plug your chatbot directly into Sensei’s simulated conversations and rules.
+
+### Core fields you’ll see in every connector
+
+| Field | Purpose | Required? |
+|-------|---------|-----------|
+| `name` | Friendly label for the connector (useful when you have several). | No |
+| `base_url` | Root URL of your chatbot API. Everything else will be relative to this. | ✅ Yes |
+| `send_message.path` | Endpoint that receives the user message (appended to `base_url`). | ✅ Yes |
+| `send_message.method` | HTTP method (POST, GET, PUT, DELETE). Defaults to POST if you skip it. | No |
+| `send_message.headers` | Any headers you need—auth tokens, JSON content type, user agent, etc. | No |
+| `send_message.payload_template` | The JSON body you want to send. Use `{user_msg}` wherever the live message should go. | ✅ Yes |
+| `response_path` | Dot notation showing Sensei where the chatbot’s reply lives in the JSON response. | ✅ Yes |
+
+Here’s a tiny recap using the examples from your project:
+
+- **Echo Bot (`postman.yaml`)**  
+  Sends `{ "message": "{user_msg}" }` to `https://postman-echo.com/post` and reads the reply from `json.message`.
+
+- **Metro Madrid (`metro-madrid.yml`)**  
+  Uses several headers plus session info in the payload, hits `/api/KDCA/WidgetMessage`, and pulls the text from `messages.0.content`.
+
+- **Ada UAM (`ada-uam.yaml`)**  
+  Adds an Authorization header, includes bot IDs and conversation IDs in the payload, and looks up the response at `response.0.text`.
+
+- **345634 (`345634_config.yml`)**  
+  A simpler connector: POSTs to `/chat` with a JSON body containing `message: "{user_msg}"`, expecting the bot’s text in `response.text`.
+
+No matter how complex the backend, the pattern stays the same: define how to send a message and how to read the answer. Once that connector YAML is in place, Sensei can drive conversations against your live bot.
+
+Need help crafting or tweaking one? Just let me know! 👀
+$$$

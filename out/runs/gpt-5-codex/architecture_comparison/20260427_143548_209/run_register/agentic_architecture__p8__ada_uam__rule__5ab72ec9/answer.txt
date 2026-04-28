@@ -1,0 +1,21 @@
+Hi there! 😊 I took a look at the rule using the guidance from `sensei-check-doc.md` (rule semantics) and `sensei-chat-guide.md` (how profile outputs map into `conv[0].…`). I’m assuming this rule targets the profile `profiles/consultante_de_servicios_y_asistencia_del_cau.yaml`, which exposes the slots `contact_email`, `contact_phone`, and `physical_address` in its `chatbot.output`. Let me know if you meant a different profile.
+
+### What was going wrong
+Your original rule set the **same expression** in both `when` and `oracle`. Because `when` acts as a filter, the rule only ran when the conversation already provided the correct contact details—so any wrong answers were skipped entirely and the rule could never fail. Section 4 of `sensei-check-doc.md` stresses that `when` should narrow the relevant cohort, not restate the invariant you’re testing.
+
+### Fixed rule
+Here’s an updated version that applies to every conversation and actually enforces the check:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works
+- Without the redundant `when`, the rule evaluates for every run of the profile.
+- `oracle` now cleanly encodes the invariant: if any contact field deviates, the rule fails.
+- It still lines up with the profile’s `chatbot.output` slots, so Sensei-check can read the values correctly.
+
+If you’d like to add a friendly `on-error` message or extra guards (e.g., ensuring slots aren’t empty), happy to help!

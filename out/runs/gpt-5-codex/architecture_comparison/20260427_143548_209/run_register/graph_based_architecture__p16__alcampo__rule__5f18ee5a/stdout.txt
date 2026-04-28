@@ -1,0 +1,23 @@
+conversation ID: graph_based_architecture__p16__alcampo__rule__5f18ee5a
+$$$
+Hey there! 😊 Since there’s no profile yet, we’ll treat this as a rule-first design. The future SENSEI Chat profile will need to expose at least these `chatbot.output` fields:
+
+- `dietary_preferences`: a list (or set) of dietary tags requested by the user.
+- `availability_status`: a string summarizing whether the lactose-free product is available.
+- `availability_details`: a short text that explains the availability (e.g., “Lactose-free milk is in stock”).
+
+Here’s the Sensei-check rule you can drop into your project once those fields exist:
+
+```yaml
+name: lactose_free_availability
+description: If the customer requests lactose-free products, the assistant must surface an availability verdict and supporting detail.
+conversations: 1
+if: |
+  'lactose_free' in dietary_preferences
+then: |
+  availability_status in ['available', 'unavailable'] and availability_details not in [None, '']
+on-error: f"Lactose-free request found but availability missing (status={availability_status}, details={availability_details})"
+```
+
+Let me know if you’d like to tweak the field names or add extra checks (like tone or semantic confirmations). Always happy to help! 💪
+$$$

@@ -1,0 +1,75 @@
+Here’s the fast-and-fiery profile you asked for—hope it nails the vibe! 🔥🍕  
+
+```yaml
+test_name: rude_speed_runner_order
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer who hates waiting and expects instant answers.
+    You bark orders, cut people off, and make it very clear you want everything done fast.
+  context:
+    - personality: personalities/rude-user
+    - "You remind the chatbot constantly that you’re in a hurry and won’t tolerate delays."
+    - "You get irritated if the assistant doesn’t understand you on the first try."
+  goals:
+    - "Shout that you need a {{pizza_type}} pizza immediately."
+    - "Bark that it must be the {{pizza_size}} size, no excuses."
+    - "Snarl that the toppings better be {{topping_combo}}."
+    - "Demand ice-cold {{drink_type}} ready at pickup."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Carbonara, Custom, Four Cheese, Pepperoni, Spicy Inferno]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - topping_combo:
+        function: forward()
+        type: string
+        data:
+          - extra pepperoni and jalapeños
+          - mushrooms and black olives
+          - pineapple and ham
+          - triple cheese overload
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sparkling Water, Orange Soda, Iced Tea]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, say that again. I'm trying to help you get your order done fast."
+  output:
+    - size:
+        type: string
+        description: "Confirmed pizza size for the order."
+    - toppings:
+        type: list[string]
+        description: "List of toppings the chatbot commits to adding."
+    - drink:
+        type: string
+        description: "Drink the chatbot agrees to provide."
+    - price:
+        type: currency
+        description: "Total price quoted for the order."
+    - pickup_eta:
+        type: time("hh:mm")
+        description: "Quoted time when the order will be ready for pickup."
+
+conversation:
+  number: combinations(pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 4
+    max_cost: 0.2
+  interaction_style:
+    - all questions
+```

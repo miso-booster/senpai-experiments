@@ -1,0 +1,17 @@
+Aquí tienes la versión corregida del rule y un resumen de los ajustes 😊. Me basé en la guía `sensei-check-doc.md` para confirmar la sintaxis (`conversations`, `if`/`then`, uso de helpers como `extract_float`).
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 1
+if: tune_up_price is not None
+then: extract_float(str(tune_up_price)) == 50
+```
+
+### Qué cambié y por qué
+- **`conversations: 1`** → El rule solo usa una conversación (`tune_up_price` viene de la primera), por lo que no tiene sentido pedir dos (`sensei-check-doc.md`, secciones 3 y 4).
+- **Eliminé `when:`** → Filtrar por “precio == 50” hacía que el rule nunca detectara errores cuando el valor fuese distinto (la condición se evaluaba antes del chequeo real).
+- **Reemplacé el `then`** → Ahora es una expresión booleana que valida el valor; antes devolvía una cadena siempre verdadera, lo que anulaba la verificación.
+- **Convertí el valor a string** → `extract_float` espera texto. Convertir con `str(...)` permite que funcione tanto si el campo viene como número como si viene como texto.
+
+Si necesitas también verificar que la moneda sea USD (por ejemplo con el helper `currency`), dime y lo añadimos.

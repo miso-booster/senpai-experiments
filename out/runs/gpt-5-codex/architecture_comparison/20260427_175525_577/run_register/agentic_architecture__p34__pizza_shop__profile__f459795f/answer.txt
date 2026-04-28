@@ -1,0 +1,108 @@
+Hey there! Here’s a fresh profile that walks the simulator through ordering a custom pizza, then pivoting to a predefined option mid-conversation—exactly what you asked for 😊. I reused the guidance from `sensei-chat-guide.md` and peeked at the existing `pizza_and_drink_order_placement.yaml` to keep the outputs consistent for any rules you might already have.
+
+Key bits:
+- The user persona is indecisive on purpose, with `interaction_style: change your mind` to enforce the flip.
+- Goals lead the bot through custom toppings, then explicitly instruct the switch to a predefined pizza.
+- Outputs capture both the initial customization attempt and the final selection so downstream rules can compare the before/after.
+
+```yaml
+test_name: pizza_custom_to_predefined_switch
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an indecisive customer ordering pizza for yourself.
+    You initially want to build a fully custom pizza with specific size,
+    crust, sauce, and toppings, but you are open to switching to a
+    predefined option if it sounds appealing.
+  context:
+    - You are ordering dinner after a long day at work and want something satisfying but quick.
+    - You have some friends joining later, so you want to make sure the final choice will please everyone.
+    - You tend to overthink options and sometimes backtrack on decisions.
+  goals:
+    - "Confirm that the restaurant can build a custom pizza and ask what customization choices are available."
+    - "Provide the bot with your custom preferences: {{size}}, {{crust}}, {{sauce}}, and toppings like {{toppings}}. Ask for an updated price."
+    - "Once the bot acknowledges the custom pizza, change your mind and ask instead for their predefined {{predefined_pizza}} pizza."
+    - "Request a final summary including the pizza you will receive, the total price, pickup time, and any order ID or confirmation."
+    - size:
+        function: forward()
+        type: string
+        data:
+        - small
+        - medium
+        - large
+    - crust:
+        function: pairwise()
+        type: string
+        data:
+        - thin crust
+        - stuffed crust
+        - gluten-free crust
+    - sauce:
+        function: another()
+        type: string
+        data:
+        - marinara sauce
+        - alfredo sauce
+        - pesto sauce
+    - toppings:
+        function: random()
+        type: string
+        data:
+        - roasted vegetables and feta
+        - spicy pepperoni and jalapeños
+        - mushrooms and caramelized onions
+        - chicken, bacon, and ranch drizzle
+    - predefined_pizza:
+        function: pairwise()
+        type: string
+        data:
+        - Classic Margherita
+        - Pepperoni Feast
+        - BBQ Chicken Deluxe
+        - Four Cheese Supreme
+
+chatbot:
+  is_starter: false
+  fallback: I'm sorry, I didn't catch that. I can help you customize a pizza or pick one of our predefined options.
+  output:
+    - customization_attempt:
+        type: string
+        description: Details the user provided for the initial custom pizza request.
+    - predefined_options:
+        type: string
+        description: Menu pizzas presented by the bot when the user asks for predefined choices.
+    - final_pizza_choice:
+        type: string
+        description: The pizza the user commits to after changing their mind.
+    - order_summary:
+        type: string
+        description: Final confirmation including pizza name, any sides, and delivery or pickup notes.
+    - total_cost:
+        type: currency
+        description: Total price for the final order.
+    - pickup_time:
+        type: time
+        description: Estimated time until the order is ready for pickup.
+    - order_id:
+        type: string
+        description: Confirmation or tracking identifier for the order.
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 8
+    max_cost: 0.15
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+Let me know if you want to tweak the persona, add drink orders, or align the outputs with specific rules you plan to run!

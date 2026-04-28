@@ -1,0 +1,30 @@
+conversation ID: agentic_architecture__p16__alcampo__rule__a18f1c9f
+$$$
+Here’s a rule-first draft you can plug in once the matching profile exists:
+
+```yaml
+name: lactose_free_availability_reported
+description: Lactose-free requests must surface an explicit availability status
+conversations: 1
+when: dietary_need == 'lactose_free'
+oracle: availability_status and availability_status.strip().lower() in ['available', 'unavailable']
+on-error: f"Expected lactose-free availability for {requested_product}, got {availability_status}"
+```
+
+### How it works
+- **Scope:** Single-conversation oracle. When the simulated customer asks for a lactose-free option (`dietary_need == 'lactose_free'`), the chatbot must clearly report whether that product is available.
+- **Expectation:** `availability_status` can be either `"available"` or `"unavailable"` (case-insensitive). Anything missing, blank, or a different value fails the rule.
+- **Helpful error:** The `on-error` message surfaces which product and status were returned, making debugging easier.
+
+### Assumptions for the future profile
+To make this rule operable, the upcoming Sensei Chat profile should expose at least these `chatbot.output` fields:
+- `dietary_need` (string) — captures the dietary request such as `"lactose_free"`.
+- `requested_product` (string) — the specific item being checked.
+- `availability_status` (string) — normalized to `"available"` or `"unavailable"`.
+
+Once you build that profile, ensure its field names match the ones above (or tweak the rule to match whatever names you pick).
+
+> References: This design follows the rule-first guidance in **sensei-check-doc.md** (sections on case C / rule-first workflows and single-conversation oracles) and mirrors expression patterns from **rules-examples.md** for boolean slot checks.
+
+Let me know if you’d like the profile stub as well or want to broaden the accepted availability values!
+$$$

@@ -1,0 +1,18 @@
+conversation ID: one_node_architecture__p16__alcampo__rule__daea7b2e
+$$$
+Here you go! I drafted a rule-first check you can plug in once the profile exposes the required fields 😊
+
+```yaml
+name: lactose_free_availability_is_reported
+description: Ensures lactose-free availability is surfaced when requested (expects outputs: lactose_free_requested, lactose_free_availability, lactose_free_options)
+conversations: 1
+if: lactose_free_requested is True
+then: str(lactose_free_availability).strip().lower() not in ['', 'unknown', 'none'] and (
+        str(lactose_free_availability).strip().lower() != 'available'
+        or (lactose_free_options not in [None, []] and len(lactose_free_options) > 0)
+      )
+on-error: f"Lactose-free availability missing or inconsistent — availability={lactose_free_availability}, options={lactose_free_options}"
+```
+
+When you build the matching profile, just make sure it exposes those three fields in `chatbot.output`, and this rule will validate that any lactose-free query gets a clear availability answer (with product examples whenever the answer is “available”). Let me know if you’d like help shaping the profile too!
+$$$

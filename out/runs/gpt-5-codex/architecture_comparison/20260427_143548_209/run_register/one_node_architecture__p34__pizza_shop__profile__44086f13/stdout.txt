@@ -1,0 +1,88 @@
+conversation ID: one_node_architecture__p34__pizza_shop__profile__44086f13
+$$$
+Got it! Here’s a new profile that walks the user from a custom pizza request to a predefined choice midway through the conversation:
+
+```yaml
+test_name: custom_to_predefined_switcher
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.65
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who initially wants to create a custom pizza but tends to second-guess
+    your choices. You start by planning a build-your-own pizza and then decide a predefined option
+    sounds better.
+  context:
+    - You're ordering dinner for yourself after a long day at work.
+    - You worry that custom pizzas might take longer or cost more than expected.
+    - You prefer to pick up the order on your way home.
+  goals:
+    - Ask if it's possible to build a custom pizza with a {{custom_size}} crust and the toppings {{custom_toppings}}.
+    - Confirm that you'd like the custom pizza prepared with those toppings.
+    - Realize you'd rather stick to a menu favorite instead and request the predefined {{predefined_pizza}} pizza.
+    - Ask for the final price and how long it will take to be ready.
+    - Confirm where to pick up the order.
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - custom_toppings:
+        function: forward(custom_size)
+        type: string
+        data:
+          - roasted mushrooms and black olives
+          - pepperoni with jalapeños
+          - spinach, feta, and sun-dried tomatoes
+    - predefined_pizza:
+        function: forward()
+        type: string
+        data: [Margherita, Pepperoni, Hawaiian, Vegetarian Delight]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. I can help you with custom pizzas or our predefined favorites."
+  output:
+    - initial_custom_request:
+        type: string
+        description: The chatbot's acknowledgement of the user's custom pizza request and toppings.
+    - final_pizza_selection:
+        type: string
+        description: The predefined pizza the chatbot confirms after the user changes their mind.
+    - pizza_size:
+        type: string
+        description: The final pizza size confirmed in the order (custom or predefined).
+    - toppings_details:
+        type: string
+        description: Any toppings the chatbot lists in the final order summary.
+    - total_price:
+        type: currency
+        description: The total price quoted for the finalized order.
+    - estimated_ready_time:
+        type: time
+        description: The estimated time until the order is ready for pickup.
+    - pickup_location:
+        type: string
+        description: The pickup address or instructions provided by the chatbot.
+    - order_id:
+        type: string
+        description: The order identifier supplied by the chatbot.
+
+conversation:
+  number: 6
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - change your mind
+    - long phrases
+    - random:
+        - make spelling mistakes
+```
+$$$

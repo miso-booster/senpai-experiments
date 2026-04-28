@@ -1,0 +1,28 @@
+conversation ID: graph_based_architecture__p25__bikeshop__rule__30ae89d2
+$$$
+Hey there! Happy to help you lock that down 😊  
+Here’s a single-conversation Sensei-check rule that validates the outputs exposed by your bike-shop profile:
+
+- It makes sure the opening hours mention both **10** and **20**.
+- It checks that the prices for **tire**, **tune-up**, and **seat** all line up with the expected values.
+- It also confirms the assistant actually provides some text for the bike-care advice.
+
+```yaml
+name: bike_shop_expected_values
+description: Confirms the bike shop profile reports the expected hours and prices
+conversations: 1
+oracle: |
+  (
+    isinstance(opening_and_closing, str)
+    and '10' in opening_and_closing
+    and '20' in opening_and_closing
+    and abs(extract_float(tire) - 20) < 0.01
+    and abs(extract_float(tune_up) - 50) < 0.01
+    and abs(extract_float(seat_price) - 20) < 0.01
+    and len(str(care_bike).strip()) > 0
+  )
+on-error: f"Opening={opening_and_closing}, tire={tire}, tune_up={tune_up}, seat={seat_price}, care_bike={care_bike}"
+```
+
+Drop this into your rules folder (for example, `rules/bike_shop_expected_values.yaml`) and you’re good to go. Let me know if you’d like to tighten or expand any of the checks! 🚲✨
+$$$

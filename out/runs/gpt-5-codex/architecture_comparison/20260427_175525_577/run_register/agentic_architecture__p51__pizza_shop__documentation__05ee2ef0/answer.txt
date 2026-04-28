@@ -1,0 +1,14 @@
+Connectors are the “transport layer” that let SENSEI talk to an external chatbot API without writing Python code yourself. You drop a YAML file into the connectors folder, and SENSEI uses that blueprint to send each simulated user message to your bot and capture the bot’s reply. (Source: `custom-connector-guide.md`, `connector-examples.md`.)
+
+The key fields you define are:
+
+- `name` — optional friendly label so you recognize the connector.
+- `base_url` — the root URL for your chatbot’s API (required).
+- `send_message` — how to send a single request:
+  - `path` (required): endpoint appended to the base URL.
+  - `method`: HTTP verb (defaults to `POST` if omitted).
+  - `headers`: any custom headers (e.g., `Authorization`, `Content-Type`).
+  - `payload_template` (required): JSON body with `{user_msg}` where the simulator should insert the user’s message.
+- `response_path` (required) — dot notation indicating where to find the bot’s text in the JSON response SENSEI gets back.
+
+That’s all you need: once configured, the connector repeatedly fills `{user_msg}`, sends the request, follows `response_path`, and hands the chatbot’s reply back to the simulator.

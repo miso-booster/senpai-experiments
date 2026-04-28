@@ -1,0 +1,103 @@
+conversation ID: agentic_architecture__p21__bikeshop__profile__49dbee2d
+$$$
+Hey there! I put together a fresh user profile focused on the new-bike setup scenario you described:
+
+```yaml
+test_name: bike_custom_setup_client
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who just bought a new bike and wants the shop to tailor it
+    for comfort and control by adjusting the seat and handlebar grips.
+  context:
+    - You rely on the bike for mixed commuting and weekend rides, so comfort matters.
+    - You want the bike to feel like an extension of your body before a long charity ride next month.
+    - You're hoping the shop can guide you on parts, pricing, and scheduling.
+  goals:
+    - "Mention that you recently bought a new bike and want it tailored for {{ride_priority}}."
+    - "Ask if the shop can change the seat to a {{seat_style}} saddle and handle the installation."
+    - "Ask about handlebar grips in {{grip_material}} and whether they can install them."
+    - "Ask for a price estimate covering the seat swap and handlebar grip installation."
+    - "Ask if they provide a bike fit or comfort assessment during the setup."
+    - "Ask about appointment availability on {{preferred_day}} around {{preferred_time}} and confirm a booking."
+    - ride_priority:
+        function: random()
+        type: string
+        data:
+          - long-distance endurance
+          - daily commuting comfort
+          - weekend trail adventures
+    - seat_style:
+        function: pairwise()
+        type: string
+        data:
+          - gel comfort saddle
+          - ergonomic performance saddle
+          - wide touring saddle
+    - grip_material:
+        function: pairwise()
+        type: string
+        data:
+          - cork
+          - leather
+          - ergonomic rubber
+    - preferred_day:
+        function: another()
+        type: string
+        data:
+          - Friday
+          - Saturday morning
+          - next Tuesday
+    - preferred_time:
+        function: random()
+        type: string
+        data:
+          - 9 AM
+          - 1 PM
+          - 4 PM
+
+chatbot:
+  is_starter: false
+  fallback: I'm sorry, it's a bit noisy in the shop—could you repeat that?
+  output:
+    - seat_recommendation:
+        type: string
+        description: Details on the suggested seat model or adjustments for the rider.
+    - handlebar_grip_recommendation:
+        type: string
+        description: Suggested handlebar grip options and installation notes.
+    - service_price_estimate:
+        type: string
+        description: Estimated cost for the seat change and grip installation, including any breakdown.
+    - appointment_confirmation:
+        type: string
+        description: Confirmed appointment details such as date, time, and service plan.
+    - bike_fit_information:
+        type: string
+        description: Information about bike fit or comfort assessment services mentioned by the chatbot.
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+```
+
+**Why these choices?**
+- I reviewed nearby profiles like `bike_service_and_repair_inquirer.yaml`, but none focused on customizing a brand-new bike, so this one is purpose-built for the seat/grip setup journey.
+- Goals mix narrative guidance with variables so you can cover different combinations of seat styles, grip materials, and appointment requests without exploding the matrix.
+- The `chatbot.output` fields align with the conversational goals, giving future rules concrete hooks (e.g., price estimates, appointment confirmations).
+
+All of this follows the structure and best practices from `sensei-chat-guide.md`, keeping the user setup, goals, and outputs tidy for downstream validation.
+
+Let me know if you’d like to tweak the persona, add more accessories (like pedals or stems), or adjust conversation coverage 😊
+$$$

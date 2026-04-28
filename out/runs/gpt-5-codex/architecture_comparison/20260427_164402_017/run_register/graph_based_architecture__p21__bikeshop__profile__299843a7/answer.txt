@@ -1,0 +1,107 @@
+¡Perfecto! Vamos a crear un perfil Sensei que simule a ese usuario recién estrenando bici y buscando un ajuste personalizado 😊. Te dejo una propuesta completa y comentada para que puedas copiarla a `profiles/` y adaptarla si hace falta.
+
+---
+
+### 🧭 Objetivo del perfil
+- Usuario entusiasta con bicicleta nueva.
+- Quiere cambiar/ajustar el **asiento** y los **puños del manillar**.
+- Busca confirmar servicios, precios y agendar una cita para el ajuste completo.
+
+---
+
+### ✅ Perfil sugerido
+
+```yaml
+test_name: bike_setup_customization
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and want it tailored for comfort.
+    You are friendly but detail-oriented, and you’re eager to have the shop
+    adjust the setup so every ride feels perfect.
+  context:
+    - You've just upgraded to a nicer bike and want the fit dialed in before a long weekend ride.
+    - Comfort is your priority, especially the saddle and handlebar feel.
+    - You're willing to pay for a professional fitting if it guarantees the right setup.
+  goals:
+    - "Explain that you just purchased a new bike and need help setting it up for comfort."
+    - "Ask about their seat fitting services, mentioning you're interested in a {{seat_style}} saddle."
+    - "Request recommendations for handlebar grips, especially {{grip_texture}} options."
+    - "Confirm whether they can adjust seat height and handlebar position during the same visit."
+    - "Ask for pricing on the seat and grip swap, plus any fitting package."
+    - "Schedule a customization appointment on {{appointment_date}} around {{appointment_time}}."
+    - seat_style:
+        function: forward()
+        type: string
+        data:
+          - gel cushion
+          - performance
+          - ergonomic cut-out
+    - grip_texture:
+        function: random()
+        type: string
+        data:
+          - cork
+          - rubber
+          - leather wrap
+          - ergonomic lock-on
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - this Friday
+          - Saturday morning
+          - next Tuesday
+    - appointment_time:
+        function: random()
+        type: string
+        data:
+          - 10:00 AM
+          - 1:30 PM
+          - 4:00 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_service_details:
+        type: string
+        description: "Summary of the seat fitting or replacement service offered."
+    - grip_options:
+        type: string
+        description: "Information about recommended handlebar grips or customization choices."
+    - adjustment_bundle_price:
+        type: money
+        description: "Quoted price for the seat/grip setup and any fitting package."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the scheduled customization appointment with date and time."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - default
+```
+
+---
+
+### 🔍 Notas clave
+
+- **Variables:** garantizan variedad en estilos de asiento, tipos de puños y horarios sin perder control. `forward()` asegura cobertura ordenada de asientos; `another()` evita repetir fechas hasta rotar todas.
+- **Outputs:** cubren los puntos que querrás validar luego con reglas Sensei-check: detalles del servicio, opciones de puños, precio y confirmación de cita.
+- **Conversación:** `all_answered` se ajusta genial porque necesitas todas las respuestas; `limit: 15` impide que se alargue de más si el bot se enreda.
+
+---
+
+¿Quieres que también preparemos una regla Sensei-check para validar, por ejemplo, que efectivamente confirme la cita o que incluya precio? Solo dime y lo armamos 🙌

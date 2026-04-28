@@ -1,0 +1,104 @@
+conversation ID: agentic_architecture__p20__bikeshop__profile__f40d8bd2
+$$$
+Here’s a new profile you can drop into `profiles/bike_shop_wheel_change_scheduler.yml` (or any filename you like):
+
+```yaml
+test_name: "bike_shop_wheel_change_appointments"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a busy cyclist booking a wheel change service at a local bike shop.
+    You want precise confirmation of the appointment details and preparation steps.
+  context:
+    - "You depend on the bike for daily commuting and want minimal downtime."
+    - "You prefer the downtown branch but can visit other locations if availability differs."
+  goals:
+    - "Schedule a wheel change for my {{bike_type}} on {{appointment_date}} at {{appointment_time}}."
+    - "Ask if the service can cover {{service_scope}}."
+    - "Check whether I need to bring any spare parts or if the shop provides them."
+    - "Request a confirmation number and a reminder sent via {{preferred_contact_method}}."
+    - bike_type:
+        function: forward()
+        type: string
+        data:
+          - commuter bike
+          - road bike
+          - mountain bike
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - "Tuesday, June 18"
+          - "Thursday, June 20"
+          - "Saturday, June 29"
+          - "Monday, July 1"
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - "9:00 AM"
+          - "1:30 PM"
+          - "4:45 PM"
+          - "7:15 PM"
+    - service_scope:
+        function: another()
+        type: string
+        data:
+          - "both wheels including truing"
+          - "just the rear wheel with cassette swap"
+          - "front wheel replacement with a brake check"
+    - preferred_contact_method:
+        function: random()
+        type: string
+        data:
+          - email
+          - text message
+          - phone call
+
+chatbot:
+  is_starter: false
+  fallback: "Could you clarify that so I can help with your service booking?"
+  output:
+    - scheduled_date:
+        type: date("day-month-year")
+        description: "Date the shop books for the wheel change"
+    - scheduled_time:
+        type: time("hh:mm a")
+        description: "Time slot the chatbot confirms"
+    - appointment_reference:
+        type: string
+        description: "Confirmation number or reference code provided by the shop"
+    - location_confirmed:
+        type: string
+        description: "Which shop location the appointment is set for"
+    - preparation_instructions:
+        type: string
+        description: "Any instructions about bringing parts or arriving early"
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+    - random:
+      - single questions
+      - make spelling mistakes
+```
+
+### Why it’s set up this way
+- **Multiple day/time coverage:** Both `appointment_date` and `appointment_time` use `pairwise()` so Sensei will generate combinations that stress-test how the bot handles different scheduling slots.
+- **Rich goals:** The goals push the bot to confirm the service scope, preparation, and contact method—useful for follow-up rules later.
+- **Extraction contract:** `chatbot.output` captures the booked date/time plus reference info so Sensei-check rules can verify the chatbot’s responses.
+
+All of this follows the guidelines from `sensei-chat-guide.md`, especially for structuring `user.goals`, using `pairwise()` for coverage, and defining the `chatbot.output` schema. Let me know if you’d like to tweak interaction styles or add more variables!
+$$$

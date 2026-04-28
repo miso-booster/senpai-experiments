@@ -1,0 +1,63 @@
+Absolutely, happy to help! 😊  
+Here’s a complete `chatbot` section that matches the goals of your **pizza_and_drinks_information_seeker** profile and stays consistent with Sensei’s output schema guidelines:
+
+```yaml
+test_name: pizza_information_overview
+
+llm:
+  format:
+    type: text
+  model: gpt-4o-mini
+  temperature: 0.3
+
+user:
+  language: English
+  role: A customer gathering information about pizzas, drinks, and service options before placing an order.
+  context:
+    - You are planning a pizza night with friends and want details about the menu and services.
+  goals:
+    - Ask about the available pizza types.
+    - Ask for the price of a Margarita pizza.
+    - Ask about available drinks and their prices.
+    - Ask for the shop's operating hours.
+    - Ask whether delivery is available.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you with information about our pizzas, drinks, and ordering."
+  output:
+    - pizza_types:
+        type: string
+        description: "A list of the pizza types offered by the shop. Look for phrases like 'We offer...' or enumerated pizza names."
+    - margarita_price:
+        type: money
+        description: "The price of a Margarita pizza, including currency. Capture all mentioned sizes if applicable."
+    - drinks_and_prices:
+        type: string
+        description: "A list of available drinks and their prices. Look for drink names paired with price mentions."
+    - operating_hours:
+        type: string
+        description: "The shop's operating hours, highlighting opening and closing times."
+    - delivery_availability:
+        type: string
+        description: "Whether the shop offers delivery. Look for explicit confirmation like 'We deliver' or 'No delivery service'."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+### Why this setup works:
+- **`is_starter: false`** keeps the bot waiting for the user to begin, which fits your information-seeking persona.
+- The **fallback** message gently guides the bot back to its core domain if it gets confused.
+- The **output fields** align perfectly with the user goals: each question the simulated user asks has a corresponding field that Sensei can extract and later use for validation or rules.  
+  - `margarita_price` uses the `money` type so currency values are parsed correctly.
+  - The rest are `string` fields because they’re free-form descriptions or lists.
+
+Let me know if you’d like to tweak any descriptions or add custom types — I’m here to help! 🍕✨

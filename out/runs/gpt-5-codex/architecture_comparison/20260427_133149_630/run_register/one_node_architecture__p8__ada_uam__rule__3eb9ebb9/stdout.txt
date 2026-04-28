@@ -1,0 +1,26 @@
+conversation ID: one_node_architecture__p8__ada_uam__rule__3eb9ebb9
+$$$
+¡Hola! Revisé tu regla y vi un par de detalles que hacen que ahora mismo no compruebe nada útil:
+
+- En reglas de **una conversación** (`conversations: 1`) no usamos `conv[0].campo`; basta con referirnos a `campo` directamente.  
+- El `when` repetía exactamente la misma condición que el `oracle`, así que, si la información estaba mal, la regla simplemente no se aplicaba en lugar de fallar.
+
+Aquí tienes la versión corregida:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+on-error: >
+  f"Expected CAU contact details to be cau@uam.es / 91 497 4029 / C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107, but got {contact_email} / {contact_phone} / {physical_address}"
+```
+
+**Qué cambió y por qué:**
+
+1. Eliminé `conv[0]` para usar los campos tal cual, como exige el DSL cuando `conversations: 1`.
+2. Quité el `when`, de modo que siempre se evalúe la igualdad; así la regla falla si la información no coincide o si el bot no rellenó esos campos.
+3. Añadí `on-error` para que, en caso de fallo, veas exactamente lo que devolvió el chatbot.
+
+Con esto, la regla ahora sí valida que el bot entregue los datos oficiales del CAU 💪.
+$$$

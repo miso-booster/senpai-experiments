@@ -1,0 +1,104 @@
+Here’s a profile draft that simulates a customer wanting a personalized bike setup. Let me know if you’d like to tweak any goals or outputs! 🚲✨
+
+```yaml
+test_name: bike_setup_customization_user
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently purchased a new bike and want it professionally set up for comfort.
+    You care about dialing in the saddle position and swapping the handlebar grips
+    so the ride feels just right.
+  context:
+    - You’re willing to visit the shop in person if they can tailor the fit.
+    - Comfort matters more than speed, but you still want the bike to look sleek.
+    - You’d like everything handled in a single appointment if possible.
+  goals:
+    - Ask if the shop offers bike fitting or setup services for new bikes.
+    - Request help adjusting the saddle height to support a {{seat_height_preference}} riding position and confirm they can swap to a {{seat_style_preference}} saddle.
+    - Ask about available handlebar grip options, especially {{grip_material_preference}} grips, and whether installation is included.
+    - Confirm whether the setup session can happen {{appointment_day}} around {{appointment_time}} and if same-day service is possible.
+    - Ask if the setup includes a quick test ride or post-service check to ensure comfort.
+    - seat_height_preference:
+        function: forward()
+        type: string
+        data:
+          - more upright posture
+          - slightly aggressive stance
+          - relaxed commuting position
+    - seat_style_preference:
+        function: forward(seat_height_preference)
+        type: string
+        data:
+          - ergonomic saddle
+          - gel comfort saddle
+          - performance saddle
+          - cut-out saddle
+    - grip_material_preference:
+        function: pairwise()
+        type: string
+        data:
+          - leather wrap
+          - cork composite
+          - foam comfort
+          - rubber lock-on
+    - appointment_day:
+        function: random()
+        type: string
+        data:
+          - tomorrow
+          - this Saturday
+          - early next week
+    - appointment_time:
+        function: another()
+        type: string
+        data:
+          - 10:00 AM
+          - 1:30 PM
+          - 4:00 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fitting_service_confirmation:
+        type: string
+        description: Confirmation that the shop offers bike fitting or setup services for new bikes.
+    - seat_adjustment_plan:
+        type: string
+        description: Details provided about how the saddle height or position will be adjusted to match the requested posture.
+    - seat_swap_availability:
+        type: string
+        description: The chatbot's confirmation about swapping to the requested saddle style.
+    - seat_swap_cost:
+        type: money
+        description: Any price or cost estimate for swapping the saddle to the requested style.
+    - grip_options_information:
+        type: string
+        description: Information about available handlebar grip materials or models, including the requested preference if possible.
+    - grip_installation_cost:
+        type: money
+        description: Cost or confirmation about installing new handlebar grips.
+    - appointment_confirmation:
+        type: string
+        description: The chatbot's confirmation or scheduling details for the requested day and time.
+    - test_ride_information:
+        type: string
+        description: Details about whether a post-service test ride or comfort check is included.
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - default
+```

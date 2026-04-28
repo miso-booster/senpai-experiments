@@ -1,0 +1,67 @@
+Here’s a ready-to-use Sensei profile that captures the bike shop scenario exactly as you described:
+
+```yaml
+test_name: "bike_shop_general_info_smoke"
+
+llm:
+  temperature: 0.2
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a polite customer who is planning to visit the bike shop soon.
+    You want to gather general information about the shop's standard services.
+  context:
+    - "Keep the conversation focused on shop hours, basic pricing, and everyday bike care."
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery, or any other unrelated services."
+    - "Phrase every question clearly and directly like a normal customer."
+  goals:
+    - "Greet the assistant and explain that you want general information about the bike shop's basic services."
+    - "Ask what the bike shop's opening and closing times are."
+    - "Ask how much a new bike tire costs."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask how much a new bike seat costs."
+    - "Request general advice on routine bike care, focusing on basic maintenance and good practices."
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you say it again?"
+  output:
+    - shop_hours:
+        type: string
+        description: "Opening and closing times provided by the assistant."
+    - tire_price:
+        type: currency
+        description: "Quoted price for a new bike tire."
+    - tune_up_price:
+        type: currency
+        description: "Quoted price for a standard bike tune-up."
+    - seat_price:
+        type: currency
+        description: "Quoted price for a new bike seat."
+    - maintenance_advice:
+        type: string
+        description: "General bike care guidance offered by the assistant."
+    - off_topic_offers:
+        type: string
+        description: "Any unrelated services or unsolicited suggestions mentioned."
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      limit: 12
+  interaction_style:
+    - default
+```
+
+### Why this works
+- The `user` section keeps the simulated customer firmly on the allowed topics and spells out each required question in the `goals`.
+- `chatbot.output` captures every answer you’ll want to validate later: operating hours, pricing for the three services, maintenance advice quality, and a field to note if the bot strays into unrelated territory.
+- `goal_style: all_answered` ensures the conversation continues until every question has been addressed (or the safety limit is reached), while a single conversation keeps things simple for smoke testing.
+
+This structure follows the guidance from **`sensei-chat-guide.md`**, especially around organizing user goals and defining `chatbot.output` as the contract for future rules. Let me know if you’d like variants (e.g., different interaction styles or additional output fields) 😊

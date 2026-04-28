@@ -1,0 +1,62 @@
+conversation ID: agentic_architecture__p23__bikeshop__profile__45d932ce
+$$$
+Hey there! I took a look at your profile and found a few schema issues that were keeping it from loading correctly. Based on the guidance in **`sensei-chat-guide.md`**, I fixed the following:
+
+- **`llm.temperature` must be a number** (the guide shows it as a float), so I switched `low` to `0.2` and added the provider/format block for completeness.
+- **`chatbot.output` fields need valid types**; the doc lists built-in types like `string`, `int`, etc., so I replaced `str`/`money` with `string` and added missing `type` entries for `seat_price` and `care_bike`.
+- Quoted the fallback string to avoid YAML parsing hiccups and cleaned up the role/context wording slightly.
+
+Here’s the corrected profile:
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.2
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You have to act as a customer talking to a virtual assistant of a bike shop.
+  context:
+    - You are interested in asking the items below.
+    - Stick to asking about opening times, the price of a tire, the price of a tune-up, the price of a seat, and actions to care for your bike. Do not ask anything else.
+  goals:
+    - "What are the opening and closing times of the bike shop?"
+    - "What is the price of a new tire?"
+    - "What is the price of a tune-up?"
+    - "What is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop. Can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: The opening and closing time of the shop
+    - tire:
+        type: string
+        description: The price of a new tire
+    - tune_up:
+        type: string
+        description: The price of a tune-up
+    - seat_price:
+        type: string
+        description: The price of a new seat
+    - care_bike:
+        type: string
+        description: Actions to take care of the bike
+
+conversation:
+  number: 5
+  interaction_style:
+    - default
+```
+
+Drop this updated YAML into your profile file and you should be good to go. If you’d like to capture prices as a structured currency later, you can add a custom `currency` type (there’s an example in the guide) and adjust the `type` fields accordingly. Let me know if you want help with that!
+$$$

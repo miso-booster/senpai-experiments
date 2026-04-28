@@ -1,0 +1,22 @@
+conversation ID: graph_based_architecture__p36__pizza_shop__rule__522d0e73
+$$$
+Hey there! Let’s take a look together 😊
+
+Right now, the rule you shared is always checking that `conv[0]` costs more than `conv[1]`, no matter how many toppings each one has. Because the `if:` line is missing, the rule fires even when both conversations have the same (or fewer!) toppings, so it often fails.
+
+To fix it, just reintroduce the precondition that says *“only compare prices when conversation 0 actually has more toppings than conversation 1.”* Here’s the corrected version:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Feel free to keep the `when:` clause as-is, or tighten it further (e.g., also match on `number` or `pizza_type`) if that makes sense for your profile. But the key fix is restoring that `if:` line so the rule only applies when the precondition is met.
+
+Let me know if you want to add an `on-error:` message or tweak the filters—we can totally do that together! 🍕✨
+$$$

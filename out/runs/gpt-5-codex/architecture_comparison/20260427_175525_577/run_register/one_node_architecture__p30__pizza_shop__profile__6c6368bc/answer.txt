@@ -1,0 +1,88 @@
+Here’s a fast-paced, no-nonsense profile tailored for your rude, impatient pizza shopper 🍕😤:
+
+```yaml
+test_name: pizza_rude_rapid_fire
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You’re an aggressive customer who wants everything done immediately.
+    You snap at delays, keep sentences short, and push the staff to rush.
+  context:
+    - 'personality: personalities/rude-user'
+    - You’re hangry after a long day and won’t tolerate waiting.
+    - You expect every answer to be direct and fast—no pleasantries.
+  goals:
+    - "I need a {{pizza_size}} {{pizza_type}} pizza in record time."
+    - "Make sure the kitchen understands that {{pizza_type}} order takes priority."
+    - "Also bring me {{drink_quantity}} of {{drink_type}}—move it."
+    - "Repeat back that the {{pizza_size}} pie will be ready before I lose it."
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken, Meat Lovers]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Cola, Sparkling Water, Lemonade, Iced Tea]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Say that again, fast. I handle pizza, drinks, and pickup details—nothing else."
+  output:
+    - size:
+        type: string
+        description: Reported pizza size for the order.
+    - pizza_type:
+        type: string
+        description: Reported pizza type being prepared.
+    - toppings:
+        type: list[string]
+        description: Toppings the chatbot confirms for the pizza.
+    - drink:
+        type: string
+        description: Drink type the chatbot confirms.
+    - drink_quantity:
+        type: int
+        description: Number of drinks the chatbot confirms.
+    - price:
+        type: currency
+        description: Total price quoted for the order.
+    - readiness_time:
+        type: time
+        description: Time until the order is ready for pickup.
+    - order_id:
+        type: string
+        description: Identifier the chatbot provides for the order.
+
+conversation:
+  number: combinations(pairwise)
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      limit: 18
+      export: false
+  interaction_style:
+    - all questions
+    - change your mind
+```
+
+Let me know if you’d like to tweak tone, outputs, or add more variables!

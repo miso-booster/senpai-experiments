@@ -1,0 +1,94 @@
+Hey there! 🍕 I sketched a profile that starts with a fussy custom order and then pivots to a predefined pizza, using the structure and interaction-style tips from `sensei-chat-guide.md`. The user persona begins by specifying size, crust, toppings, cheese, and a side, then explicitly cancels that idea mid-conversation and asks for a menu pizza instead.
+
+Here’s the profile:
+
+```yaml
+test_name: "pizza_custom_then_predefined"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an indecisive pizza fan who starts by designing a custom pizza
+    but tends to switch to a menu favorite halfway through the conversation.
+  context:
+    - "You enjoy experimenting with toppings but you ultimately want something quick and trusty."
+    - "You are polite and detail-oriented, confirming every step."
+  goals:
+    - "Start by designing a custom {{size_custom}} pizza on {{dough_style}} crust with {{custom_toppings}} and request extra {{cheese_pref}}."
+    - "Ask whether you can add {{side_item}} to the order."
+    - "Once the assistant acknowledges the custom pizza, change your mind and ask to switch to the predefined pizza called \"{{predefined_pizza}}\" instead. Make it clear you want that exact menu option."
+    - "Confirm the final order summary and total price, ensuring the custom pizza is cancelled."
+    - size_custom:
+        function: another()
+        type: string
+        data: [small, medium, large]
+    - dough_style:
+        function: random()
+        type: string
+        data:
+          - thin crust
+          - hand-tossed
+          - deep-dish
+    - custom_toppings:
+        function: random()
+        type: string
+        data:
+          - pepperoni and mushrooms
+          - spicy sausage and jalapeños
+          - spinach, ricotta, and garlic
+          - artichoke hearts and sun-dried tomatoes
+    - cheese_pref:
+        function: random()
+        type: string
+        data: [mozzarella, provolone, vegan cheese, parmesan]
+    - side_item:
+        function: random()
+        type: string
+        data:
+          - garlic knots
+          - Caesar salad
+          - buffalo wings
+          - 2-liter soda
+    - predefined_pizza:
+        function: another()
+        type: string
+        data:
+          - Margherita Classic
+          - BBQ Chicken Feast
+          - Veggie Supreme
+          - Meat Lovers Deluxe
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn’t catch that. Could you rephrase your order?"
+  output:
+    - final_pizza_name:
+        type: string
+        description: "Name or description of the pizza that ends up being ordered."
+    - final_pizza_size:
+        type: string
+        description: "Size of the final pizza selection."
+    - total_price:
+        type: currency
+        description: "Quoted total price for the final order, including any sides."
+    - extras:
+        type: list[string]
+        description: "Any sides or extras that remain in the confirmed order."
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 8
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+Feel free to tweak the variable lists or `interaction_style` if you want even more variety. Let me know if you’d like complementary rules later (e.g., verifying the final pizza is one of the predefined options).

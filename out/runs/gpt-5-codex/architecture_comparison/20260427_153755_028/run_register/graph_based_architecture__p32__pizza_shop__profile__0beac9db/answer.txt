@@ -1,0 +1,74 @@
+¡Claro! Aquí tienes un perfil listo para Sensei que pide exactamente lo que necesitas 😊. Guárdalo, por ejemplo, como `profiles/pizza_pedido_usd.yml`.
+
+```yaml
+test_name: pizza_order_usd_validation
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: Cliente que está realizando un pedido completo de pizza y bebida para llevar.
+  context:
+    - Estás organizando una cena informal en casa y quieres asegurarte de que todo quede registrado correctamente.
+    - Deseas confirmar el tipo de pizza, la bebida, el precio final en dólares y el ID del pedido antes de pasar a recogerlo.
+  goals:
+    - "Hola, quiero ordenar una pizza {{pizza_type}} tamaño {{pizza_size}}."
+    - "Añade también {{drink_quantity}} {{drink_type}} para acompañar."
+    - "¿Puedes confirmarme el precio final en dólares estadounidenses?"
+    - "Por favor, comparte el ID del pedido para tenerlo anotado."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Vegetariana, BBQ Chicken]
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data: [pequeña, mediana, grande]
+    - drink_type:
+        function: pairwise()
+        type: string
+        data: [Refresco, Agua mineral, Té helado, Cerveza artesanal]
+    - drink_quantity:
+        function: forward(drink_type)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí. Puedo ayudarte a pedir pizzas predefinidas o personalizadas, y bebidas."
+  output:
+    - selected_pizza_type:
+        type: string
+        description: "Tipo de pizza que el chatbot confirma para el pedido."
+    - selected_drink:
+        type: string
+        description: "Bebida que el chatbot confirma para el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido proporcionado por el chatbot."
+    - final_price_usd:
+        type: currency
+        description: "Precio final del pedido expresado en dólares estadounidenses."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 5
+    max_cost: 0.8
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+Con este perfil, Sensei pedirá al chatbot la confirmación del tipo de pizza, la bebida, el ID del pedido y asegurará que el precio esté en USD dentro de `chatbot.output`. Ajusta los valores que necesites (por ejemplo, lista de pizzas o bebidas) y lánzalo como siempre desde `sensei_chat.py`.
+
+¿Te gustaría que prepare también un `run.yml` o alguna regla para validar esos campos? Estoy por aquí 😄.

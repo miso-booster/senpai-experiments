@@ -1,0 +1,93 @@
+conversation ID: graph_based_architecture__p34__pizza_shop__profile__7e70313e
+$$$
+Sure thing! I put together a Sensei profile that walks the simulator through exactly that scenario—starting a custom pizza, then switching to a predefined menu option halfway through the chat. The “change your mind” interaction style is included so Sensei naturally flips the user’s request mid-conversation.
+
+Here’s the profile YAML you can drop into your `profiles/` folder:
+
+```yaml
+test_name: custom_to_predefined_switch
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are placing a pizza order but tend to second-guess yourself.
+    Begin by requesting a custom build, then change your mind and pick a predefined pizza instead.
+  context:
+    - You're ordering dinner for yourself after a long day and want something tasty but simple.
+    - You usually overthink food orders and sometimes switch choices mid-conversation.
+  goals:
+    - "Start by telling the bot you want to build a custom {{pizza_size}} pizza with {{dough_style}} dough and toppings like {{initial_toppings}}."
+    - "Ask for the price and prep time for that custom pizza."
+    - "Then admit you've changed your mind and prefer the predefined {{predefined_pizza}} pizza instead."
+    - "Confirm the predefined pizza order, keeping the {{pizza_size}} size unless the bot suggests otherwise."
+    - "Ask for final confirmation including total price, pickup time, and any order identifier."
+    - dough_style:
+        type: string
+        function: forward()
+        data:
+          - thin crust
+          - hand-tossed
+          - gluten-free
+    - initial_toppings:
+        type: string
+        function: another()
+        data:
+          - mushrooms and olives
+          - pepperoni and jalapeños
+          - spinach and feta
+          - extra cheese and basil
+    - pizza_size:
+        type: string
+        function: forward()
+        data:
+          - small
+          - medium
+          - large
+    - predefined_pizza:
+        type: string
+        function: forward()
+        data:
+          - Margarita
+          - Pepperoni
+          - Vegetarian Supreme
+          - BBQ Chicken
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can help you order custom or predefined pizzas and drinks."
+  output:
+    - custom_pizza_details:
+        type: string
+        description: Summary of the initial custom pizza request (size, dough, toppings).
+    - final_order_summary:
+        type: string
+        description: Confirmation of the final predefined pizza order.
+    - total_cost:
+        type: money
+        description: Total price for the completed order.
+    - readiness_time:
+        type: time
+        description: Estimated time until the order is ready.
+    - order_id:
+        type: string
+        description: Identifier or confirmation code for the finalized order.
+
+conversation:
+  number: combinations(0.6, forward)
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      limit: 18
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+Let me know if you’d like to tweak the goal flow, adjust the variable lists, or capture additional outputs (like drink add-ons). Happy to iterate with you! 😊
+$$$

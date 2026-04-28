@@ -1,0 +1,99 @@
+conversation ID: agentic_architecture__p32__pizza_shop__profile__e432233d
+$$$
+¡Listo! Aquí tienes un perfil para probar tu chatbot de pizzería 😊👇
+
+```yaml
+test_name: "pizza_delivery_es_smoke"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente hambriento que se conecta al chat de una pizzería para pedir una pizza a domicilio.
+    Te interesa confirmar sabores disponibles, bebidas y obtener un resumen claro del pedido antes de pagar.
+  context:
+    - "La pizzería ofrece entrega en menos de 45 minutos dentro de la ciudad."
+    - "Quieres pagar con tarjeta al momento de la entrega."
+    - "Prefieres que el pedido llegue caliente y con los toppings bien distribuidos."
+  goals:
+    - "Saluda y explica que quieres pedir una pizza para entrega a domicilio esta noche."
+    - "Elige una pizza {{pizza_type}} de tamaño {{size}}."
+    - "Pregunta si puedes añadir {{extra_toppings}} y decide si mantenerlos."
+    - "Solicita una bebida {{beverage}} para acompañar el pedido."
+    - "Pide que te confirmen el precio final en dólares e incluye cualquier cargo adicional."
+    - "Solicita el identificador del pedido y confirma la dirección de entrega."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data:
+          - margarita
+          - pepperoni
+          - cuatro quesos
+          - vegetariana
+    - size:
+        function: forward(pizza_type)
+        type: string
+        data:
+          - mediana
+          - grande
+    - extra_toppings:
+        function: random()
+        type: string
+        data:
+          - champiñones
+          - aceitunas
+          - extra queso
+          - jalapeños
+          - ninguno
+    - beverage:
+        function: pairwise()
+        type: string
+        data:
+          - refresco de cola
+          - limonada
+          - agua mineral
+          - té helado
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu pedido. ¿Podrías repetirlo?"
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmado por el chatbot."
+    - beverage:
+        type: string
+        description: "Bebida incluida en el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido proporcionado por el chatbot."
+    - final_price_usd:
+        type: currency
+        description: "Precio final del pedido expresado en dólares estadounidenses."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 7
+    max_cost: 0.15
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+### Resumen rápido
+- El perfil simula un cliente en español que cubre variaciones de pizza y bebida usando funciones `pairwise()` para generar combinaciones y así explorar mejor la carta.
+- En `chatbot.output` se extraen exactamente los campos que necesitas: tipo de pizza, bebida, ID del pedido y precio final en USD.
+- La conversación se controla con `goal_style.steps` y un estilo de interacción que añade variabilidad (frases largas, pequeños errores) para poner a prueba la robustez del bot.
+
+Referencias: construí el perfil siguiendo la guía `sensei-chat-guide.md`, que marca la estructura básica (`user`, `chatbot`, `conversation`) y cómo declarar `chatbot.output`.
+
+Si quieres añadir más bebidas, tamaños o estilos de interacción, ¡me dices y lo ajustamos! 🍕
+$$$

@@ -1,0 +1,114 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__a5bf48e6
+$$$
+Here’s a fresh Sensei profile that captures the frustrated eduroam user scenario, grounded on the structure and best practices from `sensei-chat-guide.md` 😊
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student who cannot get the campus eduroam Wi-Fi to
+    work. You are polite but clearly frustrated and you keep detailed notes
+    about what you already tried.
+  context:
+    - "You start classes this week and need Wi-Fi for course materials."
+    - "You already followed multiple setup guides but nothing sticks."
+    - "You are speaking with campus IT support via chat."
+  goals:
+    - "Explain that you already tried {{initial_attempt}} on your {{device_type}} running {{operating_system}}, but eduroam still refuses to connect."
+    - "Ask if following {{alternate_attempt}} would finally let you authenticate."
+    - "Mention that, as a last resort, you might {{last_resort_attempt}}, yet you hope to avoid it."
+    - "Quote the error message \"{{error_message}}\" that appears every time."
+    - "Clarify that you have already reset your {{network_component}} once."
+    - initial_attempt:
+        function: forward()
+        type: string
+        data:
+          - "using the university's eduroam installer"
+          - "running the eduroam CAT configuration tool"
+          - "adding the Wi-Fi profile manually with PEAP and MSCHAPv2"
+    - alternate_attempt:
+        function: forward(initial_attempt)
+        type: string
+        data:
+          - "downloading the campus mobile configuration profile"
+          - "using the onboarding wired connection to bootstrap credentials"
+          - "resetting the network settings and retrying the setup wizard"
+    - last_resort_attempt:
+        function: random()
+        type: string
+        data:
+          - "importing the certificate bundle provided by IT"
+          - "asking the help desk to provision the device in person"
+          - "borrowing another device to generate the eduroam profile"
+    - device_type:
+        function: forward(alternate_attempt)
+        type: string
+        data:
+          - "laptop"
+          - "smartphone"
+          - "tablet"
+    - operating_system:
+        function: pairwise()
+        type: string
+        data:
+          - "Windows 11"
+          - "macOS Sonoma"
+          - "Ubuntu 22.04"
+          - "iOS 17"
+          - "Android 14"
+    - error_message:
+        function: random()
+        type: string
+        data:
+          - "authentication failed"
+          - "EAP-TTLS handshake timeout"
+          - "unable to verify server certificate"
+          - "network not in range"
+    - network_component:
+        function: random()
+        type: string
+        data:
+          - "Wi-Fi adapter"
+          - "network profile"
+          - "keychain certificates"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase?"
+  output:
+    - troubleshooting_plan:
+        type: list[string]
+        description: "Ordered steps the chatbot recommends to fix the eduroam setup."
+    - resolution_status:
+        type: string
+        description: "Whether the chatbot claims the issue is resolved, pending, or escalated."
+    - resources_shared:
+        type: list[string]
+        description: "Links or tools the chatbot provides for configuring eduroam."
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+```
+
+**Why this works**
+
+- The profile leans on the `goals` + variable patterns recommended in `sensei-chat-guide.md`, using multiple variables (`initial_attempt`, `alternate_attempt`, `last_resort_attempt`) to represent different setup methods as you requested.
+- Conversation controls (`conversation.number: combinations`, `goal_style.steps`, `interaction_style`) follow the guide so you can cover the combinations of attempts without manually enumerating them.
+- `chatbot.output` exposes structured fields (`troubleshooting_plan`, `resolution_status`, `resources_shared`) in case you later want to validate the support flow with Sensei rules.
+
+Let me know if you’d like to tweak the tone, add more setup methods, or localize it into another language!
+$$$

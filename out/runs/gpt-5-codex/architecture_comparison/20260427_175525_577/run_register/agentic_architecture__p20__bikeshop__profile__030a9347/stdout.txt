@@ -1,0 +1,118 @@
+conversation ID: agentic_architecture__p20__bikeshop__profile__030a9347
+$$$
+Here’s a fresh Sensei profile you can drop into `profiles/bike_wheel_change_appointment.yml` to stress-test how the chatbot handles appointment dates and times:
+
+```yaml
+test_name: "bike_wheel_change_appointment"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a regular customer at a neighborhood bike shop who needs both wheels
+    changed. You’re decisive but expect the shop to lead the scheduling details.
+  context:
+    - "You rely on the bike for commuting and weekend rides."
+    - "You can drop the bike off the evening before if the shop needs extra prep time."
+    - "You prefer to receive SMS updates once the booking is confirmed."
+  goals:
+    - "I need to schedule a wheel change appointment on {{preferred_date}} at {{preferred_time}}. Can you fit me in?"
+    - "If that slot is unavailable, ask whether {{alternate_date}} at {{alternate_time}} works instead."
+    - "Confirm the mechanic can finish before {{ride_deadline}} because I have plans."
+    - "Ask about the drop-off window: can I bring the bike in {{dropoff_window}}?"
+    - preferred_date:
+        function: pairwise()
+        type: string
+        data:
+          - July 15, 2024
+          - July 17, 2024
+          - July 20, 2024
+          - July 23, 2024
+    - preferred_time:
+        function: pairwise()
+        type: string
+        data:
+          - 8:30 AM
+          - 10:15 AM
+          - 1:45 PM
+          - 4:30 PM
+    - alternate_date:
+        function: another()
+        type: string
+        data:
+          - July 18, 2024
+          - July 19, 2024
+          - July 22, 2024
+          - July 25, 2024
+    - alternate_time:
+        function: another()
+        type: string
+        data:
+          - 9:00 AM
+          - 11:30 AM
+          - 2:15 PM
+          - 5:00 PM
+    - ride_deadline:
+        function: random()
+        type: string
+        data:
+          - a charity ride on July 28, 2024
+          - a commute starting before 7:00 AM the next day
+          - a weekend group ride on July 21, 2024
+          - a training session on July 27, 2024
+    - dropoff_window:
+        function: random()
+        type: string
+        data:
+          - the evening before the appointment
+          - the morning of the appointment at 7:30 AM
+          - during my lunch break
+          - right after work around 6:00 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you say it another way?"
+  output:
+    - scheduled_date:
+        type: date("month day, year")
+        description: "Date the chatbot ultimately books or proposes for the wheel change"
+    - scheduled_time:
+        type: time("hh:mm AM/PM")
+        description: "Time slot the chatbot confirms or offers"
+    - alternate_option:
+        type: string
+        description: "Any alternate date/time suggested if the first preference fails"
+    - appointment_status:
+        type: string
+        description: "States whether the appointment is confirmed, pending, or needs follow-up"
+    - dropoff_instructions:
+        type: string
+        description: "Guidance about when/how to drop off the bike"
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.08
+  interaction_style:
+    - change your mind
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+### Why this setup works
+
+- **Multiple day/time combos**: `preferred_date` and `preferred_time` both use `pairwise()` so Sensei explores a wide matrix of date/time combinations (per `sensei-chat-guide.md`). Alternate slots add even more coverage.
+- **Follow-up pressure**: The goals push the bot to confirm availability, propose backups, and acknowledge deadlines/drop-off preferences—perfect for evaluating how the chatbot manages scheduling.
+- **Rich extraction targets**: `chatbot.output` captures the confirmed slot, alternates, status, and drop-off instructions, giving future rules plenty to inspect.
+
+Let me know if you’d like a companion rule or tweaks to the interaction style!
+$$$

@@ -1,0 +1,86 @@
+¡Hola! Aquí tienes un perfil nuevo listo para Sensei, centrado en un usuario que no consigue configurar eduroam y quiere explorar distintas vías para lograrlo. Usé variables para representar los métodos que ha intentado o quiere comprobar. 😊
+
+```yaml
+test_name: "Configuración de Eduroam sin éxito"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario universitario que necesita conectarse a la red eduroam, pero ninguna
+    de sus pruebas de configuración ha funcionado. Quiere explicar todo lo que ya
+    intentó e insiste en conseguir instrucciones claras y enlaces oficiales.
+  context:
+    - personality: personalities/impatient-user
+    - "Dependes de la conexión inalámbrica eduroam para tus clases híbridas y videollamadas."
+    - "Ya probaste varios métodos (instaladores, configuración manual y apps móviles) sin éxito."
+    - "Temes haber omitido certificados o requisitos previos, así que pides una guía completa."
+  goals:
+    - "Explicar que ya intenté usar {{metodo_instalador}} para configurar eduroam y sigo sin conectarme."
+    - "Preguntar si hay instrucciones más detalladas para {{metodo_manual}} porque no logro completar la configuración."
+    - "Solicitar pasos específicos para {{metodo_movil}} ya que necesito conectarme desde otros dispositivos."
+    - "Pedir que revisen si hay requisitos previos, certificados o perfiles que me falten antes de volver a intentarlo."
+    - metodo_instalador:
+        function: forward()
+        type: string
+        data:
+          - instalador automático de eduroam para Windows
+          - ejecutable oficial de eduroam para macOS
+          - asistente de configuración proporcionado por la UAM
+    - metodo_manual:
+        function: forward()
+        type: string
+        data:
+          - configuración manual WPA2-Enterprise con certificado raíz UAM
+          - creación manual de perfil PEAP/MSCHAPv2 siguiendo la guía PDF
+          - ajustes manuales especificando identidad anónima y servidor radius
+    - metodo_movil:
+        function: forward()
+        type: string
+        data:
+          - aplicación eduroam CAT en Android
+          - perfil de configuración eduroam para iOS instalado desde la web
+          - importación de perfil eduroam en Linux usando NetworkManager
+
+chatbot:
+  is_starter: false
+  fallback: "¿Podrías reformularlo? También puedes consultar nuestro catálogo de servicios. Respondo a consultas del CAU de Tecnologías de la Información."
+  output:
+    - eduroam_prerequisites:
+        type: string
+        description: "Requisitos previos necesarios antes de configurar eduroam"
+    - eduroam_installer_links:
+        type: string
+        description: "Enlaces oficiales a instaladores automáticos de eduroam"
+    - manual_configuration_steps:
+        type: string
+        description: "Pasos detallados para la configuración manual de eduroam"
+    - cat_app_instructions:
+        type: string
+        description: "Instrucciones para usar aplicaciones o perfiles móviles de eduroam"
+    - certificate_download_info:
+        type: string
+        description: "Información sobre certificados o perfiles que deben instalarse"
+    - troubleshooting_advice:
+        type: string
+        description: "Consejos de resolución cuando la conexión sigue fallando"
+    - support_contact_details:
+        type: string
+        description: "Datos de contacto del CAU o mesa de ayuda para asistencia adicional"
+
+conversation:
+  number: 4
+  max_cost: 0.5
+  goal_style:
+    steps: 24
+  interaction_style:
+    - single questions
+```
+
+Si necesitas ajustarlo (por ejemplo, añadir más métodos, cambiar el tono del usuario o modificar el esquema de extracción para Sensei-check), dime y lo afinamos juntos. 💪✨

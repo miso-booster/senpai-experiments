@@ -1,0 +1,86 @@
+Hey there! 😊 Here’s a fresh Sensei profile that zeroes in on appointment scheduling for a wheel change, with multiple dates and times so you can stress-test how the chatbot handles calendar details. Feel free to drop it under `profiles/` in your bike shop project.
+
+```yaml
+test_name: wheel_change_appointment_scheduler
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a commuter who depends on your bike daily and needs to book a wheel
+    change service. You like to double-check details such as timing, service duration,
+    and any preparation steps before dropping by.
+  context:
+    - You noticed wobbling on both wheels after a recent pothole mishap.
+    - Your schedule is tight, so you care a lot about accurate date and time confirmation.
+    - You’re hoping the shop can handle the swap quickly so you can get back on the road.
+  goals:
+    - "Hi! I'd like to schedule a {{service_detail}} on {{appointment_date}} at {{appointment_time}}."
+    - "Could you confirm how long the wheel change usually takes?"
+    - "Do I need to bring anything specific—like spare parts or documents—for the appointment?"
+    - service_detail:
+        function: another()
+        type: string
+        data:
+          - front wheel replacement
+          - rear wheel replacement
+          - full wheel set change
+    - appointment_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - next Tuesday
+          - 2024-11-22
+          - 2024-12-02
+          - next Friday
+          - the first Monday of next month
+    - appointment_time:
+        function: forward(appointment_date)
+        type: string
+        data:
+          - 9:00 AM
+          - 11:30 AM
+          - 1:00 PM
+          - 2:30 PM
+          - 4:45 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmed_date:
+        type: date
+        description: "The appointment date confirmed by the chatbot."
+    - confirmed_time:
+        type: string
+        description: "The appointment time confirmed by the chatbot, including AM/PM if applicable."
+    - confirmed_service:
+        type: string
+        description: "The service the chatbot confirms it will perform (e.g., wheel change)."
+    - preparation_instructions:
+        type: string
+        description: "Any instructions the chatbot gives about what the user should bring or prepare."
+
+conversation:
+  number: combinations
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: true
+      limit: 12
+  interaction_style:
+    - default
+```
+
+### Why this setup works nicely:
+- **Date & time coverage:** Using `forward()` and `forward(appointment_date)` unlocks the combination matrix, so Sensei will iterate through every pairing you’ve defined.
+- **Service variations:** The `service_detail` with `another()` keeps the wheel-change request diverse without exploding the combo count.
+- **Extraction targets:** The `chatbot.output` fields give you everything you need to validate date/time handling and any prep instructions the bot provides.
+
+Let me know if you’d like a version with stricter date formats or additional follow-up questions to push the bot even harder. Happy testing! 🚲✨

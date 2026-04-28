@@ -1,0 +1,29 @@
+Hey there! 😊
+
+In Sensei-check, a **metamorphic rule** is a validation that compares **multiple conversations at once** to make sure the chatbot’s behaviour changes (or stays the same) in a predictable way when the inputs change. Instead of checking one dialog in isolation, these rules look at pairs or tuples of conversations that meet some filter and verify a relationship between their outputs.
+
+Here’s the gist (based on `sensei-check-doc.md`):
+
+### How metamorphic rules work
+- **Scope:** They require at least two conversations (`conversations: 2`, `3`, etc.) or even the whole batch (`conversations: all`).
+- **Selection:** You narrow down which conversations to compare with a `when:` clause (e.g., same pizza size and drink).
+- **Relation:** You define the expected behaviour either as:
+  - a single boolean `oracle:` expression over `conv[i].field` values, or
+  - an `if:` / `then:` implication that spells out how outputs should react when inputs change.
+
+### Why they matter
+They solve the “oracle problem” by focusing on **relationships** instead of hard-coded answers. Example: if two pizza orders are identical except for extra toppings, the one with more toppings shouldn’t be cheaper.
+
+### Example pattern
+```yaml
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+Here we ensure price grows when toppings increase—classic metamorphic behaviour.
+
+### Ties to profiles
+Metamorphic rules usually reference fields defined in a Sensei Chat profile’s `chatbot.output` (e.g., `price`, `toppings`, `order_id`). You should only reference slots that the profile actually exposes.
+
+Hope that paints a clear picture! Let me know if you’d like to dive into writing one or adapting an example to your project.

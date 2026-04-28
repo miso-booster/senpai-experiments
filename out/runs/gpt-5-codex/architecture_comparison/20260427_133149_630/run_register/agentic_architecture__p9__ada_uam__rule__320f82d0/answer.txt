@@ -1,0 +1,18 @@
+¡Perfecto! Aquí tienes una regla de Sensei-check pensada para el perfil **“Préstamos y Recursos de la Biblioteca”**, aprovechando el slot `library_hours` que expone ese perfil:
+
+```yaml
+name: biblioteca_horario_9a20
+description: Verifica que el campo library_hours indique un horario de atención de 9 a 20 horas en el perfil "Préstamos y Recursos de la Biblioteca".
+active: true
+conversations: 1
+when: library_hours not in [None, ""]
+oracle: semantic_content(library_hours, "El horario de la biblioteca es de 9 a 20") and any(fragment in library_hours for fragment in ['9 a 20', '9:00 a 20:00', '09:00 a 20:00'])
+on-error: f"Se esperaba horario 9-20, pero el asistente devolvió: {library_hours}"
+```
+
+### Cómo funciona
+- **`when`** asegura que solo evaluemos conversaciones en las que el asistente haya llenado el slot `library_hours`.
+- **`oracle`** combina una verificación semántica (que el mensaje realmente diga que abre de 9 a 20) con una comprobación de cadenas típicas que deberían aparecer en la respuesta.
+- **`on-error`** devuelve el horario que proporcionó el bot para investigar rápidamente cualquier desviación.
+
+Esta regla sigue las pautas descritas en la guía de reglas (`sensei-check-doc.md`), especialmente la sección sobre reglas ligadas a `chatbot.output` y el uso del helper `semantic_content`. ¡Avísame si quieres ajustar la tolerancia a diferentes formatos de horario o añadir más checks! 😊

@@ -1,0 +1,21 @@
+conversation ID: one_node_architecture__p39__pizza_shop__rule__74c75e76
+$$$
+Hey! I can definitely sketch the metamorphic rule, but heads-up: none of the current profiles in your project expose a `drink` field in `chatbot.output`, so Sensei-check wouldn’t find `conv[i].drink` yet. You’ll want to add that slot (and ensure it’s filled during extraction) before this rule can pass validation. Once the field is available, the rule can look like this:
+
+```yaml
+name: drink
+description: Adding a drink increases the total price by exactly 2 USD for otherwise identical orders
+conversations: 2
+when: >
+  conv[0].pizza_type == conv[1].pizza_type
+  and conv[0].size == conv[1].size
+  and conv[0].toppings == conv[1].toppings
+  and conv[0].number == conv[1].number
+if: conv[0].drink and not conv[1].drink
+then: abs(extract_float(conv[0].price) - extract_float(conv[1].price) - 2) <= 0.01
+on-error: >
+  f"Drink surcharge mismatch: price with drink {conv[0].price} vs without {conv[1].price}"
+```
+
+Once you’ve added `drink`, `pizza_type`, `size`, `toppings`, `number`, and `price` to the relevant profile’s `chatbot.output` (or mapped the rule to whatever field names you already expose), this rule will enforce the $2 surcharge check. Let me know if you’d like help adjusting the profile schema too!
+$$$

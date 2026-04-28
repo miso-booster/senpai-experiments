@@ -1,0 +1,20 @@
+conversation ID: graph_based_architecture__p36__pizza_shop__rule__cb6aac87
+$$$
+Hey there! 😊
+
+The rule is failing because it’s missing the **precondition** that tells Sensei-check *when* the “more toppings ⇒ higher price” comparison should apply. Without that `if:` clause, Sensei-check gets conversation pairs in arbitrary order—so it often compares a convo with **fewer** toppings in `conv[0]` against one with **more** in `conv[1]`, which breaks the `then:` condition and makes the rule fail.
+
+Here’s the fixed version, restored to the working structure:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+That `if:` precondition restricts the check to pairs where `conv[0]` truly has more toppings. You can also tighten the `when:` filter (e.g., ensuring quantity is equal) if needed, but the crucial missing piece was the `if:` clause. Let me know if you’d like help refining it further! 🍕✨
+$$$

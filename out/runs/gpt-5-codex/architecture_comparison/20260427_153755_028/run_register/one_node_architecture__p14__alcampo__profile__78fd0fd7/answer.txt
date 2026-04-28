@@ -1,0 +1,102 @@
+¡Claro! Aquí tienes un perfil listo para evaluar cómo recomienda recetas y planifica menús el chatbot de Alcampo 😊👇
+
+```yaml
+test_name: Recetas y Planificación de Menús
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona que quiere optimizar su alimentación semanal con recetas variadas,
+    equilibradas y fáciles de preparar utilizando los servicios de Alcampo.
+  context:
+    - personality: personalities/conversational-user
+    - Quieres organizar un menú semanal que aproveche ingredientes de temporada y se adapte a tus preferencias dietéticas.
+    - Buscas ahorrar tiempo cocinando por lotes y mantener una alimentación equilibrada para toda la familia.
+    - Te interesa obtener listas de compra organizadas y consejos para ajustar las recetas a diferentes gustos.
+  goals:
+    - "Pide al chatbot sugerencias de recetas para un menú semanal equilibrado que respete la preferencia {{dietary_preference}}."
+    - "Solicita que proponga un plan de comidas para {{number_of_days}} días, incluyendo desayuno, comida y cena."
+    - "Pregunta cuánto tiempo toma preparar la receta principal para {{focus_meal}} y si puede adelantarse con meal prep."
+    - "Pide una lista de compra agrupada por categorías para ese menú semanal."
+    - "Solicita alternativas con ingredientes de temporada en {{season}} y cómo adaptarlas si falta algún producto."
+    - "Pregunta por consejos de organización y conservación para cocinar por lotes sin perder sabor ni nutrientes."
+    - dietary_preference:
+        function: forward()
+        type: string
+        data:
+          - vegetariana
+          - vegana
+          - sin gluten
+          - familiar
+    - number_of_days:
+        function: forward()
+        type: int
+        data:
+          min: 3
+          max: 7
+          step: 1
+    - focus_meal:
+        function: forward(dietary_preference)
+        type: string
+        data:
+          - comida principal
+          - cena del domingo
+          - almuerzo rápido
+          - cena ligera
+    - season:
+        function: forward()
+        type: string
+        data:
+          - primavera
+          - verano
+          - otoño
+          - invierno
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recipe_recommendations:
+        type: list[string]
+        description: Lista de recetas sugeridas para el menú semanal
+    - weekly_menu_plan:
+        type: list[string]
+        description: Plan detallado de comidas por día y momento
+    - preparation_times:
+        type: list[string]
+        description: Tiempos estimados de preparación para cada receta destacada
+    - batch_cooking_tips:
+        type: string
+        description: Consejos para cocinar por lotes y conservar los platos
+    - shopping_list:
+        type: list[string]
+        description: Lista de compra agrupada por categorías
+    - seasonal_alternatives:
+        type: string
+        description: Sugerencias con ingredientes de temporada y sustituciones
+    - nutritional_highlights:
+        type: string
+        description: Resumen de beneficios nutricionales clave del menú
+    - dietary_adjustments:
+        type: string
+        description: Recomendaciones para adaptar las recetas a otras preferencias o restricciones
+
+conversation:
+  number: combinations(0.6, forward)
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change language:
+            - english
+            - catalan
+```

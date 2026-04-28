@@ -1,0 +1,17 @@
+Hey, thanks for sharing the draft rule! I tweaked it so it follows the Sensei-check syntax and actually enforces the consistency you’re looking for. The idea is:
+
+* Only look at pairs where one user asks for general contact options and the other asks specifically for the customer service number.
+* If both conversations captured the relevant outputs, make sure the number provided in the second case is also present inside the broader contact options response.
+
+Here’s the polished version you can drop into your rules folder:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides consistent contact options and customer service number.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: str(conv[1].customer_service_number) in str(conv[0].contact_options)
+```
+
+💡 Quick reminder: this assumes your profile exposes `contact_options` and `customer_service_number` exactly with those names. If they differ, just update the field names accordingly. Let me know if you’d like an `on-error` message or further validation rules!

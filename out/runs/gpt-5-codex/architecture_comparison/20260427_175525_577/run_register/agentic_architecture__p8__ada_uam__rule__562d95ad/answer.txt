@@ -1,0 +1,22 @@
+Hey! I had a look at your rule and spotted one key issue:
+
+### What’s wrong
+- In `sensei-check-doc.md` the `when:` clause is described as a **filter** that picks which conversations to evaluate, while the real verification lives in `oracle:` (or `if`/`then`). Because your `when:` and `oracle:` are identical, any conversation with the wrong contact data gets filtered out before the oracle runs, so the rule never fails. In other words, the rule becomes vacuously true.
+
+### Fixed rule
+Here’s a corrected version that always runs and actually fails when the contact data doesn’t match:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+on-error: f"Expected CAU contact info but got email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+### Why this works
+- With no `when:` filter, the rule evaluates every conversation and fails whenever any of the three fields differ from the expected values.
+- The optional `on-error` message (supported per `sensei-check-doc.md`) makes failures easier to diagnose.
+- For single-conversation rules the doc also shows you can reference fields directly (e.g., `price` instead of `conv[0].price`), so the direct field names above are consistent.
+
+Let me know if you’d like to tweak the error message or add activation flags. 😊

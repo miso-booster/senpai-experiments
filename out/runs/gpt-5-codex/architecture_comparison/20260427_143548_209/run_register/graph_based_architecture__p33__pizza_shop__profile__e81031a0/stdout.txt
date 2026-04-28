@@ -1,0 +1,63 @@
+conversation ID: graph_based_architecture__p33__pizza_shop__profile__e81031a0
+$$$
+Sure thing! 😊 Since your simulated user is gathering menu and service details, the `chatbot` section should capture whatever the bot replies with—especially the bits you’ll want to validate or reference later through Sensei rules. Here’s a complete block you can drop into your profile:
+
+```yaml
+test_name: pizza_information_profile
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.3
+  format:
+    type: text
+
+user:
+  language: English
+  role: A customer gathering information about pizzas, drinks, and delivery before ordering.
+  context:
+    - You plan to order pizza soon and want to understand the menu and services first.
+  goals:
+    - Ask for the available pizza types.
+    - Ask about the price of a Margarita pizza.
+    - Ask for the list of available drinks with prices.
+    - Ask about the shop's operating hours.
+    - Ask whether delivery is available.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_types:
+        type: string
+        description: "A list of the pizza types offered by the shop. Look for phrases like 'We offer' followed by the pizza names."
+    - margarita_price:
+        type: money
+        description: "The price (or prices, if size variants are mentioned) for a Margarita pizza."
+    - drinks_and_prices:
+        type: string
+        description: "A list of available drinks along with their prices."
+    - operating_hours:
+        type: string
+        description: "The shop’s operating hours, including opening and closing times."
+    - delivery_availability:
+        type: string
+        description: "Whether the shop offers delivery or not."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+A quick rundown of what’s happening here:
+
+- `is_starter: false` keeps the chatbot waiting for the user’s first move—perfect for information-seeking scenarios.
+- `fallback` should reflect the real “I didn’t understand” message your bot uses, so Sensei can detect it properly.
+- Each entry under `output` declares a field Sensei will try to extract at the end of the conversation. I matched them to the user goals so you can easily hook up Sensei-check rules later (think: `conv[0].margarita_price` to make sure a price was provided).
+
+Once you paste this in, your profile will be ready to run. If you need help writing rules or tweaking those descriptions, just let me know! 🍕✨
+$$$

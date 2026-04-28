@@ -1,0 +1,103 @@
+Hey there! Love this test idea — it’s perfect for checking how well the bot handles mid-conversation pivots 🍕🔁. Below is a profile that starts with a custom pizza request and then switches to a predefined option halfway through. It uses the `change your mind` interaction style to reinforce that behavior, plus the goals walk the bot through the whole journey (custom request → switch → confirmation).
+
+---
+
+### ✅ What this profile does
+- Starts with the user asking for a custom pizza (size, sauce, toppings, extra requests).
+- Midway, the user changes their mind and asks for a predefined pizza instead.
+- Wraps up by confirming the new order, total cost, ready time, and order ID.
+- Expects the bot to provide structured outputs for validation (custom response, final choice, summary, price, time, order ID).
+
+---
+
+### 📂 Save it as  
+`profiles/custom_to_predefined_switch.yaml`
+
+```yaml
+test_name: custom_to_predefined_switch
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who starts out wanting a custom pizza,
+    but halfway through the conversation you decide that a predefined pizza is easier.
+    Make sure the chatbot clearly understands the change in direction.
+  context:
+    - personality: personalities/decisive-user.yml
+    - You are ordering dinner on the way home from work and want to keep things simple.
+    - You initially want to experiment with a custom pizza but end up preferring a predefined option.
+  goals:
+    - "I'd like to build a custom {{custom_size}} pizza with {{custom_sauce}} sauce and toppings like {{custom_toppings}}."
+    - "Can I add {{extra_requests}} to that custom pizza?"
+    - "Actually, I'd rather switch to one of your predefined pizzas—let's go with the {{predefined_pizza}}."
+    - "Please make that a {{predefined_size}} {{predefined_pizza}}."
+    - "What's the total price now, and how long will it take to be ready?"
+    - "Could you confirm the new order details or give me an order ID?"
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - custom_sauce:
+        function: forward()
+        type: string
+        data: [marinara, alfredo, pesto]
+    - custom_toppings:
+        function: random()
+        type: string
+        data: [mushrooms, pepperoni, black olives, spinach, roasted peppers]
+    - extra_requests:
+        function: another()
+        type: string
+        data: [extra cheese, gluten-free crust, light sauce, well-done bake]
+    - predefined_pizza:
+        function: forward(custom_size)
+        type: string
+        data: [Margherita, Pepperoni, BBQ Chicken, Vegetarian, Four Cheese]
+    - predefined_size:
+        function: forward(predefined_pizza)
+        type: string
+        data: [small, medium, large]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't quite catch that. I can help you with custom or predefined pizzas, plus drinks."
+  output:
+    - custom_order_response:
+        type: string
+        description: The chatbot's acknowledgement or follow-up questions about the initial custom pizza request.
+    - final_pizza_choice:
+        type: string
+        description: The pizza the chatbot confirms after the user switches to a predefined option.
+    - order_summary:
+        type: string
+        description: A recap of the confirmed order, including pizza type, size, and any extras.
+    - total_price:
+        type: money
+        description: The total cost after the switch to the predefined pizza.
+    - estimated_ready_time:
+        type: time
+        description: Estimated time until the pizza is ready for pickup.
+    - order_id:
+        type: string
+        description: Any confirmation number or order identifier supplied.
+
+conversation:
+  number: 3
+  max_cost: 0.8
+  goal_style:
+    steps: 6
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+---
+
+Let me know if you’d like to add drinks, vary the language, or hook it into a rule set — happy to tweak it with you! 😊

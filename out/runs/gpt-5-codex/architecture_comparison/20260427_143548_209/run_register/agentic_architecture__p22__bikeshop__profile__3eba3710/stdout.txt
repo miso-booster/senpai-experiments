@@ -1,0 +1,99 @@
+conversation ID: agentic_architecture__p22__bikeshop__profile__3eba3710
+$$$
+Here’s a draft profile tailored to your scenario:
+
+```yaml
+test_name: "bike_fit_discomfort_guidance"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a committed cyclist who wants to resolve recurring discomfort during rides.
+    You’re unsure whether the bike fit is off or certain components are worn,
+    and you want actionable guidance before deciding on further service.
+  context:
+    - "You ride year-round for commuting and weekend endurance sessions."
+    - "You prefer to understand possible fixes before committing to an in-store appointment."
+    - "You recently made small setup tweaks but aren’t confident about the results."
+  goals:
+    - "Describe the discomfort in your {{discomfort_area}} when riding your {{bike_type}}."
+    - "Explain that the discomfort began after {{recent_change}} and ask if the bike fit might be off."
+    - "Mention you suspect the {{component_issue}} could be worn and request tips to check it."
+    - "Ask what shop services or adjustments could help without directly requesting an appointment."
+    - "Ask about indicative costs or turnaround time for the suggested service."
+    - discomfort_area:
+        function: pairwise()
+        type: string
+        data:
+          - "lower back"
+          - "knees"
+          - "hands"
+          - "neck"
+    - bike_type:
+        function: random()
+        type: string
+        data:
+          - "road bike"
+          - "commuter bike"
+          - "gravel bike"
+          - "mountain bike"
+    - recent_change:
+        function: random()
+        type: string
+        data:
+          - "switching to a new saddle"
+          - "installing a shorter stem"
+          - "increasing weekly mileage"
+          - "replacing the handlebars"
+    - component_issue:
+        function: pairwise()
+        type: string
+        data:
+          - "bottom bracket"
+          - "saddle rails"
+          - "handlebar tape"
+          - "chain and cassette"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. Could you rephrase?"
+  output:
+    - fit_adjustment_advice:
+        type: list[string]
+        description: "Specific bike-fit tweaks or positioning tips the bot suggests."
+    - service_options:
+        type: list[string]
+        description: "Shop services or packages recommended to address the discomfort."
+    - component_inspection_steps:
+        type: list[string]
+        description: "Guidance on checking the suspected worn components."
+    - appointment_guidance:
+        type: string
+        description: "Summary of whether the bot recommends or insists on booking an appointment."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+### Why this fits
+- **User behaviour**: The role, context, and goals keep the rider focused on understanding discomfort and possible shop services without outright requesting an appointment—exactly what you described.
+- **Variability**: `pairwise()` on discomfort areas and component issues plus randomized bike types/changes exercise different combinations so the bot’s advice can be tested across scenarios.
+- **Outputs**: The `chatbot.output` fields capture actionable advice, service suggestions, component checks, and whether the bot pushes for an appointment—perfect anchors for future validation rules.
+- **Documentation alignment**: Structured exactly as outlined in `sensei-chat-guide.md` (sections for `user`, `chatbot`, `conversation`, use of functions like `pairwise()`, supported output types, and interaction styles).
+
+If you’d like to tweak interaction styles, goal phrasing, or add more variables (e.g., riding frequency or fit history), just let me know! 😊
+$$$

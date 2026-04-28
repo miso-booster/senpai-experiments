@@ -1,0 +1,73 @@
+conversation ID: one_node_architecture__p32__pizza_shop__profile__ef44c8de
+$$$
+¡Claro! Aquí tienes un perfil listo para usar que recopila exactamente esos datos del chatbot 😊
+
+```yaml
+test_name: "pedido_pizza_validacion_usd"
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona que quiere hacer un pedido de pizza para cenar y desea confirmar todos los detalles:
+    tipo de pizza, bebida, identificación del pedido y precio final en dólares.
+  context:
+    - "Te encantan las pizzas con sabores variados y acompañarlas con una bebida refrescante."
+    - "Prefieres pagar en dólares estadounidenses."
+  goals:
+    - "Pregunta por las pizzas disponibles."
+    - "Elige la pizza {{tipo_pizza}} en tamaño {{tamano_pizza}}."
+    - "Pregunta por las bebidas y selecciona {{bebida}}."
+    - "Solicita el precio final en dólares y confirma que incluye la bebida."
+    - "Pide un resumen final con el número de pedido."
+    - tipo_pizza:
+        function: forward()
+        type: string
+        data: [Pepperoni, Margarita, Vegetariana, Cuatro quesos, BBQ Chicken]
+    - tamano_pizza:
+        function: forward(tipo_pizza)
+        type: string
+        data: [pequeña, mediana, grande]
+    - bebida:
+        function: random()
+        type: string
+        data: [Refresco de cola, Agua mineral, Limonada, Té helado]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí tu mensaje. ¿Puedes repetirlo?"
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza que se confirmó para el pedido."
+    - drink_type:
+        type: string
+        description: "Bebida seleccionada en el pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido proporcionado por el chatbot."
+    - final_price_usd:
+        type: currency
+        description: "Precio total del pedido en dólares estadounidenses (USD)."
+
+conversation:
+  number: 4
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change language:
+            - English
+            - Portuguese
+```
+$$$

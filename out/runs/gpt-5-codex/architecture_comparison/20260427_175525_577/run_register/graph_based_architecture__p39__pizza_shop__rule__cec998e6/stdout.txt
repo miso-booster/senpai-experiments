@@ -1,0 +1,19 @@
+conversation ID: graph_based_architecture__p39__pizza_shop__rule__cec998e6
+$$$
+Sure thing! Here’s a metamorphic Sensei-check rule that enforces the “adding a drink costs exactly $2” expectation, assuming the profile exposes a `drink` field in `chatbot.output`. I’m also considering that “no drink” might be represented as `None`, an empty string, or the literal `'none'` — please adjust those sentinels if your profile uses something different.
+
+```yaml
+name: drink_price_increment
+description: Adding a drink increases the order total by exactly 2 dollars (same pizza config)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].number == conv[1].number and sorted(conv[0].toppings) == sorted(conv[1].toppings)
+if: conv[0].drink != conv[1].drink
+then: (
+        conv[0].drink not in ['', None, 'none'] and conv[1].drink in ['', None, 'none'] and extract_float(conv[0].price) == extract_float(conv[1].price) + 2
+    ) or (
+        conv[1].drink not in ['', None, 'none'] and conv[0].drink in ['', None, 'none'] and extract_float(conv[1].price) == extract_float(conv[0].price) + 2
+    )
+```
+
+If your dataset uses a different value to signal “no drink,” just tweak the lists inside those `in [...]` checks. Let me know if you’d like a complementary rule to ensure the opposite direction (removing a drink subtracts $2) or to handle multiple drink options 🌟
+$$$

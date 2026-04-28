@@ -1,0 +1,96 @@
+conversation ID: graph_based_architecture__p32__pizza_shop__profile__68d21c94
+$$$
+¡Hola! 😊 Aquí tienes un perfil de Sensei listo para poner a prueba a tu chatbot de pizzería. Lo diseñé para que el simulador cubra desde la selección de pizza y bebida hasta la confirmación del precio final en dólares y el ID del pedido.
+
+Guárdalo como `profiles/pizza_order_with_drink_summary.yaml` dentro de tu proyecto Sensei:
+
+```yaml
+test_name: pizza_order_with_drink_summary
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona que está haciendo un pedido para recoger en una pizzería.
+    Quieres asegurarte de que la pizza y la bebida elegidas queden claras y de
+    recibir un total final en dólares junto con el número de pedido.
+  context:
+    - "Planeas una cena casual y necesitas recoger el pedido de camino a casa."
+    - "Quieres que la orden incluya una bebida para acompañar la pizza."
+  goals:
+    - "Preguntar por las pizzas disponibles."
+    - "Elegir la pizza {{pizza_name}} en tamaño {{pizza_size}}."
+    - "Preguntar por las bebidas disponibles."
+    - "Pedir {{drink_quantity}} {{drink_choice}}."
+    - "Solicitar el total a pagar en dólares y el número de orden."
+    - pizza_name:
+        function: forward()
+        type: string
+        data:
+          - Margarita
+          - Pepperoni
+          - Cuatro quesos
+          - Vegetariana
+          - BBQ Chicken
+    - pizza_size:
+        function: forward(pizza_name)
+        type: string
+        data:
+          - pequeña
+          - mediana
+          - grande
+    - drink_choice:
+        function: forward()
+        type: string
+        data:
+          - Refresco
+          - Agua con gas
+          - Té helado
+          - Cerveza artesanal
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí eso. ¿Podrías reformular tu pedido?"
+  output:
+    - selected_pizza_type:
+        type: string
+        description: "Tipo de pizza confirmado por el chatbot."
+    - selected_drink:
+        type: string
+        description: "Bebida confirmada por el chatbot."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido."
+    - final_price_usd:
+        type: currency
+        description: "Precio final del pedido en dólares estadounidenses."
+
+conversation:
+  number: combinations(0.5, forward)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - change your mind
+```
+
+🧠 **Notas rápidas**  
+- El `conversation.number` usa la matriz de combinaciones para cubrir la variedad de pizzas/tamaños sin explotar el número de conversaciones.  
+- El campo `final_price_usd` usa el tipo `currency`, ideal para validar montos en USD en tus reglas de Sensei-check.  
+- El estilo de interacción `change your mind` ayuda a verificar que el bot gestione cambios de preferencia (perfecto para detectar inconsistencias en resúmenes u órdenes).
+
+Si necesitas ajustar vocabulario, añadir más bebidas o combinarlo con reglas de Sensei-check, avísame y lo adaptamos juntos. ¡Listo para cocinar esas pruebas! 🍕💪
+$$$

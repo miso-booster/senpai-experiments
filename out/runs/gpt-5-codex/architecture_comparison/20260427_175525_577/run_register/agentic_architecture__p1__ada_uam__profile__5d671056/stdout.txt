@@ -1,0 +1,93 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__5d671056
+$$$
+Here’s a ready-to-use SENSEI profile tailored for an eduroam troubleshooting user scenario 😊:
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a university student trying to connect your device to the eduroam Wi-Fi network.
+    You are technically capable but frustrated because repeated setup attempts have failed.
+  context:
+    - "You urgently need stable Wi-Fi on campus to submit assignments."
+    - "You already reviewed your institution's documentation but still cannot connect."
+    - "You are willing to follow detailed troubleshooting steps."
+  goals:
+    - "Explain that you already tried to configure eduroam using {{attempt_method}} on your {{device_type}} but it keeps failing."
+    - "Mention that the setup shows the error {{error_message}}."
+    - "Ask the assistant for a clear, step-by-step plan to finally connect to eduroam."
+    - "Confirm whether any certificates, profiles, or credential resets are required before retrying {{attempt_method}}."
+    - "Request a fallback option if eduroam still fails on the {{device_type}}."
+    - attempt_method:
+        function: pairwise()
+        type: string
+        data:
+          - the eduroam Configuration Assistant Tool (CAT)
+          - the institution's mobileconfig profile download
+          - manual WPA2-Enterprise setup with PEAP and MSCHAPv2
+          - the campus onboarding portal installer
+          - a NetworkManager script provided by IT
+    - device_type:
+        function: pairwise()
+        type: string
+        data:
+          - Windows 11 laptop
+          - macOS Sonoma MacBook
+          - Android 14 phone
+          - iOS 17 iPhone
+          - Ubuntu 22.04 notebook
+    - error_message:
+        function: random()
+        type: string
+        data:
+          - "authentication failed"
+          - "unable to validate server certificate"
+          - "cannot connect to this network"
+          - "no network access after connecting"
+          - "EAP negotiation timed out"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I couldn't follow that. Could you rephrase your request?"
+  output:
+    - recommended_steps:
+        type: string
+        description: "Summary of the troubleshooting steps the chatbot provides to fix the eduroam connection."
+    - certificate_guidance:
+        type: string
+        description: "Information about certificates or profiles the chatbot advises to install or remove."
+    - escalation_path:
+        type: string
+        description: "Any follow-up contact, ticketing, or escalation path the chatbot suggests."
+
+conversation:
+  number: combinations(0.7, pairwise)
+  goal_style:
+    all_answered:
+      limit: 12
+  interaction_style:
+    - long phrases
+    - make spelling mistakes
+    - change your mind
+```
+
+**Why it’s set up this way**
+
+- Variables capture the different configuration methods the user has already tried (`attempt_method`) alongside the device types they’re attempting on (`device_type`). Pairwise coverage ensures the simulator explores varied combinations without exploding the number of runs.  
+- An `error_message` variable keeps the conversation grounded in realistic failure signals, helping the chatbot surface precise troubleshooting advice.  
+- `chatbot.output` focuses on the most useful artifacts you’ll likely validate later: the steps the bot recommends, any certificate/profile guidance, and escalation info if the issue persists.  
+- Interaction styles (`long phrases`, `make spelling mistakes`, `change your mind`) mimic how a frustrated student might talk when repeatedly failing to join eduroam.
+
+This design follows the structure and best practices outlined in **`sensei-chat-guide.md`**, especially around crafting `user.goals`, pairing variables, and defining the `chatbot.output` contract.
+
+Let me know if you’d like to tweak the goal phrasing, add more device types, or introduce a specific language!
+$$$

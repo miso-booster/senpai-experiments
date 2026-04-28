@@ -1,0 +1,81 @@
+conversation ID: graph_based_architecture__p22__bikeshop__profile__75f7509b
+$$$
+Hey there! This new profile sounds like a great addition for covering those “bike doesn’t feel right but I don’t know why” scenarios. Below is a ready-to-drop-in YAML profile that keeps the user focused on diagnostic advice (no appointment booking) and covers both bike fit and component wear uncertainties.
+
+```yaml
+test_name: bike_fit_or_wear_discomfort_inquirer
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a recreational cyclist who has started to feel uncomfortable on
+    your bike and aren't sure if the fit is off or if some components are worn.
+    You want expert advice but prefer to gather information before committing
+    to any service.
+  context:
+    - You recently increased your weekly mileage and now notice nagging discomfort.
+    - You adjust minor things at home but aren't confident about full bike fitting.
+    - You're budget-conscious and want to understand options before spending money.
+  goals:
+    - Explain that you're experiencing discomfort in your {{discomfort_area}} during longer rides.
+    - Ask whether the discomfort might be due to an improper bike fit or {{component_concern}} wear.
+    - Request actionable adjustments you can try at home to relieve the discomfort.
+    - Ask what professional fit or assessment services the shop offers to help address the issue.
+    - Ask if the shop can inspect components for wear without requiring an appointment yet.
+    - discomfort_area:
+        function: pairwise()
+        type: string
+        data:
+          - lower back
+          - knees
+          - hands and wrists
+          - neck and shoulders
+    - component_concern:
+        function: pairwise()
+        type: string
+        data:
+          - saddle
+          - handlebar tape
+          - drivetrain
+          - wheel bearings
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - adjustment_advice:
+        type: string
+        description: Guidance or tips the chatbot provides for at-home adjustments to ease discomfort.
+    - professional_fit_services:
+        type: string
+        description: Information about professional fit or assessment services offered by the shop.
+    - component_inspection_support:
+        type: string
+        description: Details on whether the shop can inspect components for wear without booking an appointment.
+    - additional_recommendations:
+        type: string
+        description: Any extra advice, resources, or next steps suggested by the chatbot.
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - default
+```
+
+### Why this setup works
+- **Pairwise variables** (`discomfort_area`, `component_concern`) let Sensei cover different body discomforts versus suspected components without exploding into every full combination.
+- Goals stay firmly in “seek advice” territory—no appointment requests—so we really test how the bot guides users before booking anything.
+- Output fields capture the core advice we expect: home adjustments, in-shop services, and whether inspection is possible without committing.
+
+Give it a spin and let me know if you’d like variations (e.g., multilingual, more detailed price questions, etc.). Happy profiling! 🚴‍♂️✨
+$$$

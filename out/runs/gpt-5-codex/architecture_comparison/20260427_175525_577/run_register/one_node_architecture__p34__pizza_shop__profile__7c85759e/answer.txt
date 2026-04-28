@@ -1,0 +1,102 @@
+Sure thing! Here’s a ready-to-use profile where the simulated user starts crafting a custom pizza, then switches to a predefined option mid-conversation 😊
+
+```yaml
+test_name: custom_to_predefined_switch
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an indecisive customer who initially wants to build a custom pizza but
+    eventually decides to choose one of the pizzeria's predefined options.
+    You care about price, preparation time, and pairing the pizza with a drink.
+  context:
+    - You are planning dinner for a small group of friends and hope to impress them.
+    - You start excited about making a custom pizza but remember a favorite signature option halfway through.
+    - You want the chatbot to clearly confirm the final order details after you change your mind.
+  goals:
+    - "Ask to create a custom {{size}} pizza with toppings {{first_toppings}} and {{second_toppings}}."
+    - "Check if you can also add {{extra_request}} to that custom pizza."
+    - "Request the price and preparation time for the custom pizza."
+    - "Change your mind and say you'd rather switch to the predefined {{predefined_pizza}} pizza."
+    - "Confirm the order for the {{predefined_pizza}} pizza in a {{predefined_size}} size and ask for {{drink_order}}."
+    - size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - first_toppings:
+        function: forward()
+        type: string
+        data: [mushrooms, pepperoni, spinach, artichokes]
+    - second_toppings:
+        function: forward(first_toppings)
+        type: string
+        data: [olives, roasted peppers, onions, basil]
+    - extra_request:
+        function: random()
+        type: string
+        data:
+          - extra cheese
+          - gluten-free crust
+          - dairy-free cheese
+          - stuffed crust
+    - predefined_pizza:
+        function: forward()
+        type: string
+        data: [Margherita, Four Cheese, Hawaiian, Pepperoni Feast]
+    - predefined_size:
+        function: forward(predefined_pizza)
+        type: string
+        data: [medium, large]
+    - drink_order:
+        function: another()
+        type: string
+        data:
+          - a large sparkling water
+          - two cans of cola
+          - a bottle of iced tea
+          - three lemon sodas
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can help you with custom or predefined pizzas, plus drinks."
+  output:
+    - pizza_type:
+        type: string
+        description: Final pizza type confirmed after the user switches preferences.
+    - size:
+        type: string
+        description: Final pizza size confirmed in the order.
+    - toppings:
+        type: list[string]
+        description: Toppings included in the final pizza (empty list if sticking to predefined recipe).
+    - drink:
+        type: string
+        description: Drink selection confirmed with the order.
+    - price:
+        type: currency
+        description: Total price for the confirmed order.
+    - preparation_time:
+        type: time("minutes")
+        description: Estimated time until the order is ready.
+    - order_id:
+        type: string
+        description: Order identifier provided by the chatbot.
+    - order_summary:
+        type: string
+        description: Summary text of the final order details.
+
+conversation:
+  number: 4
+  max_cost: 0.9
+  goal_style:
+    steps: 6
+  interaction_style:
+    - change your mind
+    - long phrases
+```

@@ -1,0 +1,11 @@
+Hey there! I dug into the rule and the project setup, leaning on the guidance from `sensei-check-doc.md` and `sensei-chat-guide.md`. Here’s what I found so far:
+
+1. **Rule logic issue:** the snippet you shared is missing the `if:` guard that checks whether the first conversation actually has more toppings. Without that, the rule always expects `conv[0]` to be pricier—even when topping counts are the same or lower—so it will constantly fail. The example in the docs includes:
+   ```yaml
+   if: len(conv[0].toppings) > len(conv[1].toppings)
+   ```
+   which reinstates the “only compare price when toppings increase” requirement.
+
+2. **Profile mismatch:** I checked our pizza profiles (`pizza_order_test_custom.yml`, `user_sim_pizzaorder_predefined.yml`, `pizza_and_drink_order_placement.yaml`, `pizzaorder_ivan_test.yml`, etc.), and none of them expose `size`, `drink`, or `toppings` in `chatbot.output`. Rules like this rely on those fields being exported by the profile (per §3 of `sensei-check-doc.md`). So even with the `if`, the rule will crash or be N/A until a profile surfaces those slots.
+
+Could you confirm which profile this rule should cover—or if you’d like me to extend one (e.g., `pizza_order_test_custom.yml`) to include `size`, `drink`, `toppings`, and `price` in `chatbot.output`? Once I know the target schema, I can drop in the corrected YAML and make sure everything lines up.

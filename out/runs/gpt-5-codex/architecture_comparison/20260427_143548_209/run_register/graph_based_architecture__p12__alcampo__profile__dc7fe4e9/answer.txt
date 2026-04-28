@@ -1,0 +1,86 @@
+¡Claro que sí! Aquí tienes un nuevo perfil listo para usar que guía al usuario a pedirle al chatbot que añada artículos al carrito 🛒. Guárdalo como `profiles/shopping_cart_item_addition.yaml` dentro de tu proyecto Sensei.
+
+```yaml
+test_name: Shopping Cart Item Addition
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a time-pressed shopper who wants to add items to the online cart efficiently.
+    You rely on the chatbot to confirm availability, quantities, and pricing before checkout.
+  context:
+    - "personality: personalities/direct-user"
+    - "You prefer clear, actionable instructions and double-check that every item really ends up in your cart."
+    - "You want to confirm totals and fees before proceeding to payment."
+  goals:
+    - "Ask the chatbot to walk you through the steps to add products from the {{cart_category}} section into your cart."
+    - "Request that the chatbot adds {{cart_quantity}} units of {{cart_item}} to the cart and confirms availability."
+    - "If {{cart_item}} is unavailable, ask for suggested substitutions to keep the shopping list complete."
+    - "Request the current cart subtotal, delivery fee, and overall total after adding {{cart_item}}."
+    - cart_category:
+        function: forward()
+        type: string
+        data:
+          - fresh produce
+          - bakery
+          - beverages
+    - cart_item:
+        function: forward()
+        type: string
+        data:
+          - ripe bananas (6-pack)
+          - rustic baguette
+          - Valencia orange juice 1L
+    - cart_quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy sobre nuestros productos y servicios?"
+  output:
+    - steps_to_add_item:
+        type: string
+        description: "Instructions provided to add items to the cart"
+    - items_added:
+        type: list[string]
+        description: "Items that the chatbot confirmed as added to the cart"
+    - quantity_confirmed:
+        type: int
+        description: "Quantity of the primary item confirmed in the cart"
+    - substitution_suggestions:
+        type: string
+        description: "Alternative product recommendations if the requested item is unavailable"
+    - cart_subtotal:
+        type: currency
+        description: "Subtotal of the cart after adding the requested items"
+    - delivery_fee:
+        type: currency
+        description: "Delivery fee quoted during the conversation"
+    - cart_total:
+        type: currency
+        description: "Total amount due including fees"
+    - cart_confirmation_status:
+        type: string
+        description: "Status message that confirms whether the cart update succeeded"
+
+conversation:
+  number: 3
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - single questions
+```
+
+Con esto podrás comprobar si el chatbot realmente guía al usuario para añadir productos al carrito y confirmar totales. Si necesitas ajustar cantidades, estilos de interacción o más campos en `chatbot.output`, dime y lo adaptamos juntos. ¡Mucho ánimo con las pruebas! 💪✨

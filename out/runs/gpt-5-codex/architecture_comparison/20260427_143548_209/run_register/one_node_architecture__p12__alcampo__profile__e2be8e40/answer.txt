@@ -1,0 +1,81 @@
+Here’s a fresh profile that nudges the chatbot to suggest and add items into the user’s shopping cart 😊
+
+```yaml
+test_name: Shopping Cart Item Addition
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: "A busy shopper planning meals and asking the chatbot to help stock an online cart."
+  context:
+    - "You want to quickly gather everything needed for upcoming meals without missing essentials."
+    - "You're happy to follow the assistant's guidance if it helps streamline checkout."
+    - "Clarifying the running total and any relevant savings keeps you confident in the purchase."
+  goals:
+    - "Explain that I'm organizing groceries for {{meal_plan}} and ask for helpful product suggestions."
+    - "Request that the chatbot adds {{primary_item}} to my shopping cart."
+    - "Ask the assistant to add {{secondary_item}} as well so I don't forget it."
+    - "Check whether there are bundle deals or complementary items within the {{bundle_category}} section."
+    - "Ask for a cart summary that includes all items added and the estimated total so far."
+    - meal_plan:
+        function: forward()
+        type: string
+        data:
+          - weekday dinners
+          - weekend brunch
+          - school lunches
+          - healthy snacks
+    - primary_item:
+        function: pairwise()
+        type: string
+        data:
+          - fresh salmon fillets
+          - whole grain pasta
+          - organic spinach
+          - rotisserie chicken
+    - secondary_item:
+        function: pairwise()
+        type: string
+        data:
+          - seasonal berries
+          - almond milk
+          - sourdough bread
+          - mixed nuts
+    - bundle_category:
+        function: random()
+        type: string
+        data:
+          - fresh produce
+          - dairy
+          - bakery
+          - pantry staples
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - cart_items:
+        type: list[string]
+        description: "All items that the chatbot confirms as added to the user's cart."
+    - newly_added_items:
+        type: list[string]
+        description: "Items specifically added during this conversation."
+    - cart_item_count:
+        type: int
+        description: "Total number of products currently in the cart."
+    - estimated_total_cost:
+        type: currency
+        description: "Estimated total amount for the cart after the requested additions."
+    - savings_or_promotions:
+        type: string
+        description: "Any deals, bundles, or promotions mentioned for the selected items or categories."
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 18
+  interaction_style:
+    - single questions
+```

@@ -1,0 +1,97 @@
+Here’s a ready-to-use profile that gets the chatbot to propose items for a shopping cart 🛒. It follows the structure and best practices from `sensei-chat-guide.md`.
+
+```yaml
+test_name: "shopping_cart_item_recommendations"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a proactive online shopper building a cart on a large marketplace.
+    Ask the assistant to recommend incremental items, clarify product details,
+    and ensure the cart aligns with your scenario.
+  context:
+    - "You already have a few essentials in the cart and want complementary ideas."
+    - "You prefer balanced suggestions across groceries, home, and office needs."
+    - "You want to maximise value bundles while avoiding out-of-stock picks."
+  goals:
+    - "Ask for suggestions to add {{primary_category}} items to your cart for a {{use_case}} scenario."
+    - "Clarify recommended quantities or variations for {{secondary_category}} products while staying within a {{budget}} budget."
+    - "Request any bundle or promotional offer that would improve the cart."
+    - primary_category:
+        function: pairwise()
+        type: string
+        data:
+          - fresh produce
+          - snacks
+          - office supplies
+          - pet care
+    - secondary_category:
+        function: pairwise()
+        type: string
+        data:
+          - pantry staples
+          - beverages
+          - cleaning supplies
+          - personal care
+    - use_case:
+        function: pairwise()
+        type: string
+        data:
+          - weekly meal prep
+          - remote work setup
+          - family game night
+          - weekend getaway
+    - budget:
+        function: random()
+        type: string
+        data:
+          - "$50"
+          - "$75"
+          - "$120"
+          - "$200"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase?"
+  output:
+    - items_recommended:
+        type: list[string]
+        description: "Specific items the assistant suggests adding to the cart"
+    - category_coverage:
+        type: list[string]
+        description: "Categories addressed by the assistant while recommending items"
+    - estimated_total:
+        type: float
+        description: "Estimated total spend for the recommended additions"
+    - promotions_applied:
+        type: list[string]
+        description: "Promotions or bundles the assistant proposes"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.5
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - change your mind
+        - single questions
+```
+
+### Why these choices?
+- **User goals & variables**: Three `pairwise()` variables (`primary_category`, `secondary_category`, `use_case`) guarantee diverse combinations of shopper scenarios without exploding the total cases, as advised in the guide.
+- **Budget variability**: A simple `random()` list keeps spending expectations fresh.
+- **Chatbot outputs**: The schema (`items_recommended`, `category_coverage`, `estimated_total`, `promotions_applied`) captures exactly what future rules are likely to check when evaluating the cart suggestions.
+- **Conversation controls**: `combinations(0.6, pairwise)` plus the interaction styles from the doc create a mix of behaviours (long phrases, typos, mind changes) to stress-test the bot’s recommendation logic.
+
+Feel free to tweak categories, budgets, or interaction styles if you need a different flavour of shopping session!

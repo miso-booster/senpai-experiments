@@ -1,0 +1,87 @@
+Absolutely! Here’s a fresh profile ready to probe how the bike shop bot handles wheel-change appointments across different dates and times 😊
+
+```yaml
+test_name: wheel_change_appointment_tester
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist trying to schedule a wheel change appointment with the bike shop.
+    You pay close attention to dates and times and expect the assistant to confirm them clearly.
+  context:
+    - You recently noticed wobbling wheels and want them serviced promptly.
+    - You keep a tight work schedule, so you compare a couple of time slots before deciding.
+    - You prefer polite, concise exchanges but will restate details if needed.
+  goals:
+    - "Greet the assistant and explain you need a wheel change appointment."
+    - "Request an appointment on {{appointment_date}} at {{appointment_time}} specifically for a wheel change."
+    - "If the assistant hesitates or offers alternatives, clarify that the service is a wheel change."
+    - "Ask whether the appointment could instead be set for {{alternate_date}} at {{alternate_time}} if the first slot is unavailable."
+    - "Ask the assistant to confirm the final scheduled date and time for the wheel change."
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - 2024-11-05
+          - 2024-11-07
+          - 2024-11-12
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - "09:30"
+          - "11:15"
+          - "15:45"
+    - alternate_date:
+        function: another()
+        type: string
+        data:
+          - 2024-11-06
+          - 2024-11-08
+          - 2024-11-13
+    - alternate_time:
+        function: another()
+        type: string
+        data:
+          - "10:30"
+          - "13:00"
+          - "16:30"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - service_confirmation:
+        type: string
+        description: "Explicit confirmation that the wheel change appointment can be scheduled."
+    - scheduled_date:
+        type: date("YYYY-MM-DD")
+        description: "Final date confirmed for the wheel change appointment."
+    - scheduled_time:
+        type: time("HH:MM")
+        description: "Final time confirmed for the wheel change appointment."
+    - reschedule_response:
+        type: string
+        description: "Assistant's response when the user proposes the alternate slot."
+
+conversation:
+  number: combinations
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+Let me know if you’d like matching Sensei-check rules to validate those outputs, or tweaks to the persona/goals!

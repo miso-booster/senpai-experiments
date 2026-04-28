@@ -1,0 +1,25 @@
+¡Hola! Gracias por compartir la regla 😊. Te cuento lo que vi:
+
+### ¿Qué pasaba?
+
+- **El `when` hacía redundante la validación.** Al exigir exactamente los valores correctos en `when`, la regla solo se evaluaba si esos campos ya eran correctos. Si el chatbot devolvía información incorrecta, la condición `when` era falsa y la regla ni siquiera se ejecutaba. Resultado: ¡la comprobación nunca fallaba!
+- **Uso de `conv[0]` con `conversations: 1`.** Funciona, pero podemos simplificar usando los nombres de campo directamente, tal como recomienda la sintaxis para reglas de una sola conversación.
+
+### Regla corregida
+
+Aquí tienes la versión ajustada. Ahora verifica de verdad que el chatbot entregue el email, teléfono y dirección oficiales del CAU, y además devuelve un mensaje útil cuando algo no coincide:
+
+```yaml
+name: check_cau_information
+description: Verifica que el chatbot devuelva los datos oficiales de contacto del CAU.
+conversations: 1
+oracle: |
+  contact_email == 'cau@uam.es' and \
+  contact_phone == '91 497 4029' and \
+  physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+on-error: |
+  f"Datos incorrectos -> email: {contact_email}, teléfono: {contact_phone}, dirección: {physical_address}"
+```
+
+Si tu perfil objetivo es `Consultante de servicios y asistencia del CAU`, esta regla encaja perfecto, porque esos campos vienen de su `chatbot.output`.  
+¿Necesitas que también valide otros datos del CAU? ¡Dímelo y lo ampliamos juntos!

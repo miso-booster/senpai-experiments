@@ -1,0 +1,66 @@
+conversation ID: agentic_architecture__p10__ada_uam__rule__6ca80899
+$$$
+¡Hola! 😊 Tomando como referencia tu perfil “Usuarios Nuevos y Admisiones” (si el archivo tiene otro nombre, avísame), aquí van tres reglas que puedes añadir en `rules/` para empezar a probarlo. Las diseñé apoyándome en la documentación `sensei-check-doc.md`, `rules-examples.md` y `sensei-chat-guide.md`.
+
+---
+
+### 1. Comprobar que devuelve los cuatro enlaces clave  
+Asegura que siempre vengan los links básicos sobre admisiones, listas de espera, recursos y Welcome Day.
+
+```yaml
+name: admissions_links_present
+description: Verifica que el asistente entregue los enlaces esenciales de admisiones.
+conversations: 1
+oracle: |
+  all(
+    len((value or '').strip()) > 0
+    for value in [
+      admission_to_grados_link,
+      waitlist_info_link,
+      future_students_link,
+      welcome_day_link
+    ]
+  )
+```
+
+### 2. Coherencia de los detalles del Welcome Day  
+Cuando el bot comparte el enlace del evento, también debería informar fecha, hora y ubicación.
+
+```yaml
+name: welcome_day_details_complete
+description: Si aparece el enlace del Welcome Day, deben entregarse fecha, hora y lugar.
+conversations: 1
+if: len((welcome_day_link or '').strip()) > 0
+then: |
+  (welcome_day_date is not None)
+  and (welcome_day_time is not None)
+  and len((event_location or '').strip()) > 0
+```
+
+### 3. El bot responde en español  
+Regla general basada en los ejemplos de estilo de la documentación para confirmar que mantiene el idioma del usuario.
+
+```yaml
+name: spanish_language_consistency
+description: El asistente responde en español como el usuario simulador.
+conversations: 1
+oracle: responds_in_same_language()
+```
+
+---
+
+**Cómo probarlas**
+
+1. Guarda cada regla como un archivo YAML independiente dentro de `rules/` (por ejemplo, `rules/admissions_links_present.yml`, etc.).
+2. Si aún no tienes un `run.yml`, puedes ejecutar algo tipo:
+   ```bash
+   python sensei_check.py \
+     --project-path /ruta/a/tu/proyecto \
+     --rules rules/admissions_links_present.yml \
+     --rules rules/welcome_day_details_complete.yml \
+     --rules rules/spanish_language_consistency.yml
+   ```
+3. Repite o agrupa reglas según te convenga. Cada una solo depende de los campos definidos en `chatbot.output`, así que funcionan directamente con tu perfil actual.
+
+¿Quieres que prepare alguna otra validación (por ejemplo, para verificar requisitos de admisión o la información de listas de espera)? ¡Dímelo y lo hacemos!
+$$$

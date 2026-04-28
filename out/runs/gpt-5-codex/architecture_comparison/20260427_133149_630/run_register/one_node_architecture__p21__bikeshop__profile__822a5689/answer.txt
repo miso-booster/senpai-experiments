@@ -1,0 +1,86 @@
+Sounds like a great test scenario! Here's a profile you can drop straight into your bikeshop project:
+
+```yaml
+test_name: bike_setup_customization
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A cyclist who just bought a new bike and wants the shop to customize the fit.
+  context:
+    - You recently bought a new bike and want it tailored precisely to your body.
+    - You care about comfort on longer rides and want both saddle and handlebars adjusted.
+    - You expect clear pricing before agreeing to any service.
+  goals:
+    - "Confirm whether the shop offers professional bike fitting or seat adjustments."
+    - "Ask about replacing the seat with a {{seat_style}} saddle to improve comfort."
+    - "Request the price for purchasing and installing the new seat."
+    - "Ask what handlebar grip options they have, especially {{grip_material}} grips."
+    - "Request the cost to install the new handlebar grips."
+    - "Schedule a fitting appointment for {{appointment_day}} at {{appointment_time}}."
+    - seat_style:
+        function: forward()
+        type: string
+        data:
+          - "gel comfort"
+          - racing
+          - ergonomic
+    - grip_material:
+        function: forward()
+        type: string
+        data:
+          - cork
+          - foam
+          - leather
+    - appointment_day:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - next Tuesday
+          - this Saturday
+    - appointment_time:
+        function: another()
+        type: string
+        data:
+          - "10:00 AM"
+          - "1:30 PM"
+          - "4:00 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_adjustment_availability:
+        type: string
+        description: Confirmation that the shop provides seat adjustments or fitting services.
+    - seat_replacement_price:
+        type: money
+        description: The quoted price for purchasing and installing the requested replacement seat.
+    - handlebar_grip_options:
+        type: string
+        description: The list or description of available handlebar grip options, including the requested material.
+    - handlebar_installation_price:
+        type: money
+        description: The quoted price for installing new handlebar grips.
+    - fitting_appointment_confirmation:
+        type: string
+        description: Confirmation of the scheduled fitting appointment with date and time.
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 16
+  interaction_style:
+    - default
+```
+
+Let me know if you’d like a companion rule set to validate those outputs or tweaks to the interaction style!

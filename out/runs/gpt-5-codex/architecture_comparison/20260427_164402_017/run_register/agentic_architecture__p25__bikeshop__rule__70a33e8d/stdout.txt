@@ -1,0 +1,27 @@
+conversation ID: agentic_architecture__p25__bikeshop__rule__70a33e8d
+$$$
+Here’s a rule tailored to the `qa.yml` profile (the one you shared with outputs like `opening_and_closing`, `tire`, `tune_up`, `seat_price`, `care_bike`). It checks that the bike shop shares the expected schedule and prices (10 to 20 for opening hours, tune-up 50, tire 20, seat 20):
+
+```yaml
+name: bike_shop_expected_outputs
+description: Verifies the qa profile returns the expected opening hours and price points.
+conversations: 1
+oracle: |
+  data_collected() is True and
+  extract_float(opening_and_closing) == 10 and
+  '20' in opening_and_closing and
+  extract_float(tire) == 20 and
+  extract_float(tune_up) == 50 and
+  extract_float(seat_price) == 20
+yields: |
+  f"Got opening hours '{opening_and_closing}', tire {tire}, tune-up {tune_up}, seat {seat_price}"
+```
+
+### How it works
+- `data_collected()` (from **sensei-check-doc.md**) ensures the profile filled every slot before we compare values.
+- `extract_float(...)` pulls the first numeric value from each response so we can check exact amounts (also from **sensei-check-doc.md**).
+- For opening hours, we confirm the first number is 10 and the string still mentions “20” — good enough for formats like “10 to 20” or “10:00 - 20:00”.
+- The rule assumes we’re running conversations from the `qa.yml` profile you provided (per **sensei-chat-guide.md**); if your bot phrases the hours differently, we can adjust the check (e.g., swap in `semantic_content` or tighten string matching).
+
+Let me know if you’d like to extend the rule (maybe validate the maintenance advice slot) or tune the opening-hours check to a different phrasing 😊
+$$$

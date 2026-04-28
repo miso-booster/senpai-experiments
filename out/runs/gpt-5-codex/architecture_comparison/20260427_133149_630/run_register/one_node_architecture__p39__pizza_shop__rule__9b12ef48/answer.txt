@@ -1,0 +1,14 @@
+Sure thing! Here’s a metamorphic rule named **`drink`** that checks whether adding a drink increases the price by \$2 while keeping the pizza configuration identical. It assumes your target profile exposes `size`, `number`, `toppings`, `drink`, and `price` in `chatbot.output` (the same schema used by your existing toppings rule).
+
+```yaml
+name: drink
+description: Adding a drink increases the total price by exactly $2 when the pizza configuration is the same.
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].number == conv[1].number and sorted(conv[0].toppings) == sorted(conv[1].toppings)
+if: (conv[0].drink not in ['none', 'No drink', 'no drink', None, '']) != (conv[1].drink not in ['none', 'No drink', 'no drink', None, ''])
+then: abs(abs(extract_float(conv[0].price) - extract_float(conv[1].price)) - 2) <= 0.01
+on-error: |
+  f"Expected a $2 difference when toggling drinks. Got {conv[0].drink=} ({conv[0].price}) vs {conv[1].drink=} ({conv[1].price})."
+```
+
+Let me know if you’d like to tweak the tolerance or the “no drink” markers to match your bot’s exact wording! 😊

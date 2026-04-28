@@ -1,0 +1,87 @@
+Sure thing! Here’s a fresh Sensei profile that captures the rude, time-pressured pizza shopper you described. It uses two `pairwise()` variables so the conversation count comes from the pairwise matrix, as explained in `sensei-chat-guide.md`.
+
+```yaml
+test_name: "rude_pizza_shop_rush"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer ordering from a pizza shop. You bark orders,
+    refuse small talk, and demand the bot keeps everything fast and efficient.
+  context:
+    - "You snap at the agent if they stall or add pleasantries."
+    - "You are in a rush and insist on immediate confirmations."
+  goals:
+    - "Give me a {{pizza_size}} pizza, and don't keep me waiting."
+    - "Make the crust {{crust_style}} because I said so."
+    - "Pile on {{topping_combo}} and don't mess around."
+    - "I expect it ready in {{prep_deadline}} minutes, clear?"
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra-large]
+    - crust_style:
+        function: pairwise()
+        type: string
+        data:
+          - thin
+          - hand-tossed
+          - deep dish
+    - topping_combo:
+        function: another()
+        type: string
+        data:
+          - pepperoni and jalapeños
+          - mushrooms and black olives
+          - bbq chicken and red onions
+          - spinach and feta
+          - sausage and green peppers
+    - prep_deadline:
+        function: random()
+        type: int
+        data:
+          min: 10
+          max: 25
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - order_total:
+        type: float
+        description: "Quoted total price for the order"
+    - prep_eta_minutes:
+        type: int
+        description: "Estimated preparation time in minutes"
+    - order_id:
+        type: string
+        description: "Order confirmation identifier"
+    - items_confirmed:
+        type: list[string]
+        description: "Items the chatbot confirms adding to the order"
+
+conversation:
+  number: combinations(pairwise)
+  goal_style:
+    steps: 4
+    max_cost: 0.05
+  interaction_style:
+    - single questions
+```
+
+**Why it fits the brief**
+
+- The persona and goals sound curt and demanding, reinforcing the rude, time-sensitive behavior.
+- Four distinct goals with four variables; `pizza_size` and `crust_style` use `pairwise()` so the conversation matrix (and `conversation.number`) is driven by pairwise coverage, just as the guide recommends.
+- `conversation.number: combinations(pairwise)` ensures Sensei derives the run count from those pairwise assignments.
+- Outputs capture price, ETA, confirmation ID, and items—handy anchors for future rules.
+
+Let me know if you’d like to tweak the tone, add drinks, or wire up a matching rule next! 🍕

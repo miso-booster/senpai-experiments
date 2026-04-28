@@ -1,0 +1,40 @@
+conversation ID: agentic_architecture__p36__pizza_shop__rule__6f1dc89e
+$$$
+Hey there! 😊 I took a look at the docs (`sensei-check-doc.md`, `rules-examples.md`) and inspected our pizza profiles in the project.
+
+Here’s what I found:
+
+1. **Schema mismatch**  
+   The rule references `conv[0].size`, `conv[0].drink`, and `conv[0].toppings`, but none of the existing pizza profiles expose those fields in their `chatbot.output`. For example:
+   - `pizza_order_test_custom.yml` only exposes `price`, `time`, and `order_id`.
+   - `pizza_and_drink_order_placement.yaml` gives you `pizza_options`, `drink_options`, `order_summary`, `total_cost`, etc., but no individual `size` or `toppings` slots.
+   - `pizzaorder_ivan_test.yml` does have `selected_pizza_size`, but still no `toppings` or `price`.
+
+   Because the fields aren’t available, the rule never gets the data it needs—so it either errors out or becomes a no-op.
+
+2. **Missing `if:` guard**  
+   In `sensei-check`, when you want to use a `then:` clause you’re expected to pair it with an `if:` precondition (`sensei-check-doc.md`, section “Syntax snapshot”). The version from `rules-examples.md` shows the intended structure:
+
+   ```yaml
+   name: more_toppings_cost_more
+   description: Adding more toppings to a custom pizza cost more
+   active: True
+   conversations: 2
+   when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+   if:   len(conv[0].toppings) > len(conv[1].toppings)
+   then: extract_float(conv[0].price) > extract_float(conv[1].price)
+   ```
+
+   Without that `if:`, `then:` isn’t evaluated properly.
+
+---
+
+### What I need from you
+
+Could you confirm which profile you want this rule to validate?
+
+- If you intend to keep using existing profiles, we’ll have to rewrite the rule to rely on the fields they actually expose (e.g., `order_summary`, `total_cost`, `selected_pizza_size`, etc.).
+- If you really do need `size`, `drink`, and `toppings`, we’ll need to add those fields to the relevant profile’s `chatbot.output` first; after that I can plug in the corrected rule (with the `if:` guard).
+
+Once you let me know the target profile (or whether we’re updating the profile schema), I’ll fix up the YAML accordingly 👍
+$$$

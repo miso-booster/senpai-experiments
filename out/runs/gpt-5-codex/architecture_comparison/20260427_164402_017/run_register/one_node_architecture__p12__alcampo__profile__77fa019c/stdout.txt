@@ -1,0 +1,88 @@
+conversation ID: one_node_architecture__p12__alcampo__profile__77fa019c
+$$$
+Here’s a fresh profile geared toward gathering shopping cart items 😊. Let me know if you'd like any tweaks!
+
+```yaml
+test_name: "shopping_cart_item_builder"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a decisive shopper who wants the chatbot to help you curate a shopping cart,
+    add specific items, adjust quantities, and confirm costs before checkout.
+  context:
+    - You are planning a weekly grocery run and want the cart ready before visiting the store.
+    - You prefer balancing fresh items with pantry staples and a couple of household essentials.
+    - You want clarity on costs and any fees before completing the order.
+  goals:
+    - "Ask the chatbot to list popular {{category}} options I can add to my cart."
+    - "Request to add {{selected_item}} to my cart and set the quantity to {{quantity}}."
+    - "Confirm which items are currently in my cart along with their quantities."
+    - "Ask for complementary product suggestions that pair well with {{selected_item}}."
+    - "Request the current subtotal and any delivery fees before I proceed to checkout."
+    - category:
+        function: forward()
+        type: string
+        data:
+          - fresh produce
+          - bakery treats
+          - pantry staples
+          - household essentials
+          - pet supplies
+    - selected_item:
+        function: random()
+        type: string
+        data:
+          - organic apples pack
+          - whole wheat baguette
+          - premium olive oil
+          - eco-friendly dish soap
+          - grain-free dog food
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 4
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que no te he entendido del todo. ¿Puedes repetir tu consulta sobre la compra?"
+  output:
+    - items_in_cart:
+        type: list[string]
+        description: "List of items currently in the shopping cart"
+    - cart_quantities:
+        type: list[int]
+        description: "Quantities for each item in the cart aligned with items_in_cart"
+    - complementary_suggestions:
+        type: string
+        description: "Recommended complementary items to consider adding"
+    - subtotal:
+        type: currency
+        description: "Current cart subtotal before fees"
+    - delivery_fee:
+        type: currency
+        description: "Delivery or service fee for the current cart"
+    - cart_confirmation:
+        type: string
+        description: "Assistant confirmation message summarizing the cart status"
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - random:
+        - long phrases
+        - change your mind
+        - make spelling mistakes
+```
+$$$

@@ -1,0 +1,92 @@
+Hey there! This scenario sounds fun to test 😊  
+I’ve drafted a Sensei profile that makes the simulated user start a custom build, then pivot to a predefined pizza mid-conversation. It uses the `change your mind` interaction style so the simulator naturally performs that switch. You can drop it into your project’s `profiles/` folder (for example, as `profiles/custom_to_menu_switch.yaml`).
+
+---
+
+### 📄 Suggested profile: `custom_to_menu_switch.yaml`
+
+```yaml
+test_name: custom_to_menu_switch
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You’re a customer who usually builds custom pizzas, but you’re in a hurry
+    tonight and might switch to an easier predefined option if it sounds better.
+  context:
+    - You're planning dinner after a long day at work.
+    - You want enough food for two people.
+    - You prefer savory toppings but will compromise if needed.
+  goals:
+    - "I want to build a custom pizza: {{custom_size}} size, {{custom_crust}} crust, with extra {{custom_toppings}}."
+    - "Could you confirm any sauces or extras that come with that custom pizza?"
+    - "Actually, I changed my mind—can I order your predefined {{menu_pizza}} pizza instead?"
+    - "Please confirm the final pizza details and let me know the total price."
+    - "How long will it take before the order is ready for pickup?"
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - custom_crust:
+        function: forward(custom_size)
+        type: string
+        data: [thin crust, thick crust, stuffed crust]
+    - custom_toppings:
+        function: random()
+        type: string
+        data:
+          - pepperoni and mushrooms
+          - spicy sausage and onions
+          - spinach and feta
+          - roasted vegetables
+    - menu_pizza:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Vegetarian, BBQ Chicken]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't catch that. I can help with custom or predefined pizzas, and drinks."
+  output:
+    - custom_build_summary:
+        type: string
+        description: "How the chatbot acknowledged or summarized the initial custom pizza request."
+    - final_menu_selection:
+        type: string
+        description: "The predefined pizza the chatbot confirmed after the user changed their mind."
+    - total_cost:
+        type: money
+        description: "Total cost of the final order, including any extras."
+    - readiness_time:
+        type: time
+        description: "Estimated time until the pizza is ready for pickup."
+    - order_id:
+        type: string
+        description: "Order confirmation or tracking identifier."
+
+conversation:
+  number: 3
+  max_cost: 0.8
+  goal_style:
+    steps: 6
+  interaction_style:
+    - change your mind
+    - long phrases
+```
+
+---
+
+### 🛠️ Notes & tips
+
+- **Change of heart baked in:** The goals lead with a custom build and explicitly ask to switch to a predefined pizza. Pairing that with `interaction_style: change your mind` nudges Sensei to play out the flip convincingly.
+- **Outputs for validation:** The `chatbot.output` fields grab what you’ll likely want to inspect with Sensei-check rules (confirmation of both phases, pricing, readiness time, etc.).
+- **Coverage:** With `conversation.number: 3` and `forward()` on the key variables, you’ll cycle through different sizes, crusts, and menu pizzas across runs without going too wild on cost.
+
+Feel free to tweak the context, toppings, or predefined options to match your bot’s menu. If you’d like a variant (say, with drink add-ons or multilingual twists), just let me know! 🍕✨

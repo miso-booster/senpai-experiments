@@ -1,0 +1,60 @@
+Hey there! I spotted a few issues that were keeping your profile from running smoothly and cleaned them up based on the guidance in `sensei-chat-guide.md`:
+
+### What I fixed
+- **LLM settings:** `temperature` must be numeric, so I set it to `0.2` and added `model_prov: openai` for completeness.
+- **User prompt structure:** Reformatted `role` and `context` to use YAML-friendly multiline/quoted strings so the simulator reads them correctly.
+- **Chatbot outputs:** Replaced the non-standard types (`str`, `money`) with the built-in types (`string`, `currency`) and added missing `type` declarations for `seat_price` and `care_bike`.
+- **Booleans & style:** Switched `is_starter` to lowercase `false` and kept the interaction style as the documented `default`.
+
+Here’s the corrected profile:
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.2
+  model: gpt-4o-mini
+  model_prov: openai
+
+user:
+  language: English
+  role: >
+    You are a customer speaking with the virtual assistant of a bike shop.
+    Ask about the shop schedule, product prices, and bike care tips.
+  context:
+    - "You are interested in learning the items listed in your goals."
+    - "Stick to asking about opening times, price of a tire, price of a tune-up, price of a new seat, and ways to take care of a bike."
+  goals:
+    - "What are the opening and closing times of the bike shop?"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: "Opening and closing time of the shop"
+    - tire:
+        type: currency
+        description: "Price of a new tire"
+    - tune_up:
+        type: currency
+        description: "Price of a tune-up"
+    - seat_price:
+        type: currency
+        description: "Price of a new seat"
+    - care_bike:
+        type: string
+        description: "Actions to take care of the bike"
+
+conversation:
+  number: 5
+  interaction_style:
+    - default
+```
+
+Give this version a spin and you should be good to go! Let me know if you want to tweak the goals or add interaction styles. 😊

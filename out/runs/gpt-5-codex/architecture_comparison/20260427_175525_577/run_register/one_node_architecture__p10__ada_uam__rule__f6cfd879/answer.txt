@@ -1,0 +1,29 @@
+¡Hola! Este perfil ya expone muchos campos útiles, así que puedes empezar con algunas reglas centradas en comprobar que el bot entrega la información clave que promete. Aquí van tres reglas sugeridas para Sensei-check; cada una está lista para pegarse en tu carpeta `rules/`.
+
+1. **Verifica que los enlaces esenciales de admisiones nunca queden vacíos.**
+```yaml
+name: admissions_core_links_present
+description: Los enlaces principales de admisiones, lista de espera, futuros estudiantes y Welcome Day deben aparecer en cada conversación.
+conversations: 1
+oracle: all(len(str(field or '').strip()) > 0 for field in [admission_to_grados_link, waitlist_info_link, future_students_link, welcome_day_link])
+```
+
+2. **Si se da el enlace del Welcome Day, también deben darse fecha, hora y ubicación.**
+```yaml
+name: welcome_day_details_complete
+description: Cuando se proporciona el enlace del Welcome Day, la respuesta debe incluir fecha, hora y ubicación del evento.
+conversations: 1
+if: len(str(welcome_day_link or '').strip()) > 0
+then: welcome_day_date is not None and welcome_day_time is not None and len(str(event_location or '').strip()) > 0
+```
+
+3. **Comprueba que el curso solicitado aparezca en la información de cursos que devuelve el bot.**
+```yaml
+name: requested_course_acknowledged
+description: El bot debe mencionar el curso solicitado por el usuario dentro de la lista de cursos disponible.
+conversations: 1
+if: cursos is not None and cursos_available not in [None, '']
+then: cursos[0].lower() in cursos_available.lower()
+```
+
+Estas reglas se apoyan directamente en los campos de `chatbot.output`, así que encajan perfecto con tu perfil “Usuarios Nuevos y Admisiones”. Si quieres algo más metamórfico (comparando varias conversaciones) o centrado en otros slots, dime y lo diseñamos junt@s 😊.

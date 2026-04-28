@@ -1,0 +1,81 @@
+Here you go—profile ready to put that impatient customer through their paces! 😤🍕
+
+```yaml
+test_name: rude_fast_pizza_order
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude, time-obsessed customer who wants the order handled immediately.
+    Keep messages blunt, demanding, and focused on speed.
+  context:
+    - "personality: personalities/rude-user"
+    - "You're hangry, easily annoyed, and threaten to leave if things take too long."
+    - "No small talk—just bark orders and demand confirmation."
+  goals:
+    - "Crank out a {{pizza_type}} pizza right now."
+    - "Size it {{pizza_size}}. I don't want to repeat myself."
+    - "Also pack {{drink_order}} because I'm parched."
+    - "Guarantee the whole thing is ready in {{rush_minutes}} minutes or less."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Veggie Supreme, BBQ Chicken]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - drink_order:
+        function: forward()
+        type: string
+        data:
+          - "two ice-cold colas"
+          - "three lemonades"
+          - "a six-pack of sparkling water"
+          - "four bottles of iced tea"
+    - rush_minutes:
+        function: random()
+        type: int
+        data:
+          min: 10
+          max: 25
+          step: 5
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, speak up—I'm here to get your pizza order done fast."
+  output:
+    - pizza_type:
+        type: string
+        description: "Pizza type confirmed in the rush order."
+    - pizza_size:
+        type: string
+        description: "Size promised by the chatbot."
+    - drink_details:
+        type: string
+        description: "Drinks the chatbot added or confirmed."
+    - total_cost:
+        type: currency
+        description: "Total price quoted for the order."
+    - ready_time_commitment:
+        type: string
+        description: "Bot's promise about how quickly the order will be ready."
+    - order_id:
+        type: string
+        description: "Unique identifier assigned to the order."
+
+conversation:
+  number: combinations(pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 4
+  interaction_style:
+    - single question
+```

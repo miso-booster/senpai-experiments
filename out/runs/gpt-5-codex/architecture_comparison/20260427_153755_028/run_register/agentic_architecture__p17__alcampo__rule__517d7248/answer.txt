@@ -1,0 +1,26 @@
+¡Hola! 😊
+
+Revisé la regla y veo un par de detalles que explican por qué no está funcionando. Asumo que la estás aplicando sobre el perfil `general_shopper_and_member_support.yaml`, que es el único que expone el slot `membership_benefits`. Si no es así, avísame para ajustarlo.
+
+### ¿Qué estaba fallando?
+1. **`conversations:` está vacío.**  
+   Tal como indica `sensei-check-doc.md`, cada regla debe declarar explícitamente cuántas conversaciones evalúa (`1`, `2`, `all`, etc.). Con el campo vacío, Sensei-check ignora la regla.
+
+2. **Chequeo demasiado débil.**  
+   El `oracle` sólo compara con `''`, pero conviene asegurarse de que el campo no sea `None` ni quede en blanco (p. ej., espacios). La documentación permite usar expresiones Python simples, así que podemos reforzarlo con un `strip()` después de verificar que el valor no sea `None`.
+
+### Propuesta de regla corregida
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot provides details about Club de Socios membership benefits.
+conversations: 1
+active: true
+oracle: membership_benefits is not None and membership_benefits.strip() != ''
+on-error: f"Expected membership benefits info, got: {membership_benefits}"
+```
+
+- `conversations: 1` deja claro que es un chequeo de una sola conversación.
+- El `oracle` se asegura de que el slot se haya rellenado con algún texto significativo.
+- `on-error` te dará un mensaje amigable cuando falle, útil para depurar qué devolvió el bot.
+
+¿Me confirmas si esta regla está asociada al perfil `general_shopper_and_member_support.yaml` o a otro? Así termino de cerrar los pendientes.

@@ -1,0 +1,14 @@
+Sure thing! Here’s a new Sensei-check metamorphic rule that verifies adding a drink costs exactly \$2 extra. I’ve kept the rule name as **"drink"**, just like you asked 😊.  
+
+It compares two conversations with matching pizza size, quantity, and toppings, and checks that when exactly one of them includes a drink, the price difference is \$2.
+
+```yaml
+name: drink
+description: Adding a drink increases the total price by $2 when the rest of the order matches
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].number == conv[1].number and sorted(conv[0].toppings) == sorted(conv[1].toppings)
+if:   (conv[0].drink not in [None, '', 'no drink', 'none']) != (conv[1].drink not in [None, '', 'no drink', 'none'])
+then: abs(abs(extract_float(conv[0].price) - extract_float(conv[1].price)) - 2) <= 0.01
+```
+
+**Quick heads-up:** I treated `None`, empty strings, `"none"`, and `"no drink"` as “no drink” markers—feel free to tweak that list if your profile uses a different placeholder. Let me know if you’d like help tailoring it further!

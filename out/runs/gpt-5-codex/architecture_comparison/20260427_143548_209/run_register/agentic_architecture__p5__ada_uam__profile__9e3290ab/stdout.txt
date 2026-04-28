@@ -1,0 +1,67 @@
+conversation ID: agentic_architecture__p5__ada_uam__profile__9e3290ab
+$$$
+Here’s a focused CAU-contact profile you can drop under `profiles/consulta_datos_contacto_cau.yaml`. I noticed we already have `consultante_de_servicios_y_asistencia_del_cau.yaml`, but that one covers many extra outputs (catálogo de servicios, ID-UAM, etc.), so this lighter variant hones in on the four contact details you asked for.
+
+**Highlights**
+
+- Following the structure and best practices from `sensei-chat-guide.md`, the goals walk the simulator through each required data point (teléfono, correo, ubicación, horario) using clear Spanish prompts.
+- `chatbot.output` only keeps the four fields your downstream rules/tests will need, preventing unused schema from accumulating.
+- `goal_style: all_answered` (also from `sensei-chat-guide.md`) keeps the conversation going until every contact requirement has been covered, while `interaction_style: single questions` encourages the bot to handle one query at a time.
+
+```yaml
+test_name: "consulta_datos_contacto_cau"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona usuaria de la Universidad Autónoma de Madrid que ha tenido
+    una incidencia técnica y necesita contactar con el Centro de Atención a Usuarios (CAU)
+    para resolverla cuanto antes.
+  context:
+    - "Te urge comunicarte con personal del CAU para recibir soporte oficial."
+    - "Quieres asegurarte de que los datos de contacto que te proporcionen están actualizados."
+    - "Necesitas saber si puedes acudir presencialmente o si todo se gestiona a distancia."
+  goals:
+    - "Solicitar el número de teléfono actualizado del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico que utiliza el CAU para soporte."
+    - "Preguntar por la ubicación física exacta del CAU para atención presencial."
+    - "Confirmar el horario de atención del CAU e identificar si hay franjas especiales en vacaciones o fines de semana."
+    - "Agradecer la información recibida y comprobar si existe algún canal de contacto alternativo de emergencia."
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu consulta. ¿Podrías reformularla? También puedes consultar la información del CAU en el portal de la UAM."
+  output:
+    - cau_phone_number:
+        type: string
+        description: Número de teléfono oficial del CAU
+    - cau_email:
+        type: string
+        description: Correo electrónico de contacto del CAU
+    - cau_location:
+        type: string
+        description: Dirección física donde atiende el CAU
+    - cau_opening_hours:
+        type: string
+        description: Horario de atención del CAU
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 12
+  interaction_style:
+    - single questions
+    - long phrases
+```
+
+Let me know if you’d like to align this profile with a rule or tweak the interaction style further.
+$$$

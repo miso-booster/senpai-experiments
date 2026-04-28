@@ -1,0 +1,90 @@
+conversation ID: agentic_architecture__p21__bikeshop__profile__022da971
+$$$
+Here’s a fresh profile tailored for your “new bike setup” customer scenario 🚲✨
+
+**What I set up (guided by `sensei-chat-guide.md`):**
+- The simulated user is an English-speaking cyclist who just bought a bike and wants a custom fit.
+- Goals cover all the key questions: saddle adjustments, grip options, appointment scheduling, timing, and pricing.
+- `chatbot.output` captures the essentials we’ll likely validate later: adjustment plan, grip recommendations, appointment confirmation, estimated cost (using the documented `currency` type), etc.
+- Conversation controls use pairwise sampling so we explore different discomfort issues and grip materials without exploding the test count.
+
+```yaml
+test_name: bike_custom_setup_consultation
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who recently purchased a new bike and are visiting the shop
+    to tailor the fit for comfort and control.
+  context:
+    - You ride four times a week for commuting and weekend fitness rides.
+    - You want the saddle position and style adjusted so the bike feels natural.
+    - You want fresh handlebar grips that match your riding style.
+  goals:
+    - "Explain that you bought a new bike last week and need a custom setup for {{ride_style}} riding."
+    - "Ask for recommendations on adjusting the saddle position and choosing a seat that prevents {{seat_issue}}."
+    - "Ask about options for {{preferred_grip_material}} handlebar grips and whether installation is included."
+    - "Ask how long the fitting session will take and if a test ride is available afterward."
+    - "Ask to schedule an appointment on {{appointment_day}} at {{appointment_time}} for the seat and grip adjustments."
+    - "Ask for the estimated total cost for the seat adjustment and new grips, including installation."
+    - ride_style:
+        function: forward()
+        type: string
+        data: [commuting, trail, endurance]
+    - seat_issue:
+        function: pairwise()
+        type: string
+        data: [numbness, lower back pain, knee strain, saddle soreness]
+    - preferred_grip_material:
+        function: pairwise()
+        type: string
+        data: [leather, foam, cork, ergonomic rubber]
+    - appointment_day:
+        function: another()
+        type: string
+        data: [Tuesday, Thursday, Saturday]
+    - appointment_time:
+        function: random()
+        type: string
+        data: ["10:00 AM", "1:30 PM", "4:15 PM"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you repeat your question?"
+  output:
+    - seat_adjustment_plan:
+        type: string
+        description: Recommended saddle adjustments or fitting guidance provided by the chatbot.
+    - grip_recommendation:
+        type: string
+        description: Suggested handlebar grip options and installation notes.
+    - fit_duration:
+        type: string
+        description: Estimated time required for the fitting session or appointment.
+    - appointment_confirmation:
+        type: string
+        description: Confirmed appointment date and time for the fitting service.
+    - estimated_cost:
+        type: currency
+        description: Total estimated price for the seat adjustment and new grips including installation.
+    - test_ride_policy:
+        type: string
+        description: Information about whether a test ride is available after the adjustments.
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+  interaction_style:
+    - long phrases
+    - single questions
+```
+
+I double-checked existing bike-service profiles and none focused on “new bike fit + seat/grip customization,” so this one fills that gap nicely. Let me know if you’d like to tweak the variables, interaction style, or extracted fields!
+$$$

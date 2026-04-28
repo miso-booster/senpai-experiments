@@ -1,0 +1,28 @@
+conversation ID: agentic_architecture__p8__ada_uam__rule__8848c5f9
+$$$
+Hi there! Thanks for sharing the rule 😊
+
+### Is the original rule OK?
+Not quite. According to the guidance in **`sensei-check-doc.md`**, the `when:` clause acts as a *filter* that decides which conversations the rule evaluates. Because your `when` condition is identical to the `oracle`, only conversations that already have the correct contact details ever get checked. Any conversation with wrong details fails the filter and **the rule never runs**, so the mistake slips through.
+
+### Fixed version
+Here’s a corrected version that simply asserts the expected values. I kept the `conv[0]` access pattern you used (Sensei-check still exposes it for single-conversation rules), but feel free to switch to the direct field names if your project prefers that style.
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: |
+  conv[0].contact_email == 'cau@uam.es' and \
+  conv[0].contact_phone == '91 497 4029' and \
+  conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works
+- The rule now always runs (no `when:` filter), so any mismatch causes a failure, as intended.
+- It directly compares the extracted outputs to the expected constants, matching the single-conversation pattern described in `sensei-check-doc.md`.
+
+> **Assumption:** The profile feeding this rule exposes the slots `contact_email`, `contact_phone`, and `physical_address`. If any of those are missing or named differently, you’ll need to align the profile before the rule can pass.
+
+Let me know if you’d like to add an `on-error` message or combine this with a `data_collected()` check!
+$$$

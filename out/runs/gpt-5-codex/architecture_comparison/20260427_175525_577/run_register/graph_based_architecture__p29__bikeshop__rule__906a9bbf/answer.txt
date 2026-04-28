@@ -1,0 +1,21 @@
+Hey there! 😊 Happy to help you set up that Sensei-check rule. Below is a template you can drop into your rules folder—just swap the field names so they match whatever your SENSEI Chat profile exposes in `chatbot.output`.
+
+```yaml
+name: bike_service_confirmation
+description: Confirms the bike service appointment whenever the user schedules one.
+conversations: 1
+when: service_type == 'bike_service' and request_intent == 'schedule_appointment'
+oracle: appointment_confirmed is True and semantic_content(confirmation_message, 'appointment confirmed')
+on-error: >
+  Expected a bike service appointment confirmation, but got appointment_confirmed={appointment_confirmed}
+  with message: "{confirmation_message}"
+```
+
+### How it works
+- **`when:`** filters to conversations where the simulated user is scheduling a bike service.  
+- **`oracle:`** asserts two things:
+  1. The structured flag `appointment_confirmed` is `True`.
+  2. The assistant’s confirmation text (`confirmation_message`) actually reads like a confirmation, using the `semantic_content` helper for a semantic check.
+- **`on-error:`** gives you a clear failure message if the rule trips.
+
+If your profile uses different slot names (e.g., `service_category`, `intent`, `confirmation_status`, etc.), just adjust the expressions in `when:` and `oracle:` accordingly. Want to double-check those names together? Send them over and I’ll tweak the rule for you!

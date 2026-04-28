@@ -1,0 +1,91 @@
+conversation ID: agentic_architecture__p30__pizza_shop__profile__1ad37606
+$$$
+Here’s your feisty pizza-shop profile, ready to drop into `profiles/rude_pizza_shop_speed_run.yaml` (you can rename if you prefer):
+
+```yaml
+test_name: "rude_pizza_shop_speed_run"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, foul-mouthed regular who treats the pizza shop like your personal kitchen.
+    You bark orders, interrupt, and demand everything be ready yesterday.
+  context:
+    - "You absolutely hate waiting and expect priority treatment without question."
+    - "You don't mind being blunt or slightly insulting if it gets faster service."
+  goals:
+    - "Listen up, I need a {{size}} {{crust}} pizza drowning in {{topping_combo}}, so move it."
+    - "Give me a prep estimate under {{rush_minutes}} minutes or I'm walking."
+    - "Repeat back that {{size}} {{crust}} combo so you don't screw it up."
+    - "Make sure that {{topping_combo}} is blazing hot the second I storm in."
+    - size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - large
+          - extra-large
+    - crust:
+        function: pairwise()
+        type: string
+        data:
+          - thin crust
+          - hand-tossed
+          - stuffed crust
+    - topping_combo:
+        function: another()
+        type: string
+        data:
+          - pepperoni and jalapeño
+          - bbq chicken with red onions
+          - spicy sausage and mushrooms
+          - veggie overload with olives
+    - rush_minutes:
+        function: random()
+        type: int
+        data: [10, 15, 20, 25]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you rephrase?"
+  output:
+    - order_size:
+        type: string
+        description: "Size of the pizza the bot confirms for the customer."
+    - crust_type:
+        type: string
+        description: "Crust style the bot commits to provide."
+    - toppings_promised:
+        type: list[string]
+        description: "Toppings or combinations the bot agrees to deliver."
+    - ready_in_minutes:
+        type: int
+        description: "Minutes the bot promises before the order is ready or delivered."
+    - quoted_total:
+        type: currency
+        description: "Total price the bot quotes for the order."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 5
+  interaction_style:
+    - all questions
+    - long phrases
+```
+
+### Why it fits
+- Two variables (`size`, `crust`) use `pairwise()` so `conversation.number: combinations(1, pairwise)` pulls its run count from the pairwise coverage matrix, exactly as required in **sensei-chat-guide.md**.
+- Four goals are aggressive and fast-paced, reusing the four declared variables to keep the schema tight.
+- The chatbot outputs track the commitments you’re likely to check later (size, crust, toppings, readiness time, total price).
+
+Let me know if you’d like a calmer variant or matching rules!
+$$$

@@ -1,0 +1,24 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__c2c8a9ea
+$$$
+Hey! Thanks for sharing the rule 😊 Let me walk you through what I found and how we can polish it:
+
+### What needed attention
+- Because this rule targets **one conversation** (`conversations: 1`), you don’t need — and actually shouldn’t use — the `conv[0].` prefix. Single-convo rules can refer directly to the output fields.
+- The `when:` clause was basically repeating the `oracle:` condition. That means the rule only ran when the info was already correct, so it never really evaluated anything new 🙈
+
+### Polished version ✨
+Here’s the revised rule that keeps the intent but uses the idiomatic single-conversation pattern:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the correct contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Why this works
+- The rule now **always runs** and directly verifies the three contact fields.
+- It assumes those fields (`contact_email`, `contact_phone`, `physical_address`) are exposed in the profile’s `chatbot.output`. If they’re named differently there, just update the rule to match.
+
+Hope that clears things up! If you’d like to add more validations around these fields (e.g., ensuring they’re not empty before checking), I’m happy to help brainstorm 👍
+$$$

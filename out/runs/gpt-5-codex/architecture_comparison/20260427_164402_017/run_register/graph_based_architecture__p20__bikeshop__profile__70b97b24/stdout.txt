@@ -1,0 +1,83 @@
+conversation ID: graph_based_architecture__p20__bikeshop__profile__70b97b24
+$$$
+Hey there! Here’s a brand-new Sensei profile you can drop under `profiles/` (for example, `profiles/wheel_change_appointment_scheduler.yaml`). It focuses on an appointment-seeker who wants their bike’s wheels changed, and it cycles through multiple date/time combinations so you can watch how the chatbot handles scheduling details 🗓️🔧
+
+```yaml
+test_name: wheel_change_appointment_scheduler
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an organized cyclist trying to book a wheel change at a neighborhood
+    bike shop. You expect the assistant to confirm the date, time, and service,
+    and you double-check that everything is set.
+  context:
+    - You recently replaced your tires and now want the shop to install them properly.
+    - You try to be flexible with your schedule but still prefer clear confirmation.
+    - You’d like to know if there’s anything to prepare before dropping off the bike.
+  goals:
+    - "Schedule a wheel change appointment for {{appointment_date}} at {{appointment_time}}."
+    - "Confirm the service is specifically a wheel change."
+    - "Ask whether you need to prepare anything before the appointment."
+    - appointment_date:
+        function: pairwise()
+        type: string
+        data:
+          - tomorrow
+          - next Monday
+          - next Wednesday
+          - "July 18th, 2024"
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - "9:00 AM"
+          - "11:15 AM"
+          - "2:30 PM"
+          - "4:45 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmation_message:
+        type: string
+        description: >
+          The chatbot's explicit confirmation that the appointment has been booked.
+          Look for language such as "You're all set" or "Your appointment is confirmed."
+    - scheduled_date:
+        type: date
+        description: "The appointment date confirmed by the chatbot."
+    - scheduled_time:
+        type: time("hh:mm am/pm")
+        description: "The appointment time confirmed by the chatbot."
+    - service_confirmed:
+        type: string
+        description: >
+          The service the chatbot has scheduled. Should reference a wheel change
+          or similar wording.
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - default
+  max_cost: 0.6
+```
+
+### Why it’s handy
+- **Pairwise date/time variables** → Sensei will generate a variety of combinations while keeping the run size reasonable.
+- **Clear `chatbot.output` schema** → lets you plug in metamorphic rules later (e.g., checking that the confirmed date matches the requested one).
+- **Goal flow** keeps the simulator focused on appointment handling without extra fluff.
+
+If you need any tweaks—like adding weekend requests, pushing times into the evening, or mixing in interaction styles such as `change your mind`—just say the word! 😊
+$$$

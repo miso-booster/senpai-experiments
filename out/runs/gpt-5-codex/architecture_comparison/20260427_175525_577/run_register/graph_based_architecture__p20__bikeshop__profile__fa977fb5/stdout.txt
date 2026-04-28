@@ -1,0 +1,115 @@
+conversation ID: graph_based_architecture__p20__bikeshop__profile__fa977fb5
+$$$
+Hey there! I put together a fresh Sensei profile tailored for wheel-change appointments, with lots of date and time variety so you can stress-test how the chatbot handles scheduling. Save it under `profiles/wheel_change_appointment_tester.yaml` (or any name you prefer):
+
+```yaml
+test_name: wheel_change_appointment_tester
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who needs a wheel change and wants to get it scheduled
+    with the bike shop as soon as possible.
+  context:
+    - Your daily commute depends on this bike, so you’re eager to lock in a slot.
+    - You’re flexible but want to test how the shop handles different dates and times.
+    - You’d prefer a same-week appointment if possible.
+  goals:
+    - "Request to book a wheel change appointment on {{service_date}} at {{service_time}}."
+    - "Clarify that the appointment should cover {{wheel_service_type}}."
+    - "If that slot isn’t available, ask about booking on {{alternate_date}} at {{alternate_time}} instead."
+    - "Confirm the final appointment details once the chatbot provides them."
+    - service_date:
+        function: pairwise()
+        type: string
+        data:
+          - next Monday
+          - next Wednesday
+          - this Saturday
+          - October 18th
+          - November 2nd
+    - service_time:
+        function: pairwise()
+        type: string
+        data:
+          - 9:00 AM
+          - 11:30 AM
+          - 2:15 PM
+          - 4:45 PM
+    - wheel_service_type:
+        function: another()
+        type: string
+        data:
+          - a front wheel replacement
+          - a rear wheel replacement
+          - both wheels swapped out
+          - a wheel and tire change combo
+    - alternate_date:
+        function: random()
+        type: string
+        data:
+          - later the same day
+          - next Friday
+          - the upcoming Sunday
+          - November 5th
+    - alternate_time:
+        function: random()
+        type: string
+        data:
+          - 8:30 AM
+          - 10:15 AM
+          - 1:00 PM
+          - 3:30 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - requested_slot_acknowledgement:
+        type: string
+        description: >
+          The chatbot’s response to the initial request, confirming or denying the
+          {{service_date}} {{service_time}} slot.
+    - alternate_slot_response:
+        type: string
+        description: >
+          How the chatbot handles the follow-up request for {{alternate_date}} at
+          {{alternate_time}}.
+    - confirmed_service:
+        type: string
+        description: >
+          The service the chatbot confirms for the appointment (should indicate the
+          wheel change scope).
+    - final_appointment_date:
+        type: string
+        description: >
+          The final appointment date agreed upon by the chatbot and user.
+    - final_appointment_time:
+        type: string
+        description: >
+          The final appointment time agreed upon by the chatbot and user.
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.75
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - default
+```
+
+### Why this setup works
+- **Pairwise coverage** on `service_date` and `service_time` gives you a rich mix of day/time combos without exploding into every possible permutation.
+- **Alternate slot prompts** push the chatbot to juggle multiple availability checks.
+- The **chatbot outputs** capture both acknowledgements and final confirmations, making it easy to plug into Sensei rules later.
+
+Let me know if you’d like variations (e.g., multilingual user, rescheduling attempts, or stricter interaction styles). Happy testing! 🚲✨
+$$$

@@ -1,0 +1,25 @@
+Hey there! Happy to take a look 👀💪
+
+### What needed fixing
+Your original rule had a few hiccups:
+1. **`conversations: 2`** – but the rule never compared a second conversation. This should just be a single-conversation check.
+2. **`when: conv[0].tune_up_price == 50`** – this would only select conversations that already pass the rule, so it wouldn’t actually catch failures.
+3. **`then: "The tune-up price is $50."`** – `then` (or `oracle`) must be a boolean expression, not a string message.
+
+### Updated rule
+Here’s a cleaned-up version that keeps things simple and strictly checks the price:
+
+```yaml
+name: check_tune_up_price
+description: Confirms the tune-up price exposed by the profile is exactly $50 USD.
+conversations: 1
+when: tune_up_price is not None
+oracle: extract_float(str(tune_up_price)) == 50 and currency(str(tune_up_price)) == 'USD'
+```
+
+### What changed & why
+- **`conversations: 1`** – it’s just a single dialogue check now.
+- **`when`** – we only require the field to exist (`tune_up_price is not None`) so failures can surface.
+- **`oracle`** – verifies the price is 50 and it’s tagged as USD. I wrapped the value in `str(...)` so the rule works whether the profile outputs a string like “$50” or a numeric value.
+
+Let me know if you want to handle other currencies or add a tolerance for small price variations! 😊

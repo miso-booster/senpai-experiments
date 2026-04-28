@@ -1,0 +1,24 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__c2dfc916
+$$$
+Hey hey! Thanks for sharing the rule 😊  
+I spotted two little issues:
+
+1. **`when` vs `oracle`** – you used the exact same condition in both. Because `when` acts like a filter, the rule would *only* run when the contact info is already correct. If the bot ever returned a wrong value, the `when` would be `False`, the rule would be skipped, and you’d miss the failure. So the rule would never actually catch mistakes.
+
+2. **`conv[0]` in a single-conversation rule** – when `conversations: 1`, you can refer to the fields directly (`contact_email`, `contact_phone`, …) without indexing `conv[0]`. It’s cleaner and matches the recommended style.
+
+Here’s a fixed version you can drop into your rules folder:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the canonical contact details.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' \
+    and contact_phone == '91 497 4029' \
+    and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+Now the rule always runs, and it will fail whenever any of those fields deviate from the expected values (or are missing). Just make sure the profile’s `chatbot.output` exposes `contact_email`, `contact_phone`, and `physical_address` with these exact names.
+
+Let me know if you’d like to add extra guards, like checking that the fields aren’t empty before comparison 🤗
+$$$

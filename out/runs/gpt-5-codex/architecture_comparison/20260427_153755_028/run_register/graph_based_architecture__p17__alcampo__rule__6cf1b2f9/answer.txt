@@ -1,0 +1,29 @@
+¡Hola! 😄 Gracias por compartir tu regla. Veamos por qué no está funcionando y cómo podemos ajustarla.
+
+### ¿Qué estaba fallando?
+
+1. **`conversations:` incompleto**  
+   En Sensei-check, cada regla necesita saber cuántas conversaciones analiza. Como tu regla solo revisa una conversación a la vez, debe ser `conversations: 1`.
+
+2. **Chequeo del campo `membership_benefits`**  
+   El `oracle` original (`membership_benefits != ''`) falla si el campo viene como `None` o contiene espacios en blanco. Además, necesitamos asegurarnos de que el perfil realmente exponga un campo llamado `membership_benefits` en su `chatbot.output`. Si no existe, esta regla no podrá evaluarse.
+
+### Regla ajustada
+
+Aquí tienes una versión corregida y un poquito más robusta:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot provides non-empty membership benefits information.
+conversations: 1
+when: membership_benefits is not None
+oracle: membership_benefits.strip() != ''
+```
+
+- `conversations: 1` le indica al motor que revise cada conversación individualmente.  
+- `when: membership_benefits is not None` evita que intentemos llamar `.strip()` sobre `None`.  
+- `oracle: membership_benefits.strip() != ''` confirma que el texto no está vacío ni lleno solo de espacios.
+
+✨ **Tip:** Verifica que el perfil relacionado tenga definido `membership_benefits` en su `chatbot.output`. Si ese slot no existe o se llama distinto, habrá que alinearlo para que la regla funcione correctamente.
+
+¿Quieres que también revisemos el perfil o redactemos un `on-error` personalizado para esta regla? Estoy aquí para ayudarte 😊

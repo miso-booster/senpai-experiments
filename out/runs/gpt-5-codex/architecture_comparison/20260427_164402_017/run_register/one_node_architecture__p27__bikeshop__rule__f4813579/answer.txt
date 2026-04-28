@@ -1,0 +1,12 @@
+¡Claro! Aquí tienes una regla metamórfica pensada para el perfil `appointment.yml`. Comprueba que, si dos conversaciones intentan agendar exactamente la misma fecha y hora, la primera se confirma y la segunda debe ser rechazada explícitamente:
+
+```yaml
+name: deny_duplicate_appointment_slot
+description: Si dos conversaciones piden la misma fecha y hora, la primera se confirma y la segunda debe ser rechazada.
+conversations: 2
+when: conv[0].confirmed_date == conv[1].confirmed_date and conv[0].confirmed_time == conv[1].confirmed_time
+if: conv[0].confirmed_service not in [None, '']
+then: semantic_content(conv[1].chatbot_phrases, "The assistant refuses to book the same appointment slot again and asks for a different date or time.")
+```
+
+📝 Nota rápida: el `semantic_content` verifica que, en la segunda conversación, el bot deje claro que no puede aceptar otra cita en ese mismo horario. Ajusta la descripción si tu asistente usa un mensaje diferente para la negativa.

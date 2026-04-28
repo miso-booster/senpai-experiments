@@ -1,0 +1,29 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__32f37df1
+$$$
+Hey there! 👋 Let’s walk through your rule together.
+
+### ✅ What’s going well
+The intention of your rule is totally clear: you want to make sure the CAU always returns the official contact details. Love the precision! 💪
+
+### ⚠️ What needs tweaking
+There are two small issues:
+
+1. **Using `conv[0]` in a single-conversation rule** – When `conversations: 1`, Sensei-check already assumes you’re talking about the only conversation available, so you should reference the fields directly (e.g., `contact_email`) instead of `conv[0].contact_email`.
+
+2. **Redundant `when` clause** – Since the `when` condition is identical to the `oracle`, it doesn’t filter anything—it just repeats the check. You can safely remove it and keep the assertion in the `oracle`.
+
+### ✅ Fixed version
+
+```yaml
+name: check_cau_information
+description: CAU contact details must match the official values.
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### 🧠 Summary
+- Refer to fields directly in single-conversation rules.
+- Use `oracle` for the actual check; only add a `when` if you need a filter.
+
+Let me know if you’d like to add tolerance for formatting differences (e.g., phone number spacing) or similar — happy to help! 😊
+$$$

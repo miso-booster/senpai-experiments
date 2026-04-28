@@ -1,0 +1,40 @@
+¡Claro! Para empezar a validar esa ficha “Usuarios Nuevos y Admisiones” puedes enfocarte en tres áreas clave: que los enlaces realmente apunten a recursos web, que la tasa de solicitud tenga un valor positivo y que la información del Welcome Day sea coherente (fecha + hora). Aquí tienes tres reglas listas para probar:
+
+```yaml
+name: admission_links_are_urls
+description: Los enlaces principales para admisiones deben ser URLs válidas
+conversations: 1
+oracle: |
+  all(
+    link is not None and link.lower().startswith('http')
+    for link in [
+      admission_to_grados_link,
+      waitlist_info_link,
+      future_students_link,
+      welcome_day_link
+    ]
+  )
+on-error: >
+  f"Revisa los enlaces: admisión={admission_to_grados_link}, lista_espera={waitlist_info_link}, futuros_estudiantes={future_students_link}, welcome_day={welcome_day_link}"
+```
+
+```yaml
+name: application_fee_is_positive
+description: El costo de la solicitud debe existir y ser mayor que cero
+conversations: 1
+oracle: application_fee is not None and extract_float(application_fee) > 0 and currency(application_fee) is not None
+on-error: >
+  f"Valor o divisa de la tasa incorrectos: {application_fee}"
+```
+
+```yaml
+name: welcome_day_consistency
+description: Si se entrega información del Welcome Day, debe incluir fecha y hora
+conversations: 1
+if: welcome_day_date is not None or welcome_day_time is not None
+then: welcome_day_date is not None and welcome_day_time is not None
+on-error: >
+  f"Fecha u hora faltante para el Welcome Day: fecha={welcome_day_date}, hora={welcome_day_time}"
+```
+
+Con esto vas cubriendo enlaces, tarifas y consistencia temporal. Puedes activarlas y correr Sensei-check para empezar a ver cómo responde el bot. Si después quieres revisar otros campos (por ejemplo, que `contact_admissions` nunca venga vacío), dime y armamos más reglas. 😊

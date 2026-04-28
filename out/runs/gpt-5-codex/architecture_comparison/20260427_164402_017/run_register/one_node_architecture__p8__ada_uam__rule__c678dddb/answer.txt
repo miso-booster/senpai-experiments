@@ -1,0 +1,22 @@
+¡Hola! Gracias por compartir la regla 😊. La estuve revisando y encontré dos cositas que vale la pena ajustar:
+
+1. **Uso de `conv[0]`**: Como la regla trabaja con una sola conversación (`conversations: 1`), no necesitamos el índice `conv[0]`. En reglas de conversación única, puedes referirte a los campos directamente (`contact_email`, `contact_phone`, etc.).
+
+2. **Condición `when` redundante**: Tal como estaba escrita, `when` y `oracle` evaluaban exactamente lo mismo. Es mejor usar `when` como un filtro que solo active la regla cuando el bot haya proporcionado los datos (no, por ejemplo, cuando estén vacíos). Luego el `oracle` valida el contenido.
+
+Aquí tienes la versión corregida:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+when: contact_email and contact_phone and physical_address
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### ¿Qué cambiamos?
+
+- Eliminé `conv[0]` para las referencias a los campos, porque no se usa en reglas de una sola conversación.
+- Simplifiqué el `when` para que la regla se aplique únicamente cuando existan los tres datos de contacto, y dejamos el `oracle` como la verificación estricta de los valores esperados.
+
+Con esto, la regla queda más limpia y lista para validar que la información del CAU sea la correcta. ¡Cualquier otra duda, aquí estoy! 💪

@@ -1,0 +1,87 @@
+¡Hola! Aquí tienes un perfil Sensei listo para simular a un usuario que intenta (sin éxito) configurar eduroam en su dispositivo. Usé variables que representan los distintos métodos que la persona va probando, tal como pediste. Dale un vistazo y ajústalo si necesitas más variantes o un tono distinto. 😊
+
+```yaml
+test_name: "Usuario con problemas al configurar eduroam"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Estudiante que necesita conectar su dispositivo a la red Wi-Fi eduroam de la universidad, pero no logra completar la configuración."
+  context:
+    - personality: personalities/frustrated-user
+    - "Has intentado varias guías y asistentes de instalación sin conseguir que eduroam funcione en tu dispositivo principal."
+    - "Necesitas conectarte con urgencia para entregar trabajos y acceder a recursos académicos."
+    - "Buscas instrucciones claras, enlaces oficiales y soporte técnico específico según el método de instalación que pruebes."
+  goals:
+    - "Explicar que intentaste configurar eduroam mediante {{metodo_principal}} y pedir instrucciones paso a paso."
+    - "Comentar que también probaste {{metodo_alternativo}} y aún no consigues conectarte, solicitando guías actualizadas o enlaces oficiales."
+    - "Solicitar recomendaciones sobre requisitos previos y posibles errores comunes que bloquean la conexión mediante {{metodo_en_dispositivo}}."
+    - "Pedir información de contacto del soporte técnico o CAU para resolver la incidencia si persiste."
+    - metodo_principal:
+        function: pairwise()
+        type: string
+        data:
+          - instalador automático eduroam CAT
+          - configuración manual en Windows 11
+          - asistente de configuración en macOS Sonoma
+          - perfil móvil para iOS
+          - aplicación eduroam para Android
+    - metodo_alternativo:
+        function: pairwise()
+        type: string
+        data:
+          - reinstalar el certificado raíz de la universidad
+          - actualizar controladores de la tarjeta Wi-Fi
+          - configurar eduroam en Linux con NetworkManager
+          - importar perfil .mobileconfig oficial
+          - usar asistente genérico de la plataforma eduroam
+    - metodo_en_dispositivo:
+        function: forward()
+        type: string
+        data:
+          - portátil Windows 11
+          - portátil macOS
+          - smartphone Android
+          - iPhone/iPad
+          - equipo Linux (Ubuntu)
+
+chatbot:
+  is_starter: false
+  fallback: "¿Podrías reformular la consulta? Si lo prefieres, revisa el catálogo de servicios del CAU."
+  output:
+    - eduroam_setup_steps:
+        type: string
+        description: "Pasos concretos para configurar eduroam según el método solicitado"
+    - troubleshooting_tips:
+        type: string
+        description: "Recomendaciones y errores comunes al configurar eduroam"
+    - required_credentials:
+        type: string
+        description: "Credenciales necesarias (ID institucional, formato de usuario, etc.)"
+    - installer_or_profile_links:
+        type: string
+        description: "Enlaces a instaladores, perfiles o guías oficiales de eduroam"
+    - device_specific_guidance:
+        type: string
+        description: "Instrucciones particulares para el dispositivo mencionado"
+    - support_contact_info:
+        type: string
+        description: "Información de contacto del soporte técnico o CAU"
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - change your mind
+    - single questions
+```
+
+Si quieres que la conversación sea más larga/corta o cambiar el tono del usuario (por ejemplo, menos frustrado y más curioso), dime y lo ajustamos. ¡Éxito con tus pruebas en Sensei! 🚀

@@ -1,0 +1,19 @@
+¡Claro! Aquí tienes una regla nueva para Sensei-check que valida que el perfil de **ada uam** entregue toda la información oficial del CAU. Comprueba el correo, normaliza el teléfono (sin espacios ni guiones) y usa `semantic_content` para validar que la dirección física coincide con la referencia completa. 
+
+```yaml
+name: cau_contact_details_complete
+description: Verifica que ada uam entregue el email, teléfono y dirección oficiales del CAU
+conversations: 1
+oracle: >
+  contact_email.strip().lower() == 'cau@uam.es'
+  and contact_phone.replace(' ', '').replace('-', '') in ['914974029', '+34914974029']
+  and semantic_content(
+        physical_address,
+        'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+      )
+on-error: >
+  f"Información CAU incompleta o incorrecta. Email={contact_email}, Teléfono={contact_phone},
+  Dirección={physical_address}"
+```
+
+Colócala junto a tus reglas existentes (por ejemplo, en `rules/cau_contact_details_complete.yaml`) y actívala en Sensei-check cuando quieras validar esas salidas. Si necesitas ajustar la tolerancia de la dirección (por ejemplo, aceptar abreviaturas), puedo ayudarte a afinarla 😊.

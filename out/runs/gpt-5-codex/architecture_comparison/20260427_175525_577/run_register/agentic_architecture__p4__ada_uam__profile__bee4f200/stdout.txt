@@ -1,0 +1,68 @@
+conversation ID: agentic_architecture__p4__ada_uam__profile__bee4f200
+$$$
+¡Perfecto! Aquí tienes un perfil listo para que Sensei simule a un usuario que pide al CAU (Centro de Atención a Usuarios) de la UAM toda la información de contacto que necesitas. Me basé en la guía `sensei-chat-guide.md` para estructurar los campos obligatorios y los objetivos.
+
+```yaml
+test_name: "uam_cau_contact_info"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un/a estudiante de la Universidad Autónoma de Madrid que busca contactar con el Centro de Atención a Usuarios (CAU) para resolver problemas tecnológicos.
+  context:
+    - "Necesitas datos de contacto actualizados y oficiales del CAU."
+    - "Prefieres respuestas claras y concisas, sin rodeos."
+  goals:
+    - "Preséntate como miembro de la comunidad UAM y explica que necesitas ayuda con {{motivo_consulta}}."
+    - "Pregunta cuál es el número de teléfono del CAU."
+    - "Pregunta cuál es el correo electrónico de contacto del CAU."
+    - "Pregunta dónde se encuentra físicamente el CAU."
+    - "Pregunta el horario de atención del CAU."
+    - motivo_consulta:
+        function: random()
+        type: string
+        data:
+          - problemas con el correo institucional
+          - incidencias en el Campus Virtual
+          - dudas sobre acceso a la red wifi
+          - soporte para software académico
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu consulta. ¿Puedes reformularla?"
+  output:
+    - cau_phone:
+        type: string
+        description: "Número de teléfono proporcionado para contactar con el CAU."
+    - cau_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU."
+    - cau_address:
+        type: string
+        description: "Dirección física del CAU."
+    - cau_hours:
+        type: string
+        description: "Horario de atención del CAU."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 6
+  interaction_style:
+    - default
+```
+
+### Cómo funciona
+- **Objetivo del usuario**: pedir explícitamente los cuatro datos clave (teléfono, email, dirección y horarios) del CAU, variando el motivo de la consulta para cubrir varios escenarios.
+- **`chatbot.output`**: recoge exactamente los campos que necesitarás validar después con reglas (`cau_phone`, `cau_email`, `cau_address`, `cau_hours`).
+- **Control de conversación**: hasta 3 conversaciones, máximo 6 turnos cada una, con un estilo de interacción natural (`default`).
+
+¿Quieres que también preparemos reglas para verificar que el bot proporciona correctamente esta información, o te gustaría ajustar algo del perfil? 😊
+$$$

@@ -1,0 +1,72 @@
+¡Claro! Aquí tienes un perfil listo para probar tu chatbot de pizzería 😊:
+
+```yaml
+test_name: "pizza_order_profile_usd"
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.6
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona que quiere ordenar una pizza con bebida para llevar.
+    Buscas confirmar los detalles del pedido y el importe final en dólares estadounidenses.
+  context:
+    - "Estás organizando una cena sencilla en casa."
+    - "Quieres asegurarte de recibir un número de pedido para el seguimiento."
+    - "Necesitas que el chatbot confirme el precio final en USD."
+  goals:
+    - "Pregunta qué tipos de pizzas están disponibles."
+    - "Elige la pizza {{pizza_type}} en tamaño {{pizza_size}}."
+    - "Solicita la bebida {{drink_type}}."
+    - "Pide que confirmen el número de pedido y el precio total en dólares."
+    - pizza_type:
+        type: string
+        function: forward()
+        data: [Margherita, Pepperoni, Vegetariana, BBQ Chicken, Cuatro Quesos]
+    - pizza_size:
+        type: string
+        function: forward(pizza_type)
+        data: [pequeña, mediana, grande]
+    - drink_type:
+        type: string
+        function: another()
+        data:
+          - Agua mineral
+          - Refresco de cola
+          - Refresco de naranja
+          - Té helado
+          - any(2 bebidas sin alcohol populares)
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí eso. ¿Podrías repetirlo?"
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmada por el chatbot."
+    - drink:
+        type: string
+        description: "Bebida confirmada dentro del pedido."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido proporcionado por el chatbot."
+    - final_price:
+        type: currency
+        description: "Precio final del pedido en USD (ej. '24.50 USD')."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      limit: 18
+      export: false
+  interaction_style:
+    - default
+    - random:
+        - make spelling mistakes
+        - single questions
+```

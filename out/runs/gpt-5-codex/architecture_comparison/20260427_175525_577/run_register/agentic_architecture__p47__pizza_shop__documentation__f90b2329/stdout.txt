@@ -1,0 +1,24 @@
+conversation ID: agentic_architecture__p47__pizza_shop__documentation__f90b2329
+$$$
+A metamorphic rule in Sensei-check is a validation that compares **pairs or tuples of conversations** to make sure the chatbot behaves consistently when inputs vary in controlled ways. Instead of judging a single dialogue in isolation, the rule looks at relationships like “if one order has more toppings than another otherwise-identical order, its price should be higher.”  
+
+Key points (from `sensei-check-doc.md`):
+
+- **Scope:** Metamorphic rules are defined with `conversations: N` where `N ≥ 2` (or `all`). They simultaneously examine multiple conversations that satisfy a filter.
+- **Selection:** The optional `when:` clause narrows the comparison to comparable cases (e.g., same pizza size and drink).
+- **Relation:** You encode the expected behavior either as a boolean `oracle:` expression or an `if:`/`then:` implication that references `conv[0].field`, `conv[1].field`, etc. These fields come from the profile’s `chatbot.output`.
+- **Purpose:** This approach catches regressions or inconsistencies (pricing monotonicity, language consistency, uniqueness of IDs, etc.) without needing a single “correct” answer for every scenario.
+
+Example snippet from the docs:
+
+```yaml
+name: toppings_monotonicity
+description: More toppings increases total price
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Here the rule checks a relation between two conversations: same base configuration, different topping counts, and the price should move in the expected direction. This relational checking is exactly what makes a rule “metamorphic.”
+$$$

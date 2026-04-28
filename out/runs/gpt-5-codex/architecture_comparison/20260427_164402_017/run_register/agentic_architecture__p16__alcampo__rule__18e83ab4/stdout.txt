@@ -1,0 +1,26 @@
+conversation ID: agentic_architecture__p16__alcampo__rule__18e83ab4
+$$$
+Here’s a first pass at the lactose-free availability rule 😊
+
+**What’s in here**
+- Based on `sensei-check-doc.md`, I created a single-conversation rule that fires whenever the simulated user is explicitly asking for a lactose-free option.
+- The rule expects the future profile to expose these outputs:
+  - `request_requires_lactose_free` (bool): whether the user is asking for a lactose-free product.
+  - `lactose_free_availability` (string): status such as `"available"`, `"unavailable"`, or `"limited"`.
+  - `availability_details` (string/list): explanation, alternatives, or next steps.
+  - `product_name` (string): name of the item being discussed (used in the error message).
+
+**Sensei-check rule**
+
+```yaml
+name: lactose_free_availability_reported
+description: When a lactose-free version is requested, the assistant must clearly report availability status and supporting details.
+active: true
+conversations: 1
+if: request_requires_lactose_free is True
+then: lactose_free_availability in ['available', 'unavailable', 'limited'] and availability_details not in [None, '', []]
+on-error: f"Lactose-free availability not reported for {product_name}"
+```
+
+Feel free to tweak the allowed status values or the detail check once the corresponding profile is in place!
+$$$

@@ -1,0 +1,69 @@
+¡Perfecto! Vamos a armar un perfil Sensei centrado en un usuario que necesita los datos de contacto del CAU. Te dejo un ejemplo completo y ajustable, listo para guardar como `profiles/contacto_cau_informacion.yaml`.
+
+```yaml
+test_name: "Contacto CAU - Información de soporte"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Persona que necesita contactar al Centro de Atención a Usuarios (CAU)
+    para resolver incidencias técnicas y administrativas urgentes.
+  context:
+    - personality: personalities/formal-user
+    - "Quieres confirmar todos los métodos de contacto oficiales del CAU."
+    - "Necesitas tener a mano esta información para escalar incidencias de forma rápida."
+  goals:
+    - "Solicitar el número de teléfono de contacto del CAU."
+    - "Pedir el correo electrónico oficial del CAU para soporte."
+    - "Preguntar por la dirección física del CAU para atención presencial."
+    - "Consultar los horarios de atención del CAU, incluyendo días laborables."
+    - "Confirmar si existe alguna recomendación adicional para contactar al CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes repetirlo con otras palabras? También puedes revisar el catálogo de servicios del CAU."
+  output:
+    - cau_phone_number:
+        type: string
+        description: "Número de teléfono oficial del CAU"
+    - cau_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - cau_address:
+        type: string
+        description: "Dirección física del CAU"
+    - cau_service_hours:
+        type: string
+        description: "Horarios de atención del CAU"
+    - additional_contact_notes:
+        type: string
+        description: "Recomendaciones o pasos adicionales para contactar al CAU"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+### ¿Qué cubre este perfil?
+- **Usuario**: habla español, tono formal y enfoque directo a resolver gestiones con el CAU.
+- **Metas**: cada objetivo apunta a uno de los datos clave que quieres verificar (teléfono, email, dirección y horario).
+- **`chatbot.output`**: define los campos que luego podrás validar con Sensei-check (por ejemplo, `conv[0].cau_phone_number`).
+
+### Siguientes pasos sugeridos ✨
+1. Guarda el YAML en tu carpeta `profiles/`.
+2. Si quieres un toque distinto de actitud, puedes cambiar la personalidad (`personalities/formal-user`) por otra que ya tengas creada.
+3. Ejecuta Sensei con este perfil para generar las conversaciones y asegurarte de que el chatbot responde con toda la info que buscas.
+4. Opcional: crea reglas en `rules/` para verificar automáticamente que los cuatro campos no vengan vacíos o tengan un formato correcto.
+
+Si necesitas que ajustemos variables, interacción, o que integremos este perfil con reglas o conectores, dime y lo pulimos juntos 😊.

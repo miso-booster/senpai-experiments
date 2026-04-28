@@ -1,0 +1,73 @@
+Hey there! Happy to help 😊
+
+### What `pairwise()` Does
+
+In Sensei profiles, `pairwise()` is a smart way to sample variable combinations so you don’t have to run every single possible permutation. Instead, it guarantees that **every pair of variable values appears together at least once** across your conversations.
+
+Think of it like making sure every *duo* gets to meet, without hosting a giant party for every possible *group* 😄.
+
+---
+
+### Why it’s useful
+
+- **Efficient coverage**: You still catch most interaction bugs that happen when two variables interact (like `pizza_type` and `pizza_size`), without needing an enormous number of conversations.
+- **Scales nicely**: As you add more variables, full Cartesian combinations blow up fast. `pairwise()` keeps things manageable while still being thorough.
+
+---
+
+### How to use it
+
+1. **Apply it to at least two variables** in your `user.goals` definitions. They’ll work together to build the pairwise matrix.
+
+   ```yaml
+   - pizza_type:
+       function: pairwise()
+       type: string
+       data: [Margherita, Pepperoni, Vegetarian]
+
+   - drink:
+       function: pairwise()
+       type: string
+       data: [Water, Soda, Juice]
+   ```
+
+2. **Optional but recommended**: Align your `conversation.number` to use the pairwise matrix:
+
+   ```yaml
+   conversation:
+     number: combinations(pairwise)
+   ```
+
+   or even `combinations(0.6, pairwise)` if you want just 60% of the possible pairs.
+
+3. **Execution behavior**: Sensei will generate just enough conversations so each pizza-drink pair shows up at least once.
+
+---
+
+### Real example (from your project!)
+
+In `profiles/pizza_order_test_custom.yml`, you’ve already got:
+
+```yaml
+- size:
+    function: pairwise()
+    data: [small, medium, big, extra large]
+- toppings:
+    function: pairwise()
+    data: [cheese, mushrooms, pepperoni]
+```
+
+This tells Sensei: “please mix sizes and toppings so that every size is paired with every topping somewhere.” Perfect for catching size+topping pricing issues, for example.
+
+---
+
+### Quick recap
+
+| Want this...                           | Use this                                  |
+|----------------------------------------|--------------------------------------------|
+| Every possible combination             | `forward()` with nested dependencies       |
+| Random single values                   | `random()`                                 |
+| No repeats until all options are used  | `another()`                                |
+| Every pair covered efficiently         | ✅ `pairwise()`                             |
+
+If you’d like, I can also show how to mix `pairwise()` with other functions (like `forward()` dependencies) to create richer test matrices—just let me know!

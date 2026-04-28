@@ -1,0 +1,16 @@
+Absolutely! Since the profile exposes an `order_id` slot, you can add a single-conversation rule that simply checks that value isn’t missing or empty. Here’s a ready-to-paste YAML snippet you can drop under `rules/` (e.g., `rules/order_id_provided.yaml`):
+
+```yaml
+name: order_id_provided
+description: The assistant must surface an order_id in each conversation
+conversations: 1
+oracle: order_id not in [None, '']
+on-error: "Missing order_id for conversation with inputs: {user_input}"
+```
+
+**How it works**
+
+- Because this rule inspects just one conversation at a time, you can refer to the profile’s output slots directly (`order_id` in this case).
+- The oracle ensures the slot isn’t `None` and isn’t an empty string. If either happens, Sensei-check will raise a violation and show the `on-error` message to help you debug quickly.
+
+Let me know if you’d like to tie `order_id` uniqueness across the whole batch too! 😊

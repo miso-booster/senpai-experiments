@@ -1,0 +1,80 @@
+¡Claro que sí! Aquí tienes un perfil listo para probar tu chatbot de pizzería. Incluye las salidas que necesitas: tipo de pizza, bebida, ID del pedido y precio final en dólares 👇
+
+```yaml
+test_name: pizza_order_es_mvp
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente que está haciendo un pedido para llevar en una pizzería.
+    Quieres asegurarte de que el chatbot confirme todos los detalles del pedido.
+  context:
+    - Es un pedido para compartir con amigos esta noche.
+    - Necesitas que el chatbot confirme el precio final en dólares estadounidenses.
+  goals:
+    - "Hola, ¿aceptan pedidos para llevar?"
+    - "Quiero pedir una pizza {{pizza_type}} tamaño {{pizza_size}}."
+    - "Añade {{extra_toppings}} como ingrediente extra."
+    - "También necesito {{drink_quantity}} {{drink_type}}."
+    - "Antes de finalizar, confirma el precio total en dólares y dame el ID del pedido."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margherita, Pepperoni, Cuatro quesos, Vegetariana]
+    - pizza_size:
+        function: another()
+        type: string
+        data: [pequeña, mediana, grande]
+    - extra_toppings:
+        function: random()
+        type: string
+        data: [aceitunas, champiñones, jalapeños, pepperoni extra, cebolla caramelizada]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coca-Cola, Sprite, Agua mineral, Té helado]
+    - drink_quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no entendí. Puedo ayudarte a pedir pizzas personalizadas, bebidas y resolver dudas del menú."
+  output:
+    - pizza_type:
+        type: string
+        description: "Tipo de pizza confirmada por el chatbot."
+    - drink:
+        type: string
+        description: "Bebida confirmada, incluyendo cantidad si aplica."
+    - order_id:
+        type: string
+        description: "Identificador único del pedido proporcionado por el chatbot."
+    - total_price_usd:
+        type: currency
+        description: "Precio final del pedido expresado explícitamente en dólares (USD)."
+
+conversation:
+  number: 4
+  max_cost: 0.8
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - long phrases
+    - change your mind
+```
+
+¡Listo para poner a prueba tu bot pizzero! Si necesitas ajustar combinaciones o añadir más campos, dime y lo adaptamos 😊.

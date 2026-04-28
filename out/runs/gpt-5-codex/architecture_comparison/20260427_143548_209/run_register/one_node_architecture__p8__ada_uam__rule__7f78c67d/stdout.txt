@@ -1,0 +1,27 @@
+conversation ID: one_node_architecture__p8__ada_uam__rule__7f78c67d
+$$$
+¡Vamos a revisarlo juntos! 😊
+
+### ¿Qué estaba pasando?
+- **Uso de `conv[0]`**: En reglas de una sola conversación no hace falta (ni se recomienda) usar `conv[0]`. Los campos del `chatbot.output` están disponibles directamente.
+- **Condición en `when`**: Al repetir exactamente la misma condición que en el `oracle`, la regla nunca falla. Si la información es incorrecta, el `when` se queda en `False` y la regla ni siquiera se evalúa.
+
+### Regla corregida
+Aquí tienes la versión ajustada para que realmente verifique los datos de contacto del CAU:
+
+```yaml
+name: check_cau_information
+description: CAU contact details match the official reference
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and contact_phone == '91 497 4029' and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+on-error: >
+  f"Expected CAU contact details (cau@uam.es, 91 497 4029, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107) but got email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+### ¿Por qué así?
+- **Removimos el `when`** para que la regla siempre compruebe los valores y falle si algo no coincide.
+- **Campos directos**: usamos `contact_email`, `contact_phone` y `physical_address` tal como los define el `chatbot.output`.
+- **`on-error` útil**: el mensaje ayuda a diagnosticar rápidamente qué campo no coincide.
+
+Si necesitas filtrar la regla solo para ciertas conversaciones, podríamos añadir un `when` diferente (por ejemplo, cuando la conversación trate de los datos del CAU). Pero para validar que los valores sean exactos, este formato es el más efectivo. ¡Avísame si quieres que lo ajustemos aún más!
+$$$

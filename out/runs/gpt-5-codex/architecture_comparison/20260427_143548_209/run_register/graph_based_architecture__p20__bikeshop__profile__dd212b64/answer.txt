@@ -1,0 +1,87 @@
+Hey there! Happy to help you spin up a fresh profile for that wheel-change appointment scenario 🚲🔧  
+Below you’ll find a ready-to-drop-in YAML profile that creates a simulated user determined to book a wheel change while poking at the chatbot’s date/time handling.
+
+---
+
+### ✅ What this profile covers
+- Multiple date and time combinations (using nested `forward()` functions) so Sensei can generate a combinations matrix and really stretch the bot’s scheduling logic.
+- Goals that drive the bot to confirm the service type and provide a clear summary.
+- Output fields you can use later in Sensei-check rules to verify the bot captured everything correctly.
+
+---
+
+```yaml
+test_name: wheel_change_appointment_scheduler
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who needs a wheel change before an upcoming group ride.
+    You’re organized but want the assistant to double-check every scheduling detail.
+  context:
+    - "You depend on this bike for commuting and weekend rides."
+    - "A group ride is coming up soon, so timing matters."
+    - "You prefer clear confirmations so you can add the appointment to your calendar."
+  goals:
+    - "I need to schedule a wheel change appointment on {{appointment_date}} at {{appointment_time}}."
+    - "Please note that the service should be logged as a {{wheel_service_type}}."
+    - "Can you confirm in one summary when and what service is booked?"
+    - appointment_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - next Tuesday
+          - June 12th
+          - July 3rd
+    - appointment_time:
+        function: forward(appointment_date)
+        type: string
+        data:
+          - 9:00 AM
+          - 11:30 AM
+          - 2:15 PM
+          - 4:45 PM
+    - wheel_service_type:
+        function: another()
+        type: string
+        data:
+          - front wheel replacement
+          - rear wheel replacement
+          - both wheels swap
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - appointment_date_confirmation:
+        type: string
+        description: "Date the chatbot confirms for the wheel change appointment."
+    - appointment_time_confirmation:
+        type: string
+        description: "Time the chatbot confirms for the wheel change appointment."
+    - service_confirmation:
+        type: string
+        description: "Service description the chatbot confirms (e.g., wheel change, wheel replacement)."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: false
+      limit: 8
+  interaction_style:
+    - default
+```
+
+---
+
+If you drop this into `profiles/wheel_change_appointment_scheduler.yml`, Sensei will generate all the date/time pairs created by those nested `forward()` functions. From there you can hook up metamorphic rules that check whether the bot echoed back the right slot or offered mismatched confirmations.
+
+Need tweaks—maybe to throw in rescheduling scenarios or different languages? Just holler! 😊

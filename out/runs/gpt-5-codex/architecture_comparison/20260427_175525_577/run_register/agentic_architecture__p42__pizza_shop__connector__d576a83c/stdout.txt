@@ -1,0 +1,40 @@
+conversation ID: agentic_architecture__p42__pizza_shop__connector__d576a83c
+$$$
+¡Hola! Gracias por compartir todos los detalles; con eso es mucho más fácil encontrar el fallo 😊.
+
+### Qué estaba pasando
+Comparando tu configuración con la traza real y los ejemplos de la documentación (`custom-connector-guide.md` y `connector-examples.md`), detecté varios desajustes:
+
+1. **`base_url` y `path`** no apuntaban al host real (`https://api.1millionbot.com` y `/api/public/messages`).
+2. **Cabecera `Authorization`** faltaba en tu YAML original, pero el endpoint la requiere.
+3. **`payload_template`** necesita los campos fijos (`conversation`, `sender_type`, etc.) que exige la API.
+4. **`response_path`** debe ir a `response.0.text`, que es donde llega el texto HTML de la respuesta.
+
+### Conector corregido
+Aquí tienes la versión ajustada:
+
+```yaml
+name: "1MillionBot Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+> 🔐 Ajusta los valores de `Authorization`, `conversation`, `sender`, `bot`, etc., si tus credenciales o IDs cambian.
+
+Con esto, el conector debería enviar el payload correcto y extraer la respuesta desde el mismo nodo (`response[0].text`) que muestra la API real. Cuéntame si vuelve a fallar o si quieres parametrizar alguno de esos IDs para sesiones distintas.
+$$$

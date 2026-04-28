@@ -1,0 +1,86 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__05ffbb77
+$$$
+Here’s a fast-paced, no-nonsense profile for your rushed, rude pizza shopper. Let me know if you’d like any tweaks! 🍕
+
+```yaml
+test_name: rude_speed_runner
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a blunt, impatient customer who demands instant service and gets irritated the moment
+    the chatbot hesitates. You bark orders, expect confirmations right away, and threaten to leave
+    if things aren’t resolved immediately.
+  context:
+    - personality: personalities/rude-user
+    - You are in a hurry to pick up food for a late-night work session and have zero patience.
+    - You expect every answer to be short, clear, and delivered without delay.
+    - If the chatbot stalls, you remind it to move faster.
+  goals:
+    - "Spit out the price for a {{pizza_size}} {{pizza_type}} pizza immediately."
+    - "Confirm the {{pizza_type}} order is locked in, no excuses."
+    - "Add {{drink_bundle}} to the order before I lose patience."
+    - "Guarantee it's ready in {{pickup_window}} minutes or I'm walking."
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, BBQ Chicken, Four Cheese]
+    - drink_bundle:
+        function: forward()
+        type: string
+        data:
+          - "two Cokes"
+          - "three Sprites"
+          - "a six-pack of water"
+          - "two iced teas"
+    - pickup_window:
+        function: forward()
+        type: int
+        data:
+          min: 10
+          max: 40
+          step: 10
+
+chatbot:
+  is_starter: false
+  fallback: "Stay with me—what do you need next for your order?"
+  output:
+    - size:
+        type: string
+        description: "Pizza size confirmed by the assistant."
+    - toppings:
+        type: list[string]
+        description: "List of toppings the assistant acknowledges for the order."
+    - drink:
+        type: string
+        description: "Drink bundle or beverage selection the assistant confirms."
+    - price:
+        type: currency
+        description: "Total price the assistant states for the order."
+    - pickup_eta:
+        type: string
+        description: "Promised pickup time or readiness window mentioned by the assistant."
+    - order_id:
+        type: string
+        description: "Any identifier or confirmation code supplied for the order."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 4
+  interaction_style:
+    - single questions
+  max_cost: 0.6
+```
+$$$

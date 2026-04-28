@@ -1,0 +1,17 @@
+conversation ID: one_node_architecture__p16__alcampo__rule__aaa8e3fc
+$$$
+Sure thing! Here’s a rule-first design you can plug into your Sensei-check project once the matching profile exists. It assumes the future profile will expose three outputs: `lactose_free_requested` (bool), `lactose_free_available` (bool), and `lactose_free_products` (list of strings). Adjust the field names if your profile uses different ones.
+
+```yaml
+name: lactose_free_availability_consistency
+description: When the user asks for lactose-free products, the assistant must flag availability consistently with the provided product list.
+conversations: 1
+if: lactose_free_requested is True
+then: (
+  (lactose_free_available is True and lactose_free_products is not None and len(lactose_free_products) > 0) or
+  (lactose_free_available is False and (lactose_free_products is None or len(lactose_free_products) == 0))
+)
+on-error: >
+  f"Lactose-free availability flag {lactose_free_available} conflicts with products {lactose_free_products}"
+```
+$$$

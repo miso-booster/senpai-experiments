@@ -1,0 +1,99 @@
+Got it! Here’s a fresh Sensei profile to probe how the chatbot handles wheel-change appointment dates and times 😊👇
+
+```yaml
+test_name: wheel_change_appointment_scheduling
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a methodical bike owner who wants to schedule an appointment to have
+    both wheels changed. Track the agenda carefully and make sure the assistant
+    confirms the exact slot.
+  context:
+    - You rely on your bike for daily commuting, so timing matters a lot.
+    - You prefer morning appointments but can consider afternoon backups.
+    - You want the assistant to restate the final confirmed date and time.
+  goals:
+    - "Hi! I'd like to schedule a wheel change appointment for {{appointment_date}} at {{appointment_time}}."
+    - "Please list the service under {{service_type}} so it shows up correctly."
+    - "Let me know if that slot is available."
+    - "If it's not, could we try {{alternate_date}} at {{alternate_time}} instead?"
+    - "Before we wrap up, please confirm the final appointment date and time."
+    - service_type:
+        function: another()
+        type: string
+        data:
+          - wheel change
+          - wheel replacement service
+          - wheel and tire swap
+    - appointment_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - next Tuesday
+          - April 18th
+          - May 2nd
+    - appointment_time:
+        function: forward(appointment_date)
+        type: string
+        data:
+          - 9:00 AM
+          - 2:30 PM
+          - 11:15 AM
+          - 4:45 PM
+    - alternate_date:
+        function: forward()
+        type: string
+        data:
+          - the day after tomorrow
+          - next Thursday
+          - April 19th
+          - May 3rd
+    - alternate_time:
+        function: forward(alternate_date)
+        type: string
+        data:
+          - 10:30 AM
+          - 3:15 PM
+          - 1:00 PM
+          - 5:15 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you repeat that?"
+  output:
+    - initial_slot_response:
+        type: string
+        description: Assistant’s reply about the first requested date/time (availability or denial).
+    - confirmed_service:
+        type: string
+        description: The service name the assistant confirms for the appointment.
+    - confirmed_date:
+        type: string
+        description: The final date the assistant books or confirms.
+    - confirmed_time:
+        type: string
+        description: The final time the assistant books or confirms.
+    - alternate_slot_response:
+        type: string
+        description: Assistant’s response when the user offers the alternate slot.
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: false
+      limit: 14
+  interaction_style:
+    - default
+  max_cost: 0.6
+```
+
+Let me know if you’d like matching Sensei-check rules or tweaks to the goals or outputs! 🚲✨

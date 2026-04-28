@@ -1,0 +1,82 @@
+¡Hola! 😊 Gracias por compartir el perfil; está súper completo, ¡bien hecho! Como ya tienes un montón de slots en `chatbot.output`, te propongo algunas **Sensei-check rules** para validar que el bot realmente entregue toda esa información con la consistencia que buscas. Te dejo varias ideas (todas pensadas para este perfil específico) y puedes activarlas poco a poco según lo que quieras cubrir primero.
+
+---
+
+### 1. Todos los enlaces deben ser URLs válidas  
+Como expones cuatro campos tipo link, esta regla revisa que el bot no devuelva textos tipo “consulta con soporte”, sino URLs reales.
+
+```yaml
+name: admission_links_are_urls
+description: Todos los enlaces de admisiones y recursos deben lucir como URLs
+conversations: 1
+oracle: |
+  all(
+    link.startswith('http')
+    for link in [
+      admission_to_grados_link,
+      waitlist_info_link,
+      future_students_link,
+      welcome_day_link
+    ]
+    if link
+  )
+```
+
+---
+
+### 2. Consistencia en la información del Welcome Day  
+Si la respuesta menciona fecha u hora, debería entregar ambos datos y el lugar. Así evitamos respuestas a medias.
+
+```yaml
+name: welcome_day_complete_info
+description: Si se menciona el Welcome Day, deben aparecer fecha, hora y lugar
+conversations: 1
+if: welcome_day_date or welcome_day_time or event_location
+then: bool(welcome_day_date) and bool(welcome_day_time) and bool(event_location)
+```
+
+---
+
+### 3. Listas de espera: procedimientos + enlace  
+Cuando el bot detalla procedimientos de lista de espera, debería ofrecer también el link oficial.
+
+```yaml
+name: waitlist_has_supporting_link
+description: Explicar la lista de espera implica incluir el enlace oficial
+conversations: 1
+if: bool(waitlist_procedures)
+then: bool(waitlist_info_link) and waitlist_info_link.startswith('http')
+```
+
+---
+
+### 4. Idioma consistente en español  
+Tu usuaria es hispanohablante; esta regla global asegura que las respuestas comparables se mantengan en español.
+
+```yaml
+name: idioma_espanol_consistente
+description: Para este perfil, respuestas comparables deben mantenerse en español
+conversations: 2
+oracle: language(conv[0].chatbot_phrases) == 'SPA' and language(conv[1].chatbot_phrases) == 'SPA'
+```
+
+---
+
+### 5. Información mínima de admisión  
+Si el bot habla de admisión, que no olvide requisitos, proceso y datos de contacto.
+
+```yaml
+name: admision_cubre_datos_basicos
+description: La respuesta de admisión debe incluir requisitos, proceso y contacto
+conversations: 1
+if: bool(admission_to_grados_link) or 'admis' in chatbot_phrases.lower()
+then: bool(admission_requirements) and bool(enrollment_process) and bool(contact_admissions)
+```
+
+> *Nota:* ajuste la condición `if:` si prefieres otro gatillo (por ejemplo, usar un extractor en el `when:` para conversaciones sobre admisión concreta).
+
+---
+
+¿Siguiente paso? 😎 Ejecuta el perfil en Sensei-chat, observa qué campos se rellenan y, si hace falta, retoca los `if/then` para alinearlos con cómo responde tu bot. Cuando tengas más conversaciones, también podríamos pensar en reglas metamórficas más elaboradas (por ejemplo, comparar respuestas para diferentes `grados`).
+
+¿Quieres que te ayude a activar alguna regla directamente en el proyecto o a crear más verificaciones? ¡Estoy aquí para eso! 🙌

@@ -1,0 +1,54 @@
+Here you go! Based on the guidance from `sensei-chat-guide.md`, I filled in the `chatbot` section so the simulator knows how to extract the key details you want to validate later (pizza varieties, Margarita price, drinks info, hours, and delivery details).
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - pizza_options:
+        type: list[string]
+        description: "List of pizza varieties the chatbot mentions as available."
+    - margarita_price:
+        type: currency
+        description: "Quoted price for a Margarita pizza."
+    - drinks_menu:
+        type: list[string]
+        description: "Available drinks along with their pricing details."
+    - operating_hours:
+        type: string
+        description: "The shop's opening and closing hours."
+    - delivery_available:
+        type: string
+        description: "Whether delivery is offered and any delivery specifics."
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single question
+```
+
+Feel free to tweak the field names or descriptions if you plan to write specific rules against them. (Small tip: the interaction style keyword in the docs is `single questions`, so you may want to pluralize it to match the accepted list.) Let me know if you’d like to add more outputs or wire up some rules next! 😊

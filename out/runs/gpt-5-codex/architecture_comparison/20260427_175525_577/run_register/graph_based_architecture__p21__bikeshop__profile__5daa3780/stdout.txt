@@ -1,0 +1,100 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__5daa3780
+$$$
+Hey there! That sounds like an awesome test case—perfect for checking whether the bot can guide someone through a personalized bike setup. To help you get rolling, here’s a Sensei profile tailored to that scenario. It hits all the key beats: asking about seat options, handlebar grips, pricing, and scheduling the actual setup appointment.
+
+Feel free to copy this into `profiles/bike_setup_customization_user.yaml` (or whatever name you like) and tweak any of the specifics to match your bot’s behavior or the data you want to extract.
+
+```yaml
+test_name: bike_setup_customization_user
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.4
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a brand-new bike and want the shop to fine-tune it so it
+    fits you perfectly. You’re polite, detail-oriented, and clear about wanting a
+    comfortable seat setup plus new handlebar grips.
+  context:
+    - You’ve ridden the bike a couple of times and feel the current saddle and grips aren’t quite right.
+    - You want advice on replacement options before committing.
+    - You appreciate ergonomic upgrades and are curious about installation timing and pricing.
+  goals:
+    - "Explain that you just bought a new bike and want it fitted to your preferences."
+    - "Ask what saddle adjustment or replacement options they offer for a {{riding_style}} rider."
+    - "Request recommendations for upgrading the handlebar grips, mentioning interest in {{grip_feature}} options."
+    - "Ask whether they can take care of the seat change and grip installation during one visit."
+    - "Ask for a quote covering the saddle fitting and handlebar grip swap."
+    - "Schedule an appointment for {{appointment_day}} at {{appointment_time}} to get the setup done."
+    - riding_style:
+        function: forward()
+        type: string
+        data:
+          - road
+          - commuter
+          - gravel
+          - mountain
+    - grip_feature:
+        function: forward(riding_style)
+        type: string
+        data:
+          - padded gel comfort
+          - ergonomic shaping
+          - anti-slip texture
+          - cork-style vibration damping
+    - appointment_day:
+        function: another()
+        type: string
+        data:
+          - tomorrow
+          - Friday
+          - next Tuesday
+    - appointment_time:
+        function: forward(appointment_day)
+        type: string
+        data:
+          - "10:00 AM"
+          - "1:30 PM"
+          - "4:00 PM"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop—could you say that again?"
+  output:
+    - seat_customization_details:
+        type: string
+        description: "The chatbot’s explanation of seat fitting or replacement options suggested to the user."
+    - grip_recommendations:
+        type: string
+        description: "The handlebar grip upgrades or materials the chatbot proposes."
+    - setup_service_price:
+        type: currency
+        description: "The quoted cost for performing the seat adjustment and grip swap."
+    - installation_capability:
+        type: string
+        description: "Whether the shop can complete both changes during one appointment."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the scheduled setup appointment, including day and time."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - default
+```
+
+### A couple of quick customization tips 💡
+- If your project already uses a custom `money` type instead of `currency`, just swap that in for `setup_service_price`.
+- Want the user to be more erratic or to change their mind about saddle types mid-chat? Add `interaction_style: change your mind` or mix in a `random` block.
+- If you’d like to test multiple personalities, hook in a `personality:` reference inside the `context` list.
+
+Let me know if you want a version with different appointment logic, extra variables (like specific seat models), or rule ideas to validate the outputs. Happy testing! 🚲✨
+$$$

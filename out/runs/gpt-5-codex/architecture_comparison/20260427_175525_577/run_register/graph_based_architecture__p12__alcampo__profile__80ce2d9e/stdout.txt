@@ -1,0 +1,84 @@
+conversation ID: graph_based_architecture__p12__alcampo__profile__80ce2d9e
+$$$
+Got it! I put together a brand-new profile that nudges the chatbot to suggest items and guide the user through adding them to the cart. Here’s a quick overview before the YAML:
+
+- Persona: a conversational shopper prepping meals for the week and eager for smart cart suggestions.
+- Goals: request item recommendations, cart update guidance, price/size info, substitutions, and checkout tips.
+- Variables: uses `pairwise()` to cover combinations of meal type, grocery category, and number of items.
+- Outputs: captures the recommended items, cart status, pricing notes, substitutions, checkout guidance, and an estimated total.
+
+You can save this as `profiles/shopping_cart_item_support.yaml` (or another filename you prefer):
+
+```yaml
+test_name: Shopping Cart Item Support
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A time-strapped home cook planning meals for the week who wants help filling their Alcampo online cart with smart choices.
+  context:
+    - personality: personalities/conversational-user
+    - You are preparing a mix of weekday meals and want suggestions that balance freshness, value, and variety.
+    - You prefer when the chatbot clearly explains how to add items to the cart and keeps track of totals.
+  goals:
+    - "Ask the chatbot to recommend {{number_of_items}} items from the {{grocery_category}} section that fit a {{meal_type}} plan."
+    - "Request step-by-step guidance to add each suggested item to the shopping cart and confirm the cart update status."
+    - "Ask for price ranges or package sizes for the recommended items."
+    - "If an item is unavailable, request substitution ideas or comparable alternatives."
+    - "Ask for any final tips to review the cart and proceed toward checkout."
+    - number_of_items:
+        function: pairwise()
+        type: int
+        data: [2, 3, 4]
+    - grocery_category:
+        function: pairwise()
+        type: string
+        data:
+          - fresh produce
+          - pantry staples
+          - beverages
+          - household essentials
+    - meal_type:
+        function: pairwise()
+        type: string
+        data:
+          - breakfast
+          - quick lunch
+          - family dinner
+          - snacks
+chatbot:
+  is_starter: false
+  fallback: Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios.
+  output:
+    - suggested_items:
+        type: list[string]
+        description: Items the chatbot proposes adding to the shopping cart
+    - cart_update_status:
+        type: string
+        description: Confirmation or instructions regarding cart additions
+    - price_and_size_notes:
+        type: list[string]
+        description: Price estimates or package size details for suggested items
+    - substitution_suggestions:
+        type: list[string]
+        description: Alternative products if the recommended items are unavailable
+    - checkout_tip:
+        type: string
+        description: Guidance on reviewing the cart and moving toward checkout
+    - estimated_cart_total:
+        type: money
+        description: Estimated total cost after adding the suggested items
+conversation:
+  number: combinations(0.75, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+  interaction_style:
+    - single questions
+```
+
+Feel free to tweak the context or goal phrasing if you want a different tone, but the structure should be ready to drop into your Sensei project. Let me know if you’d like a companion rule or validation tips! 😊
+$$$

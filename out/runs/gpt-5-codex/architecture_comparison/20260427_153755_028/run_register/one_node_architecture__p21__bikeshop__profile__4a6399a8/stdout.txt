@@ -1,0 +1,86 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__4a6399a8
+$$$
+Got it! Here’s a fresh profile you can drop into your `profiles/` folder to simulate a rider who just bought a new bike and wants the shop to dial in the seat and handlebar grips to match their style:
+
+```yaml
+test_name: bike_setup_customization
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.5
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You recently bought a new bike and want the shop to fine-tune it so it fits you
+    perfectly. You care about comfort on longer rides but also want responsive handling.
+  context:
+    - You're excited about the new bike but want it set up by professionals.
+    - You have mild lower-back discomfort when the saddle isn't adjusted properly.
+    - You prefer handlebars that feel secure on longer rides.
+  goals:
+    - Ask if the shop offers professional bike fitting or setup services for new bikes.
+    - Request help adjusting the seat to match your preferred {{riding_style}} position.
+    - Ask whether the seat can be swapped for a {{seat_preference}} and what the cost would be.
+    - Discuss options for replacing the handlebar grips with {{handlebar_grip_material}} grips and ask about pricing.
+    - Ask if they can install the new seat and grips during the same visit.
+    - Schedule a fitting appointment for {{appointment_day}} at {{appointment_time}}.
+    - riding_style:
+        function: forward()
+        type: string
+        data: [upright comfort, endurance, performance]
+    - seat_preference:
+        function: forward(riding_style)
+        type: string
+        data: [gel comfort saddle, performance saddle, pressure-relief saddle]
+    - handlebar_grip_material:
+        function: another()
+        type: string
+        data: [cork, leather, ergonomic rubber]
+    - appointment_day:
+        function: forward()
+        type: string
+        data: [tomorrow, this Saturday, next Monday]
+    - appointment_time:
+        function: another()
+        type: string
+        data: [10:00 AM, 1:30 PM, 4:00 PM]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - bike_fitting_service:
+        type: string
+        description: Confirmation that the shop can perform a professional fit or setup for a new bike.
+    - seat_adjustment_details:
+        type: string
+        description: Information about how the seat can be adjusted or swapped to match the user's preferences.
+    - seat_adjustment_price:
+        type: money
+        description: Price quoted for the seat adjustment or replacement.
+    - handlebar_grip_options:
+        type: string
+        description: Options or recommendations for replacement handlebar grips.
+    - handlebar_grip_price:
+        type: money
+        description: Pricing information for the recommended handlebar grips or installation.
+    - fitting_appointment_confirmation:
+        type: string
+        description: Confirmation message for the scheduled fitting appointment, including day and time.
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 18
+  interaction_style:
+    - default
+```
+
+Let me know if you’d like to tweak any of the goals or outputs—for example, to capture installation time estimates or follow-up care tips 😊.
+$$$

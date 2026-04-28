@@ -1,0 +1,101 @@
+Hey there! That sounds like a super useful test case for the shop’s assistant. Here’s a fresh Sensei profile tailored to a rider who just picked up a new bike and wants the shop to dial it in—new seat, new grips, the works 🚲✨
+
+```yaml
+test_name: bike_setup_customization
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a new bike owner who wants the shop to customize the fit of your bike,
+    especially by swapping the saddle and handlebar grips so the bike feels perfect.
+  context:
+    - You recently bought a new bike and want it professionally set up for comfort.
+    - You’re willing to upgrade components if it improves long-ride comfort.
+    - You’d like clear explanations of the shop’s fitting process.
+  goals:
+    - "Tell the assistant you just purchased a new bike and want a professional setup."
+    - "Ask if the shop offers seat fitting or replacement services for {{seat_preference}} riders."
+    - "Ask which seat models they recommend for {{riding_style}} rides."
+    - "Ask about handlebar grip options that use {{grip_material}} or similar materials."
+    - "Ask how much it costs to install both a new seat and new handlebar grips."
+    - "Schedule a fitting appointment on {{appointment_date}} at {{appointment_time}}."
+    - seat_preference:
+        function: pairwise()
+        type: string
+        data:
+          - extra cushioning
+          - ergonomic support
+          - performance-oriented
+    - grip_material:
+        function: pairwise()
+        type: string
+        data:
+          - cork blend
+          - silicone gel
+          - leather wrap
+    - riding_style:
+        function: random()
+        type: string
+        data:
+          - long weekend rides
+          - daily commuting
+          - mixed gravel and road outings
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - tomorrow
+          - this Saturday
+          - next Monday
+    - appointment_time:
+        function: another()
+        type: string
+        data:
+          - 9:00 AM
+          - 11:30 AM
+          - 3:00 PM
+
+chatbot:
+  is_starter: false
+  fallback: "I’m sorry, it’s a little loud in my shop—could you repeat that?"
+  output:
+    - seat_service_details:
+        type: str
+        description: "Summary of the shop’s seat fitting or replacement services."
+    - seat_recommendation:
+        type: str
+        description: "Recommended seat models or styles given to the user."
+    - handlebar_grip_options:
+        type: str
+        description: "List or description of handlebar grip options suggested."
+    - customization_cost:
+        type: money
+        description: "Quoted cost for installing a new seat and handlebar grips."
+    - fitting_appointment_confirmation:
+        type: str
+        description: "Confirmation of the scheduled fitting appointment, including date and time."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    all_answered:
+      export: false
+      limit: 16
+  interaction_style:
+    - default
+```
+
+A quick rundown of what’s happening:
+
+- Two pairwise-driven variables (`seat_preference` and `grip_material`) give you broad coverage without blowing up the run count.
+- Extra variables capture the rider’s style and preferred appointment slots.
+- Outputs focus on the pieces your QA folks will want to validate: service details, product options, pricing, and the confirmed booking.
+
+If you want to tweak the tone (e.g., make the user a bit more demanding or unsure), just add a `personality` reference in `user.context`. Need any rule ideas to go with it? Happy to help! 😊

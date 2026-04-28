@@ -1,0 +1,76 @@
+conversation ID: one_node_architecture__p14__alcampo__profile__4eac4171
+$$$
+¡Claro! Aquí tienes un perfil listo para poner a prueba la capacidad del chatbot de Alcampo en recomendaciones de recetas y planificación de menús 🍽️✨
+
+```yaml
+test_name: Menu Planning and Recipe Guidance
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres una persona que quiere organizar sus comidas con recetas variadas y saludables
+    aprovechando los servicios de Alcampo.
+  context:
+    - Acabas de decidir planificar tus menús semanales para optimizar tiempo y presupuesto.
+    - Quieres recetas que se adapten a distintas preferencias alimentarias en tu hogar.
+    - Buscas ideas para reducir el desperdicio y reutilizar ingredientes.
+  goals:
+    - "Pide al chatbot sugerencias de recetas equilibradas para {{meal_focus}}."
+    - "Solicita un plan de menú de {{planning_horizon}} días que combine esas recetas."
+    - "Pregunta por opciones alternativas para personas con {{dietary_preference}}."
+    - "Pide una lista de compras agrupada por categorías."
+    - "Consulta consejos para aprovechar los ingredientes sobrantes y evitar desperdicios."
+    - meal_focus:
+        function: forward()
+        type: string
+        data: [desayuno, comidas principales, cenas ligeras]
+    - planning_horizon:
+        function: forward(meal_focus)
+        type: int
+        data:
+          min: 3
+          max: 7
+          step: 2
+    - dietary_preference:
+        function: random()
+        type: string
+        data: [vegetarianas, sin gluten, ricas en proteínas, bajas en calorías]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no está relacionado con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recipe_suggestions:
+        type: list[string]
+        description: Sugerencias concretas de recetas proporcionadas por el chatbot
+    - menu_plan:
+        type: list[string]
+        description: Plan de menú estructurado por días o comidas
+    - shopping_list:
+        type: list[string]
+        description: Lista de compras agrupada por categorías de ingredientes
+    - dietary_alternatives:
+        type: string
+        description: Recomendaciones adaptadas a la preferencia alimentaria indicada
+    - leftover_tips:
+        type: string
+        description: Consejos para aprovechar sobrantes y reducir desperdicio
+
+conversation:
+  number: 4
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - long phrases
+    - random:
+        - change your mind
+        - make spelling mistakes
+```
+$$$

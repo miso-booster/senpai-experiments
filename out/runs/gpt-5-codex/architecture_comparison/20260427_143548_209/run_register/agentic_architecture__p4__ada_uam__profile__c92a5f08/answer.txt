@@ -1,0 +1,71 @@
+¡Genial! Aquí tienes un perfil Sensei listo para probar el chatbot del CAU de la UAM y recuperar todos los datos de contacto que necesitas 😊.
+
+```yaml
+test_name: "uam_cau_contact_profile"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un integrante de la comunidad de la Universidad Autónoma de Madrid que
+    necesita asistencia del Centro de Atención a Usuarios (CAU). Te interesa obtener
+    todos los datos de contacto para poder comunicarte por distintos medios.
+  context:
+    - "Tienes problemas con los servicios informáticos y quieres resolverlos cuanto antes."
+    - "Deseas anotar la información para compartirla con otros compañeros."
+  goals:
+    - "Saluda brevemente y menciona que eres {{rol}} de la UAM que necesita ayuda del CAU."
+    - "Solicita el número de teléfono del Centro de Atención a Usuarios."
+    - "Pide el correo electrónico de contacto del CAU."
+    - "Pregunta por la dirección física del CAU para visitas presenciales."
+    - "Consulta los horarios de atención del CAU, incluyendo días y franjas horarias si es posible."
+    - rol:
+        function: random()
+        type: string
+        data:
+          - un estudiante
+          - personal administrativo
+          - un profesor
+          - un investigador visitante
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu consulta. ¿Podrías reformularla?"
+  output:
+    - cau_phone_number:
+        type: string
+        description: "Número de teléfono del CAU proporcionado por el chatbot."
+    - cau_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU."
+    - cau_physical_address:
+        type: string
+        description: "Dirección física del CAU de la UAM."
+    - cau_service_hours:
+        type: string
+        description: "Horarios de atención del CAU."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - single questions
+    - long phrases
+```
+
+### Por qué está configurado así
+- El usuario simulado habla en español y adopta distintos roles de la comunidad UAM para cubrir varios escenarios.
+- Las metas cubren paso a paso teléfono, email, dirección y horarios del CAU, justo como pediste.
+- En `chatbot.output` se definen esos cuatro campos para que luego cualquier regla o análisis pueda validar la información que entregue el bot.
+- `goal_style: all_answered` asegura que el simulador siga preguntando hasta completar todos los objetivos o llegar al límite de seguridad.
+
+Todo está alineado con las pautas de `sensei-chat-guide.md`, aprovechando la sección de objetivos, contextos y extracción de datos del chatbot. Si quieres añadir más variaciones (por ejemplo, distintos campus o franja horaria específica), dímelo y lo adaptamos. ¡Listo para probar! 🙌

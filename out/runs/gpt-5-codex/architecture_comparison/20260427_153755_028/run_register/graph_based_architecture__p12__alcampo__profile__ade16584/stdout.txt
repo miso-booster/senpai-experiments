@@ -1,0 +1,109 @@
+conversation ID: graph_based_architecture__p12__alcampo__profile__ade16584
+$$$
+¡Hola! 😊 Here’s a brand-new Sensei Profile you can drop into your `profiles/` folder to simulate a user who specifically asks the chatbot for items to add to their shopping cart. Save it as something like `profiles/cart_item_recommendations.yaml`.
+
+```yaml
+test_name: "cart_item_recommendations"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A busy home cook planning the week’s groceries who wants clear guidance on
+    what items to add to the shopping cart.
+  context:
+    - "You are stocking up for several meals and snacks throughout the week."
+    - "You care about keeping the total reasonable while still covering key essentials."
+    - "You’d like the chatbot to suggest concrete products and help with cart management."
+  goals:
+    - "Ask for recommendations of {{item_category}} to add to my cart for {{meal_type}}."
+    - "Request that {{quantity}} units of one suggested item be added to my cart and confirm it’s there."
+    - "See if there are complementary items suited for {{dietary_preference}} shoppers that I should include as well."
+    - "Request a confirmation of what is in the cart and whether the estimated total fits {{budget_range}}."
+    - "Ask how to review the cart and adjust quantities before checkout."
+    - item_category:
+        function: pairwise()
+        type: string
+        data:
+          - fresh produce
+          - pantry staples
+          - dairy and eggs
+          - frozen meals
+          - beverages
+    - meal_type:
+        function: pairwise()
+        type: string
+        data:
+          - breakfast
+          - lunch
+          - dinner
+          - snacks
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - dietary_preference:
+        function: forward()
+        type: string
+        data:
+          - vegetarian
+          - high-protein
+          - gluten-free
+          - family-friendly
+    - budget_range:
+        function: forward()
+        type: string
+        data:
+          - "under 20 euros"
+          - "around 35 euros"
+          - "under 50 euros"
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - suggested_items:
+        type: list[string]
+        description: "List of specific items the chatbot recommended for the cart"
+    - add_to_cart_instructions:
+        type: string
+        description: "Guidance on how to add items to the cart"
+    - quantity_confirmation:
+        type: string
+        description: "Confirmation or status of adding the requested quantity to the cart"
+    - complementary_items:
+        type: list[string]
+        description: "Additional items recommended to complement the main selection"
+    - estimated_total:
+        type: currency
+        description: "Estimated total cost for the cart items"
+    - cart_review_steps:
+        type: string
+        description: "Steps for reviewing and adjusting the cart before checkout"
+    - substitution_guidance:
+        type: string
+        description: "Information about substitutions if requested items are unavailable"
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 24
+  interaction_style:
+    - long phrases
+    - random:
+        - change your mind
+        - make spelling mistakes
+```
+
+Let me know if you’d like a variant (e.g., different interaction styles or multilingual goals). Happy testing and happy cart-filling! 🛒✨
+$$$
