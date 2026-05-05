@@ -1,0 +1,77 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__1fb79e8f
+$$$
+Here is the YAML connector and the Python script based on the HTTP request and response you provided. 
+
+I have used the SENSEI connector documentation (`custom-connector-guide.md` and `connector-examples.md`) to map your request into the correct format.
+
+### 1. YAML Connector
+
+Save this file as `saic-malaga.yml`. It extracts the necessary headers (like `Authorization` and `Origin`), sets up the JSON payload with the `{user_msg}` placeholder, and uses dot notation (`response.0.text`) to extract the bot's reply from the JSON response array.
+
+```yaml
+name: "SAIC Malaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 2. Python Script
+
+Here is a complete Python script that uses the SENSEI `CustomChatbot` class to load your YAML connector and send multiple requests to it. 
+
+Make sure you have the `saic-malaga.yml` file in the same directory as this script (or update the path accordingly).
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def main():
+    # Load the YAML connector we just created
+    connector_path = "saic-malaga.yml"
+    bot = CustomChatbot(connector_path)
+    
+    # List of messages to send to the bot
+    test_messages = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Muchas gracias por la ayuda"
+    ]
+    
+    print(f"--- Starting conversation with {bot.config.get('name', 'Bot')} ---\n")
+    
+    for msg in test_messages:
+        print(f"User: {msg}")
+        
+        # Send the message using the connector
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"Bot: {response}\n")
+        else:
+            print(f"Error communicating with bot: {response}\n")
+
+if __name__ == "__main__":
+    main()
+```
+
+### How it works:
+1. **`payload_template`**: The connector automatically replaces `{user_msg}` with the text you pass into `bot.execute_with_input()`.
+2. **`response_path`**: The script reads `response.0.text`, which navigates the JSON response (`response` array -> first item `0` -> `text` field) to extract the exact HTML/Text reply (`<p>¡Buenos días!...`). 
+
+Let me know if you need to adjust any headers or if you'd like to test it with different parameters! 😊
+$$$

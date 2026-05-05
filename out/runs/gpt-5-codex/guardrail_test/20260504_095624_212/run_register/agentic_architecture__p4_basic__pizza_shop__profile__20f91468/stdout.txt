@@ -1,0 +1,279 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__20f91468
+$$$
+Hey there! 😊 Here’s a full game plan for automating Sensei profile creation with an LLM, grounded in the guidance from `sensei-chat-guide.md`.
+
+---
+
+## 1. Key requirements for a valid Sensei profile
+
+Before we prompt an LLM, make sure it always covers these essentials (all spelled out in the guide):
+
+- **Top-level sections**: `test_name`, optional `llm` override, `user`, `chatbot`, and `conversation`.
+- **User goals**: any `{{variable}}` in the goal text must be declared with matching name, type, data source, and function.
+- **chatbot.output**: every field needs a `type` and `description`. This is the contract that Sensei-check rules rely on.
+- **conversation controls**: define `number`, `goal_style`, and any `interaction_style` keywords (must be from the allowed list in the docs).
+
+The automation below bakes these constraints into the prompt and also validates the YAML we get back.
+
+---
+
+## 2. Python automation to co-create profiles with an LLM
+
+> Requirements: `pip install openai pydantic pyyaml`
+
+```python
+import os
+import json
+from textwrap import dedent
+from typing import List, Dict, Any
+
+import yaml
+from openai import OpenAI
+from pydantic import BaseModel, Field, ValidationError
+
+
+# ---------- Structured spec we send to the LLM ----------
+
+class OutputField(BaseModel):
+    name: str
+    type: str
+    description: str
+
+
+class ProfileSpec(BaseModel):
+    test_name: str
+    user_language: str = "English"
+    user_role: str
+    contexts: List[str] = Field(default_factory=list)
+    goals: List[str] = Field(
+        description="Goal prompts that may include {{variables}}."
+    )
+    variables: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Optional explicit variable declarations."
+    )
+    output_fields: List[OutputField]
+    conversations: Dict[str, Any] = Field(
+        default_factory=lambda: {"number": 2, "goal_style": {"steps": 6}}
+    )
+    interaction_style: List[Any] = Field(default_factory=list)
+    llm_overrides: Dict[str, Any] = Field(default_factory=dict)
+    generation_model: str = "gpt-4o-mini"
+    generation_temperature: float = 0.4
+
+
+# ---------- Prompt template (keeps Sensei rules in front of the LLM) ----------
+
+PROMPT_TEMPLATE = dedent(
+    """
+    You are Sensei's profile architect. Produce a valid Sensei profile in YAML.
+    Follow these constraints:
+
+    1. Top-level keys: test_name, optional llm, user, chatbot, conversation.
+    2. user.language MUST be exactly the value provided.
+    3. user.role is a natural-language persona.
+    4. user.context is a YAML list (strings or personalities/<file>.yml).
+    5. user.goals:
+       - Include each goal string provided.
+       - Every {{variable}} MUST have a matching variable block with function/type/data.
+       - Respect Sensei-allowed functions (default, random, random(n), random(rand),
+         forward, another, pairwise) and type rules from sensei-chat-guide.md.
+    6. chatbot:
+       - is_starter: boolean (default false if not specified).
+       - fallback: realistic fallback message.
+       - output: list of mappings; each entry has field_name: {type, description}.
+    7. conversation:
+       - number: integer or combinations(...) according to the request.
+       - goal_style: steps, random steps, or all_answered as per docs.
+       - Optional max_cost fields are allowed.
+       - interaction_style: only use reserved keywords or the random: [...] form.
+    8. NO extra commentary—return YAML only.
+
+    User specification (JSON):
+    {spec_json}
+    """
+)
+
+
+# ---------- Functions ----------
+
+def build_prompt(spec: ProfileSpec) -> str:
+    spec_payload = spec.model_dump()
+    prompt = PROMPT_TEMPLATE.format(
+        spec_json=json.dumps(spec_payload, indent=2)
+    )
+    return prompt
+
+
+def call_llm(prompt: str, model: str, temperature: float) -> str:
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    response = client.responses.create(
+        model=model,
+        temperature=temperature,
+        input=prompt,
+        max_output_tokens=2000
+    )
+    return response.output_text.strip()
+
+
+def parse_yaml(yaml_text: str) -> Dict[str, Any]:
+    try:
+        return yaml.safe_load(yaml_text)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"YAML parsing error: {exc}") from exc
+
+
+def validate_profile_structure(profile: Dict[str, Any]) -> List[str]:
+    errors = []
+
+    # Required top-level keys
+    for key in ("test_name", "user", "chatbot", "conversation"):
+        if key not in profile:
+            errors.append(f"Missing top-level key: {key}")
+
+    user = profile.get("user", {})
+    if "language" not in user:
+        errors.append("user.language is required")
+    if "goals" not in user or not isinstance(user["goals"], list):
+        errors.append("user.goals must be a list")
+
+    chatbot = profile.get("chatbot", {})
+    if "output" not in chatbot or not isinstance(chatbot["output"], list):
+        errors.append("chatbot.output must be a list of fields")
+    else:
+        for entry in chatbot["output"]:
+            if not isinstance(entry, dict):
+                errors.append("Each chatbot.output item must be a mapping")
+                continue
+            for field_name, config in entry.items():
+                if "type" not in config:
+                    errors.append(f"chatbot.output.{field_name} missing type")
+                if "description" not in config:
+                    errors.append(f"chatbot.output.{field_name} missing description")
+
+    conversation = profile.get("conversation", {})
+    if "number" not in conversation:
+        errors.append("conversation.number is required")
+    if "goal_style" not in conversation:
+        errors.append("conversation.goal_style is required")
+
+    return errors
+
+
+def generate_profile(spec: ProfileSpec) -> str:
+    prompt = build_prompt(spec)
+    raw_yaml = call_llm(prompt, spec.generation_model, spec.generation_temperature)
+    profile_dict = parse_yaml(raw_yaml)
+
+    structural_issues = validate_profile_structure(profile_dict)
+    if structural_issues:
+        raise ValueError(
+            "Generated profile failed validation:\n" + "\n".join(structural_issues)
+        )
+
+    return yaml.safe_dump(profile_dict, sort_keys=False)
+
+
+# ---------- Example usage ----------
+
+if __name__ == "__main__":
+    spec = ProfileSpec(
+        test_name="boutique_hotel_booking_smoke",
+        user_language="English",
+        user_role=(
+            "You are a traveller planning a boutique hotel stay. "
+            "You insist on late check-out, want city-centre options, "
+            "and care about pet-friendliness."
+        ),
+        contexts=[
+            "You are celebrating an anniversary.",
+            "You plan to stay 3 nights."
+        ],
+        goals=[
+            "Ask for room availability on {{check_in_date}} for {{stay_length}} nights.",
+            "Confirm if pets are allowed and any associated fees.",
+            "Request late check-out and note any surcharges.",
+            "Collect the final price breakdown in {{currency}}."
+        ],
+        variables=[
+            {
+                "name": "check_in_date",
+                "function": "another()",
+                "type": "string",
+                "data": ["any(date within the next 30 days)"]
+            },
+            {
+                "name": "stay_length",
+                "function": "forward(check_in_date)",
+                "type": "int",
+                "data": {"min": 2, "max": 6, "step": 1}
+            },
+            {
+                "name": "currency",
+                "function": "random()",
+                "type": "string",
+                "data": ["USD", "EUR", "GBP"]
+            }
+        ],
+        output_fields=[
+            OutputField(
+                name="total_price",
+                type="currency",
+                description="Quoted price for the entire stay"
+            ),
+            OutputField(
+                name="pet_policy",
+                type="string",
+                description="Pet-friendly status and fees"
+            ),
+            OutputField(
+                name="late_checkout_fee",
+                type="currency",
+                description="Additional cost (if any) for late check-out"
+            ),
+            OutputField(
+                name="booking_id",
+                type="string",
+                description="Reservation reference code if the booking is confirmed"
+            )
+        ],
+        conversations={
+            "number": "combinations(0.6, pairwise)",
+            "goal_style": {"steps": 7, "max_cost": 0.15}
+        },
+        interaction_style=[
+            "long phrases",
+            {"random": ["make spelling mistakes", "single questions"]}
+        ],
+        llm_overrides={
+            "temperature": 0.6,
+            "model": "gpt-4o",
+            "format": {"type": "text"}
+        }
+    )
+
+    profile_yaml = generate_profile(spec)
+    print(profile_yaml)
+```
+
+### What this script does
+
+1. **Collect structured intent** (`ProfileSpec`): keeps all of the knobs you’d typically tweak when writing a profile by hand.
+2. **Prompt engineering**: the LLM sees a rules-first instruction block derived directly from `sensei-chat-guide.md`, so it learns the required schema.
+3. **Post-generation validation**: parses the YAML and checks for the must-have fields before you save it.
+4. **Reusability**: swap in different `ProfileSpec` inputs, or even use an upstream LLM to generate those specs.
+
+Feel free to replace the OpenAI client with Anthropic, Azure, etc.—just keep the prompt template and validation logic.
+
+---
+
+## 3. Next steps
+
+- **Tighten validation**: extend `validate_profile_structure` to enforce function/type combos (e.g., no `list[...]` under `user.goals`) or to verify that every variable is referenced in at least one goal.
+- **Prompt chaining**: optionally run a “self-check” LLM pass that critiques the generated YAML against the spec before you accept it.
+- **Spec discovery UI**: build a small form that collects the `ProfileSpec` fields, then call `generate_profile`.
+
+---
+
+Hope this helps you spin up Sensei profiles on autopilot! If you need a companion validator or want to wire this into Sensei-check rules next, just let me know. 🚀
+$$$

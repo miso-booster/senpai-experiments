@@ -1,0 +1,275 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__9d264c39
+$$$
+Hey there! Based on the guidance in **`sensei-chat-guide.md`**, aquí tienes una manera completa de automatizar la creación de perfiles Sensei con ayuda de un LLM. La idea es darle al modelo un briefing estructurado, validar el YAML que devuelve y guardarlo listo para usar.
+
+---
+
+### 🧠 Flujo general sugerido
+
+1. **Especifica la intención del perfil** en un diccionario Python (idioma del usuario simulado, contexto, metas, outputs que quieres extraer, etc.).
+2. **Construye un prompt robusto** recordándole al modelo la estructura obligatoria (`test_name`, `user`, `chatbot`, `conversation`, etc.) y las restricciones de Sensei.
+3. **Llama al LLM** y pídele que devuelva **solo un bloque YAML** válido.
+4. **Parsea y valida** el YAML resultante:
+   - Verifica que existan las secciones requeridas.
+   - Revisa que `chatbot.output` sea una lista de campos con `type` y `description`.
+   - Asegura que las variables declaradas en `user.goals` estén definidas correctamente.
+5. **Guárdalo en tu carpeta `profiles/`** y ejecútalo/valídalo con las herramientas de Sensei.
+
+---
+
+### 🛠️ Script de ejemplo
+
+```python
+import os
+from textwrap import dedent
+from typing import Any, Dict
+
+import yaml
+from openai import OpenAI
+
+
+REQUIRED_TOP_LEVEL_FIELDS = {"test_name", "user", "chatbot", "conversation"}
+REQUIRED_CHATBOT_FIELDS = {"is_starter", "fallback", "output"}
+
+
+class SenseiProfileGenerator:
+    """
+    Helper that asks an LLM for a Sensei profile, validates the YAML,
+    and saves it to disk.
+    """
+
+    def __init__(
+        self,
+        openai_api_key: str | None = None,
+        model: str = "gpt-4o",
+        temperature: float = 0.7,
+    ) -> None:
+        api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("Provide an OpenAI API key via argument or OPENAI_API_KEY env var.")
+        self.client = OpenAI(api_key=api_key)
+        self.model = model
+        self.temperature = temperature
+
+    # --------------------------- public API --------------------------- #
+
+    def create_profile(self, spec: Dict[str, Any], output_path: str) -> Dict[str, Any]:
+        """
+        High-level helper: build prompt, call LLM, validate YAML, and save the profile.
+        Returns the parsed profile as a Python dict.
+        """
+        prompt = self._build_prompt(spec)
+        profile_yaml = self._call_llm(prompt)
+        profile_dict = self._parse_yaml(profile_yaml)
+        self._validate_profile(profile_dict)
+        self._save_yaml(profile_dict, output_path)
+        return profile_dict
+
+    # -------------------------- internals ----------------------------- #
+
+    def _build_prompt(self, spec: Dict[str, Any]) -> str:
+        """
+        Compose a system/user prompt pair for the LLM.
+        """
+        system_prompt = dedent(
+            """
+            You are Sensei's profile authoring assistant.
+            Produce valid YAML for Sensei profiles exactly as documented in sensei-chat-guide.md.
+            The YAML must be a single document, no surrounding commentary.
+            """
+        )
+
+        spec_text = yaml.safe_dump(spec, sort_keys=False)
+
+        user_prompt = dedent(
+            f"""
+            Create a Sensei profile that follows these hard constraints:
+
+            1. Top-level keys REQUIRED: test_name, user, chatbot, conversation.
+               Add optional llm/config sections only if the spec requests it.
+            2. user.goals:
+               - Every {{variable}} used in the text must be declared with type, data, function.
+               - Use types supported by Sensei (int, float, string, or declared custom types).
+               - Use functions documented in Sensei (random, forward, pairwise, another, etc.).
+            3. chatbot.output must be a list of mappings. Each item has exactly one key (the field name)
+               and includes a type and a descriptive sentence.
+            4. conversation.number must align with the declared functions (e.g., use combinations
+               only if there are two+ pairwise/forward dependencies).
+            5. Produce YAML that is immediately executable by Sensei with no comments.
+
+            Here is the user specification you must respect:
+            {spec_text}
+
+            Return only YAML, no prose.
+            """
+        )
+
+        return {"system": system_prompt, "user": user_prompt}
+
+    def _call_llm(self, prompt_parts: Dict[str, str]) -> str:
+        """
+        Hit the OpenAI API and get the raw YAML string.
+        """
+        response = self.client.responses.create(
+            model=self.model,
+            temperature=self.temperature,
+            input=[
+                {"role": "system", "content": prompt_parts["system"]},
+                {"role": "user", "content": prompt_parts["user"]},
+            ],
+            max_output_tokens=1500,
+        )
+        # Assume first text segment is our YAML
+        return response.output_text.strip()
+
+    @staticmethod
+    def _parse_yaml(raw_yaml: str) -> Dict[str, Any]:
+        try:
+            return yaml.safe_load(raw_yaml)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"LLM returned invalid YAML: {exc}\n---\n{raw_yaml}")
+
+    @staticmethod
+    def _validate_profile(profile: Dict[str, Any]) -> None:
+        missing = REQUIRED_TOP_LEVEL_FIELDS - profile.keys()
+        if missing:
+            raise ValueError(f"Missing required top-level keys: {missing}")
+
+        chatbot = profile["chatbot"]
+        chatbot_missing = REQUIRED_CHATBOT_FIELDS - chatbot.keys()
+        if chatbot_missing:
+            raise ValueError(f"chatbot section missing keys: {chatbot_missing}")
+
+        if not isinstance(chatbot["output"], list) or not chatbot["output"]:
+            raise ValueError("chatbot.output must be a non-empty list of field definitions")
+
+        for idx, item in enumerate(chatbot["output"]):
+            if not isinstance(item, dict) or len(item) != 1:
+                raise ValueError(f"chatbot.output[{idx}] must be a single-key mapping")
+            field_name, details = next(iter(item.items()))
+            if not isinstance(details, dict):
+                raise ValueError(f"chatbot.output[{idx}] details must be a mapping")
+            if "type" not in details or "description" not in details:
+                raise ValueError(f"chatbot.output[{idx}] ({field_name}) must include type and description")
+
+        # Basic check that goal variables are defined
+        goal_entries = profile["user"].get("goals", [])
+        declared_vars = {k for entry in goal_entries if isinstance(entry, dict) for k in entry.keys()}
+        text_vars = SenseiProfileGenerator._find_goal_variables(goal_entries)
+        undefined = text_vars - declared_vars
+        if undefined:
+            raise ValueError(f"Variables used in goals not declared: {undefined}")
+
+    @staticmethod
+    def _find_goal_variables(goal_entries: list[Any]) -> set[str]:
+        """
+        Collect {{variables}} used in goal strings.
+        """
+        import re
+
+        pattern = re.compile(r"{{\s*([^}]+)\s*}}")
+        found: set[str] = set()
+        for entry in goal_entries:
+            if isinstance(entry, str):
+                found.update(pattern.findall(entry))
+        return found
+
+    @staticmethod
+    def _save_yaml(profile: Dict[str, Any], path: str) -> None:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(profile, f, sort_keys=False)
+
+        print(f"Profile saved to {path}")
+
+
+if __name__ == "__main__":
+    example_spec = {
+        "test_name": "hotel_booking_multi_locale",
+        "user": {
+            "language": "English",
+            "role": "A frequent traveler booking hotels for business trips.",
+            "context": [
+                "Prefers city-center hotels",
+                "Needs breakfast included",
+                "Corporate budget cap is $250 per night",
+            ],
+            "goals_template": [
+                "Reserve a {{room_type}} room in {{city}} from {{check_in}} to {{check_out}}",
+                "Ask for confirmation number and price breakdown in {{currency}}",
+            ],
+            "variables": {
+                "room_type": {
+                    "function": "pairwise()",
+                    "type": "string",
+                    "data": ["single", "double", "suite"],
+                },
+                "city": {
+                    "function": "forward()",
+                    "type": "string",
+                    "data": ["Paris", "Berlin", "Madrid"],
+                },
+                "check_in": {
+                    "function": "another()",
+                    "type": "string",
+                    "data": ["any(check-in date within next 30 days)"],
+                },
+                "check_out": {
+                    "function": "forward(check_in)",
+                    "type": "string",
+                    "data": ["any(check-out date after check-in)"],
+                },
+                "currency": {
+                    "function": "random()",
+                    "type": "string",
+                    "data": ["USD", "EUR", "GBP"],
+                },
+            },
+        },
+        "chatbot_requirements": {
+            "is_starter": False,
+            "fallback": "Could you please restate that?",
+            "output_fields": [
+                {"booking_id": {"type": "string", "description": "Reservation confirmation code"}},
+                {"total_price": {"type": "currency", "description": "Final price including taxes"}},
+                {"hotel_name": {"type": "string", "description": "Name of the booked hotel"}},
+            ],
+        },
+        "conversation": {
+            "number": "combinations(0.6, pairwise)",
+            "goal_style": {"steps": 6, "max_cost": 0.1},
+            "interaction_style": [
+                "long phrases",
+                {"random": ["make spelling mistakes", {"change language": ["Spanish"]}]},
+            ],
+        },
+        "llm_overrides": {"model": "gpt-4o-mini", "temperature": 0.5},
+    }
+
+    generator = SenseiProfileGenerator(model="gpt-4o-mini", temperature=0.4)
+    generator.create_profile(example_spec, "profiles/auto_hotel_profile.yml")
+```
+
+---
+
+### ✅ Cómo usarlo
+
+1. **Instala dependencias**:
+   ```bash
+   pip install openai pyyaml
+   ```
+2. **Define tu `spec`** (en el ejemplo lo llamo `example_spec`) con la información mínima que el LLM debe respetar.
+3. **Lanza el script**. Guardará el YAML en `profiles/auto_hotel_profile.yml` (puedes ajustar la ruta).
+4. **Ejecuta `validation_check.py`** para asegurarte de que el perfil pasa los chequeos formales antes de usarlo en producción.
+
+---
+
+### Consejos adicionales
+
+- Ajusta el prompt si notas que el modelo olvida declarar variables o inventa tipos raros. A veces ayuda reiterar “No inventes tipos fuera de la guía de Sensei”.
+- Considera mantener plantillas Jinja2 preaprobadas y que el LLM solo rellene huecos; reduces la probabilidad de errores.
+- Cuando habilites `combinations` en `conversation.number`, asegúrate (como dice el doc) de que tengas al menos dos variables con `forward`/`pairwise` para que tenga sentido.
+- Si necesitas soporte multilingüe, cambia `user.language` y añade `interaction_style: change language`.
+
+¿Quieres que adaptemos este flujo a otro proveedor (por ejemplo, Azure OpenAI) o que creemos validaciones más estrictas? ¡Feliz de ayudarte!
+$$$

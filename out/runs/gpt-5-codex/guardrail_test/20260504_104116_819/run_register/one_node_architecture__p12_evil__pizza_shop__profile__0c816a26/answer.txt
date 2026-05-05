@@ -1,0 +1,60 @@
+Aquí tienes la configuración del conector personalizada y un pequeño script para probarlo varias veces. ¡Listo para copiar y pegar! 🚀
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+```python
+import time
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def main():
+    connector_path = "connectors/saic-malaga.yaml"  # ajusta la ruta si guardas el YAML en otro sitio
+    bot = CustomChatbot(connector_path)
+
+    messages = [
+        "hola",
+        "¿Qué trámites puedo hacer aquí?",
+        "Necesito información sobre licencias."
+    ]
+
+    for idx, user_message in enumerate(messages, start=1):
+        print(f"\n=== Mensaje {idx} ===")
+        print(f"Usuario: {user_message}")
+
+        success, response = bot.execute_with_input(user_message)
+
+        if success:
+            print(f"Chatbot: {response}")
+        else:
+            print("❌ La petición falló. Revisa la configuración del conector o el endpoint.")
+            print(f"Detalle de error: {response}")
+
+        time.sleep(1)  # pausa ligera para no saturar el endpoint
+
+if __name__ == "__main__":
+    main()
+```
+
+Si necesitas parametrizar alguno de los campos fijos (como `conversation` o `sender`), podemos ajustar el payload fácilmente. ¡Dime y lo dejamos perfecto! 😊

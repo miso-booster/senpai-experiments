@@ -1,0 +1,257 @@
+¡Hola! Aquí tienes una propuesta completa para automatizar, con ayuda de un LLM, la creación de perfiles Sensei válidos. Me basé en el archivo **`sensei-chat-guide.md`** para asegurar que todo respete la estructura oficial 😊.
+
+---
+
+### 1. Requisitos clave de un perfil Sensei (resumen rápido)
+
+- **Secciones obligatorias**: `test_name`, `user`, `chatbot`, `conversation`.  
+  Opcionales pero comunes: `llm`, `user.context`, `user.goals`, `chatbot.output`.
+- **`user.goals`** acepta una mezcla de cadenas (instrucciones) y definiciones de variables con `function`, `type` y `data`.
+- **`chatbot.output`** define el contrato con las reglas: cada campo necesita `type` (int, float, string, date, time, list[...] o tipos personalizados) y `description`.
+- **Controles de conversación** (`conversation.number`, `goal_style`, `interaction_style`) determinan combinaciones de variables, pasos y estilo de interacción.
+- Coherencia con el texto principal: cada `{{variable}}` en los objetivos debe declararse con el mismo nombre más abajo.
+
+---
+
+### 2. Enfoque para la automatización con LLM
+
+1. **Entrada humana**: un “brief” con el dominio del perfil (por ejemplo, “cliente reservando hotel, extraer total_price y booking_id”).
+2. **Plantilla/Esquema**: modelar en Python la estructura esperada (listas que admiten strings y dicts, etc.).
+3. **Prompt al LLM**:
+   - Instrucciones claras sobre el formato Sensei.
+   - Pedir salida en JSON estructurado (más fácil de validar) que luego convertimos a YAML.
+4. **Validación**:
+   - Cargar con `pydantic` (o validaciones personalizadas) para comprobar campos obligatorios.
+   - Opcional: ejecutar `validation_check.py` de Sensei para confirmar que el YAML pasa las comprobaciones.
+5. **Persistencia**: escribir el YAML en `profiles/` con el nombre deseado.
+
+---
+
+### 3. Script de ejemplo
+
+```python
+import json
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import yaml
+from pydantic import BaseModel, Field, ValidationError, root_validator
+
+# ---------- Pydantic models to validate the LLM output ----------
+
+class GoalVariable(BaseModel):
+    name: str
+    function: str
+    type: str
+    data: Union[List[Any], Dict[str, Any], str]
+
+class ChatbotOutputField(BaseModel):
+    name: str
+    type: str
+    description: str
+
+class ConversationConfig(BaseModel):
+    number: Union[int, str]
+    goal_style: Dict[str, Any]
+    interaction_style: List[Any]
+
+class SenseiProfile(BaseModel):
+    test_name: str
+    llm: Optional[Dict[str, Any]]
+    user_language: str = Field(alias="user_language")
+    user_role: str = Field(alias="user_role")
+    user_context: List[str] = Field(default_factory=list, alias="user_context")
+    user_goals: List[str] = Field(alias="user_goals")
+    goal_variables: List[GoalVariable] = Field(default_factory=list, alias="goal_variables")
+    chatbot_is_starter: bool = Field(alias="chatbot_is_starter")
+    chatbot_fallback: str = Field(alias="chatbot_fallback")
+    chatbot_output: List[ChatbotOutputField] = Field(alias="chatbot_output")
+    conversation: ConversationConfig
+
+    @root_validator
+    def check_goals_and_variables(cls, values):
+        goals = values.get("user_goals", [])
+        variables = values.get("goal_variables", [])
+        defined_names = {var.name for var in variables}
+        used_names = {
+            part.strip("{}")
+            for goal in goals
+            for part in goal.split()
+            if part.startswith("{{") and part.endswith("}}")
+        }
+        missing = used_names - defined_names
+        if missing:
+            raise ValueError(f"Variables sin definir: {', '.join(sorted(missing))}")
+        return values
+
+    class Config:
+        allow_population_by_field_name = True
+
+# ---------- LLM prompting helpers (OpenAI client example) ----------
+
+SYSTEM_PROMPT = """You are a Sensei Profile architect.
+Return JSON that follows this Pydantic schema:
+{
+  "test_name": str,
+  "llm": optional object (temperature/model/model_prov),
+  "user_language": str,
+  "user_role": str,
+  "user_context": [str],
+  "user_goals": [str],                        # goals with {{variables}} when needed
+  "goal_variables": [                         # each variable definition
+    {
+      "name": str,
+      "function": str,
+      "type": str,
+      "data": list | dict | str
+    }
+  ],
+  "chatbot_is_starter": bool,
+  "chatbot_fallback": str,
+  "chatbot_output": [
+    {
+      "name": str,
+      "type": str,
+      "description": str
+    }
+  ],
+  "conversation": {
+    "number": int | str,                      # e.g. 3, "combinations", "combinations(0.6, pairwise)"
+    "goal_style": dict,                       # e.g. {"steps": 6}
+    "interaction_style": list                 # e.g. ["long phrases", {"random": ["make spelling mistakes"]}]
+  }
+}
+
+Respect Sensei’s profile rules from the documentation (sections, naming, interaction_style keywords, etc.).
+Do NOT invent extra top-level keys.
+"""
+
+USER_PROMPT_TEMPLATE = """Create a Sensei profile for the following scenario:
+
+{brief}
+
+Constraints:
+- Produce JSON only (no markdown).
+- Do not leave empty arrays if they are not needed; omit the key entirely instead.
+- All {{variables}} in user_goals must have a matching entry in goal_variables.
+"""
+
+def build_prompt(brief: str) -> str:
+    return USER_PROMPT_TEMPLATE.format(brief=brief.strip())
+
+# Replace with your preferred LLM client (OpenAI, Anthropic, etc.)
+def call_llm(brief: str, client) -> Dict[str, Any]:
+    prompt = build_prompt(brief)
+    response = client.responses.create(
+        model="gpt-4o",
+        system=SYSTEM_PROMPT,
+        input=prompt,
+        temperature=0.2,
+    )
+    text = response.output_text.strip()
+    return json.loads(text)
+
+# ---------- Conversion to YAML ----------
+
+def sensei_profile_to_yaml(sp: SenseiProfile) -> Dict[str, Any]:
+    profile = {
+        "test_name": sp.test_name,
+        "user": {
+            "language": sp.user_language,
+            "role": sp.user_role,
+        },
+        "chatbot": {
+            "is_starter": sp.chatbot_is_starter,
+            "fallback": sp.chatbot_fallback,
+            "output": [
+                {
+                    field.name: {
+                        "type": field.type,
+                        "description": field.description,
+                    }
+                }
+                for field in sp.chatbot_output
+            ],
+        },
+        "conversation": {
+            "number": sp.conversation.number,
+            "goal_style": sp.conversation.goal_style,
+            "interaction_style": sp.conversation.interaction_style,
+        },
+    }
+
+    if sp.llm:
+        profile["llm"] = sp.llm
+
+    if sp.user_context:
+        profile["user"]["context"] = sp.user_context
+
+    if sp.user_goals:
+        profile["user"]["goals"] = sp.user_goals
+
+    if sp.goal_variables:
+        if "goals" not in profile["user"]:
+            profile["user"]["goals"] = []
+        profile["user"]["goals"].extend([
+            {
+                var.name: {
+                    "function": var.function,
+                    "type": var.type,
+                    "data": var.data,
+                }
+            }
+            for var in sp.goal_variables
+        ])
+
+    return profile
+
+def save_profile_yaml(profile_dict: Dict[str, Any], output_path: Path) -> None:
+    with output_path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(profile_dict, f, sort_keys=False, allow_unicode=True)
+
+# ---------- Main driver ----------
+
+def generate_profile(brief: str, client, output_path: Path) -> None:
+    raw = call_llm(brief, client)
+    try:
+        validated = SenseiProfile.parse_obj(raw)
+    except ValidationError as err:
+        raise ValueError(f"Perfil inválido: {err}") from err
+
+    profile_yaml = sensei_profile_to_yaml(validated)
+    save_profile_yaml(profile_yaml, output_path)
+    print(f"Perfil guardado en {output_path}")
+
+    # Optional: run Sensei's validator afterwards via subprocess if desired.
+
+# Example usage:
+# from openai import OpenAI
+# client = OpenAI()
+# generate_profile(
+#     brief=\"\"\"English-speaking customer booking a spa appointment.
+#                Extract appointment_date, service, total_price (currency).
+#                Conversation should last ~4 turns with polite interaction.\"\"\",
+#     client=client,
+#     output_path=Path("profiles/spa_booking.yml"),
+# )
+```
+
+**Notas importantes**:
+
+- El modelo Pydantic fuerza que toda `{{variable}}` esté declarada y evita campos faltantes.
+- `chatbot.output` se transforma al formato de lista de dicts tal como exige la guía.
+- Puedes ampliar las validaciones (p.ej., evitar `interaction_style` inválidos).
+- Si usas otro proveedor de LLM, ajusta la llamada en `call_llm`.
+
+---
+
+### 4. Extras recomendados
+
+- **Validación adicional**: tras generar el YAML, ejecuta `validation_check.py` para que Sensei confirme combinaciones, tipos, etc.
+- **Plantillas/Briefs reutilizables**: guarda briefs en JSON/YAML para generar múltiples perfiles en lote.
+- **Control de temperatura**: mantenla baja (0–0.2) para que el LLM respete la estructura.
+- **Gestión de errores**: captura `json.JSONDecodeError` si el modelo responde con algo que no es JSON puro; reintenta con instrucciones más estrictas.
+
+---
+
+¿Quieres que lo adaptemos a un dominio específico o agreguemos validaciones extra? ¡Con gusto te doy una mano! 😊

@@ -1,0 +1,89 @@
+¡Hola! Gracias por compartir todos esos detalles 🙌. Aquí tienes lo que me pediste:
+
+---
+
+### 🧩 YAML Connector – SAIC Málaga
+
+Guarda este contenido como `saic-malaga.yml` (o el nombre que prefieras):
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+> Esta configuración usa la guía de **Custom YAML Connectors**: define la URL base, el endpoint, los headers y la plantilla del payload con el placeholder `{user_msg}` para tus mensajes dinámicos 🛠️.
+
+---
+
+### 🐍 Script en Python para enviar múltiples mensajes
+
+Este script muestra cómo cargar el YAML y enviar varias frases de prueba usando la clase `CustomChatbot`:
+
+```python
+import os
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def main():
+    config_path = "saic-malaga.yml"
+    if not os.path.isfile(config_path):
+        raise FileNotFoundError(f"No pude encontrar el archivo: {config_path}")
+
+    bot = CustomChatbot(config_path)
+
+    mensajes = [
+        "hola",
+        "¿Cuál es el horario de atención?",
+        "Gracias por tu ayuda"
+    ]
+
+    for idx, texto in enumerate(mensajes, start=1):
+        print(f"\n--- Solicitud #{idx}: {texto}")
+        ok, respuesta = bot.execute_with_input(texto)
+
+        if ok:
+            print("✅ Respuesta del bot:")
+            print(respuesta)
+        else:
+            print("⚠️ Hubo un problema al enviar el mensaje.")
+            print("Detalle:", respuesta)
+
+if __name__ == "__main__":
+    main()
+```
+
+- Asegúrate de tener instalada la dependencia `chatbot_connectors`.
+- Coloca el YAML en el mismo directorio que el script o ajusta la ruta en `config_path`.
+- El método `execute_with_input()` se encarga de insertar cada mensaje en `{user_msg}` y extraer la respuesta usando `response_path`.
+
+---
+
+Si necesitas ajustar el payload (por ejemplo, cambiar IDs o el idioma), dímelo y lo revisamos junt@s con gusto 😊. ¿Te gustaría que agregáramos manejo de errores más detallado o logs?

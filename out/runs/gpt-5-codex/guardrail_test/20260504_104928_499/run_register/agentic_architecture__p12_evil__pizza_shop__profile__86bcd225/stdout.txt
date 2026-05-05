@@ -1,0 +1,138 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__86bcd225
+$$$
+Aquí tienes el conector y el script listos para usar 😊
+
+### Conector YAML
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Accept: "*/*"
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Script en Python para lanzar múltiples peticiones
+```python
+#!/usr/bin/env python3
+import argparse
+import copy
+import json
+from pathlib import Path
+from typing import Any
+
+import requests
+import yaml
+
+
+def load_config(path: Path) -> dict:
+    with path.open("r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def replace_user_msg(template: Any, user_msg: str) -> Any:
+    if isinstance(template, str):
+        return template.replace("{user_msg}", user_msg)
+    if isinstance(template, dict):
+        return {k: replace_user_msg(v, user_msg) for k, v in template.items()}
+    if isinstance(template, list):
+        return [replace_user_msg(item, user_msg) for item in template]
+    return copy.deepcopy(template)
+
+
+def extract_response(json_data: Any, path: str) -> Any:
+    current = json_data
+    for token in path.split("."):
+        if isinstance(current, list):
+            index = int(token)
+            current = current[index]
+        else:
+            current = current[token]
+    return current
+
+
+def send_messages(config_path: Path, messages: list[str], timeout: int = 30) -> None:
+    config = load_config(config_path)
+
+    base_url = config["base_url"].rstrip("/")
+    send_conf = config["send_message"]
+    url = f"{base_url}{send_conf['path']}"
+
+    method = send_conf.get("method", "POST").upper()
+    headers = send_conf.get("headers", {})
+    payload_template = send_conf["payload_template"]
+    response_path = config["response_path"]
+
+    for idx, user_msg in enumerate(messages, 1):
+        payload = replace_user_msg(payload_template, user_msg)
+        response = requests.request(
+            method=method,
+            url=url,
+            headers=headers,
+            json=payload,
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        data = response.json()
+        bot_reply = extract_response(data, response_path)
+
+        print(f"--- Conversación #{idx} ---")
+        print(f"Usuario: {user_msg}")
+        print(f"Bot: {bot_reply}")
+        print()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Enviar mensajes al conector SAIC Málaga.")
+    parser.add_argument(
+        "config_path",
+        type=Path,
+        help="Ruta al archivo YAML del conector (p. ej. saic-malaga-bot.yaml)",
+    )
+    parser.add_argument(
+        "-m",
+        "--message",
+        action="append",
+        dest="messages",
+        help="Mensaje a enviar (puedes repetir la opción para varios mensajes)",
+    )
+
+    args = parser.parse_args()
+
+    if not args.messages:
+        args.messages = [
+            "Hola, ¿puedes ayudarme?",
+            "Necesito información sobre trámites municipales.",
+            "Gracias, hasta luego.",
+        ]
+
+    send_messages(args.config_path, args.messages)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Notas y referencias
+- Configuré el YAML siguiendo las pautas de `custom-connector-guide.md`, usando `payload_template` con `{user_msg}` y `response_path` para extraer `response.0.text`.
+- Tomé como referencia adicional el ejemplo de MillionBot en `connector-examples.md`, adaptándolo a los IDs, cabeceras y URL que facilitaste.
+- El script de Python carga el YAML, sustituye el mensaje del usuario, envía tantas peticiones como quieras y muestra la respuesta procesada con el `response_path`.
+
+Si necesitas que guardemos el conector con un nombre específico o que el script lea los mensajes desde un archivo, dímelo y lo ajustamos.
+$$$

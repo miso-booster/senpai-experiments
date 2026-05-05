@@ -1,0 +1,82 @@
+¡Hola! Qué gusto verte por aquí 😊. Listo, te dejo todo preparado paso a paso:
+
+---
+
+### 📄 Conector YAML propuesto
+
+Guárdalo como, por ejemplo, `saic-malaga.yml` dentro de tu carpeta de conectores:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+> 📝 Nota: El header `Content-Length` lo maneja automáticamente la librería HTTP, así que no hace falta incluirlo en el YAML.
+
+---
+
+### 🐍 Script en Python para enviar múltiples mensajes
+
+Este script usa el conector anterior y lanza varias interacciones de forma consecutiva (puedes ajustar la lista de mensajes a tu gusto):
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def main():
+    # Actualiza la ruta al archivo YAML según tu estructura local
+    connector_path = r"E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\users\user_1\connectors\saic-malaga.yml"
+
+    bot = CustomChatbot(connector_path)
+
+    messages = [
+        "hola",
+        "Necesito información sobre trámites municipales.",
+        "¿Cuál es el horario de atención?"
+    ]
+
+    for idx, user_msg in enumerate(messages, start=1):
+        success, response = bot.execute_with_input(user_msg)
+
+        print(f"\n--- Mensaje #{idx} ---")
+        print(f"Usuario: {user_msg}")
+
+        if success:
+            print(f"Bot: {response}")
+        else:
+            print("Hubo un problema al contactar con el bot. Revisa la configuración y vuelve a intentarlo.")
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+Si necesitas añadir más headers, personalizar los mensajes o registrar el conector en la fábrica de bots, dime y te ayudo encantado 💪. ¿Quieres que revisemos también cómo integrarlo en tu flujo actual?

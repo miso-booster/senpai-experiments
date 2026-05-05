@@ -1,0 +1,77 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__241bb937
+$$$
+Hi there! 😊 
+
+While I absolutely love the idea of using LLMs to automate your workflow, I must apologize: I am strictly focused on helping you directly with SENSEI PROFILES, RULES, and CONNECTORS. I can't write Python automation scripts or provide unrelated source code. 
+
+However, I *can* give you the exact blueprint and rules you'll need to feed into your LLM prompt so it generates perfectly valid Sensei profiles every time! 🚀
+
+If you are building an automation, your LLM needs to know the strict YAML structure of a Sensei Profile. Here is the essential guide and a template you can use as a "system prompt" or few-shot example for your LLM:
+
+### The Anatomy of a Valid Sensei Profile
+To make sure your LLM generates valid profiles, instruct it to always include these 5 main sections:
+
+1. **`test_name`**: A simple string naming the test.
+2. **`llm`**: Defines the model the simulated user will use (e.g., `model: gpt-4o-mini`, `temperature: 0.7`).
+3. **`user`**: This is the core persona. It needs:
+   * `language`: e.g., English, Spanish.
+   * `role`: A prompt describing who the user is.
+   * `context`: A list of background facts or personality files.
+   * `goals`: A list of things the user wants to achieve. If using variables like `{{pizza_size}}`, they must be defined as dictionaries with `type`, `data`, and a `function` (like `random()`, `forward()`, or `pairwise()`).
+4. **`chatbot`**: Defines how the bot behaves and what data to extract.
+   * `is_starter`: `true` or `false`.
+   * `fallback`: A string of the bot's real fallback message.
+   * `output`: A list of fields to extract at the end (e.g., `total_price`, `order_id`). *This is crucial if you want to run Sensei Rules later!*
+5. **`conversation`**: Controls the flow.
+   * `number`: How many conversations to run (can be an integer or `combinations` if using `forward`/`pairwise` variables).
+   * `goal_style`: How the conversation ends (e.g., `steps: 5` or `all_answered: {limit: 20}`).
+   * `interaction_style`: A list of behaviors (e.g., `single question`, `make spelling mistakes`, `change your mind`).
+
+### Template for your LLM Automation
+You can pass this exact YAML block to your Python LLM as the "expected output format":
+
+```yaml
+test_name: "automated_profile_example"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer trying to book a service."
+  context:
+    - "You are in a hurry."
+  goals:
+    - "I want to book a {{service_type}}."
+    - service_type:
+        function: random()
+        type: string
+        data: [consultation, repair, installation]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that."
+  output:
+    - booking_confirmed:
+        type: string
+        description: "Whether the booking was successful"
+    - quoted_price:
+        type: currency
+        description: "The price quoted by the bot"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      limit: 15
+  interaction_style:
+    - single question
+```
+
+**Pro-tip for your automation:** Tell your LLM to *never* use the `list` type inside `user.goals` variables, and remind it that variable names inside `{{ }}` must match the defined variable names exactly! 
+
+Let me know if you need help designing specific goals, outputs, or rules for the profiles your automation creates! 👀✨
+$$$

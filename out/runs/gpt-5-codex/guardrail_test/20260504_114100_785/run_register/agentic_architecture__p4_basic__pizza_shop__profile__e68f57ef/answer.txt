@@ -1,0 +1,226 @@
+Hey there! 😄 Here’s how you can spin up a Python automation that leans on an LLM to draft **valid Sensei profiles** end-to-end. I’m grounding everything in the official profile guide (`sensei-chat-guide.md`), which lays out the required sections (`test_name`, `user`, `chatbot`, `conversation`, etc.) and the contracts you need to respect.
+
+---
+
+### 🔑 What counts as a “valid” profile?
+
+From `sensei-chat-guide.md`, every Sensei profile must include:
+
+| Section       | Must contain… |
+|---------------|----------------|
+| `test_name`   | Unique name for the run |
+| `llm` *(optional)* | Overrides for temperature/model/format |
+| `user`        | `language`, `role`, `context`, and `goals` (with any `{{variables}}` declared) |
+| `chatbot`     | `is_starter`, `fallback`, and `output` schema (fields and types that rules will consume) |
+| `conversation`| `number`, `goal_style`, and `interaction_style` directives |
+
+So, whatever the LLM produces has to tick each of those boxes and keep variable/type names consistent.
+
+---
+
+### 🛠️ Automation flow
+
+1. **Collect inputs** you want the LLM to condition on (domain, persona, outputs, etc.).
+2. **Prompt the LLM** with a carefully structured instruction that mirrors the Sensei schema.
+3. **Parse and validate** the LLM’s reply:
+   - Make sure required keys are there.
+   - Catch obvious mistakes (e.g., undefined `{{variables}}`, empty outputs).
+4. **Serialize to YAML** with keys ordered the way Sensei expects.
+5. **Optional polish**: run the generated file through `validation_check.py` later for extra safety.
+
+---
+
+### 🧩 Example Python scaffold
+
+Here’s a self-contained script that uses OpenAI’s SDK, rejects malformed replies with `jsonschema`, and saves a ready-to-run profile:
+
+```python
+```python
+import json
+from pathlib import Path
+from typing import Any, Dict
+
+import yaml
+from jsonschema import ValidationError, validate
+from openai import OpenAI
+
+# --- 1) JSON Schema matching the minimum sections from sensei-chat-guide.md ---
+PROFILE_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "required": ["test_name", "user", "chatbot", "conversation"],
+    "properties": {
+        "test_name": {"type": "string", "minLength": 1},
+        "llm": {"type": "object"},
+        "user": {
+            "type": "object",
+            "required": ["language", "role", "context", "goals"],
+            "properties": {
+                "language": {"type": "string"},
+                "role": {"type": "string"},
+                "context": {"type": "array", "items": {"type": ["string", "object"]}},
+                "goals": {"type": "array"},
+            },
+        },
+        "chatbot": {
+            "type": "object",
+            "required": ["is_starter", "fallback", "output"],
+            "properties": {
+                "is_starter": {"type": "boolean"},
+                "fallback": {"type": "string"},
+                "output": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "minProperties": 1,
+                        "additionalProperties": {
+                            "type": "object",
+                            "required": ["type", "description"],
+                            "properties": {
+                                "type": {"type": "string"},
+                                "description": {"type": "string"},
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        "conversation": {
+            "type": "object",
+            "required": ["number", "goal_style", "interaction_style"],
+            "properties": {
+                "number": {"type": ["integer", "string"]},
+                "goal_style": {"type": ["integer", "object"]},
+                "interaction_style": {"type": "array"},
+                "max_cost": {"type": ["number", "string"]},
+            },
+        },
+    },
+}
+
+PROMPT_TEMPLATE = """You are a Sensei (Chatbot Dojo) profile generator.
+Follow EXACTLY the schema described below and return valid JSON only (no markdown fences).
+
+Schema requirements (summarised from sensei-chat-guide.md):
+- test_name: unique slug.
+- llm (optional): temperature, model, model_prov, format.type.
+- user: language, role, context (list of strings or persona refs), goals.
+  * Every goal string may include {{variables}}.
+  * For each {{variable}}, also include a mapping item in goals declaring function, type, data.
+- chatbot: is_starter, fallback (realistic bot fallback), output (list of mappings with type + description).
+- conversation: number (int or combinations directive), goal_style (steps/random/all_answered structure), interaction_style (keywords like 'long phrases', 'change your mind', 'change language', etc.).
+
+Guidelines:
+- Keep types aligned with Sensei defaults (string, int, float, currency, date(...), time(...), list[...]) or named custom types.
+- If you reference personalities/, make sure the filename looks right (e.g., personalities/calmperson.yml).
+- Goal variables must match their {{variable}} usage exactly.
+- Choose sensible interaction_style combinations.
+- Avoid hallucinating undefined keys.
+
+Return JSON with those keys only.
+
+Context to use:
+{context}
+"""
+
+def build_prompt(context: Dict[str, Any]) -> str:
+    return PROMPT_TEMPLATE.format(context=json.dumps(context, indent=2))
+
+def call_llm(prompt: str, model: str = "gpt-4.1-mini") -> Dict[str, Any]:
+    client = OpenAI()
+    response = client.responses.create(
+        model=model,
+        temperature=0.2,
+        input=[
+            {
+                "role": "system",
+                "content": "You draft Sensei profile JSON that strictly matches the required schema."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
+        ],
+        response_format={"type": "json_object"},
+    )
+    raw = response.output[0].content[0].text
+    return json.loads(raw)
+
+def validate_profile(profile: Dict[str, Any]) -> None:
+    validate(instance=profile, schema=PROFILE_SCHEMA)
+
+    # Extra sanity checks
+    goals = profile["user"]["goals"]
+    goal_strings = [g for g in goals if isinstance(g, str)]
+    declared_variables = {list(item.keys())[0] for item in goals if isinstance(item, dict)}
+    used_variables = {
+        fragment.strip("{}")
+        for goal in goal_strings
+        for fragment in goal.split()
+        if fragment.startswith("{{") and fragment.endswith("}}")
+    }
+    missing = used_variables - declared_variables
+    if missing:
+        raise ValidationError(f"Missing variable declarations for: {', '.join(sorted(missing))}")
+
+def dump_yaml(profile: Dict[str, Any], output_path: Path) -> None:
+    output_path.write_text(
+        yaml.safe_dump(profile, sort_keys=False, allow_unicode=True),
+        encoding="utf-8",
+    )
+
+def main():
+    # You can replace this with a CLI/GUI/Config file
+    context = {
+        "domain": "inbound travel agency support",
+        "user_language": "English",
+        "persona": [
+            "You are planning a honeymoon trip to Japan in spring.",
+            "You have a mid-range budget and prefer boutique hotels.",
+            "You must collect airline options, lodging ideas, and activity proposals."
+        ],
+        "must_capture_outputs": [
+            {"field": "itinerary_summary", "type": "string", "description": "High-level plan summarised by the bot"},
+            {"field": "estimated_budget", "type": "currency", "description": "Total estimated budget"},
+            {"field": "destinations", "type": "list[string]", "description": "Cities or areas recommended"}
+        ],
+        "conversation_preferences": {
+            "max_steps": 8,
+            "interaction_styles": ["long phrases", "change your mind"]
+        },
+        "fallback_text": "I'm sorry, could you clarify what you mean?"
+    }
+
+    prompt = build_prompt(context)
+    profile = call_llm(prompt)
+    validate_profile(profile)
+
+    output_path = Path("profiles/generated_travel_profile.yml")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    dump_yaml(profile, output_path)
+
+    print(f"Profile generated at {output_path}")
+
+if __name__ == "__main__":
+    main()
+```
+```
+
+#### Why this works
+- **Prompt discipline:** we echo the Sensei schema straight from `sensei-chat-guide.md`.
+- **Structured output:** `response_format={"type": "json_object"}` forces the model to stick to JSON, so converting to YAML is easy.
+- **Validation:** `jsonschema` ensures required sections exist, and the extra check makes sure every `{{variable}}` has a matching declaration in `user.goals`.
+- **YAML dump:** preserves key order (`sort_keys=False`) so the file looks familiar to Sensei authors.
+
+---
+
+### 🚀 How to adapt it
+
+1. **Swap in your own context** (maybe load from a YAML/JSON spec or CLI args).
+2. **Extend the schema** if you need to enforce custom `llm` defaults or bespoke goal rules.
+3. **Add a retry loop** that nudges the LLM when validation fails (e.g., send the error message back so it can correct the draft).
+4. **Integrate with CI**: after generating files, run `validation_check.py` or even invoke Sensei with `--dry-run` to guarantee nothing breaks.
+5. **Support multiple profiles**: iterate over a list of contexts, or let the LLM emit an array of profiles and validate each.
+
+---
+
+Feel free to tweak the style, swap models/providers, or bake in post-processing (like enforcing `interaction_style` keywords from the docs). If you need a CLI wrapper or want to pair this with rule generation later, happy to help!

@@ -1,0 +1,72 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__6f0de0e5
+$$$
+Hey! I can help you create a Python automation script that uses LLM models to generate valid Sensei profiles. This script will guide the LLM to produce YAML profiles following the Sensei Profiles documentation, ensuring the output is valid and ready to use.
+
+Here's a simple example using OpenAI's GPT API (you can adapt it to other LLMs). The script prompts the model to generate a Sensei profile YAML based on user inputs like test name, user role, goals, and chatbot output fields.
+
+```python
+import openai
+import yaml
+
+openai.api_key = "your-openai-api-key"
+
+def generate_sensei_profile(test_name, user_role, user_goals, chatbot_outputs, language="English"):
+    prompt = f"""
+You are an expert Sensei profile author. Generate a valid Sensei profile YAML for a chatbot test.
+
+Requirements:
+- test_name: {test_name}
+- user.language: {language}
+- user.role: {user_role}
+- user.goals: {user_goals}
+- chatbot.output: {chatbot_outputs}
+
+Follow the Sensei Profiles specification strictly. Use appropriate types for chatbot outputs (string, int, currency, time, etc.).
+Include a conversation section with number: 3, goal_style: steps: 5, and interaction_style: single question.
+
+Return only the YAML content without extra explanations.
+"""
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+        max_tokens=500,
+    )
+
+    profile_yaml = response.choices[0].message.content.strip()
+    return profile_yaml
+
+if __name__ == "__main__":
+    test_name = "pizza_order_smoke_test"
+    user_role = "A customer ordering a pizza with specific preferences."
+    user_goals = [
+        "Order a {{size}} {{pizza_type}} pizza with {{toppings}}.",
+        "Request {{number}} cans of {{drink}}."
+    ]
+    chatbot_outputs = [
+        {"price": {"type": "currency", "description": "Final price of the order"}},
+        {"order_id": {"type": "string", "description": "Unique order identifier"}},
+        {"estimated_time": {"type": "time(hh:mm)", "description": "Estimated preparation time"}}
+    ]
+
+    profile_yaml = generate_sensei_profile(test_name, user_role, user_goals, chatbot_outputs)
+    print(profile_yaml)
+
+    # Optionally, validate YAML syntax
+    try:
+        parsed = yaml.safe_load(profile_yaml)
+        print("\nYAML is valid!")
+    except yaml.YAMLError as e:
+        print("\nYAML validation error:", e)
+```
+
+### How this works:
+- You provide the test name, user role description, user goals (with variables), and chatbot output fields.
+- The prompt instructs the LLM to generate a valid Sensei profile YAML matching the Sensei Profiles spec.
+- The script prints the YAML and optionally validates it with PyYAML.
+
+---
+
+If you want, I can help you customize this further or generate a sample profile YAML right now! Just let me know 😊
+$$$

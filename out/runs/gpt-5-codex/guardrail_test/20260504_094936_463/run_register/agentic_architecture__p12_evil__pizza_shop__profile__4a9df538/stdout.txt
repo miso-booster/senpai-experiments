@@ -1,0 +1,116 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__4a9df538
+$$$
+Here you go! Based on the connector format from `custom-connector-guide.md` and the MillionBot example in `connector-examples.md`, here’s the YAML connector plus a Python helper to fire multiple requests 🚀
+
+### SENSEI connector
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Python script (send multiple requests)
+```python
+import copy
+import requests
+import yaml
+from pathlib import Path
+from typing import Any, Dict
+
+CONFIG_PATH = Path("saic-malaga-connector.yaml")  # update if you save the YAML elsewhere
+
+
+def load_connector_config(path: Path) -> Dict[str, Any]:
+    with path.open("r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def build_payload(template: Any, user_msg: str) -> Any:
+    """
+    Recursively walk the payload_template and replace {user_msg}.
+    Works for dicts, lists, and strings.
+    """
+    if isinstance(template, dict):
+        return {key: build_payload(value, user_msg) for key, value in template.items()}
+    if isinstance(template, list):
+        return [build_payload(item, user_msg) for item in template]
+    if isinstance(template, str):
+        return template.replace("{user_msg}", user_msg)
+    return template
+
+
+def send_message(session: requests.Session, config: Dict[str, Any], user_msg: str) -> Dict[str, Any]:
+    url = config["base_url"].rstrip("/") + config["send_message"]["path"]
+    headers = config["send_message"].get("headers", {})
+
+    payload_template = config["send_message"]["payload_template"]
+    payload = build_payload(payload_template, user_msg)
+
+    response = session.post(url, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+
+def extract_response_text(resp_json: Dict[str, Any], response_path: str) -> Any:
+    """
+    Traverse the JSON using dot notation (e.g., 'response.0.text').
+    """
+    parts = response_path.split(".")
+    current = resp_json
+    for part in parts:
+        if isinstance(current, list):
+            current = current[int(part)]
+        else:
+            current = current[part]
+    return current
+
+
+def main():
+    config = load_connector_config(CONFIG_PATH)
+    response_path = config["response_path"]
+
+    messages = [
+        "hola",
+        "¿Puedes ayudarme con una cita?",
+        "Necesito información sobre trámites municipales."
+    ]
+
+    with requests.Session() as session:
+        for msg in messages:
+            try:
+                print(f"\n> Enviando: {msg}")
+                resp_json = send_message(session, config, msg)
+                reply = extract_response_text(resp_json, response_path)
+                print(f"< Respuesta: {reply}")
+            except Exception as exc:
+                print(f"! Error al enviar '{msg}': {exc}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Quick notes
+- Save the YAML as `saic-malaga-connector.yaml` (or update `CONFIG_PATH` accordingly).
+- The Python script loads the connector, swaps `{user_msg}` into the payload template, sends each message, and pulls out the reply using the declared `response_path`.
+
+Let me know if you’d like to tweak headers, add retries, or turn this into an async script. Happy to help! 😊
+$$$

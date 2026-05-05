@@ -1,0 +1,113 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__56698064
+$$$
+To create a Python automation that generates valid SENSEI profiles using an LLM, we need to provide the LLM with a strong **System Prompt** that explains the SENSEI YAML schema (based on the `sensei-chat-guide.md` documentation). 
+
+The script below uses the official `openai` Python library. It defines the exact rules for `user.goals`, `chatbot.output`, and `conversation` controls so that the LLM understands how to map your plain-English descriptions into a valid SENSEI profile.
+
+### Python Automation Script
+
+You will need to install the OpenAI package (`pip install openai pyyaml`) and have an API key.
+
+```python
+import os
+import re
+import yaml
+from openai import OpenAI
+
+# Initialize the OpenAI client
+# Ensure you have set the OPENAI_API_KEY environment variable
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+# This system prompt acts as the "Sensei Expert" and enforces the YAML schema
+SENSEI_PROFILE_SYSTEM_PROMPT = """
+You are an expert in creating valid SENSEI profiles (YAML files) for chatbot testing.
+A SENSEI profile defines how a user simulator behaves, its goals, and what data to extract.
+
+Here is the required YAML structure and rules:
+1. `test_name`: A string representing the test name.
+2. `llm`: (Optional) LLM configuration (temperature, model, model_prov, format).
+3. `user`:
+   - `language`: e.g., English, Spanish.
+   - `role`: A prompt describing the simulated user.
+   - `context`: A list of strings (constraints, facts, preferences).
+   - `goals`: A list containing string prompts with {{variables}} AND dictionaries defining those variables.
+     - Variable definitions must have: `function` (e.g., random(), default(), forward(), pairwise()), `type` (string, int, float), and `data` (a list of values or min/max/step).
+4. `chatbot`:
+   - `is_starter`: boolean (true/false).
+   - `fallback`: string (the bot's fallback message).
+   - `output`: A list of dictionaries defining fields to extract. Each field needs a `type` (string, int, float, currency, time("hh:mm"), etc.) and `description`.
+5. `conversation`:
+   - `number`: int or "combinations" / "combinations(0.5, pairwise)".
+   - `goal_style`: e.g., `steps: 5` or `all_answered: {export: true}`.
+   - `interaction_style`: A list of styles (e.g., "long phrases", "make spelling mistakes", "single questions", "change language: [Spanish, German]", or a "random" block).
+
+CRITICAL RULES:
+- Every {{variable}} in a goal string MUST have a corresponding definition in the `goals` list with exactly the same name.
+- Output ONLY valid YAML. Do not include explanations.
+"""
+
+def generate_sensei_profile(description: str, output_filename: str = "generated_profile.yml"):
+    print(f"🤖 Generating SENSEI profile for: '{description}'...")
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o", # You can use gpt-4o or gpt-4-turbo for best YAML generation
+            temperature=0.2, # Low temperature for more deterministic schema adherence
+            messages=[
+                {"role": "system", "content": SENSEI_PROFILE_SYSTEM_PROMPT},
+                {"role": "user", "content": f"Create a SENSEI profile based on this description:\n{description}"}
+            ]
+        )
+        
+        raw_output = response.choices[0].message.content.strip()
+        
+        # Clean up markdown formatting if the LLM adds ```yaml ... ```
+        yaml_content = re.sub(r"^```yaml\n|```$", "", raw_output, flags=re.MULTILINE).strip()
+        
+        # Validate that it is actually valid YAML
+        parsed_yaml = yaml.safe_load(yaml_content)
+        
+        # Save to file
+        os.makedirs("profiles", exist_ok=True)
+        filepath = os.path.join("profiles", output_filename)
+        
+        with open(filepath, "w", encoding="utf-8") as f:
+            yaml.dump(parsed_yaml, f, sort_keys=False, allow_unicode=True)
+            
+        print(f"✅ Successfully generated and saved profile to: {filepath}")
+        return filepath
+        
+    except yaml.YAMLError as e:
+        print(f"❌ The LLM generated invalid YAML: {e}")
+        print("Raw output was:\n", raw_output)
+    except Exception as e:
+        print(f"❌ An error occurred: {e}")
+
+# ==========================================
+# Example Usage
+# ==========================================
+if __name__ == "__main__":
+    # Describe the chatbot scenario you want to test
+    scenario_description = """
+    I need a profile to test a pizza ordering chatbot. 
+    The user should speak English and act like a hungry college student. 
+    They want to order a pizza with a specific size (small, medium, large) and a topping (pepperoni, mushrooms, extra cheese). 
+    Use pairwise combinations for the size and topping. 
+    The chatbot should extract the final 'total_price' (currency) and 'order_id' (string). 
+    The user should occasionally make spelling mistakes.
+    """
+    
+    generate_sensei_profile(
+        description=scenario_description, 
+        output_filename="pizza_student_profile.yml"
+    )
+```
+
+### How this works:
+1. **System Prompt Engineering**: The `SENSEI_PROFILE_SYSTEM_PROMPT` distills the SENSEI documentation into strict rules. It tells the LLM exactly how to format variables (`{{var}}`), how to assign data generation functions (`pairwise()`, `random()`), and how to structure the `chatbot.output` schema.
+2. **Regex Cleanup**: LLMs often wrap their code in markdown blocks (e.g., ````yaml ````). The script uses a regular expression to strip these out so the file is pure YAML.
+3. **YAML Validation**: Before saving, it runs `yaml.safe_load()` to ensure the LLM didn't break the YAML syntax.
+4. **File Output**: It automatically saves the generated file into a `profiles/` directory, making it immediately ready to be run by Sensei using `python sensei_chat.py --user-profile profiles/generated_profile.yml`.
+
+You can easily adapt this script to run in a loop over a CSV of test scenarios to generate hundreds of profiles automatically! Let me know if you need help tweaking the prompt for specific custom types or advanced SENSEI features. 😊
+$$$

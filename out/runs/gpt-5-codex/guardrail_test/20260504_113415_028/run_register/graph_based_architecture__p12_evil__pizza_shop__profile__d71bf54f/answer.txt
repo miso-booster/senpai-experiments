@@ -1,0 +1,74 @@
+Hola 👋, aquí tienes el conector y el script listos para usar. Si necesitas pulir algo más, dime sin problema 😊.
+
+---
+
+### 1. Nuevo conector YAML (`saic-malaga.yml`)
+
+Guárdalo dentro de tu carpeta `connectors`:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+> Nota: `{user_msg}` será reemplazado automáticamente por el texto que envíes en cada petición.
+
+---
+
+### 2. Script en Python para enviar múltiples mensajes
+
+Este ejemplo usa la clase `CustomChatbot` (tal y como recomienda la guía). Ajusta la lista `messages_to_send` con las frases que quieras probar.
+
+```python
+from pathlib import Path
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def main():
+    # Ajusta la ruta si guardaste el YAML en otro lugar
+    config_path = Path(
+        r"E:\ESCRITORIO\Py_projects\SENPAI\graph_based\Senpai-Assistant\users\user_1\connectors\saic-malaga.yml"
+    )
+
+    bot = CustomChatbot(str(config_path))
+
+    messages_to_send = [
+        "hola",
+        "Necesito información sobre trámites municipales",
+        "¿Cuáles son vuestros horarios de atención?"
+    ]
+
+    for user_msg in messages_to_send:
+        print(f"\n➡️ Enviando: {user_msg}")
+        success, response = bot.execute_with_input(user_msg)
+
+        if success:
+            print(f"✅ Respuesta: {response}")
+        else:
+            print("⚠️ Ocurrió un problema al consultar el conector.")
+
+if __name__ == "__main__":
+    main()
+```
+
+¡Listo! Con esto deberías poder lanzar varias consultas seguidas y revisar las respuestas. Si te gustaría añadir logs, manejar reintentos o cualquier otra mejora, estaré encantado de ayudarte 💪✨.

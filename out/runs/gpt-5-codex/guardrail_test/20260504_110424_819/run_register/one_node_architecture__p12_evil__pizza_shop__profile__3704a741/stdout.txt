@@ -1,0 +1,72 @@
+conversation ID: one_node_architecture__p12_evil__pizza_shop__profile__3704a741
+$$$
+Here you go! I’ve captured the request in a reusable connector and a helper script so you can ping it with multiple messages:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+```python
+"""
+Send multiple messages through the SAIC Malaga connector.
+Save this as send_requests.py (for example) and run it with your Sensei environment active.
+"""
+
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+CONNECTOR_PATH = "connectors/saic-malaga.yaml"  # adjust if you save it elsewhere
+
+def main() -> None:
+    bot = CustomChatbot(CONNECTOR_PATH)
+
+    user_messages = [
+        "hola",
+        "¿Qué trámites puedo hacer online?",
+        "Necesito información sobre citas presenciales",
+    ]
+
+    for idx, message in enumerate(user_messages, start=1):
+        success, response = bot.execute_with_input(message)
+        print(f"\nRequest #{idx}: {message}")
+        if success:
+            print(f"Bot reply: {response}\n")
+        else:
+            print(f"Request failed. Raw response: {response}\n")
+
+if __name__ == "__main__":
+    main()
+```
+
+Give it a spin and let me know if you’d like to tweak headers, payload fields, or try a different response path!
+$$$

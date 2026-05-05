@@ -1,0 +1,79 @@
+I have reviewed the SENSEI Connector documentation (`custom-connector-guide.md` and `connector-examples.md`) and extracted the necessary details from your HTTP request and response. 
+
+Here is the YAML connector and the Python script you requested! 😊
+
+### 1. YAML Connector
+
+Save this file as `saic_malaga.yml`. I've mapped the headers, the payload (using the `{user_msg}` placeholder for dynamic input), and the `response_path` based on the JSON response you provided.
+
+```yaml
+name: "SAIC Malaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+*Note: The `response_path` is set to `"response.0.text"` because the bot's reply in your JSON is located inside the `response` array at the first index (`0`), under the `text` key.*
+
+---
+
+### 2. Python Script
+
+Here is a complete Python script that uses the SENSEI `CustomChatbot` class to load your YAML connector and send multiple requests to the API.
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def main():
+    # 1. Load the YAML connector we just created
+    # (Ensure the YAML file is saved in the same directory or provide the correct path)
+    bot = CustomChatbot("saic_malaga.yml")
+
+    # 2. Define multiple messages to send to the bot
+    test_messages = [
+        "hola",
+        "¿Qué trámites puedo realizar online?",
+        "Muchas gracias por la información"
+    ]
+
+    print("Starting conversation with SAIC Malaga Bot...\n" + "-"*40)
+    
+    # 3. Loop through the messages and send them using the connector
+    for msg in test_messages:
+        print(f"User: {msg}")
+        
+        # execute_with_input automatically replaces {user_msg} in the payload,
+        # sends the request, and extracts the response using response_path
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"Bot: {response}\n")
+        else:
+            print(f"Error communicating with bot: {response}\n")
+
+if __name__ == "__main__":
+    main()
+```
+
+### How it works:
+1. **`CustomChatbot("saic_malaga.yml")`**: Reads your YAML file and configures the base URL, headers, and payload template.
+2. **`bot.execute_with_input(msg)`**: Takes your string, injects it into the `"{user_msg}"` placeholder in the JSON payload, sends the POST request, and parses the response using the `response.0.text` path.
+
+Let me know if you need any adjustments to the headers or the script!

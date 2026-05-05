@@ -1,0 +1,100 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__c1fb74eb
+$$$
+Hey! I can definitely help you design a Python automation that uses LLM models to generate valid Sensei profiles. Since Sensei profiles have a specific YAML structure with fields like `test_name`, `llm`, `user`, `chatbot`, and `conversation`, the automation will prompt an LLM (like OpenAI's GPT) to generate these sections according to your specifications.
+
+Here's a simple example script that uses OpenAI's API to generate a Sensei profile YAML string. You can customize the prompt to fit your domain and needs. The script includes validation by trying to parse the generated YAML to ensure it's structurally valid for Sensei.
+
+```python
+import openai
+import yaml
+
+# Set your OpenAI API key
+openai.api_key = "your-api-key"
+
+def generate_sensei_profile(domain_description: str, user_role: str, goals: list, llm_model="gpt-4o-mini"):
+    """
+    Generate a Sensei profile YAML string using an LLM.
+
+    Args:
+        domain_description: Description of the chatbot domain (e.g., pizza ordering).
+        user_role: Description of the simulated user role.
+        goals: List of user goals as strings.
+        llm_model: OpenAI model to use.
+
+    Returns:
+        Parsed YAML dict of the profile if valid, else None.
+    """
+
+    # Compose prompt for the LLM
+    prompt = f"""
+You are an expert in creating Sensei user simulation profiles for chatbot testing.
+Create a valid Sensei profile YAML for a chatbot domain described as:
+"{domain_description}"
+
+The simulated user role is:
+"{user_role}"
+
+The user goals are:
+{goals}
+
+The profile should include:
+- test_name
+- llm section with model "{llm_model}", temperature 0.7, and text format
+- user section with language English, role as above, and goals as above
+- chatbot section with is_starter false, a fallback message, and at least one output field
+- conversation section with number 3, goal_style with steps 5, and interaction_style with "single question"
+
+Return only the YAML content without explanations.
+"""
+
+    # Call OpenAI API
+    response = openai.ChatCompletion.create(
+        model=llm_model,
+        messages=[
+            {"role": "system", "content": "You generate valid Sensei profile YAMLs."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7,
+        max_tokens=800,
+    )
+
+    profile_yaml = response['choices'][0]['message']['content']
+
+    # Validate YAML structure
+    try:
+        profile_dict = yaml.safe_load(profile_yaml)
+        # Basic checks for required top-level keys
+        required_keys = ['test_name', 'llm', 'user', 'chatbot', 'conversation']
+        if all(key in profile_dict for key in required_keys):
+            print("Generated a valid Sensei profile!")
+            return profile_dict
+        else:
+            print("Missing required keys in the profile YAML.")
+            return None
+    except yaml.YAMLError as e:
+        print(f"YAML parsing error: {e}")
+        return None
+
+if __name__ == "__main__":
+    domain = "A pizza ordering chatbot that takes orders for pizzas and drinks."
+    role = "A customer placing an order for pizza and drinks."
+    goals_list = [
+        "Ask what pizzas are available.",
+        "Order a {{pizza_type}} pizza.",
+        "Select the size {{pizza_size}} for the pizza.",
+        "Order {{number_of_drinks}} {{drink_type}}."
+    ]
+
+    profile = generate_sensei_profile(domain, role, goals_list)
+    if profile:
+        print(yaml.dump(profile, sort_keys=False))
+```
+
+### How this helps you:
+- It uses an LLM to create the profile YAML based on your domain and user role.
+- It validates the YAML structure to ensure it has the required sections.
+- You can extend the prompt to include custom variables, types, or interaction styles.
+- You can integrate this into a pipeline to generate many profiles automatically.
+
+If you want, I can help you customize this further or generate a ready-to-use profile YAML example based on your input! Just let me know 😊
+$$$

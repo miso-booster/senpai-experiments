@@ -1,0 +1,95 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__3f09afaa
+$$$
+Here you go! I based everything on the connector docs (`custom-connector-guide.md`, `connector-examples.md`) to match the MillionBot API pattern. 😊
+
+### 1. YAML connector (`saic-malaga-connector.yaml`)
+
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Save this file somewhere accessible (e.g., `saic-malaga-connector.yaml` in your project root).
+
+---
+
+### 2. Python script to send multiple requests
+
+This uses the custom connector implementation shown in the docs. Update `CONNECTOR_PATH` if you store the YAML elsewhere.
+
+```python
+#!/usr/bin/env python3
+"""
+Send multiple messages through the SAIC Málaga connector.
+
+Prerequisites:
+  pip install chatbot-connectors
+"""
+
+from pathlib import Path
+from typing import Iterable
+
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+CONNECTOR_PATH = Path("saic-malaga-connector.yaml")
+
+
+def send_batch_messages(bot: CustomChatbot, messages: Iterable[str]) -> None:
+    for msg in messages:
+        success, response = bot.execute_with_input(msg)
+        print(f"USER: {msg}")
+        if success:
+            print(f"BOT : {response}")
+        else:
+            print(f"ERROR: {response}")
+        print("-" * 40)
+
+
+def main() -> None:
+    if not CONNECTOR_PATH.exists():
+        raise FileNotFoundError(
+            f"Connector YAML not found at {CONNECTOR_PATH.resolve()}. "
+            "Make sure you saved saic-malaga-connector.yaml first."
+        )
+
+    bot = CustomChatbot(str(CONNECTOR_PATH))
+
+    test_messages = [
+        "hola",
+        "Necesito información sobre citas previas",
+        "Gracias, hasta luego",
+    ]
+
+    send_batch_messages(bot, test_messages)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Run it with:
+
+```bash
+python saic_malaga_batch.py
+```
+
+Let me know if you’d like to add dynamic session IDs or read prompts from a file!
+$$$

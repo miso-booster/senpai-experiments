@@ -1,0 +1,189 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__381f3dba
+$$$
+¡Hola! 😄 Vamos a crear esa automatización en Python para que un LLM genere perfiles válidos de Sensei de forma consistente. Me basé en la guía `sensei-chat-guide.md`, que detalla la anatomía obligatoria del YAML (secciones como `test_name`, `user`, `chatbot`, `conversation`, etc.) y las reglas sobre variables, tipos y `chatbot.output`.
+
+---
+
+## 🧠 Estrategia general
+
+1. **Plantilla estructural**  
+   Define una “plantilla mental” con las secciones mínimas descritas en la guía:
+   - `test_name`
+   - `llm` (opcional si usas defaults, pero recomendable configurarlo)
+   - `user` con `language`, `role`, `context`, `goals`
+   - `chatbot` con `is_starter`, `fallback`, `output`
+   - `conversation` con `number`, `goal_style`, `interaction_style`
+
+2. **Prompting robusto al LLM**  
+   Usa un `system prompt` que explique:
+   - El objetivo: generar un perfil válido de Sensei.
+   - Las reglas clave del YAML (nombres consistentes, variables declaradas en `goals`, `chatbot.output` describiendo campos que luego usarán las reglas, etc.).
+   - Formato de salida: un único documento YAML.
+
+3. **Post-procesado & validación**  
+   - Parsear el YAML con `ruamel.yaml` o `pyyaml`.
+   - Validar que están las secciones principales, que los `{{variables}}` coinciden con las declaraciones de `goals`, y que `chatbot.output` tiene descripciones y tipos válidos.
+   - Opcional: llamar a `validation_check.py` de Sensei para un check más estricto antes de guardar.
+
+4. **Iteración asistida**  
+   - Si el LLM omite un campo, devolver feedback y reintentar (e.g., “faltó `chatbot.output` con al menos un campo extraído”).
+   - Permitir entrada del usuario: “qué dominio quieres (p. ej. reservas, ecommerce), qué campos se deben extraer, estilos de interacción, idioma, etc.”.
+
+---
+
+## 🧪 Script de ejemplo
+
+Aquí tienes un boceto que usa la API de OpenAI, pero puedes adaptar al proveedor que prefieras. Incluye validaciones básicas basadas en la guía:
+
+```python
+```yaml
+import os
+from typing import Any, Dict, Tuple
+import re
+
+import openai
+from ruamel.yaml import YAML
+from ruamel.yaml.compat import StringIO
+
+yaml = YAML()
+yaml.indent(mapping=2, sequence=2, offset=2)
+
+SYSTEM_PROMPT = """You are Sensei Profile Builder.
+Generate Sensei user simulator profiles in YAML.
+Follow these rules:
+
+- Output ONLY one YAML document.
+- Required top-level sections: test_name, llm (optional but preferred), user, chatbot, conversation.
+- user.goals strings may contain {{variables}}, and each variable must be declared in the goals list with type/data/function.
+- chatbot.output must list the fields that Sensei-check rules will validate; include type and description.
+- Provide sensible defaults for llm (model, temperature) unless instructed otherwise.
+- Ensure conversation.goal_style and interaction_style follow the Sensei spec.
+"""
+
+PROFILE_REQUIREMENTS = {
+    "test_name": str,
+    "user": dict,
+    "chatbot": dict,
+    "conversation": dict,
+}
+
+def call_llm(user_instructions: str) -> str:
+    client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        temperature=0.2,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": f"""Create a Sensei profile with these constraints:
+{user_instructions}
+
+Remember to output only YAML."""
+            },
+        ],
+    )
+    return response.choices[0].message["content"].strip()
+
+def parse_profile(yaml_text: str) -> Dict[str, Any]:
+    try:
+        profile = yaml.load(StringIO(yaml_text))
+        if not isinstance(profile, dict):
+            raise ValueError("Parsed YAML is not a mapping.")
+        return profile
+    except Exception as exc:
+        raise ValueError(f"Invalid YAML: {exc}") from exc
+
+def validate_required_sections(profile: Dict[str, Any]) -> None:
+    for key, expected_type in PROFILE_REQUIREMENTS.items():
+        if key not in profile:
+            raise ValueError(f"Missing required top-level section: {key}")
+        if not isinstance(profile[key], expected_type):
+            raise ValueError(f"Section {key} should be a {expected_type.__name__}")
+
+    user_goals = profile["user"].get("goals", [])
+    if not isinstance(user_goals, list) or len(user_goals) == 0:
+        raise ValueError("user.goals must be a non-empty list")
+
+    goal_variables = {
+        item["variable"]
+        for item in user_goals
+        if isinstance(item, dict) and "variable" in item
+    }
+    goal_templates = [
+        item for item in user_goals if isinstance(item, str)
+    ]
+    variables_in_templates = {
+        var for template in goal_templates for var in re.findall(r"{{\s*(\w+)\s*}}", template)
+    }
+    missing_declarations = variables_in_templates - goal_variables
+    if missing_declarations:
+        raise ValueError(
+            f"Variables used in goal strings without declaration: {missing_declarations}"
+        )
+
+    chatbot_output = profile["chatbot"].get("output", [])
+    if not isinstance(chatbot_output, list) or len(chatbot_output) == 0:
+        raise ValueError("chatbot.output must list at least one field")
+
+    for entry in chatbot_output:
+        if not isinstance(entry, dict) or len(entry) != 1:
+            raise ValueError("Each chatbot.output entry must be a single-field mapping")
+        field_name, config = next(iter(entry.items()))
+        if not isinstance(config, dict):
+            raise ValueError(f"Output field {field_name} must have a mapping value")
+        for required_key in ("type", "description"):
+            if required_key not in config:
+                raise ValueError(
+                    f"Output field {field_name} missing '{required_key}'"
+                )
+
+def generate_profile(user_instructions: str, max_retries: int = 2) -> Tuple[str, Dict[str, Any]]:
+    last_error = None
+    for attempt in range(max_retries + 1):
+        raw_yaml = call_llm(user_instructions)
+        try:
+            profile = parse_profile(raw_yaml)
+            validate_required_sections(profile)
+            return raw_yaml, profile
+        except Exception as exc:
+            last_error = exc
+            user_instructions += f"""
+
+IMPORTANT FIXES FROM PREVIOUS ATTEMPT:
+- {exc}
+"""
+    raise RuntimeError(f"Failed to generate a valid profile. Last error: {last_error}")
+
+if __name__ == "__main__":
+    instructions = """Domain: hotel booking concierge.
+Language: Spanish.
+User persona: viajero frecuente que valora precios flexibles y opciones de cancelación.
+Goals: reservar habitación doble, pedir desayuno incluido, solicitar late checkout, obtener ID de reserva.
+Chatbot output fields deseados: precio_total (currency), politica_cancelacion (string), reserva_id (string).
+Set interaction_style to include make spelling mistakes."""
+    profile_yaml, profile_obj = generate_profile(instructions)
+    print(profile_yaml)
+```
+```
+
+### Detalles clave del script
+- **`SYSTEM_PROMPT`** contiene las reglas críticas del perfil basadas en la estructura descrita en `sensei-chat-guide.md`.
+- **`validate_required_sections`** verifica la anatomía mínima y la congruencia entre `{{variables}}` y sus declaraciones, como recomienda la guía.
+- **Retroalimentación iterativa**: si la primera respuesta del LLM no es válida, el script le devuelve los errores y lo intenta de nuevo.
+- **Extensibilidad**: puedes añadir checks extra (por ejemplo, requisitos específicos de tu proyecto, formatos de fechas, límites de coste, etc.).
+
+---
+
+## ✅ Próximos pasos sugeridos
+
+1. **Amplía las validaciones** con tus propias reglas (ej. ciertos perfiles siempre requieren `conversation.number: combinations(...)`).
+2. **Registra ejemplos exitosos** para afinar el prompt (few-shot prompting).
+3. **Lanza `validation_check.py`** después de generar el YAML para detectar detalles extra (combinaciones, tipos personalizados, etc.).
+4. **Integra reglas**: si tienes Sensei-check rules que dependen de ciertos campos, asegúrate de que el `chatbot.output` los exponga.
+
+---
+
+¿Quieres que la automatización genere múltiples perfiles en lote, o que tome inputs desde un formulario? ¡Feliz de ayudarte a extender este flujo!
+$$$

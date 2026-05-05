@@ -1,0 +1,64 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__17999f6d
+$$$
+Hello there! 😊
+
+It sounds like you are building a super cool automation pipeline! However, I must apologize: I cannot write custom Python scripts or external LLM code for you. My expertise is strictly limited to the configuration, validation, and documentation of **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS**. 
+
+That being said, if you are building an LLM automation to generate profiles, I can absolutely give you the "recipe" you need to feed into your LLM's system prompt! To ensure your LLM generates 100% valid Sensei profiles, you should instruct it to follow this exact structure and set of rules.
+
+### What your LLM needs to know to generate valid profiles:
+
+1. **Top-Level Sections:** Every profile must include `test_name`, `llm`, `user`, `chatbot`, and `conversation`.
+2. **User Goals & Variables:** If the LLM uses variables in the `user.goals` text (like `{{size}}`), it **must** declare that exact variable as a dictionary in the same list, specifying its `type`, `data`, and a `function` (like `random()`, `forward()`, or `pairwise()`).
+3. **Chatbot Output:** The `chatbot.output` section must define the schema of fields to extract (e.g., `type: string`, `type: currency`). This is crucial because Sensei-check rules will use these exact field names later!
+4. **Interaction Styles:** The LLM must only use reserved keywords for `interaction_style` (e.g., `single question`, `long phrases`, `make spelling mistakes`, `change your mind`, `change language: [list]`).
+
+Here is a pristine template you can include in your LLM's prompt as the gold standard for generation:
+
+```yaml
+test_name: "generated_profile_name"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A short description of the simulated user's persona."
+  context:
+    - "Constraint or preference 1"
+    - "Constraint or preference 2"
+  goals:
+    - "I want to order a {{item}}."
+    - item:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that."
+  output:
+    - extracted_item:
+        type: string
+        description: "The item the user finally ordered."
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+### Pro-Tip for your Automation 💡
+Once your Python script receives the YAML from the LLM, you can automatically validate it using Sensei's built-in validation tool before running the chat! Just have your script call:
+
+```bash
+python validation_check.py --profile path/to/generated_profile.yml
+```
+
+If you need help tweaking the logic of the profiles your LLM generates, or if you want to know how to write rules to test them, just let me know! How else can I help you today? 👀
+$$$

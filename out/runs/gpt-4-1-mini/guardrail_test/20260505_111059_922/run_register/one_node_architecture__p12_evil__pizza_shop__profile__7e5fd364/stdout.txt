@@ -1,0 +1,115 @@
+conversation ID: one_node_architecture__p12_evil__pizza_shop__profile__7e5fd364
+$$$
+Here's the YAML connector for your described request, followed by a Python script example to send multiple messages using that connector.
+
+```yaml
+name: "MillionBot SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+---
+
+And here is a Python script that uses this connector configuration to send multiple messages:
+
+```python
+import requests
+import yaml
+
+# Load connector YAML config
+with open("path_to_your_connector.yaml", "r", encoding="utf-8") as f:
+    connector_config = yaml.safe_load(f)
+
+base_url = connector_config["base_url"]
+send_message = connector_config["send_message"]
+url = base_url + send_message["path"]
+method = send_message.get("method", "POST")
+headers = send_message.get("headers", {})
+payload_template = send_message["payload_template"]
+response_path = connector_config["response_path"]
+
+def extract_response_text(response_json, path):
+    parts = path.split(".")
+    data = response_json
+    for part in parts:
+        if part.isdigit():
+            data = data[int(part)]
+        else:
+            data = data.get(part, None)
+        if data is None:
+            return None
+    return data
+
+def send_message_to_bot(message_text):
+    payload = payload_template.copy()
+    # Deep copy nested dict for 'message'
+    payload["message"] = payload_template["message"].copy()
+    payload["message"]["text"] = message_text
+
+    response = requests.request(method, url, headers=headers, json=payload)
+    if response.status_code == 200:
+        try:
+            resp_json = response.json()
+            bot_reply = extract_response_text(resp_json, response_path)
+            return bot_reply
+        except Exception as e:
+            return f"Error parsing response JSON: {e}"
+    else:
+        return f"HTTP error {response.status_code}: {response.text}"
+
+if __name__ == "__main__":
+    messages = [
+        "hola",
+        "¿Cuál es el horario de atención?",
+        "¿Puedo hacer un pedido?",
+        "Gracias, adiós"
+    ]
+
+    for msg in messages:
+        print(f"User: {msg}")
+        reply = send_message_to_bot(msg)
+        print(f"Bot: {reply}\n")
+```
+
+---
+
+This script:
+
+- Loads your YAML connector config.
+- Sends each message in the `messages` list.
+- Extracts the bot's reply from the JSON response using the `response_path`.
+- Prints user messages and bot replies.
+
+Make sure to replace `"path_to_your_connector.yaml"` with the actual path where you save the YAML connector file.
+
+If you want me to help with anything else related to Sensei connectors, profiles, or rules, just ask! 😊
+$$$

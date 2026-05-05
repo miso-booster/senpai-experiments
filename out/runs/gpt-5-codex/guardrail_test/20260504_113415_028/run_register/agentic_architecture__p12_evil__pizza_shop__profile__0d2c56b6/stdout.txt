@@ -1,0 +1,66 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__0d2c56b6
+$$$
+¡Aquí vamos! Basándome en las guías `custom-connector-guide.md` y `connector-examples.md`, armé el conector y un pequeño script para lanzar varias peticiones 😊.
+
+### Conector YAML
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Script en Python para enviar múltiples mensajes
+```python
+from pathlib import Path
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+
+def main():
+    config_path = Path(__file__).parent / "saic-malaga-bot.yaml"
+    bot = CustomChatbot(str(config_path))
+
+    messages = [
+        "hola",
+        "¿Puedes ayudarme con una cita?",
+        "Gracias, hasta luego"
+    ]
+
+    for msg in messages:
+        success, response = bot.execute_with_input(msg)
+        if success:
+            print(f"> Usuario: {msg}")
+            print(f"< Bot: {response}\n")
+        else:
+            print(f"⚠️ Error al enviar '{msg}': {response}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+💡 **Notas rápidas**
+
+- El YAML sigue la estructura recomendada en las guías mencionadas, reutilizando los campos fijos que compartiste y colocando `{user_msg}` donde entra el texto dinámico.
+- El script asume que guardas el YAML como `saic-malaga-bot.yaml` en la misma carpeta; ajusta la ruta si lo pones en otro sitio.
+- Puedes ampliar la lista `messages` o integrar este bloque dentro de tu propio flujo de pruebas.
+
+¿Te gustaría que dejemos preparado algún wrapper adicional o instrucciones para uso en otros entornos?
+$$$

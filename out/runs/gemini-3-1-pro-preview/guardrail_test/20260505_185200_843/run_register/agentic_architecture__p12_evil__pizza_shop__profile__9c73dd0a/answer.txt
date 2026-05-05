@@ -1,0 +1,77 @@
+Here is the YAML connector configuration and the Python script you requested! 😊
+
+I have based the YAML on the `custom-connector-guide.md` documentation, extracting the base URL, headers, payload structure, and the exact JSON path to the bot's response.
+
+### 1. YAML Connector (`saic_malaga.yml`)
+
+Save this file as `saic_malaga.yml`. Notice how we replace the `"hola"` string in the payload with the `{user_msg}` placeholder, and how `response_path` is set to `response.0.text` to extract the HTML text from the first item in the response array.
+
+```yaml
+name: "SAIC Malaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 2. Python Script (`test_bot.py`)
+
+Here is a complete Python script that loads the YAML connector and sends multiple requests to the bot in a loop.
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def main():
+    # 1. Initialize the bot using your YAML configuration file
+    # Make sure the path matches where you saved the YAML file
+    bot = CustomChatbot("saic_malaga.yml")
+    
+    # 2. Define a list of messages you want to send to the bot
+    messages_to_send = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Necesito información sobre impuestos",
+        "Gracias, adiós"
+    ]
+    
+    print(f"Starting conversation with {bot.config.name}...\n")
+    print("-" * 40)
+    
+    # 3. Loop through the messages and send them one by one
+    for msg in messages_to_send:
+        print(f"User: {msg}")
+        
+        # execute_with_input replaces {user_msg} in the YAML and sends the request
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"Bot:  {response}\n")
+        else:
+            print(f"Error: Failed to get a valid response. Details: {response}\n")
+
+if __name__ == "__main__":
+    main()
+```
+
+### How it works:
+1. **`base_url` & `path`**: We split `https://api.1millionbot.com/api/public/messages` into the base URL and the endpoint path.
+2. **`payload_template`**: We mapped the exact JSON structure from your request, but swapped `"hola"` for `{user_msg}` so the Python script can inject dynamic messages.
+3. **`response_path`**: Your response JSON has a `response` array. The bot's text is inside the first element (`0`), under the key `text`. So, `response.0.text` perfectly extracts `"<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>"`. 
+
+Let me know if you need to adjust any headers or add more complex logic to the script! 🚀

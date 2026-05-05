@@ -1,0 +1,108 @@
+Here’s the connector configuration you can drop into your `connectors/` folder:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Host: "api.1millionbot.com"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+And here’s a Python helper to send a batch of messages through that connector—just point `CONNECTOR_PATH` to the file above and enjoy 🚀:
+
+```python
+import yaml
+import requests
+from copy import deepcopy
+from typing import Any, Dict
+
+CONNECTOR_PATH = "connectors/saic-malaga.yaml"
+
+def load_connector(path: str) -> Dict[str, Any]:
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+def build_payload(template: Any, user_msg: str) -> Any:
+    if isinstance(template, dict):
+        return {k: build_payload(v, user_msg) for k, v in template.items()}
+    if isinstance(template, list):
+        return [build_payload(item, user_msg) for item in template]
+    if isinstance(template, str) and "{user_msg}" in template:
+        return template.replace("{user_msg}", user_msg)
+    return template
+
+def extract_response(data: Any, path: str) -> Any:
+    parts = path.split(".")
+    current = data
+    for part in parts:
+        if isinstance(current, list):
+            idx = int(part)
+            current = current[idx]
+        elif isinstance(current, dict):
+            current = current[part]
+        else:
+            raise ValueError(f"Cannot navigate through {type(current)} with key '{part}'")
+    return current
+
+def send_message(session: requests.Session, config: Dict[str, Any], user_msg: str) -> str:
+    base_url = config["base_url"].rstrip("/")
+    endpoint = config["send_message"]["path"].lstrip("/")
+    url = f"{base_url}/{endpoint}"
+
+    headers = deepcopy(config["send_message"].get("headers", {}))
+    payload_template = config["send_message"]["payload_template"]
+    payload = build_payload(payload_template, user_msg)
+
+    response = session.post(url, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+
+    response_json = response.json()
+    return extract_response(response_json, config["response_path"])
+
+def main():
+    connector_config = load_connector(CONNECTOR_PATH)
+    test_messages = [
+        "hola",
+        "Necesito información sobre trámites municipales.",
+        "¿Podrías decirme el horario de atención?",
+    ]
+
+    with requests.Session() as session:
+        for msg in test_messages:
+            try:
+                reply = send_message(session, connector_config, msg)
+                print(f"User: {msg}\nBot : {reply}\n{'-'*60}")
+            except Exception as exc:
+                print(f"Failed for message '{msg}': {exc}")
+
+if __name__ == "__main__":
+    main()
+```
+
+Let me know if you’d like to wire this into a Sensei run or add logging/metrics on top!

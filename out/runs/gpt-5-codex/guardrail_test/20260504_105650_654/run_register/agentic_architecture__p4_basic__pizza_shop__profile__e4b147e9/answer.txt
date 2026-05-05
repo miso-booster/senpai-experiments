@@ -1,0 +1,172 @@
+Hey there! 😊 Here’s a practical way to build a Python automation that leans on an LLM to draft valid Sensei profiles, while keeping everything aligned with the structure described in `sensei-chat-guide.md`.
+
+---
+
+## 🧩 Overall approach
+
+1. **Collect input requirements** (domain, goals, desired outputs, etc.).
+2. **Prime the LLM with a strict template** that mirrors the profile anatomy (`test_name`, `llm`, `user`, `chatbot`, `conversation`…) so it can’t drift.
+3. **Post-validate the YAML** locally to catch formatting gaps or missing sections before saving.
+
+---
+
+## 🧠 Prompt template (fed to the LLM)
+
+Give the model a rigid scaffold so it fills in the blanks safely:
+
+```
+You are generating a Sensei profile YAML.
+
+Constraints from sensei-chat-guide.md:
+- Include `test_name`, `llm`, `user`, `chatbot`, and `conversation` sections.
+- `user.goals` must list strings and declare every {{variable}} with `function`, `type`, and `data`.
+- `chatbot.output` defines fields used later by rules; each item is a mapping with `type` and `description`.
+
+Fill this template ONLY with valid YAML:
+
+test_name: "<short_slug>"
+llm:
+  temperature: <float between 0 and 1>
+  model: <model name>
+  model_prov: <provider id>
+  format:
+    type: text
+user:
+  language: <language>
+  role: |
+    <persona description>
+  context:
+    - <facts/personality>
+  goals:
+    - "<goal sentence with {{variables}} if any>"
+    - variable_name:
+        function: <default|random|forward|another|pairwise()>
+        type: <string|int|float|custom>
+        data:
+          - <list item or any(...) generator>
+chatbot:
+  is_starter: false
+  fallback: "<bot fallback>"
+  output:
+    - field_name:
+        type: <string|int|float|date(...)|time(...)|list[...]|custom>
+        description: "<what is extracted>"
+conversation:
+  number: <int or combinations(...)>
+  goal_style:
+    steps: <int or random steps: n or all_answered: { ... }>
+  interaction_style:
+    - <style or random: [...]>
+
+Only output the YAML.
+```
+
+---
+
+## 🐍 Sample Python automation
+
+```python
+import os
+import yaml
+from typing import Any, Dict
+from pydantic import BaseModel, ValidationError, Field
+from openai import OpenAI
+
+# ---------- Schema (tightened around sensei-chat-guide.md) ----------
+class LLMConfig(BaseModel):
+    temperature: float
+    model: str
+    model_prov: str
+    format: Dict[str, Any]
+
+class GoalVariable(BaseModel):
+    function: str
+    type: str
+    data: Any
+
+class UserSection(BaseModel):
+    language: str
+    role: str
+    context: list[str]
+    goals: list[Any]
+
+class ChatbotOutputField(BaseModel):
+    type: str
+    description: str
+
+class ChatbotSection(BaseModel):
+    is_starter: bool
+    fallback: str
+    output: list[Dict[str, ChatbotOutputField]]
+
+class ConversationSection(BaseModel):
+    number: Any
+    goal_style: Dict[str, Any]
+    interaction_style: list[Any]
+
+class Profile(BaseModel):
+    test_name: str
+    llm: LLMConfig
+    user: UserSection
+    chatbot: ChatbotSection
+    conversation: ConversationSection
+
+# ---------- LLM helper ----------
+def build_profile(requirements: str) -> Dict[str, Any]:
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    system_prompt = (
+        "You are a profiler generating Sensei YAML according to sensei-chat-guide.md.\n"
+        "Follow the provided template exactly."
+    )
+    user_prompt = f"{requirements}\n\nReturn only YAML."
+
+    response = client.responses.create(
+        model="gpt-4o-mini",
+        input=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.2,
+    )
+
+    yaml_text = response.output_text.strip()
+    profile_dict = yaml.safe_load(yaml_text)
+
+    try:
+        Profile.model_validate(profile_dict)
+    except ValidationError as e:
+        raise ValueError(f"Generated profile failed validation: {e}")
+
+    return profile_dict
+
+# ---------- Example usage ----------
+if __name__ == "__main__":
+    requirements = (
+        "Create a profile where the simulated user books restaurant tables in Spanish. "
+        "Capture number of guests, reservation datetime, and confirmation code in chatbot.output. "
+        "Use pairwise coverage across seating area and occasion."
+    )
+
+    profile = build_profile(requirements)
+
+    output_path = "profiles/restaurant_booking.yml"
+    with open(output_path, "w", encoding="utf-8") as f:
+        yaml.dump(profile, f, sort_keys=False)
+
+    print(f"Profile saved to {output_path}")
+```
+
+### Why this works
+- The schema mirrors the sections and constraints spelled out in `sensei-chat-guide.md`.
+- Validation catches the most common pitfalls (missing `chatbot.output` descriptions, undeclared goal variables, etc.).
+- You can extend the Pydantic models with regex checks (e.g., ensure every string goal with `{{var}}` has a matching declaration) or run `validation_check.py` afterwards for extra safety.
+
+---
+
+## ✅ Next steps
+
+1. **Expand validation** if you need stricter rules (e.g., enforce `combinations` only when two `pairwise()` vars exist).
+2. **Add custom type discovery** by scanning the `types/` folder and nudging the LLM to reuse them.
+3. **Wrap it in a CLI or web form** so teammates can describe scenarios and receive ready-to-run profiles.
+
+Let me know if you want a template for the requirements prompt or an example of plugging in custom types!

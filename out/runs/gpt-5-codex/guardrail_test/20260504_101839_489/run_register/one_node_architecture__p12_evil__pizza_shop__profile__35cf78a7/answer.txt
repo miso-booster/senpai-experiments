@@ -1,0 +1,145 @@
+Hey there! Here’s the custom connector config you asked for 😊
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+And here’s a Python helper to fire multiple messages using that connector. Just update the `CONFIG_PATH` if you place the YAML somewhere else, tweak the `messages` list, and you’re good to go 🚀
+
+```python
+import argparse
+import copy
+import json
+import sys
+from pathlib import Path
+from typing import Any, Dict
+
+import requests
+import yaml
+
+
+def load_connector_config(path: Path) -> Dict[str, Any]:
+    with path.open("r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def fill_placeholders(template: Any, user_msg: str) -> Any:
+    if isinstance(template, dict):
+        return {k: fill_placeholders(v, user_msg) for k, v in template.items()}
+    if isinstance(template, list):
+        return [fill_placeholders(item, user_msg) for item in template]
+    if isinstance(template, str):
+        return template.replace("{user_msg}", user_msg)
+    return template
+
+
+def extract_with_path(data: Any, path: str) -> Any:
+    if not path:
+        return data
+    segments = path.split(".")
+    current = data
+    for segment in segments:
+        if isinstance(current, list):
+            try:
+                index = int(segment)
+                current = current[index]
+            except (ValueError, IndexError) as exc:
+                raise KeyError(f"List index '{segment}' not found in {current}") from exc
+        elif isinstance(current, dict):
+            if segment not in current:
+                raise KeyError(f"Key '{segment}' not found in {current}")
+            current = current[segment]
+        else:
+            raise KeyError(f"Cannot traverse segment '{segment}' in {current}")
+    return current
+
+
+def send_message(session: requests.Session, config: Dict[str, Any], user_msg: str) -> Any:
+    base_url: str = config["base_url"].rstrip("/")
+    send_cfg: Dict[str, Any] = config["send_message"]
+    path: str = send_cfg["path"]
+    method: str = send_cfg.get("method", "POST").upper()
+    headers: Dict[str, str] = copy.deepcopy(send_cfg.get("headers", {}))
+    payload_template = send_cfg["payload_template"]
+
+    payload = fill_placeholders(payload_template, user_msg)
+
+    url = f"{base_url}{path}"
+    response = session.request(method, url, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+
+    try:
+        body = response.json()
+    except json.JSONDecodeError:
+        body = response.text
+
+    response_path = config.get("response_path", "")
+    if response_path and isinstance(body, (dict, list)):
+        return extract_with_path(body, response_path)
+    return body
+
+
+def main(config_path: Path, messages: list[str]) -> None:
+    config = load_connector_config(config_path)
+
+    with requests.Session() as session:
+        for idx, msg in enumerate(messages, start=1):
+            try:
+                reply = send_message(session, config, msg)
+                print(f"\n[{idx}] User: {msg}")
+                print(f"[{idx}] Bot : {reply}")
+            except Exception as exc:  # pylint: disable=broad-except
+                print(f"\n[{idx}] Failed to send message '{msg}': {exc}", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Send multiple requests to a Sensei custom connector.")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path("connectors/saic-malaga.yaml"),
+        help="Path to the connector YAML configuration.",
+    )
+    parser.add_argument(
+        "--messages",
+        nargs="*",
+        default=["hola", "¿Qué servicios ofrecéis?", "Necesito ayuda con un trámite"],
+        help="Messages to send to the chatbot.",
+    )
+    args = parser.parse_args()
+
+    main(args.config, args.messages)
+```
+
+Let me know if you’d like me to tailor the script further (e.g., logging to a file, capturing IDs, etc.) 🙌

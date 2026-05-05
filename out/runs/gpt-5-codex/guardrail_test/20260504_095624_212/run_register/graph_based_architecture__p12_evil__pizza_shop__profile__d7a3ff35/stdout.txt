@@ -1,0 +1,120 @@
+conversation ID: graph_based_architecture__p12_evil__pizza_shop__profile__d7a3ff35
+$$$
+¡Hola! 😊 Claro que sí. Aquí tienes la configuración del conector en YAML basada en el request que compartiste, seguida de un script en Python para enviarle varios mensajes de forma super sencilla.
+
+---
+
+### 🧩 Conector YAML (guárdalo como `saic-malaga.yml` o el nombre que prefieras)
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+💡 Recuerda: `{user_msg}` es el placeholder que se sustituirá por cada mensaje que quieras enviar al bot.
+
+---
+
+### 🐍 Script en Python para mandar varios mensajes seguidos
+
+Este script lee el YAML, arma cada petición y muestra la respuesta principal (usando el `response_path`). Puedes ampliarlo o adaptarlo según tus necesidades.
+
+```python
+import json
+from copy import deepcopy
+from pathlib import Path
+
+import requests
+import yaml
+
+
+CONFIG_PATH = Path("saic-malaga.yml")
+TEST_MESSAGES = [
+    "hola",
+    "¿Qué trámites puedo hacer en línea?",
+    "Gracias, adiós"
+]
+
+
+def load_connector_config(path: Path) -> dict:
+    with path.open("r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def fill_placeholders(template, user_msg: str):
+    """Replace {user_msg} recursively in the payload template."""
+    if isinstance(template, dict):
+        return {k: fill_placeholders(v, user_msg) for k, v in template.items()}
+    if isinstance(template, list):
+        return [fill_placeholders(item, user_msg) for item in template]
+    if isinstance(template, str):
+        return template.replace("{user_msg}", user_msg)
+    return template
+
+
+def extract_response_field(data: dict, path: str):
+    """Traverse a JSON payload using dot notation (supports list indices)."""
+    current = data
+    for segment in path.split("."):
+        if segment.isdigit():
+            current = current[int(segment)]
+        else:
+            current = current[segment]
+    return current
+
+
+def send_message(session: requests.Session, config: dict, user_msg: str):
+    url = config["base_url"].rstrip("/") + config["send_message"]["path"]
+    method = config["send_message"].get("method", "POST")
+    headers = deepcopy(config["send_message"].get("headers", {}))
+    payload_template = config["send_message"]["payload_template"]
+
+    payload = fill_placeholders(payload_template, user_msg)
+
+    response = session.request(method=method, url=url, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+
+    extracted = extract_response_field(data, config["response_path"])
+    return extracted, data
+
+
+def main():
+    config = load_connector_config(CONFIG_PATH)
+    with requests.Session() as session:
+        for user_msg in TEST_MESSAGES:
+            try:
+                reply, raw_json = send_message(session, config, user_msg)
+                print(f"User: {user_msg}")
+                print(f"Bot : {reply}\n")
+            except Exception as exc:
+                print(f"Error while sending '{user_msg}': {exc}\n")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+Si necesitas añadir más cabeceras especiales, cambiar los mensajes de prueba o guardar las respuestas completas, ¡dímelo y te oriento encantado! 😄
+$$$

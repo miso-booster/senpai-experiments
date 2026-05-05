@@ -1,0 +1,53 @@
+Here’s a ready-to-use connector config based on that request 👇
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+And here’s a small Python helper to send a batch of messages through that connector (adjust the `CONNECTOR_PATH` if you save it somewhere else):
+
+```python
+from pathlib import Path
+
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def send_messages(messages, connector_path):
+    bot = CustomChatbot(connector_path)
+    for msg in messages:
+        success, response = bot.execute_with_input(msg)
+        status = "✅" if success else "⚠️"
+        print(f"{status} User: {msg}")
+        print(f"   Bot: {response}\n")
+
+if __name__ == "__main__":
+    CONNECTOR_PATH = Path("connectors/saic-malaga.yaml")
+    conversation = [
+        "hola",
+        "¿Cuál es el horario de atención?",
+        "Necesito información sobre trámites municipales.",
+    ]
+    send_messages(conversation, CONNECTOR_PATH)
+```
+
+Let me know if you’d like to tweak headers or make the payload more dynamic—happy to help! 😊

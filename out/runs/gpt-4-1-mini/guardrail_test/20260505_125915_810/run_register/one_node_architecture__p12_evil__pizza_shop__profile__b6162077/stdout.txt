@@ -1,0 +1,128 @@
+conversation ID: one_node_architecture__p12_evil__pizza_shop__profile__b6162077
+$$$
+Here's the YAML connector configuration for your described request to the 1millionbot API:
+
+```yaml
+name: "1MillionBot SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+---
+
+And here is a complete Python script that uses this connector YAML to send multiple messages to the chatbot:
+
+```python
+import yaml
+import requests
+
+class CustomConnector:
+    def __init__(self, config_path):
+        with open(config_path, 'r', encoding='utf-8') as f:
+            self.config = yaml.safe_load(f)
+        self.base_url = self.config['base_url']
+        self.path = self.config['send_message']['path']
+        self.method = self.config['send_message'].get('method', 'POST').upper()
+        self.headers = self.config['send_message'].get('headers', {})
+        self.payload_template = self.config['send_message']['payload_template']
+        self.response_path = self.config.get('response_path', '')
+
+    def send_message(self, user_msg):
+        # Fill in the user message in the payload
+        payload = self._fill_payload(user_msg)
+        url = self.base_url + self.path
+
+        if self.method == 'POST':
+            response = requests.post(url, json=payload, headers=self.headers)
+        else:
+            raise NotImplementedError(f"HTTP method {self.method} not implemented")
+
+        response.raise_for_status()
+        data = response.json()
+        return self._extract_response(data)
+
+    def _fill_payload(self, user_msg):
+        # Recursively replace '{user_msg}' in the payload template
+        def replace(obj):
+            if isinstance(obj, dict):
+                return {k: replace(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [replace(i) for i in obj]
+            elif isinstance(obj, str):
+                return obj.replace("{user_msg}", user_msg)
+            else:
+                return obj
+        return replace(self.payload_template)
+
+    def _extract_response(self, data):
+        # Extract response using dot notation path
+        parts = self.response_path.split('.')
+        current = data
+        for part in parts:
+            if part.isdigit():
+                current = current[int(part)]
+            else:
+                current = current.get(part, None)
+            if current is None:
+                break
+        return current
+
+if __name__ == "__main__":
+    connector = CustomConnector("connector.yaml")  # path to the YAML file above
+
+    messages = [
+        "hola",
+        "¿Cuál es el horario de atención?",
+        "¿Pueden ayudarme con mi pedido?",
+        "Gracias, adiós."
+    ]
+
+    for msg in messages:
+        try:
+            reply = connector.send_message(msg)
+            print(f"User: {msg}")
+            print(f"Bot: {reply}\n")
+        except Exception as e:
+            print(f"Failed to send message '{msg}': {e}")
+```
+
+---
+
+This script:
+
+- Loads the YAML connector config.
+- Sends multiple user messages (`messages` list).
+- Prints the bot's reply extracted from the JSON response using the configured `response_path`.
+
+Make sure to save the YAML connector as `connector.yaml` or adjust the path accordingly in the script.  
+If you want me to generate the connector YAML and script with a different filename or more features, just ask! 😊
+$$$

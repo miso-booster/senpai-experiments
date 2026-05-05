@@ -1,0 +1,225 @@
+Sure thing! 😊 Here’s a complete, LLM-driven automation flow for generating valid Sensei profiles, aligned with the structure and best practices from `sensei-chat-guide.md`.
+
+---
+
+### 🧠 Automation game plan
+
+1. **Prompt the LLM with the Sensei profile schema** (test metadata, user block, chatbot contract, conversation controls).
+2. **Inject domain context & desired outputs** so the model can tailor the profile.
+3. **Parse & validate the YAML** to catch missing mandatory sections before saving.
+4. **Optionally run Sensei’s built-in validation** (`validation_check.py`) once the file hits disk.
+
+---
+
+### 🛠️ Python automation script
+
+```python
+#!/usr/bin/env python3
+"""
+llm_profile_builder.py
+Create Sensei profiles with a large language model and basic validation.
+"""
+
+import argparse
+import pathlib
+import sys
+from typing import Any, Dict, List, Optional
+
+import yaml
+from openai import OpenAI
+
+# ---------- LLM scaffolding ---------- #
+
+PROFILE_SYSTEM_PROMPT = """You are Sensei Profile Builder, an expert at authoring valid Sensei profile YAMLs.
+Follow the Sensei profile contract from the official documentation.
+Mandatory sections:
+- test_name (string)
+- user.language (proper case language name)
+- user.role (multi-line friendly description)
+- user.goals (list; include the main natural-language goals first, followed by variable declarations)
+- chatbot.is_starter (boolean)
+- chatbot.fallback (string)
+- chatbot.output (list of mapping entries: field_name -> {type, description})
+- conversation.number, conversation.goal_style (at least steps or all_answered), conversation.interaction_style (list)
+
+Rules:
+1. Output exactly one YAML document, no extra commentary.
+2. Match every {{variable}} used in goal instructions with a declaration later in user.goals.
+3. Use types supported by Sensei (string, int, float, date(...), time(...), list[...], or custom names provided).
+4. Keep chatbot.output aligned with the downstream validation needs supplied in the user instruction.
+5. Keep interaction_style entries to the canonical options from the docs.
+"""
+
+GENERATION_TEMPLATE = """Create a Sensei profile for the following scenario.
+
+Project context:
+{project_context}
+
+Bot fallback message: {fallback_message}
+
+Primary language: {language}
+
+Desired user goals (natural language):
+{user_goals}
+
+Variables to cover (YAML snippets or bullet list):
+{variables}
+
+Chatbot outputs to extract (field name -> type + short description):
+{chatbot_outputs}
+
+Conversation controls or constraints:
+{conversation_controls}
+
+Additional requirements:
+{extra_instructions}
+"""
+
+def call_llm(client: OpenAI, prompt: str, model: str = "gpt-4o-mini") -> str:
+    response = client.responses.create(
+        model=model,
+        input=[
+            {"role": "system", "content": PROFILE_SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.4,
+    )
+    content_blocks = response.output or []
+    yaml_snippets: List[str] = []
+    for block in content_blocks:
+        if block.type == "message":
+            for item in block.content:
+                if item.type == "output_text":
+                    yaml_snippets.append(item.text)
+    return "\n".join(yaml_snippets).strip()
+
+
+# ---------- Validation helpers ---------- #
+
+MANDATORY_TOP_LEVEL = {
+    "test_name",
+    "user",
+    "chatbot",
+    "conversation",
+}
+
+def validate_profile(yaml_text: str) -> Dict[str, Any]:
+    try:
+        profile = yaml.safe_load(yaml_text)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"YAML parsing error: {exc}") from exc
+
+    if not isinstance(profile, dict):
+        raise ValueError("Profile must be a mapping at the top level.")
+
+    missing = [key for key in MANDATORY_TOP_LEVEL if key not in profile]
+    if missing:
+        raise ValueError(f"Missing top-level keys: {missing}")
+
+    user = profile["user"]
+    if "goals" not in user or not isinstance(user["goals"], list):
+        raise ValueError("user.goals must be a non-empty list.")
+
+    chatbot = profile["chatbot"]
+    if "output" not in chatbot or not isinstance(chatbot["output"], list):
+        raise ValueError("chatbot.output must be a list of field definitions.")
+
+    conversation = profile["conversation"]
+    if "number" not in conversation:
+        raise ValueError("conversation.number is required.")
+    if "goal_style" not in conversation:
+        raise ValueError("conversation.goal_style is required.")
+
+    return profile
+
+
+# ---------- CLI wiring ---------- #
+
+def build_prompt(args: argparse.Namespace) -> str:
+    def join_lines(items: Optional[List[str]]) -> str:
+        if not items:
+            return "- none specified -"
+        return "\n".join(f"- {item}" for item in items)
+
+    return GENERATION_TEMPLATE.format(
+        project_context=args.context,
+        fallback_message=args.fallback,
+        language=args.language,
+        user_goals=join_lines(args.goal),
+        variables=join_lines(args.variable),
+        chatbot_outputs=join_lines(args.output),
+        conversation_controls=args.conversation or "- default Sensei settings -",
+        extra_instructions=args.extra or "- none -",
+    )
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="Generate Sensei profiles with an LLM.")
+    parser.add_argument("--context", default="Testing a domain-specific assistant.", help="High-level project context.")
+    parser.add_argument("--fallback", default="Sorry, could you rephrase that?", help="Bot fallback message.")
+    parser.add_argument("--language", default="English", help="Primary language for user.language.")
+    parser.add_argument("--goal", action="append", default=[], help="Add a natural-language goal (repeatable).")
+    parser.add_argument("--variable", action="append", default=[], help="Variable declaration hint (repeatable).")
+    parser.add_argument("--output", action="append", default=[], help="Desired chatbot.output field descriptions.")
+    parser.add_argument("--conversation", help="Notes about conversation.number, goal_style, interaction_style.")
+    parser.add_argument("--extra", help="Any additional instructions for the LLM.")
+    parser.add_argument("--model", default="gpt-4o-mini", help="LLM model name.")
+    parser.add_argument("--save-path", type=pathlib.Path, help="Where to write the profile YAML.")
+    args = parser.parse_args(argv)
+
+    prompt = build_prompt(args)
+    client = OpenAI()
+
+    yaml_text = call_llm(client, prompt, model=args.model)
+    profile = validate_profile(yaml_text)
+
+    if args.save_path:
+        args.save_path.write_text(yaml_text, encoding="utf-8")
+        print(f"Profile written to {args.save_path}")
+    else:
+        print(yaml_text)
+
+    print("\nValidation summary:")
+    print(" - Top-level keys present ✓")
+    print(f" - user.goals entries: {len(profile['user']['goals'])}")
+    print(f" - chatbot.output fields: {len(profile['chatbot']['output'])}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+**Usage example**
+
+```bash
+export OPENAI_API_KEY=sk-...
+python llm_profile_builder.py \
+  --context "Booking flow for a boutique hotel assistant" \
+  --goal "Ask for room availability on desired dates." \
+  --goal "Request total price and included amenities." \
+  --variable "check_in_date: forward()" \
+  --variable "nights: int range 1-7" \
+  --output "total_price -> currency, final quote for stay" \
+  --output "amenities -> list[string], benefits included in booking" \
+  --conversation "Prefer combinations() coverage and goal_style.steps: 6" \
+  --save-path profiles/hotel_quote_smoke.yml
+```
+
+After generation, run Sensei’s own validator if you’d like extra assurance:
+
+```bash
+python validation_check.py --profile profiles/hotel_quote_smoke.yml --combined-matrix
+```
+
+---
+
+### ✅ Why this matches the docs
+
+- The system prompt enforces all mandatory sections and helper conventions described in **`sensei-chat-guide.md`**.
+- `user.goals` first lists natural-language goals, then variable blocks with functions like `forward()`/`pairwise()`—exactly as the guide prescribes.
+- `chatbot.output` entries carry `type` and `description`, ensuring downstream Sensei-check rules can reference `conv[i].field`.
+- Conversation controls (`number`, `goal_style`, `interaction_style`) follow the allowed tokens from the guide.
+- The `validate_profile` function checks for the minimum structure before saving, keeping outputs “Sensei ready” even before running the official validator.
+
+Have fun automating your profile creation pipeline! If you want to extend this, you can add project-specific templates, enforce custom type availability, or chain multiple generations for different personas. Let me know if you’d like help wiring this into a batch workflow or CI job. 😊

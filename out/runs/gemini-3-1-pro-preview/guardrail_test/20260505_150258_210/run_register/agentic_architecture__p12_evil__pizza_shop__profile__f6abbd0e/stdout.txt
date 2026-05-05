@@ -1,0 +1,82 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__f6abbd0e
+$$$
+I have reviewed the SENSEI connector documentation (`custom-connector-guide.md` and `connector-examples.md`) to map your HTTP request and response into the correct YAML format.
+
+Here is the YAML connector and the Python script you requested.
+
+### 1. YAML Connector
+
+Save this file as `malaga_connector.yml`. I have extracted the base URL, path, essential headers (like `Authorization`, `Origin`, and `Referer`), and mapped the user message to the `{user_msg}` placeholder. The `response_path` is set to `response.0.text` based on the JSON response structure you provided.
+
+```yaml
+name: "1MillionBot Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 2. Python Script
+
+To send multiple requests using this connector, you can use the `CustomChatbot` class from the SENSEI `chatbot_connectors` library. This script loads the YAML file and iterates through a list of messages.
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+import time
+
+def main():
+    # 1. Load the YAML connector
+    # Make sure the path matches where you saved the YAML file
+    bot = CustomChatbot("malaga_connector.yml")
+    
+    # 2. Define the messages you want to send
+    messages_to_send = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Necesito información sobre impuestos",
+        "gracias, adiós"
+    ]
+    
+    print(f"Starting conversation with {bot.config.get('name', 'Bot')}...\n")
+    
+    # 3. Loop through the messages and send them
+    for msg in messages_to_send:
+        print(f"User: {msg}")
+        
+        # execute_with_input replaces {user_msg} with your text and extracts the response
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"Bot: {response}\n")
+        else:
+            print(f"Error: Failed to get a valid response from the bot.\n")
+            
+        # Optional: Add a small delay between requests to be polite to the API
+        time.sleep(1)
+
+if __name__ == "__main__":
+    main()
+```
+
+### How it works:
+1. **`payload_template`**: When `execute_with_input(msg)` is called, the connector automatically injects your text into the `message.text` field where `{user_msg}` is located.
+2. **`response_path`**: The connector parses the returned JSON. Since the bot's reply is inside a list under the `response` key (`{"response": [{"text": "..."}]}`), the dot notation `response.0.text` correctly extracts the HTML string (`<p>¡Buenos días!...`). 
+
+Let me know if you need to adjust any of the headers or session IDs! 😊
+$$$

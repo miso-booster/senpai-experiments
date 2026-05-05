@@ -1,0 +1,265 @@
+¡Hola! 😄 Aquí tienes un plan completo para automatizar, desde Python y con ayuda de un LLM, la creación de perfiles válidos para Sensei. Me basé en lo que indica **`sensei-chat-guide.md`**, que detalla la estructura sobre cómo deben lucir los perfiles (`test_name`, `llm`, `user`, `chatbot`, `conversation`, etc.) y el contrato de `chatbot.output`.
+
+---
+
+## 1. Blueprint de la automatización
+
+1. **Definir una especificación de perfil (entrada humana o desde JSON):**
+   - Describe qué quieres testear: idioma del usuario, metas, variables, número de conversaciones, etc.
+   - Incluye las salidas que necesitas en `chatbot.output` para que luego las reglas puedan usarlas (según el contrato mencionado en la guía).
+
+2. **Crear un prompt “instrucción + plantilla obligatoria” para el LLM:**
+   - Incluye todas las secciones obligatorias:
+     - `test_name`
+     - `llm` (opcional, salvo que quieras forzar modelo/temperatura)
+     - `user` (idioma, rol, contexto, goals con variables declaradas)
+     - `chatbot` (`is_starter`, `fallback`, `output`)
+     - `conversation` (`number`, `goal_style`, `interaction_style`)
+   - Recalca al modelo que **todas las variables en `user.goals` deben declararse con el mismo nombre** y que `chatbot.output` describe el esquema que Sensei-check usará.
+
+3. **Llamar al LLM y recuperar YAML (o JSON que luego conviertas a YAML):**
+   - Usa las instrucciones anteriores y pasa tus especificaciones.
+   - Pide salida en YAML, bloque único, sin texto adicional.
+
+4. **Post-procesar y validar:**
+   - Parsear con `yaml.safe_load`.
+   - Verificar que existan las claves esperadas y tipos básicos.
+   - Chequear que cada `{{variable}}` en los goals tenga su declaración análoga.
+   - Validar `chatbot.output` (tipo y descripción por campo).
+   - Opcional: ejecutar `validation_check.py` de Sensei para asegurar que no faltan campos o hay errores de combinaciones.
+
+5. **Guardar el perfil y (opcional) versionarlo:**
+   - Escribir el YAML validado en `profiles/<loquequiera>.yml`.
+   - Puedes guardar la especificación fuente para reproducir perfiles en el futuro.
+
+---
+
+## 2. Prompt base sugerido para el LLM
+
+```text
+You are generating a Sensei user profile in YAML. Follow the Sensei profile structure exactly:
+
+test_name: <string>
+
+llm:
+  temperature: <float>
+  model: <string>
+  model_prov: <string>
+  format:
+    type: text
+
+user:
+  language: <string>
+  role: >
+    <multiline description of the simulated user>
+  context:
+    - <optional personality references or facts>
+  goals:
+    - "<goal statements with {{variables}}>"
+    - variable_name:
+        function: <default|random|forward|pairwise|another(...)>
+        type: <string|int|float|custom>
+        data: <list | range | any(...) instructions>
+
+chatbot:
+  is_starter: <true|false>
+  fallback: "<bot fallback message>"
+  output:
+    - field_name:
+        type: <primitive|list[...]|time(...)|date(...)|custom>
+        description: "<extraction goal>"
+
+conversation:
+  number: <int or combinations(...)>
+  goal_style:
+    steps: <int> | random steps: <int> | all_answered:
+      export: <true|false>
+      limit: <int>
+    max_cost: <float optional>
+  interaction_style:
+    - <list of interaction styles, use keywords like long phrases, change your mind, etc. per docs>
+
+Requirements:
+- No free text outside the YAML.
+- Every {{variable}} in goals must be declared.
+- Use realistic values for data lists and contexts.
+- Ensure the YAML parses with yaml.safe_load.
+- Align `chatbot.output` fields with the testing needs described in the spec.
+
+User specification:
+{{INSERT_SPEC_JSON}}
+```
+
+Sustituye `{{INSERT_SPEC_JSON}}` por un resumen estructurado de tus requisitos (puede ser otro JSON vacío si no hay pautas extra).
+
+---
+
+## 3. Script de ejemplo (OpenAI API) 🐍
+
+```python
+import os
+import json
+from pathlib import Path
+
+import openai
+import yaml
+
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+
+CLIENT = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+PROMPT_TEMPLATE = """You are generating a Sensei user profile in YAML. Follow the Sensei profile structure exactly:
+
+test_name: <string>
+
+llm:
+  temperature: <float>
+  model: <string>
+  model_prov: <string>
+  format:
+    type: text
+
+user:
+  language: <string>
+  role: >
+    <multiline description of the simulated user>
+  context:
+    - <optional personality references or facts>
+  goals:
+    - "<goal statements with {{variables}}>"
+    - variable_name:
+        function: <default|random|forward|pairwise|another(...)>
+        type: <string|int|float|custom>
+        data: <list | range | any(...) instructions>
+
+chatbot:
+  is_starter: <true|false>
+  fallback: "<bot fallback message>"
+  output:
+    - field_name:
+        type: <primitive|list[...]|time(...)|date(...)|custom>
+        description: "<extraction goal>"
+
+conversation:
+  number: <int or combinations(...)>
+  goal_style:
+    steps: <int> | random steps: <int> | all_answered:
+      export: <true|false>
+      limit: <int>
+    max_cost: <float optional>
+  interaction_style:
+    - <list of interaction styles per Sensei docs>
+
+Requirements:
+- No free text outside the YAML.
+- Every {{variable}} in goals must be declared.
+- Use realistic values for data lists and contexts.
+- Ensure the YAML parses with yaml.safe_load.
+- Align `chatbot.output` fields with the testing needs described in the spec.
+
+User specification:
+{spec_json}
+"""
+
+MANDATORY_KEYS = {"test_name", "user", "chatbot", "conversation"}
+
+def render_prompt(spec: dict) -> str:
+    return PROMPT_TEMPLATE.format(spec_json=json.dumps(spec, indent=2))
+
+def call_llm(prompt: str) -> str:
+    response = CLIENT.responses.create(
+        model="gpt-4.1-mini",
+        input=prompt,
+        temperature=0.4,
+    )
+    return response.output_text.strip()
+
+def parse_and_validate(yaml_text: str) -> dict:
+    profile = yaml.safe_load(yaml_text)
+
+    missing = MANDATORY_KEYS - profile.keys()
+    if missing:
+        raise ValueError(f"Missing mandatory sections: {missing}")
+
+    goals = profile["user"].get("goals", [])
+    declared_vars = {
+        entry
+        for entry in goals
+        if isinstance(entry, dict)
+    }
+    referenced_vars = set()
+    for entry in goals:
+        if isinstance(entry, str):
+            referenced_vars.update(
+                part.strip("{} ")
+                for part in entry.split()
+                if part.startswith("{{") and part.endswith("}}")
+            )
+    undeclared = referenced_vars - {list(d.keys())[0] for d in declared_vars}
+    if undeclared:
+        raise ValueError(f"Undeclared goal variables: {undeclared}")
+
+    chatbot_output = profile["chatbot"].get("output", [])
+    for item in chatbot_output:
+        if not isinstance(item, dict):
+            raise ValueError("Each chatbot.output entry must be a mapping.")
+        field, meta = next(iter(item.items()))
+        for required_key in ("type", "description"):
+            if required_key not in meta:
+                raise ValueError(
+                    f"Field '{field}' missing '{required_key}' in chatbot.output"
+                )
+
+    return profile
+
+def save_profile(profile: dict, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(profile, f, sort_keys=False, allow_unicode=True)
+
+def main():
+    spec = {
+        "test_name": "travel_booking_check",
+        "language": "English",
+        "user_role": "A traveler comparing multi-city flight itineraries.",
+        "needs_output_fields": [
+            {"field": "itinerary_id", "type": "string"},
+            {"field": "total_price", "type": "currency"},
+        ],
+        "conversation_depth": 6,
+    }
+
+    prompt = render_prompt(spec)
+    llm_yaml = call_llm(prompt)
+    profile = parse_and_validate(llm_yaml)
+    save_profile(profile, Path("profiles/travel_booking_check.yml"))
+    print("Profile saved!")
+
+if __name__ == "__main__":
+    main()
+```
+
+### Puntos clave del script
+
+- **`render_prompt`** fusiona tu especificación con el prompt fijo.
+- **`call_llm`** usa el modelo que prefieras (puedes cambiar a otro proveedor/SDK).
+- **`parse_and_validate`** aplica validaciones mínimas basadas en la guía:
+  - Verifica secciones críticas (`sensei-chat-guide.md` §3).
+  - Comprueba que las variables de `goals` declaradas coincidan con las usadas.
+  - Garantiza que cada campo de `chatbot.output` tenga `type` y `description` (sección 2.1.1 de la guía).
+- Puedes ampliar las validaciones para revisar `conversation.number`, asegurar que `fallback` exista, etc.
+- **`save_profile`** guarda el YAML en la carpeta `profiles/`.
+
+---
+
+## 4. Consejos y extensiones
+
+- **Validación avanzada:** ejecuta `python validation_check.py --profile ...` antes de correr Sensei para detectar errores de combinaciones, tipos o formato.
+- **Plantillas por dominio:** guarda prompts distintos según la vertical (e-commerce, travel, soporte técnico) para dar más contexto al LLM.
+- **Librerías de apoyo:** puedes usar `jsonschema` o `pydantic` para formalizar las reglas de la guía y reforzar el post-procesado.
+- **Human-in-the-loop:** registra el YAML generado, muéstralo en un visor y deja que un reviewer confirme o corrija antes de guardar.
+- **Entradas multi-perfil:** si necesitas generar docenas de perfiles, prepara un JSONL con tus especificaciones y ejecuta el script en batch.
+
+---
+
+Con esto tendrás una automatización robusta y alineada con la estructura oficial de Sensei. Si quieres que afinemos el prompt o añadamos checks adicionales, dime y lo adaptamos. ¡Éxitos con tus perfiles! 🚀

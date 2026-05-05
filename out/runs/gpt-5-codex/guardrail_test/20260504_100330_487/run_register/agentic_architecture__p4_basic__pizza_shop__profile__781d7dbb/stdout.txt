@@ -1,0 +1,306 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__781d7dbb
+$$$
+Aquí tienes una propuesta completa para automatizar, desde Python y con ayuda de un LLM, la generación de perfiles válidos de Sensei. Me basé en la guía oficial `sensei-chat-guide.md`, que detalla la anatomía y las reglas de validación de un perfil.
+
+---
+
+### 🎯 Suposiciones y alcance
+- Usaremos un modelo compatible con la API de OpenAI (ajústalo si prefieres otra librería/endpoint).
+- El script partirá de un **brief estructurado** (`spec`) que describe la intención del test, el rol del usuario simulado, variables necesarias, etc.
+- El LLM deberá devolver un JSON que siga el contrato de Sensei (`test_name`, secciones `user`, `chatbot`, `conversation`, etc.). Luego lo convertimos a YAML y lo validamos antes de guardarlo.
+
+---
+
+### 🛠️ Flujo recomendado
+
+1. **Preparar un brief de entrada** (`spec.json`) con:
+   - Nombre de prueba, dominio, idioma, matices del usuario.
+   - Variables y combinaciones que te interese cubrir.
+   - Contrato esperado del chatbot (`chatbot.output`) y límites de conversación.
+
+2. **Construir un prompt sólido** para el LLM:
+   - Recordarle la estructura obligatoria descrita en `sensei-chat-guide.md`.
+   - Exigir JSON válido (más fácil de validar que YAML crudo).
+   - Explicar cómo deben lucir `user.goals`, `chatbot.output`, `conversation.number`, etc.
+
+3. **Post-procesar y validar**:
+   - Parsear la respuesta JSON.
+  - Verificar que existan las secciones críticas y que `chatbot.output` sea una lista de mapeos `{campo: {type, description}}`.
+   - Asegurar que todas las variables declaradas en `user.goals` aparezcan dentro de las plantillas `{{variable}}` y viceversa.
+
+4. **Renderizar a YAML** con `yaml.safe_dump`, conservando el orden lógico y guardarlo bajo `profiles/`.
+
+5. (Opcional) **Validar automáticamente** ejecutando `validation_check.py` del proyecto Sensei para asegurar que la matriz de combinaciones y la estructura sean aceptadas.
+
+---
+
+### 📄 Plantilla de brief (entrada)
+
+```yaml
+# spec.yaml
+test_name: rental_car_quote_regression
+llm_defaults:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+user:
+  language: English
+  role: >
+    You are a traveler planning a weekend trip and need a rental car.
+  context:
+    - You belong to the Gold loyalty program.
+    - You prefer automatic transmission but can settle for manual if needed.
+goals:
+  primary:
+    - "Book a {{car_class}} car with {{transmission}} transmission"
+    - "Pickup on {{pickup_date}} and return on {{return_date}}"
+    - "Ask for add-ons: {{add_ons}}"
+    - "Request the final price in {{currency}}"
+  variables:
+    car_class:
+      function: forward()
+      type: string
+      data: [economy, compact, suv]
+    transmission:
+      function: pairwise()
+      type: string
+      data: [automatic, manual]
+    pickup_date:
+      function: another()
+      type: string
+      data:
+        - any(3 weekend dates within the next month)
+    return_date:
+      function: forward(pickup_date)
+      type: string
+      data:
+        - any(3 return dates after pickup)
+    add_ons:
+      function: pairwise()
+      type: string
+      data: [GPS, infant seat, additional driver, full coverage]
+    currency:
+      function: random()
+      type: string
+      data: [USD, EUR, GBP]
+chatbot_expectations:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output_fields:
+    - name: total_price
+      type: currency
+      description: "Final price including taxes and add-ons"
+    - name: booking_id
+      type: string
+      description: "Confirmation reference number"
+    - name: pickup_time
+      type: time("hh:mm")
+      description: "Pickup time for the vehicle"
+conversation_settings:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - change language:
+            - Spanish
+            - German
+```
+
+*(Puedes alojar este brief como YAML o JSON; el script lo admite en ambos formatos).*
+
+---
+
+### 🤖 Prompt base para el LLM
+
+```text
+You are an expert Sensei profile engineer. Produce a SENSEI profile as a JSON object that can be converted directly to YAML.
+Follow the Sensei profile contract:
+
+- Required top-level keys: test_name, llm, user, chatbot, conversation.
+- user.goals can include both plain strings and variable declarations. Every {{variable}} used in goal strings must be declared.
+- chatbot.output must be a list of single-key mappings: [{field_name: {type: "...", description: "..."}}].
+- Preserve the order: test_name, llm, user, chatbot, conversation.
+- Do not invent new sections; comply with sensei-chat-guide.md.
+
+Here is the brief you must honor:
+<BRIEF JSON GOES HERE>
+```
+
+---
+
+### 🧪 Script de automatización (Python)
+
+```python
+#!/usr/bin/env python3
+"""
+generate_profile.py
+
+Automatiza la creación de perfiles de Sensei usando un LLM y valida
+la estructura antes de exportar a YAML.
+"""
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any, Dict, List, Union
+
+import yaml
+from openai import OpenAI
+
+
+SYSTEM_PROMPT = """You are an expert Sensei profile engineer.
+Return ONLY valid JSON (no markdown) describing a Sensei profile.
+Respect the contract from sensei-chat-guide.md:
+- Include top-level keys in this order: test_name, llm, user, chatbot, conversation.
+- user.goals must list both template strings and variable declarations.
+- Each {{variable}} in goal templates MUST have a matching declaration.
+- chatbot.output must be a list of single-key mappings, e.g.:
+  [{ "price": { "type": "currency", "description": "..." } }]
+- conversation.number can be an int or combinations(...) literal.
+- Do not invent extra sections. Do not wrap the JSON in triple backticks.
+"""
+
+DEFAULT_MODEL = "gpt-4o-mini"
+
+
+def load_spec(path: Path) -> Dict[str, Any]:
+    text = path.read_text(encoding="utf-8")
+    if path.suffix in {".yaml", ".yml"}:
+        return yaml.safe_load(text)
+    return json.loads(text)
+
+
+def build_user_prompt(spec: Dict[str, Any]) -> str:
+    return (
+        "Here is the brief you must honor. "
+        "Fill any missing Sensei defaults conservatively and keep everything consistent.\n"
+        f"{json.dumps(spec, indent=2)}"
+    )
+
+
+def call_llm(
+    client: OpenAI, prompt: str, model: str = DEFAULT_MODEL, temperature: float = 0.2
+) -> Dict[str, Any]:
+    response = client.responses.create(
+        model=model,
+        input=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ],
+        response_format={"type": "json_object"},
+        temperature=temperature,
+    )
+    content = response.output[0].content[0].text
+    return json.loads(content)
+
+
+def validate_profile(profile: Dict[str, Any]) -> None:
+    required_sections = ["test_name", "llm", "user", "chatbot", "conversation"]
+    for key in required_sections:
+        if key not in profile:
+            raise ValueError(f"Missing required top-level key: {key}")
+
+    if "output" not in profile["chatbot"]:
+        raise ValueError("chatbot.output is required by Sensei.")
+
+    outputs = profile["chatbot"]["output"]
+    if not isinstance(outputs, list):
+        raise ValueError("chatbot.output must be a list.")
+    for idx, entry in enumerate(outputs):
+        if not isinstance(entry, dict) or len(entry) != 1:
+            raise ValueError(
+                f"chatbot.output[{idx}] must be a single-key mapping "
+                "{field_name: {type, description}}."
+            )
+        _, config = next(iter(entry.items()))
+        for needed in ("type", "description"):
+            if needed not in config:
+                raise ValueError(
+                    f"chatbot.output[{idx}] is missing '{needed}'."
+                )
+
+    goals = profile["user"].get("goals", [])
+    declared_vars = {
+        list(g.keys())[0]
+        for g in goals
+        if isinstance(g, dict) and len(g) == 1 and isinstance(next(iter(g.values())), dict)
+    }
+    used_vars = {
+        token.strip("{}")
+        for item in goals
+        if isinstance(item, str)
+        for token in item.split()
+        if token.startswith("{{") and token.endswith("}}")
+    }
+    missing = used_vars - declared_vars
+    if missing:
+        raise ValueError(f"Variables used but not declared: {sorted(missing)}")
+
+
+def dump_yaml(profile: Dict[str, Any]) -> str:
+    return yaml.safe_dump(profile, sort_keys=False, allow_unicode=True)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Generate a Sensei profile from a brief using an LLM."
+    )
+    parser.add_argument("spec", type=Path, help="Path to spec (YAML or JSON).")
+    parser.add_argument(
+        "--output", "-o", type=Path, default=Path("profiles/generated_profile.yml")
+    )
+    parser.add_argument("--model", default=DEFAULT_MODEL, help="LLM model name.")
+    parser.add_argument(
+        "--temperature", type=float, default=0.2, help="Sampling temperature."
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print profile to stdout instead of writing to disk.",
+    )
+    args = parser.parse_args()
+
+    spec = load_spec(args.spec)
+    prompt = build_user_prompt(spec)
+    client = OpenAI()
+
+    profile = call_llm(client, prompt, model=args.model, temperature=args.temperature)
+    validate_profile(profile)
+
+    yaml_text = dump_yaml(profile)
+
+    if args.dry_run:
+        print(yaml_text)
+    else:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(yaml_text, encoding="utf-8")
+        print(f"✓ Profile written to {args.output}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+### ✅ Consejos extra
+
+- **Afinar el prompt**: si notas que el modelo incumple la estructura, añade ejemplos tipo “Esto es un ejemplo correcto/incorrecto…”.
+- **Validación adicional**: integrar `validation_check.py` tras generar el archivo ayuda a detectar variables sin cubrir o combinaciones inválidas.
+- **Semillas reutilizables**: guarda varias especificaciones (`specs/`) según los escenarios que quieras automatizar: ventas, soporte, reservas, etc.
+- **Trazabilidad**: loguea el brief original, la respuesta cruda y el YAML final para poder depurar cuando el LLM se equivoque.
+
+---
+
+### 📌 Resumen
+
+- Revisé `sensei-chat-guide.md` para asegurar que la estructura generada cumpla con el contrato oficial de perfiles Sensei (secciones obligatorias, formato de `chatbot.output`, consistencia de variables, etc.).
+- Propuse un flujo en cuatro pasos: brief estructurado → prompt robusto → llamada al LLM → validación + exportación a YAML.
+- Incluí un script listo para usar que valida los aspectos más críticos y convierte el JSON en YAML.
+
+¿Quieres que afinemos el prompt con ejemplos concretos o que añadamos validaciones más estrictas según otros requisitos de tu proyecto?
+$$$

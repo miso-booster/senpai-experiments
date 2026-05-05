@@ -1,0 +1,182 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__94ecd338
+$$$
+Hey there! 😊 Based on the guidelines in `sensei-chat-guide.md`, here’s how you can build a Python workflow that asks an LLM to spit out fully compliant Sensei profiles end-to-end.
+
+---
+
+## 1. Recap: What a valid Sensei profile must contain
+From the doc, every profile YAML needs the following top-level structure:
+
+- `test_name`
+- Optional `llm` overrides (model, temperature, format).
+- `user` → language, role, context, and goals (with variable declarations that exactly match any `{{variables}}` used in goal strings).
+- `chatbot` → `is_starter`, `fallback`, and the crucial `output` schema that rules will later consume.
+- `conversation` controls → number of conversations, goal_style, interaction_style, optional cost caps.
+
+Keeping this template in mind is key because your automation should fail fast if any section is missing.
+
+---
+
+## 2. LLM-powered generation pipeline
+
+1. **Collect scenario requirements**  
+   Define the domain, user persona, variables, expected chatbot outputs, and conversation dynamics you want the profile to cover.
+
+2. **Construct a strict LLM prompt**  
+   - System message: enforce the YAML template, remind the model about variable declarations (`goals` + matching entries), and call out naming and typing rules from the doc.
+   - User message: inject the scenario requirements from step 1 plus a short reminder of the YAML skeleton.
+
+3. **Model call**  
+   Use your preferred provider (OpenAI, Anthropic, etc.) with `response_format="yaml"` or equivalent.
+
+4. **Post-process & validate**  
+   - Parse the YAML (e.g., `yaml.safe_load`).
+   - Run structural checks (see below).
+   - Optionally re-prompt the model with the diff/violations if something is missing.
+
+5. **Optional: run Sensei’s own validator**  
+   Call `validation_check.py` or expose it via Python’s `subprocess` to ensure the profile loads and any combination matrices make sense.
+
+---
+
+## 3. Guardrail checks to implement
+
+- **Presence checks**: all required sections mentioned above exist.
+- **Variable consistency**: every `{{var}}` in the string goals has a matching declaration entry and vice-versa.
+- **Type sanity**: use allowed primitives (`string`, `int`, `float`, `time(...)`, `date(...)`, lists, or custom types). Remember from `sensei-chat-guide.md` that `list[...]` is only valid in `chatbot.output`, not in `user.goals`.
+- **Conversation controls**: ensure `conversation.number`, `goal_style`, and `interaction_style` obey the documented options (e.g., `combinations`, `steps`, the reserved interaction keywords).
+- **Output schema**: `chatbot.output` must describe what later Sensei-check rules will read; confirm each field has `type` and `description`.
+- **Fallback check**: the doc emphasises referencing the real bot fallback text.
+
+---
+
+## 4. Prompt template (example)
+
+```text
+System:
+You are an expert Sensei profile author. Follow the structure from sensei-chat-guide.md exactly. 
+Rules:
+- Always output valid YAML with the top-level keys: test_name, llm (optional), user, chatbot, conversation.
+- In user.goals, every {{variable}} must be declared as a mapping with function, type, data.
+- Use only documented interaction_style values and types.
+- Ensure chatbot.output fields have type + description and reflect the scenario.
+
+User:
+Create a Sensei profile for a {scenario}. 
+Persona details: {persona}.
+Variables to cover: {variables}
+Required chatbot outputs: {outputs}
+Conversation expectations: {conversation_controls}
+```
+
+You can inject structured JSON for `{variables}`, `{outputs}`, etc., and let the model map it into YAML.
+
+---
+
+## 5. Python skeleton
+
+```python
+import yaml
+from pathlib import Path
+from openai import OpenAI  # adjust to your provider
+
+client = OpenAI()
+
+def build_prompt(scenario_config: dict) -> tuple[str, str]:
+    system = (
+        "You are an expert Sensei profile author. "
+        "Produce YAML matching sensei-chat-guide.md requirements. "
+        "All variables in goal strings must be declared. "
+        "Use valid interaction_style keywords and type names."
+    )
+    user = f"""
+Create a Sensei profile with these requirements:
+{yaml.safe_dump(scenario_config, sort_keys=False)}
+Return ONLY YAML.
+"""
+    return system, user
+
+def call_llm(system: str, user: str) -> str:
+    response = client.responses.create(
+        model="gpt-4o-mini",
+        input=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        response_format={"type": "yaml"}
+    )
+    return response.output_text.strip()
+
+def validate_profile(profile_dict: dict):
+    required_top_levels = {"test_name", "user", "chatbot", "conversation"}
+    missing = required_top_levels - profile_dict.keys()
+    if missing:
+        raise ValueError(f"Missing top-level keys: {missing}")
+
+    goals = profile_dict["user"].get("goals", [])
+    string_goals = [g for g in goals if isinstance(g, str)]
+    declared_vars = {
+        next(iter(item.keys()))
+        for item in goals
+        if isinstance(item, dict)
+    }
+
+    used_vars = set()
+    for goal in string_goals:
+        used_vars.update(part.strip("{}") for part in goal.split() if part.startswith("{{"))
+
+    if used_vars != declared_vars:
+        raise ValueError(f"Variable mismatch – declared: {declared_vars}, used: {used_vars}")
+
+    outputs = profile_dict["chatbot"].get("output", [])
+    for item in outputs:
+        name, info = next(iter(item.items()))
+        if "type" not in info or "description" not in info:
+            raise ValueError(f"chatbot.output field '{name}' missing type or description")
+
+def generate_profile(scenario_config: dict, output_path: Path):
+    system, user = build_prompt(scenario_config)
+    raw_yaml = call_llm(system, user)
+    data = yaml.safe_load(raw_yaml)
+    validate_profile(data)
+    output_path.write_text(raw_yaml, encoding="utf-8")
+    return raw_yaml
+
+if __name__ == "__main__":
+    scenario = {
+        "test_name": "hotel_booking_multi_currency",
+        "persona": "English-speaking traveller asking for availability, rates, and loyalty perks.",
+        "variables": {
+            "location": ["Paris", "New York", "Tokyo"],
+            "check_in_date": "any(3 check-in dates in the next 45 days)",
+            "nights": {"type": "int", "min": 1, "max": 7},
+            "currency": ["USD", "EUR", "JPY"]
+        },
+        "outputs": [
+            {"field": "total_price", "type": "currency", "description": "Final quote including taxes"},
+            {"field": "booking_reference", "type": "string", "description": "Provided confirmation ID"}
+        ],
+        "conversation_controls": {
+            "max_steps": 6,
+            "interaction_styles": ["long phrases", "change language: [Spanish]"]
+        }
+    }
+    path = Path("profiles/hotel_booking_multi_currency.yml")
+    print(generate_profile(scenario, path))
+```
+
+Feel free to expand validation with:
+- JSON Schema or Pydantic models.
+- Regex checks for interaction styles (`long phrases`, `change your mind`, etc.) as listed in the doc.
+- A subprocess call to `validation_check.py`.
+
+---
+
+## 6. Suggested next steps
+
+1. Wrap the generation in a CLI/REST service so you can feed configs easily.
+2. Add retries that include the validation error message back in the prompt (“Fix the following issues…”).
+3. Optionally store a library of scenario presets and personality snippets and let the script combine them before hitting the LLM.
+
+Let me know if you’d like help tightening the validation layer or wiring this into your Sensei project’s CI pipeline!
+$$$

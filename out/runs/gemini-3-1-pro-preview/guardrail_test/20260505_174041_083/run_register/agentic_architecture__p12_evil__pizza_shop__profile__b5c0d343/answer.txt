@@ -1,0 +1,76 @@
+Here is the YAML connector and the Python script you requested, based on the HTTP request and response you provided. 
+
+I have mapped the `Host` to the `base_url`, the endpoint to the `path`, and replaced the hardcoded `"hola"` in the payload with the `{user_msg}` placeholder required by the SENSEI connector engine. I also set the `response_path` to `response.0.text` to extract the HTML text from the nested JSON response.
+
+### 1. YAML Connector (`saic_malaga_connector.yml`)
+
+Save this file as `saic_malaga_connector.yml`.
+
+```yaml
+name: "SAIC Malaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 2. Python Script
+
+Here is a complete Python script that uses the SENSEI `CustomChatbot` class to load your YAML connector and send multiple requests to it in a loop.
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def main():
+    # 1. Initialize the bot using the YAML connector we just created
+    # Make sure the path matches where you saved the YAML file
+    bot = CustomChatbot("saic_malaga_connector.yml")
+
+    # 2. Define a list of messages to send to the chatbot
+    messages_to_send = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Necesito ayuda con un trámite",
+        "Muchas gracias, adiós"
+    ]
+
+    print(f"Starting conversation with {bot.config.get('name', 'Bot')}...\n")
+    print("-" * 40)
+
+    # 3. Loop through the messages and send them one by one
+    for msg in messages_to_send:
+        print(f"User: {msg}")
+        
+        # execute_with_input automatically injects the message into the {user_msg} placeholder
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"Bot: {response}\n")
+        else:
+            print(f"Error: Failed to get a response from the bot.\n")
+
+if __name__ == "__main__":
+    main()
+```
+
+### How it works:
+1. **`payload_template`**: The connector engine takes whatever string you pass to `bot.execute_with_input()` and injects it into the `{user_msg}` placeholder inside `message.text`.
+2. **`response_path`**: When the 1millionbot API replies with `{"response": [{"text": "<p>¡Buenos días!..."}]}`, the engine uses the dot-notation path `response.0.text` to navigate into the `response` array, grab the first item (`0`), and extract the `text` field.
+
+Let me know if you need any adjustments to the headers or the payload! 😊
