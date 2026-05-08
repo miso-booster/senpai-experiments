@@ -370,9 +370,18 @@ def generate_model_comparison_plots(
     model_labels = [_display_model_label(model) for model in model_order]
 
     def _save(fig, filename: str) -> None:
-        fig.tight_layout()
-        fig.savefig(out_dir / f"{filename}.{plot_format}", dpi=dpi)
+        fig.tight_layout(rect=(0, 0.08, 1, 1))
+        fig.savefig(out_dir / f"{filename}.{plot_format}", dpi=dpi, bbox_inches="tight")
         plt.close(fig)
+
+    def _place_legend(ax, *, ncols: int | None = None) -> None:
+        ax.legend(
+            frameon=False,
+            fontsize=9,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.22),
+            ncols=ncols or min(len(arch_order), 3),
+        )
 
     def _grouped_metric_stat(metric: str) -> pd.DataFrame:
         return (
@@ -385,10 +394,17 @@ def generate_model_comparison_plots(
         group_x = np.arange(len(model_order), dtype=float)
         bar_width = min(0.22, 0.78 / max(len(arch_order), 1))
         offsets = (np.arange(len(arch_order)) - (len(arch_order) - 1) / 2) * bar_width
+        all_values = [
+            float(value)
+            for values in values_by_arch.values()
+            for value in values
+            if pd.notna(value)
+        ]
+        max_value = max(all_values) if all_values else 0.0
         for arch_idx, arch in enumerate(arch_order):
             values = values_by_arch[arch]
             errors = errors_by_arch.get(arch, [0] * len(values))
-            ax.bar(
+            bars = ax.bar(
                 group_x + offsets[arch_idx],
                 values,
                 yerr=errors,
@@ -399,11 +415,24 @@ def generate_model_comparison_plots(
                 linewidth=0.8,
                 label=ARCH_DISPLAY_LABELS.get(arch, arch.replace("_", " ")),
             )
+            for bar, value in zip(bars, values):
+                if pd.isna(value):
+                    continue
+                label = f"{value:.2f}" if not ylim else f"{value:.0%}"
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + max(max_value * 0.015, 0.01),
+                    label,
+                    ha="center",
+                    va="bottom",
+                    fontsize=7,
+                )
         ax.set_title(title)
         ax.set_ylabel(ylabel)
         ax.set_xticks(group_x, model_labels, rotation=15, ha="right")
         if ylim:
-            ax.set_ylim(*ylim)
+            lower, upper = ylim
+            ax.set_ylim(lower, upper + max((upper - lower) * 0.12, 0.08))
         ax.grid(axis="y", alpha=0.3)
 
     # Figure 1: per-response means with std bars, grouped by model.
@@ -418,7 +447,7 @@ def generate_model_comparison_plots(
             values_by_arch[arch] = pd.to_numeric(arch_stat["mean"], errors="coerce").fillna(0).tolist()
             errors_by_arch[arch] = pd.to_numeric(arch_stat["std"], errors="coerce").fillna(0).tolist()
         _draw_grouped_bars(ax, values_by_arch, errors_by_arch, f"Average per response: {label}", label)
-    axes[-1].legend(frameon=False, fontsize=9)
+    _place_legend(axes[-1])
     _save(fig, "RQ2_per_response_mean_std")
 
     # Figure 2: per-response distributions as grouped boxplots.
@@ -426,14 +455,30 @@ def generate_model_comparison_plots(
     axes = [axes] if len(metrics) == 1 else axes
     for ax, (metric, label) in zip(axes, metrics.items()):
         _draw_grouped_boxplot(ax, filtered_rows, model_order, arch_order, color_map, metric, label)
-    axes[-1].legend(_legend_handles(plt, arch_order, color_map), arch_labels, frameon=False, fontsize=9)
+    axes[-1].legend(
+        _legend_handles(plt, arch_order, color_map),
+        arch_labels,
+        frameon=False,
+        fontsize=9,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.22),
+        ncols=min(len(arch_order), 3),
+    )
     _save(fig, "RQ2_per_response_distributions")
 
     # Figure 2b: larger per-metric distribution panels.
     for metric, label in metrics.items():
         fig, ax = plt.subplots(1, 1, figsize=(max(6.8, len(model_order) * 1.6), 4.9))
         _draw_grouped_boxplot(ax, filtered_rows, model_order, arch_order, color_map, metric, label)
-        ax.legend(_legend_handles(plt, arch_order, color_map), arch_labels, frameon=False, fontsize=9)
+        ax.legend(
+            _legend_handles(plt, arch_order, color_map),
+            arch_labels,
+            frameon=False,
+            fontsize=9,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.22),
+            ncols=min(len(arch_order), 3),
+        )
         _save(fig, f"RQ2_per_response_distribution_{metric}")
 
     # Figure 3: quality/reliability rates, grouped by model.
@@ -458,8 +503,26 @@ def generate_model_comparison_plots(
                 values_by_arch[arch] = pd.to_numeric(arch_values, errors="coerce").fillna(0).tolist()
                 errors_by_arch[arch] = [0] * len(model_order)
             _draw_grouped_bars(ax, values_by_arch, errors_by_arch, title, ylabel, ylim=(0, 1))
-        axes[-1].legend(frameon=False, fontsize=9)
+        _place_legend(axes[-1])
         _save(fig, "RQ2_quality_rates")
+
+        for title, series, ylabel in quality_panels:
+            fig, ax = plt.subplots(1, 1, figsize=(max(6.8, len(model_order) * 1.6), 4.8))
+            reindexed = series.reindex(full_index)
+            values_by_arch = {}
+            errors_by_arch = {}
+            for arch in arch_order:
+                arch_values = reindexed.xs(arch, level="arch_id")
+                values_by_arch[arch] = pd.to_numeric(arch_values, errors="coerce").fillna(0).tolist()
+                errors_by_arch[arch] = [0] * len(model_order)
+            _draw_grouped_bars(ax, values_by_arch, errors_by_arch, title, ylabel, ylim=(0, 1))
+            _place_legend(ax)
+            filename = (
+                "RQ2_quality_fallback_rate"
+                if title == "Fallback Rate"
+                else "RQ2_quality_yaml_valid_rate"
+            )
+            _save(fig, filename)
 
     # Figure 4/5 aliases for code lines, matching the individual output set.
     if "answer_code_lines" in filtered_rows.columns:
@@ -474,7 +537,15 @@ def generate_model_comparison_plots(
             "Code lines",
             title="Lines of Code per Response",
         )
-        ax.legend(_legend_handles(plt, arch_order, color_map), arch_labels, frameon=False, fontsize=9)
+        ax.legend(
+            _legend_handles(plt, arch_order, color_map),
+            arch_labels,
+            frameon=False,
+            fontsize=9,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.22),
+            ncols=min(len(arch_order), 3),
+        )
         _save(fig, "RQ2_answer_code_lines_distribution")
 
 
