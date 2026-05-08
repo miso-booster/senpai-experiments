@@ -7,6 +7,20 @@ from app.architecture_styles import ARCH_DISPLAY_LABELS, ARCH_FILL_COLORS
 
 SINGLE_DISTRIBUTION_FIGSIZE = (5.6, 4.9)
 
+MODEL_DISPLAY_LABELS = {
+    "gpt-4o-mini": "gpt-4o-mini",
+    "gpt-4-1-mini": "gpt-4.1-mini",
+    "gpt-5-codex": "gpt-5-codex",
+    "gemini-3-1-pro-preview": "gemini-3.1-pro-preview",
+}
+
+MODEL_ORDER = (
+    "gpt-4o-mini",
+    "gpt-4-1-mini",
+    "gpt-5-codex",
+    "gemini-3-1-pro-preview",
+)
+
 
 def _rate_equals_one(series: pd.Series) -> float:
     """Return the share of observed numeric values that equal 1."""
@@ -46,6 +60,19 @@ def _ordered_arches(df: pd.DataFrame, preferred: Sequence[str] | None) -> list[s
 def _display_arch_labels(architectures: Sequence[str]) -> list[str]:
     """Return shorter human-readable labels for plots."""
     return [ARCH_DISPLAY_LABELS.get(arch, arch.replace("_", " ")) for arch in architectures]
+
+
+def _ordered_models(df: pd.DataFrame) -> list[str]:
+    if "model_label" not in df.columns:
+        return []
+    detected = [m for m in df["model_label"].dropna().astype(str).unique() if m]
+    ordered = [model for model in MODEL_ORDER if model in detected]
+    extras = sorted(model for model in detected if model not in ordered)
+    return ordered + extras
+
+
+def _display_model_label(model: str) -> str:
+    return MODEL_DISPLAY_LABELS.get(model, model)
 
 
 def _metric_series_by_arch(
@@ -302,3 +329,217 @@ def generate_plots(
                 _save(fig, "RQ2_answer_code_lines_violin_distribution")
             except Exception as exc:  # pragma: no cover - defensive plotting fallback
                 print(f"[WARN] Could not generate LOC violin plot: {exc}")
+
+
+def generate_model_comparison_plots(
+    out_dir: Path,
+    filtered_rows: pd.DataFrame,
+    metrics: dict[str, str],
+    architectures: Sequence[str] | None,
+    plot_format: str,
+    dpi: int,
+) -> None:
+    """Generate RQ2 plots that compare all models in a single figure per metric family."""
+    if "model_label" not in filtered_rows.columns:
+        print("[WARN] model_label column not found; skipping RQ2 model comparison plots.")
+        return
+
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("[WARN] matplotlib is not installed; skipping model comparison plot generation.")
+        return
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    model_order = _ordered_models(filtered_rows)
+    arch_order = _ordered_arches(filtered_rows, architectures)
+    if not model_order or not arch_order:
+        print("[WARN] No models or architectures available for RQ2 model comparison plots.")
+        return
+
+    colors = plt.get_cmap("tab10").colors
+    color_map = {
+        arch: ARCH_FILL_COLORS.get(arch, colors[i % len(colors)])
+        for i, arch in enumerate(arch_order)
+    }
+    arch_labels = _display_arch_labels(arch_order)
+    model_labels = [_display_model_label(model) for model in model_order]
+
+    def _save(fig, filename: str) -> None:
+        fig.tight_layout()
+        fig.savefig(out_dir / f"{filename}.{plot_format}", dpi=dpi)
+        plt.close(fig)
+
+    def _grouped_metric_stat(metric: str) -> pd.DataFrame:
+        return (
+            filtered_rows.groupby(["model_label", "arch_id"])[metric]
+            .agg(mean="mean", std="std")
+            .reindex(pd.MultiIndex.from_product([model_order, arch_order], names=["model_label", "arch_id"]))
+        )
+
+    def _draw_grouped_bars(ax, values_by_arch: dict[str, list[float]], errors_by_arch: dict[str, list[float]], title: str, ylabel: str, *, ylim: tuple[float, float] | None = None) -> None:
+        group_x = np.arange(len(model_order), dtype=float)
+        bar_width = min(0.22, 0.78 / max(len(arch_order), 1))
+        offsets = (np.arange(len(arch_order)) - (len(arch_order) - 1) / 2) * bar_width
+        for arch_idx, arch in enumerate(arch_order):
+            values = values_by_arch[arch]
+            errors = errors_by_arch.get(arch, [0] * len(values))
+            ax.bar(
+                group_x + offsets[arch_idx],
+                values,
+                yerr=errors,
+                width=bar_width,
+                capsize=4 if any(pd.notna(errors)) else 0,
+                color=color_map[arch],
+                edgecolor="black",
+                linewidth=0.8,
+                label=ARCH_DISPLAY_LABELS.get(arch, arch.replace("_", " ")),
+            )
+        ax.set_title(title)
+        ax.set_ylabel(ylabel)
+        ax.set_xticks(group_x, model_labels, rotation=15, ha="right")
+        if ylim:
+            ax.set_ylim(*ylim)
+        ax.grid(axis="y", alpha=0.3)
+
+    # Figure 1: per-response means with std bars, grouped by model.
+    fig, axes = plt.subplots(1, len(metrics), figsize=(5.2 * len(metrics), 4.8))
+    axes = [axes] if len(metrics) == 1 else axes
+    for ax, (metric, label) in zip(axes, metrics.items()):
+        stat = _grouped_metric_stat(metric)
+        values_by_arch: dict[str, list[float]] = {}
+        errors_by_arch: dict[str, list[float]] = {}
+        for arch in arch_order:
+            arch_stat = stat.xs(arch, level="arch_id")
+            values_by_arch[arch] = pd.to_numeric(arch_stat["mean"], errors="coerce").fillna(0).tolist()
+            errors_by_arch[arch] = pd.to_numeric(arch_stat["std"], errors="coerce").fillna(0).tolist()
+        _draw_grouped_bars(ax, values_by_arch, errors_by_arch, f"Average per response: {label}", label)
+    axes[-1].legend(frameon=False, fontsize=9)
+    _save(fig, "RQ2_per_response_mean_std")
+
+    # Figure 2: per-response distributions as grouped boxplots.
+    fig, axes = plt.subplots(1, len(metrics), figsize=(5.2 * len(metrics), 4.9))
+    axes = [axes] if len(metrics) == 1 else axes
+    for ax, (metric, label) in zip(axes, metrics.items()):
+        _draw_grouped_boxplot(ax, filtered_rows, model_order, arch_order, color_map, metric, label)
+    axes[-1].legend(_legend_handles(plt, arch_order, color_map), arch_labels, frameon=False, fontsize=9)
+    _save(fig, "RQ2_per_response_distributions")
+
+    # Figure 2b: larger per-metric distribution panels.
+    for metric, label in metrics.items():
+        fig, ax = plt.subplots(1, 1, figsize=(max(6.8, len(model_order) * 1.6), 4.9))
+        _draw_grouped_boxplot(ax, filtered_rows, model_order, arch_order, color_map, metric, label)
+        ax.legend(_legend_handles(plt, arch_order, color_map), arch_labels, frameon=False, fontsize=9)
+        _save(fig, f"RQ2_per_response_distribution_{metric}")
+
+    # Figure 3: quality/reliability rates, grouped by model.
+    quality_panels: list[tuple[str, pd.Series, str]] = []
+    if "fallback" in filtered_rows.columns:
+        fallback_rate = filtered_rows.groupby(["model_label", "arch_id"])["fallback"].apply(_true_rate)
+        quality_panels.append(("Fallback Rate", fallback_rate, "Rate"))
+    if "is_yaml_valid" in filtered_rows.columns:
+        yaml_valid_rate = filtered_rows.groupby(["model_label", "arch_id"])["is_yaml_valid"].apply(_rate_equals_one)
+        quality_panels.append(("YAML Valid Rate", yaml_valid_rate, "Rate"))
+
+    if quality_panels:
+        fig, axes = plt.subplots(1, len(quality_panels), figsize=(5.4 * len(quality_panels), 4.8))
+        axes = [axes] if len(quality_panels) == 1 else axes
+        full_index = pd.MultiIndex.from_product([model_order, arch_order], names=["model_label", "arch_id"])
+        for ax, (title, series, ylabel) in zip(axes, quality_panels):
+            reindexed = series.reindex(full_index)
+            values_by_arch = {}
+            errors_by_arch = {}
+            for arch in arch_order:
+                arch_values = reindexed.xs(arch, level="arch_id")
+                values_by_arch[arch] = pd.to_numeric(arch_values, errors="coerce").fillna(0).tolist()
+                errors_by_arch[arch] = [0] * len(model_order)
+            _draw_grouped_bars(ax, values_by_arch, errors_by_arch, title, ylabel, ylim=(0, 1))
+        axes[-1].legend(frameon=False, fontsize=9)
+        _save(fig, "RQ2_quality_rates")
+
+    # Figure 4/5 aliases for code lines, matching the individual output set.
+    if "answer_code_lines" in filtered_rows.columns:
+        fig, ax = plt.subplots(1, 1, figsize=(max(6.8, len(model_order) * 1.6), 4.9))
+        _draw_grouped_boxplot(
+            ax,
+            filtered_rows,
+            model_order,
+            arch_order,
+            color_map,
+            "answer_code_lines",
+            "Code lines",
+            title="Lines of Code per Response",
+        )
+        ax.legend(_legend_handles(plt, arch_order, color_map), arch_labels, frameon=False, fontsize=9)
+        _save(fig, "RQ2_answer_code_lines_distribution")
+
+
+def _draw_grouped_boxplot(
+    ax,
+    filtered_rows: pd.DataFrame,
+    model_order: Sequence[str],
+    arch_order: Sequence[str],
+    color_map: dict[str, str],
+    metric: str,
+    label: str,
+    title: str | None = None,
+) -> None:
+    import numpy as np
+
+    group_x = np.arange(len(model_order), dtype=float)
+    box_width = min(0.18, 0.68 / max(len(arch_order), 1))
+    offsets = (np.arange(len(arch_order)) - (len(arch_order) - 1) / 2) * box_width
+    data: list[pd.Series] = []
+    positions: list[float] = []
+    box_arches: list[str] = []
+    for model_idx, model in enumerate(model_order):
+        for arch_idx, arch in enumerate(arch_order):
+            values = pd.to_numeric(
+                filtered_rows.loc[
+                    (filtered_rows["model_label"].astype(str) == model)
+                    & (filtered_rows["arch_id"].astype(str) == arch),
+                    metric,
+                ],
+                errors="coerce",
+            ).dropna()
+            if values.empty:
+                values = pd.Series([float("nan")])
+            data.append(values)
+            positions.append(float(group_x[model_idx] + offsets[arch_idx]))
+            box_arches.append(arch)
+    box = ax.boxplot(
+        data,
+        positions=positions,
+        widths=box_width * 0.82,
+        patch_artist=True,
+        showfliers=True,
+        medianprops={"color": "#d62728", "linewidth": 1.0},
+    )
+    for patch, arch in zip(box["boxes"], box_arches):
+        patch.set_facecolor(color_map[arch])
+        patch.set_alpha(0.65)
+        patch.set_edgecolor("black")
+        patch.set_linewidth(0.8)
+    ax.set_xticks(group_x, [_display_model_label(model) for model in model_order], rotation=15, ha="right")
+    ax.set_title(title or f"Variability across responses: {label}")
+    ax.set_ylabel(label)
+    ax.grid(axis="y", alpha=0.3)
+
+
+def _legend_handles(plt, arch_order: Sequence[str], color_map: dict[str, str]):
+    return [
+        plt.Line2D(
+            [0],
+            [0],
+            marker="s",
+            linestyle="",
+            markersize=9,
+            markerfacecolor=color_map[arch],
+            markeredgecolor="black",
+        )
+        for arch in arch_order
+    ]

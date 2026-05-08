@@ -1,7 +1,7 @@
 import argparse
 from itertools import combinations
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Iterable, NamedTuple, Sequence
 
 import pandas as pd
 from scipy.stats import wilcoxon
@@ -70,10 +70,17 @@ NUMERIC_COLUMNS = (
 )
 
 PAIRWISE_ID_COLUMNS = (
+    "model_label",
     "run_group_id",
     "prompt_id",
     "prompt",
 )
+
+
+class RunSource(NamedTuple):
+    workbook: Path
+    runs_dir: Path
+    model_label: str
 
 
 def default_rq4_runs_dir(model_label: str | None = None) -> Path:
@@ -82,6 +89,20 @@ def default_rq4_runs_dir(model_label: str | None = None) -> Path:
 
 def default_rq4_out_dir(model_label: str | None = None) -> Path:
     return resolve_model_output_dir(DEFAULT_OUT_DIR, model_label)
+
+
+def discover_model_run_dirs(runs_root: Path | None = None) -> list[tuple[str, Path]]:
+    root = runs_root or (OUT_DIR / "runs")
+    if not root.exists():
+        return []
+    discovered: list[tuple[str, Path]] = []
+    for candidate in sorted(root.iterdir()):
+        if not candidate.is_dir():
+            continue
+        rq4_dir = candidate / RQ4_EXPERIMENT_DIRNAME
+        if rq4_dir.is_dir():
+            discovered.append((candidate.name, rq4_dir))
+    return discovered
 
 
 def parse_args() -> argparse.Namespace:
@@ -100,6 +121,13 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Directory containing run folders "
             "(default: out/runs/guardrail_test or out/runs/<model-label>/guardrail_test)"
+        ),
+    )
+    parser.add_argument(
+        "--runs-root",
+        help=(
+            "Root directory containing <model-label>/guardrail_test folders for multi-model aggregation "
+            "(default: out/runs). Ignored when --runs-dir or --model-label is used."
         ),
     )
     parser.add_argument(
@@ -217,7 +245,20 @@ def discover_workbooks(runs_dir: Path, results_name: str) -> list[Path]:
     return sorted(p for p in runs_dir.glob(f"*/{results_name}") if p.is_file())
 
 
-def load_workbook(path: Path, sheet_name: str | None) -> pd.DataFrame:
+def discover_workbook_sources(
+    run_dirs: Sequence[tuple[str, Path]],
+    results_name: str,
+) -> list[RunSource]:
+    sources: list[RunSource] = []
+    for model_label, runs_dir in run_dirs:
+        sources.extend(
+            RunSource(workbook=workbook, runs_dir=runs_dir, model_label=model_label)
+            for workbook in discover_workbooks(runs_dir, results_name)
+        )
+    return sorted(sources, key=lambda source: (source.model_label, str(source.workbook)))
+
+
+def load_workbook(path: Path, sheet_name: str | None, model_label: str | None = None) -> pd.DataFrame:
     xl = pd.ExcelFile(path)
     chosen_sheet = sheet_name or xl.sheet_names[0]
     df = pd.read_excel(path, sheet_name=chosen_sheet)
@@ -227,6 +268,8 @@ def load_workbook(path: Path, sheet_name: str | None) -> pd.DataFrame:
     df = df.copy()
     df["source_results_xlsx"] = str(path)
     df["source_run_folder"] = path.parent.name
+    if model_label:
+        df["model_label"] = model_label
     if "run_group_id" not in df.columns:
         df["run_group_id"] = path.parent.name
     else:
@@ -258,6 +301,35 @@ def load_all_results(workbooks: Sequence[Path], sheet_name: str | None) -> pd.Da
     if "fallback" in df.columns:
         df["fallback"] = _safe_bool(df["fallback"])
     for col in ("arch_id", "run_group_id", "prompt_id", "conversation_id"):
+        if col in df.columns:
+            df[col] = _clean_string_id(df[col])
+    return df
+
+
+def load_all_result_sources(sources: Sequence[RunSource], sheet_name: str | None) -> pd.DataFrame:
+    frames: list[pd.DataFrame] = []
+    for source in sources:
+        try:
+            frame = load_workbook(source.workbook, sheet_name, source.model_label)
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"[WARN] Skipping {source.workbook}: {exc}")
+            continue
+        if not frame.empty:
+            frame["source_runs_dir"] = str(source.runs_dir)
+            frames.append(frame)
+
+    if not frames:
+        return pd.DataFrame()
+
+    df = pd.concat(frames, ignore_index=True, sort=False)
+    for col in NUMERIC_COLUMNS:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    if "timed_out" in df.columns:
+        df["timed_out"] = _safe_bool(df["timed_out"])
+    if "fallback" in df.columns:
+        df["fallback"] = _safe_bool(df["fallback"])
+    for col in ("model_label", "arch_id", "run_group_id", "prompt_id", "conversation_id", "source_runs_dir"):
         if col in df.columns:
             df[col] = _clean_string_id(df[col])
     return df
@@ -315,6 +387,39 @@ def load_middleware_decisions(df: pd.DataFrame, runs_dir: Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def load_middleware_decisions_from_sources(df: pd.DataFrame) -> pd.DataFrame:
+    required = {"run_group_id", "conversation_id", "source_runs_dir"}
+    if not required.issubset(df.columns):
+        return pd.DataFrame(columns=["model_label", "run_group_id", "conversation_id", "middleware_decision"])
+
+    key_cols = ["source_runs_dir", "run_group_id", "conversation_id"]
+    if "model_label" in df.columns:
+        key_cols.insert(0, "model_label")
+    keys = df[key_cols].dropna().drop_duplicates().sort_values(key_cols)
+
+    rows: list[dict[str, object]] = []
+    for _, row in keys.iterrows():
+        run_group_id = str(row["run_group_id"])
+        conversation_id = str(row["conversation_id"])
+        stderr_path = Path(str(row["source_runs_dir"])) / run_group_id / "run_register" / conversation_id / "stderr.txt"
+        decision = pd.NA
+        if stderr_path.is_file():
+            text = stderr_path.read_text(encoding="utf-8", errors="ignore")
+            if "blocked out-of-scope request" in text:
+                decision = "block"
+            elif "allowed request" in text:
+                decision = "allow"
+        item = {
+            "run_group_id": run_group_id,
+            "conversation_id": conversation_id,
+            "middleware_decision": decision,
+        }
+        if "model_label" in row.index:
+            item["model_label"] = row["model_label"]
+        rows.append(item)
+    return pd.DataFrame(rows)
+
+
 def enrich_rows(
     df: pd.DataFrame,
     prompt_catalog: pd.DataFrame,
@@ -326,16 +431,24 @@ def enrich_rows(
         for col in ("prompt_id", "prompt_text", "project", "type", "expected_decision", "difficulty_bucket")
         if col in prompt_catalog.columns
     ]
-    out = out.merge(prompt_catalog[prompt_cols], on="prompt_id", how="left")
+    out = out.merge(prompt_catalog[prompt_cols], on="prompt_id", how="left", suffixes=("", "_catalog"))
+    for col in ("prompt_text", "project", "type", "expected_decision", "difficulty_bucket"):
+        catalog_col = f"{col}_catalog"
+        if catalog_col not in out.columns:
+            continue
+        if col in out.columns:
+            out[col] = out[col].where(out[col].notna(), out[catalog_col])
+        else:
+            out[col] = out[catalog_col]
+        out = out.drop(columns=[catalog_col])
     if "prompt" in out.columns and "prompt_text" in out.columns:
         missing_prompt = out["prompt"].isna() | (out["prompt"].astype(str).str.strip() == "")
         out.loc[missing_prompt, "prompt"] = out.loc[missing_prompt, "prompt_text"]
     if not middleware_decisions.empty:
-        out = out.merge(
-            middleware_decisions,
-            on=["run_group_id", "conversation_id"],
-            how="left",
-        )
+        merge_cols = ["run_group_id", "conversation_id"]
+        if "model_label" in out.columns and "model_label" in middleware_decisions.columns:
+            merge_cols.insert(0, "model_label")
+        out = out.merge(middleware_decisions, on=merge_cols, how="left")
     else:
         out["middleware_decision"] = pd.NA
 
@@ -385,8 +498,11 @@ def _mean_std(group: pd.DataFrame, metric: str) -> tuple[float, float]:
 
 def build_prompt_arch_summary(df: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
-    group_cols = ["arch_id", "prompt_id"]
-    for (arch_id, prompt_id), group in df.groupby(group_cols, sort=True, dropna=False):
+    group_cols = [col for col in ("model_label", "arch_id", "prompt_id") if col in df.columns]
+    for keys, group in df.groupby(group_cols, sort=True, dropna=False):
+        key_map = dict(zip(group_cols, keys if isinstance(keys, tuple) else (keys,)))
+        arch_id = key_map["arch_id"]
+        prompt_id = key_map["prompt_id"]
         allow_rate = _rate(group["final_allow_int"])
         block_rate = _rate(group["final_block_int"])
         latency_mean, latency_std = _mean_std(group, "latency_s")
@@ -394,6 +510,7 @@ def build_prompt_arch_summary(df: pd.DataFrame) -> pd.DataFrame:
         call_mean, call_std = _mean_std(group, "llm_call_count")
         code_mean, code_std = _mean_std(group, "answer_code_lines")
         row = {
+            **({"model_label": key_map["model_label"]} if "model_label" in key_map else {}),
             "arch_id": arch_id,
             "prompt_id": prompt_id,
             "expected_decision": group["expected_decision"].dropna().iloc[0] if group["expected_decision"].notna().any() else pd.NA,
@@ -437,14 +554,17 @@ def build_prompt_arch_summary(df: pd.DataFrame) -> pd.DataFrame:
     if summary.empty:
         return summary
     return summary.sort_values(
-        ["arch_id", "prompt_id"],
+        [col for col in ("model_label", "arch_id", "prompt_id") if col in summary.columns],
         key=lambda s: s.map(_prompt_id_num) if s.name == "prompt_id" else s,
     ).reset_index(drop=True)
 
 
 def build_architecture_summary(df: pd.DataFrame, prompt_arch_summary: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
-    for arch_id, group in df.groupby("arch_id", sort=True):
+    group_cols = [col for col in ("model_label", "arch_id") if col in df.columns]
+    for keys, group in df.groupby(group_cols, sort=True, dropna=False):
+        key_map = dict(zip(group_cols, keys if isinstance(keys, tuple) else (keys,)))
+        arch_id = key_map["arch_id"]
         block_group = group[group["expected_decision"] == "block"]
         allow_group = group[group["expected_decision"] == "allow"]
         latency_mean, latency_std = _mean_std(group, "latency_s")
@@ -452,7 +572,10 @@ def build_architecture_summary(df: pd.DataFrame, prompt_arch_summary: pd.DataFra
         call_mean, call_std = _mean_std(group, "llm_call_count")
         code_mean, code_std = _mean_std(group, "answer_code_lines")
         prompt_consistency = prompt_arch_summary[prompt_arch_summary["arch_id"] == arch_id]
+        if "model_label" in key_map and "model_label" in prompt_consistency.columns:
+            prompt_consistency = prompt_consistency[prompt_consistency["model_label"] == key_map["model_label"]]
         row = {
+            **({"model_label": key_map["model_label"]} if "model_label" in key_map else {}),
             "arch_id": arch_id,
             "n_rows": int(len(group)),
             "n_runs": int(group["run_group_id"].nunique()),
@@ -478,15 +601,19 @@ def build_architecture_summary(df: pd.DataFrame, prompt_arch_summary: pd.DataFra
             "answer_code_lines__std": code_std,
         }
         rows.append(row)
-    return pd.DataFrame(rows).sort_values("arch_id").reset_index(drop=True)
+    return pd.DataFrame(rows).sort_values(group_cols).reset_index(drop=True)
 
 
 def build_middleware_summary(df: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
-    for arch_id, group in df.groupby("arch_id", sort=True):
+    group_cols = [col for col in ("model_label", "arch_id") if col in df.columns]
+    for keys, group in df.groupby(group_cols, sort=True, dropna=False):
+        key_map = dict(zip(group_cols, keys if isinstance(keys, tuple) else (keys,)))
+        arch_id = key_map["arch_id"]
         present = group[group["middleware_signal_present"] == 1]
         rows.append(
             {
+                **({"model_label": key_map["model_label"]} if "model_label" in key_map else {}),
                 "arch_id": arch_id,
                 "n_rows": int(len(group)),
                 "middleware_signal_rows": int(len(present)),
@@ -497,27 +624,28 @@ def build_middleware_summary(df: pd.DataFrame) -> pd.DataFrame:
                 "middleware_matches_final_rate": _rate(present["middleware_matches_final_int"]),
             }
         )
-    return pd.DataFrame(rows).sort_values("arch_id").reset_index(drop=True)
+    return pd.DataFrame(rows).sort_values(group_cols).reset_index(drop=True)
 
 
 def build_run_inventory(all_rows_df: pd.DataFrame, filtered_df: pd.DataFrame) -> pd.DataFrame:
+    group_cols = [col for col in ("model_label", "run_group_id", "arch_id") if col in all_rows_df.columns]
     all_counts = (
-        all_rows_df.groupby(["run_group_id", "arch_id"], dropna=False)
+        all_rows_df.groupby(group_cols, dropna=False)
         .size()
         .rename("rows_in_workbook")
         .reset_index()
     )
     kept_counts = (
-        filtered_df.groupby(["run_group_id", "arch_id"], dropna=False)
+        filtered_df.groupby(group_cols, dropna=False)
         .size()
         .rename("rows_used_for_metrics")
         .reset_index()
     )
-    inv = all_counts.merge(kept_counts, on=["run_group_id", "arch_id"], how="outer")
+    inv = all_counts.merge(kept_counts, on=group_cols, how="outer")
     inv["rows_in_workbook"] = inv["rows_in_workbook"].fillna(0).astype(int)
     inv["rows_used_for_metrics"] = inv["rows_used_for_metrics"].fillna(0).astype(int)
     inv["rows_excluded"] = inv["rows_in_workbook"] - inv["rows_used_for_metrics"]
-    return inv.sort_values(["run_group_id", "arch_id"]).reset_index(drop=True)
+    return inv.sort_values(group_cols).reset_index(drop=True)
 
 
 def build_pairwise_wilcoxon_summary(df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.DataFrame:
@@ -626,7 +754,6 @@ def build_pairwise_wilcoxon_summary(df: pd.DataFrame, metric_cols: Sequence[str]
 
 def main() -> None:
     args = parse_args()
-    runs_dir = Path(args.runs_dir) if args.runs_dir else default_rq4_runs_dir(args.model_label)
     out_dir = Path(args.out_dir) if args.out_dir else default_rq4_out_dir(args.model_label)
     prompt_config = Path(args.prompt_config)
     results_name = args.results_name
@@ -636,17 +763,40 @@ def main() -> None:
     export_csvs = not args.no_export_csvs
     detailed_sheets = not args.no_detailed_sheets
 
-    if not runs_dir.exists():
-        raise SystemExit(f"runs-dir not found: {runs_dir}")
+    multi_model_mode = not args.runs_dir and not args.model_label
+    run_sources: list[RunSource] | None = None
+    if multi_model_mode:
+        discovered_run_dirs = discover_model_run_dirs(Path(args.runs_root) if args.runs_root else None)
+        if discovered_run_dirs:
+            run_sources = discover_workbook_sources(discovered_run_dirs, results_name)
+            if not run_sources:
+                model_dirs = ", ".join(str(path) for _, path in discovered_run_dirs)
+                raise SystemExit(f"No workbooks found in discovered model run dirs: {model_dirs}")
+        else:
+            runs_dir = default_rq4_runs_dir()
+            if not runs_dir.exists():
+                raise SystemExit(f"runs-dir not found: {runs_dir}")
+    else:
+        runs_dir = Path(args.runs_dir) if args.runs_dir else default_rq4_runs_dir(args.model_label)
+        if not runs_dir.exists():
+            raise SystemExit(f"runs-dir not found: {runs_dir}")
     if not prompt_config.exists():
         raise SystemExit(f"prompt-config not found: {prompt_config}")
 
-    workbooks = discover_workbooks(runs_dir, results_name)
-    if not workbooks:
-        raise SystemExit(f"No workbooks found at {runs_dir} with name {results_name}")
-
-    print(f"[INFO] Found {len(workbooks)} workbook(s).")
-    all_rows = load_all_results(workbooks, sheet_name)
+    if run_sources is not None:
+        print(
+            f"[INFO] Found {len(run_sources)} workbook(s) across "
+            f"{len({source.model_label for source in run_sources})} model(s)."
+        )
+        all_rows = load_all_result_sources(run_sources, sheet_name)
+    else:
+        workbooks = discover_workbooks(runs_dir, results_name)
+        if not workbooks:
+            raise SystemExit(f"No workbooks found at {runs_dir} with name {results_name}")
+        print(f"[INFO] Found {len(workbooks)} workbook(s).")
+        all_rows = load_all_results(workbooks, sheet_name)
+        if args.model_label:
+            all_rows["model_label"] = sanitize_path_component(args.model_label)
     if all_rows.empty:
         raise SystemExit("No rows loaded from workbooks.")
 
@@ -654,7 +804,12 @@ def main() -> None:
     filtered_rows = all_rows.copy()
 
     prompt_catalog = load_prompt_catalog(prompt_config)
-    middleware_decisions = load_middleware_decisions(filtered_rows, runs_dir)
+    if run_sources is not None:
+        middleware_decisions = load_middleware_decisions_from_sources(filtered_rows)
+    else:
+        middleware_decisions = load_middleware_decisions(filtered_rows, runs_dir)
+        if args.model_label and not middleware_decisions.empty:
+            middleware_decisions["model_label"] = sanitize_path_component(args.model_label)
     enriched_rows = enrich_rows(filtered_rows, prompt_catalog, middleware_decisions)
     if enriched_rows["expected_decision"].isna().any():
         missing_prompt_ids = sorted(enriched_rows.loc[enriched_rows["expected_decision"].isna(), "prompt_id"].dropna().unique())
@@ -715,8 +870,12 @@ def main() -> None:
         best = rankable.iloc[0]
         message = (
             "[INFO] Top architecture by overall guardrail accuracy: "
-            f"{best['arch_id']} "
-            f"(accuracy={best['overall_accuracy_rate']:.3f}, "
+            f"{best['arch_id']}"
+        )
+        if "model_label" in best.index and not pd.isna(best["model_label"]):
+            message += f" on {best['model_label']}"
+        message += (
+            f" (accuracy={best['overall_accuracy_rate']:.3f}, "
             f"block_success={best['expected_block_success_rate']:.3f}"
         )
         if include_allow_success and not pd.isna(best["expected_allow_success_rate"]):

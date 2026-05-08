@@ -237,6 +237,18 @@ The RQ2 workbook includes:
 - aggregated per-architecture metrics
 - pairwise Wilcoxon signed-rank tests on matched `run_group_id + prompt_id` rows
 
+RQ2 model comparison plots:
+
+```bash
+python -m app.rq2 --model-comparison-only
+```
+
+This writes combined multi-model plots and tabular summaries to
+`out/RQ2_architecture_metrics/model_comparison/`. The plots keep the same RQ2
+metric families but group the X axis by model and draw one architecture series
+inside each model group. Per-model plots in
+`out/RQ2_architecture_metrics/<model-label>/` are left unchanged.
+
 Architecture footprint snapshot:
 
 ```bash
@@ -390,12 +402,13 @@ python -m app.rq4 --model-label gpt-4o-mini
 
 Default input:
 
+- `out/runs/<model-label>/guardrail_test/` for every discovered model folder when no `--model-label` or `--runs-dir` is provided
 - `out/runs/guardrail_test/`
 - `out/runs/<model-label>/guardrail_test/` when `--model-label` is used
 
 Default output directory:
 
-- `out/RQ4_guardrail_metrics/`
+- `out/RQ4_guardrail_metrics/` for the combined multi-model report or legacy non-model runs
 - `out/RQ4_guardrail_metrics/<model-label>/` when `--model-label` is used
 
 This workflow reads repeated `guardrail_test` execution workbooks, merges them
@@ -408,10 +421,40 @@ Main outputs:
 - `RQ4_guardrail_metrics.xlsx`
 - architecture and prompt-level CSV summaries
 - `RQ4_guardrail_prompt_block_rate_heatmap.png`
-- `RQ4_guardrail_blocked_counts.png`
+- `RQ4_guardrail_blocked_counts.png`, grouped by model with one bar per architecture when multiple models are discovered
 
 Useful flags:
 
 - `--model-label`
 - `--runs-dir`
+- `--runs-root`
 - `--out-dir`
+
+RQ4: LLM-as-a-Judge Fallback Cleanup
+------------------------------------
+
+Use LangChain judges to re-label whether each RQ4 answer actually complied
+with the guardrail:
+
+```bash
+python -m app.rq4.judge_fallbacks --env-file .env
+python -m app.rq4 --runs-root out/RQ4_guardrail_judged_fallbacks/corrected_runs
+```
+
+The judge reads every discovered `results.xlsx`, evaluates the original prompt
+and answer, and writes corrected copies without modifying the original runs.
+
+Main outputs:
+
+- `out/RQ4_guardrail_judged_fallbacks/RQ4_judged_fallbacks.xlsx`
+- `rq4_judged_fallback_rows.csv`
+- `rq4_judged_fallback_summary.csv`
+- `corrected_runs/<model-label>/guardrail_test/<run>/results.xlsx`
+
+Useful flags:
+
+- `--providers openai gemini`
+- `--openai-model`
+- `--gemini-model`
+- `--only-original-nonfallback`
+- `--decision-policy any-bypass`
