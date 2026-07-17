@@ -649,107 +649,126 @@ def build_run_inventory(all_rows_df: pd.DataFrame, filtered_df: pd.DataFrame) ->
 
 
 def build_pairwise_wilcoxon_summary(df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.DataFrame:
-    pair_cols = [col for col in PAIRWISE_ID_COLUMNS if col in df.columns]
+    model_group_cols = [col for col in ("model_label",) if col in df.columns]
+    pair_cols = [col for col in PAIRWISE_ID_COLUMNS if col in df.columns and col not in model_group_cols]
     required_pair_cols = {"run_group_id", "prompt_id"}
     if not required_pair_cols.issubset(pair_cols):
         return pd.DataFrame()
 
-    arch_tables: dict[str, pd.DataFrame] = {}
-    for arch, group in df.groupby("arch_id", sort=True):
-        numeric_group = group[pair_cols + list(metric_cols)].copy()
-        for metric in metric_cols:
-            numeric_group[metric] = pd.to_numeric(numeric_group[metric], errors="coerce")
-        arch_tables[str(arch)] = (
-            numeric_group.groupby(pair_cols, dropna=False, as_index=False)[list(metric_cols)]
-            .mean()
-            .reset_index(drop=True)
+    grouped_frames: Iterable[tuple[dict[str, object], pd.DataFrame]]
+    if model_group_cols:
+        grouped_frames = (
+            (
+                dict(zip(model_group_cols, keys if isinstance(keys, tuple) else (keys,))),
+                group,
+            )
+            for keys, group in df.groupby(model_group_cols, sort=True, dropna=False)
         )
+    else:
+        grouped_frames = [({}, df)]
 
+    arch_tables: dict[str, pd.DataFrame] = {}
     rows: list[dict[str, object]] = []
-    for arch_a, arch_b in combinations(sorted(arch_tables), 2):
-        merged = arch_tables[arch_a].merge(
-            arch_tables[arch_b],
-            on=pair_cols,
-            how="inner",
-            suffixes=("_a", "_b"),
-        )
-        for metric in metric_cols:
-            values = merged[[f"{metric}_a", f"{metric}_b"]].dropna().reset_index(drop=True)
-            if values.empty:
+    for group_key, group_df in grouped_frames:
+        arch_tables = {}
+        for arch, group in group_df.groupby("arch_id", sort=True):
+            numeric_group = group[pair_cols + list(metric_cols)].copy()
+            for metric in metric_cols:
+                numeric_group[metric] = pd.to_numeric(numeric_group[metric], errors="coerce")
+            arch_tables[str(arch)] = (
+                numeric_group.groupby(pair_cols, dropna=False, as_index=False)[list(metric_cols)]
+                .mean()
+                .reset_index(drop=True)
+            )
+
+        for arch_a, arch_b in combinations(sorted(arch_tables), 2):
+            merged = arch_tables[arch_a].merge(
+                arch_tables[arch_b],
+                on=pair_cols,
+                how="inner",
+                suffixes=("_a", "_b"),
+            )
+            for metric in metric_cols:
+                values = merged[[f"{metric}_a", f"{metric}_b"]].dropna().reset_index(drop=True)
+                if values.empty:
+                    rows.append(
+                        {
+                            **group_key,
+                            "arch_a": arch_a,
+                            "arch_b": arch_b,
+                            "metric": metric,
+                            "n_pairs": 0,
+                            "n_nonzero_pairs": 0,
+                            "arch_a_mean": float("nan"),
+                            "arch_a_median": float("nan"),
+                            "arch_b_mean": float("nan"),
+                            "arch_b_median": float("nan"),
+                            "mean_difference_a_minus_b": float("nan"),
+                            "median_difference_a_minus_b": float("nan"),
+                            "arch_a_lt_arch_b_count": 0,
+                            "arch_a_gt_arch_b_count": 0,
+                            "tie_count": 0,
+                            "wilcoxon_statistic": float("nan"),
+                            "p_value": float("nan"),
+                            "a12_arch_a_over_arch_b": float("nan"),
+                            "a12_arch_b_over_arch_a": float("nan"),
+                            "a12_magnitude": "n/a",
+                            "notes": "no matched non-null pairs",
+                        }
+                    )
+                    continue
+
+                diffs = values[f"{metric}_a"] - values[f"{metric}_b"]
+                a12 = compute_a12(values[f"{metric}_a"], values[f"{metric}_b"])
+                note = ""
+                if diffs.eq(0).all():
+                    statistic = 0.0
+                    p_value = 1.0
+                    note = "all paired differences are zero"
+                else:
+                    result = wilcoxon(
+                        values[f"{metric}_a"],
+                        values[f"{metric}_b"],
+                        alternative="two-sided",
+                        zero_method="wilcox",
+                        method="auto",
+                    )
+                    statistic = float(result.statistic)
+                    p_value = float(result.pvalue)
+
                 rows.append(
                     {
+                        **group_key,
                         "arch_a": arch_a,
                         "arch_b": arch_b,
                         "metric": metric,
-                        "n_pairs": 0,
-                        "n_nonzero_pairs": 0,
-                        "arch_a_mean": float("nan"),
-                        "arch_a_median": float("nan"),
-                        "arch_b_mean": float("nan"),
-                        "arch_b_median": float("nan"),
-                        "mean_difference_a_minus_b": float("nan"),
-                        "median_difference_a_minus_b": float("nan"),
-                        "arch_a_lt_arch_b_count": 0,
-                        "arch_a_gt_arch_b_count": 0,
-                        "tie_count": 0,
-                        "wilcoxon_statistic": float("nan"),
-                        "p_value": float("nan"),
-                        "a12_arch_a_over_arch_b": float("nan"),
-                        "a12_arch_b_over_arch_a": float("nan"),
-                        "a12_magnitude": "n/a",
-                        "notes": "no matched non-null pairs",
+                        "n_pairs": int(len(values)),
+                        "n_nonzero_pairs": int((diffs != 0).sum()),
+                        "arch_a_mean": float(values[f"{metric}_a"].mean()),
+                        "arch_a_median": float(values[f"{metric}_a"].median()),
+                        "arch_b_mean": float(values[f"{metric}_b"].mean()),
+                        "arch_b_median": float(values[f"{metric}_b"].median()),
+                        "mean_difference_a_minus_b": float(diffs.mean()),
+                        "median_difference_a_minus_b": float(diffs.median()),
+                        "arch_a_lt_arch_b_count": int((diffs < 0).sum()),
+                        "arch_a_gt_arch_b_count": int((diffs > 0).sum()),
+                        "tie_count": int((diffs == 0).sum()),
+                        "wilcoxon_statistic": statistic,
+                        "p_value": p_value,
+                        "a12_arch_a_over_arch_b": float(a12),
+                        "a12_arch_b_over_arch_a": float(1.0 - a12) if not pd.isna(a12) else float("nan"),
+                        "a12_magnitude": classify_a12_magnitude(a12),
+                        "notes": note,
                     }
                 )
-                continue
-
-            diffs = values[f"{metric}_a"] - values[f"{metric}_b"]
-            a12 = compute_a12(values[f"{metric}_a"], values[f"{metric}_b"])
-            note = ""
-            if diffs.eq(0).all():
-                statistic = 0.0
-                p_value = 1.0
-                note = "all paired differences are zero"
-            else:
-                result = wilcoxon(
-                    values[f"{metric}_a"],
-                    values[f"{metric}_b"],
-                    alternative="two-sided",
-                    zero_method="wilcox",
-                    method="auto",
-                )
-                statistic = float(result.statistic)
-                p_value = float(result.pvalue)
-
-            rows.append(
-                {
-                    "arch_a": arch_a,
-                    "arch_b": arch_b,
-                    "metric": metric,
-                    "n_pairs": int(len(values)),
-                    "n_nonzero_pairs": int((diffs != 0).sum()),
-                    "arch_a_mean": float(values[f"{metric}_a"].mean()),
-                    "arch_a_median": float(values[f"{metric}_a"].median()),
-                    "arch_b_mean": float(values[f"{metric}_b"].mean()),
-                    "arch_b_median": float(values[f"{metric}_b"].median()),
-                    "mean_difference_a_minus_b": float(diffs.mean()),
-                    "median_difference_a_minus_b": float(diffs.median()),
-                    "arch_a_lt_arch_b_count": int((diffs < 0).sum()),
-                    "arch_a_gt_arch_b_count": int((diffs > 0).sum()),
-                    "tie_count": int((diffs == 0).sum()),
-                    "wilcoxon_statistic": statistic,
-                    "p_value": p_value,
-                    "a12_arch_a_over_arch_b": float(a12),
-                    "a12_arch_b_over_arch_a": float(1.0 - a12) if not pd.isna(a12) else float("nan"),
-                    "a12_magnitude": classify_a12_magnitude(a12),
-                    "notes": note,
-                }
-            )
 
     out = pd.DataFrame(rows)
     if out.empty:
         return out
     out["significant_p_lt_0_05"] = pd.to_numeric(out["p_value"], errors="coerce") < 0.05
-    return out.sort_values(["metric", "arch_a", "arch_b"]).reset_index(drop=True)
+    return out.sort_values(
+        [col for col in ("model_label", "metric", "arch_a", "arch_b") if col in out.columns]
+    ).reset_index(drop=True)
 
 
 def main() -> None:

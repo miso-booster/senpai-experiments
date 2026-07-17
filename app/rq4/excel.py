@@ -14,7 +14,11 @@ def _split_pairwise_effect_exports(pairwise_summary: pd.DataFrame) -> tuple[pd.D
         "a12_magnitude",
     ]
     base_columns = [col for col in pairwise_summary.columns if col not in a12_columns]
-    id_columns = [col for col in ("arch_a", "arch_b", "metric") if col in pairwise_summary.columns]
+    id_columns = [
+        col
+        for col in ("model_label", "arch_a", "arch_b", "metric")
+        if col in pairwise_summary.columns
+    ]
     a12_export_columns = id_columns + [col for col in a12_columns if col in pairwise_summary.columns]
 
     wilcoxon_df = pairwise_summary[base_columns].copy()

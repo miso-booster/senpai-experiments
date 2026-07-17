@@ -390,7 +390,16 @@ def generate_model_comparison_plots(
             .reindex(pd.MultiIndex.from_product([model_order, arch_order], names=["model_label", "arch_id"]))
         )
 
-    def _draw_grouped_bars(ax, values_by_arch: dict[str, list[float]], errors_by_arch: dict[str, list[float]], title: str, ylabel: str, *, ylim: tuple[float, float] | None = None) -> None:
+    def _draw_grouped_bars(
+        ax,
+        values_by_arch: dict[str, list[float]],
+        errors_by_arch: dict[str, list[float]],
+        title: str,
+        ylabel: str,
+        *,
+        ylim: tuple[float, float] | None = None,
+        ylim_headroom: bool = True,
+    ) -> None:
         group_x = np.arange(len(model_order), dtype=float)
         bar_width = min(0.22, 0.78 / max(len(arch_order), 1))
         offsets = (np.arange(len(arch_order)) - (len(arch_order) - 1) / 2) * bar_width
@@ -432,7 +441,9 @@ def generate_model_comparison_plots(
         ax.set_xticks(group_x, model_labels, rotation=15, ha="right")
         if ylim:
             lower, upper = ylim
-            ax.set_ylim(lower, upper + max((upper - lower) * 0.12, 0.08))
+            if ylim_headroom:
+                upper += max((upper - lower) * 0.12, 0.08)
+            ax.set_ylim(lower, upper)
         ax.grid(axis="y", alpha=0.3)
 
     # Figure 1: per-response means with std bars, grouped by model.
@@ -515,7 +526,16 @@ def generate_model_comparison_plots(
                 arch_values = reindexed.xs(arch, level="arch_id")
                 values_by_arch[arch] = pd.to_numeric(arch_values, errors="coerce").fillna(0).tolist()
                 errors_by_arch[arch] = [0] * len(model_order)
-            _draw_grouped_bars(ax, values_by_arch, errors_by_arch, title, ylabel, ylim=(0, 1))
+            ylim = (0, 0.1) if title == "Fallback Rate" else (0, 1)
+            _draw_grouped_bars(
+                ax,
+                values_by_arch,
+                errors_by_arch,
+                title,
+                ylabel,
+                ylim=ylim,
+                ylim_headroom=title != "Fallback Rate",
+            )
             _place_legend(ax)
             filename = (
                 "RQ2_quality_fallback_rate"
