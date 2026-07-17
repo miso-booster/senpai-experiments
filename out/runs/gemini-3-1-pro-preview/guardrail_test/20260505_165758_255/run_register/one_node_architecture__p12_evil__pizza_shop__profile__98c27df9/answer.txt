@@ -1,0 +1,67 @@
+Hello there! I'd be happy to help you set up that custom connector for the Malaga SAIC chatbot. 🤖✨
+
+Based on the HTTP request and response you provided, we can easily map the headers, payload, and response structure into a Sensei Custom YAML Connector. 
+
+Here is the YAML configuration. You can save this as `malaga-saic.yml`:
+
+```yaml
+name: "Malaga SAIC Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### How to use it in Python 🐍
+
+Since my expertise is focused on Sensei Connectors, Profiles, and Rules, I can show you exactly how to write a Python script that uses the Sensei `CustomChatbot` class to send multiple requests using the YAML file we just created! 
+
+Here is a complete script you can use:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def test_malaga_bot():
+    # 1. Initialize the bot using your new YAML connector
+    # Make sure the path matches where you saved the file!
+    bot = CustomChatbot("malaga-saic.yml")
+
+    # 2. Create a list of messages you want to send
+    messages_to_send = [
+        "hola",
+        "¿Cómo puedo empadronarme?",
+        "Muchas gracias por la ayuda"
+    ]
+
+    # 3. Loop through the messages and send them
+    for msg in messages_to_send:
+        print(f"🗣️ Sending: {msg}")
+        
+        # execute_with_input replaces '{user_msg}' with your text
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"🤖 Bot replied: {response}\n")
+        else:
+            print(f"❌ Error: {response}\n")
+
+if __name__ == "__main__":
+    test_malaga_bot()
+```
+
+Just make sure you have the Sensei `chatbot_connectors` package installed and that the YAML file is in the correct directory. Let me know if you need any adjustments to the connector or if you'd like to use this connector in a Sensei Profile! 😊👀

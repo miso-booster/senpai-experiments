@@ -1,0 +1,127 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__388bc2db
+$$$
+Here’s the custom connector plus a helper script to hit it multiple times 🚀. I leaned on the official guidance in `custom-connector-guide.md` and the MillionBot example in `connector-examples.md` to mirror the headers, payload template, and `response_path`.
+
+### YAML connector
+```yaml
+name: "SAIC Malaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Python script to send multiple requests
+```python
+import json
+from urllib.parse import urljoin
+
+import requests
+import yaml
+
+
+def load_connector_config(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def fill_template(value, user_msg: str):
+    if isinstance(value, str):
+        return value.replace("{user_msg}", user_msg)
+    if isinstance(value, list):
+        return [fill_template(item, user_msg) for item in value]
+    if isinstance(value, dict):
+        return {k: fill_template(v, user_msg) for k, v in value.items()}
+    return value
+
+
+def extract_response(data: dict, response_path: str):
+    current = data
+    for segment in response_path.split("."):
+        if isinstance(current, list):
+            segment = int(segment)
+            current = current[segment]
+        else:
+            current = current[segment]
+    return current
+
+
+def send_message(session: requests.Session, config: dict, user_msg: str):
+    base_url = config["base_url"]
+    send_cfg = config["send_message"]
+    url = urljoin(base_url, send_cfg["path"])
+
+    headers = send_cfg.get("headers", {})
+    payload_template = send_cfg.get("payload_template", {})
+    payload = fill_template(payload_template, user_msg)
+
+    response = session.post(url, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+
+    bot_reply = extract_response(data, config["response_path"])
+    return {
+        "status_code": response.status_code,
+        "request_payload": payload,
+        "raw_response": data,
+        "bot_reply": bot_reply,
+    }
+
+
+def main():
+    config_path = "saic-malaga-connector.yaml"  # update with your actual path
+    config = load_connector_config(config_path)
+
+    messages = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Necesito renovar mi documento.",
+    ]
+
+    with requests.Session() as session:
+        for msg in messages:
+            try:
+                result = send_message(session, config, msg)
+                print(f"User: {msg}")
+                print(f"Bot: {result['bot_reply']}")
+                print("-" * 60)
+            except requests.HTTPError as err:
+                print(f"Request failed for '{msg}': {err}")
+                if err.response is not None:
+                    print(f"Response body: {err.response.text}")
+                print("-" * 60)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Let me know if you’d like to tweak headers, add logging, or wire this into a larger test harness!
+$$$

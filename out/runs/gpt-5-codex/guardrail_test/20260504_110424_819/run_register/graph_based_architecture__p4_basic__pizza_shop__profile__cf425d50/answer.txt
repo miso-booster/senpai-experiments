@@ -1,0 +1,100 @@
+Hey there! Thanks for thinking of Sensei profiles in such an automated way—that’s a smart idea! 😊  
+Right now I’m limited to explaining Sensei RULES, PROFILES, and CONNECTORS based on the official docs, so I can’t hand you a Python automation script. But I’d love to walk you through how you could orchestrate an LLM-driven workflow that produces valid profiles. Here’s a practical game plan built entirely on the Sensei profile guidelines:
+
+---
+
+### 🧭 1. Use the Profile Anatomy as Your Blueprint
+Every profile needs the sections shown in the **Sensei Chat Guide**:
+
+```yaml
+test_name: ...
+llm:
+  temperature: ...
+  model: ...
+  model_prov: ...
+  format:
+    type: text | speech
+user:
+  language: ...
+  role: ...
+  context: [...]
+  goals:
+    - "goal text with {{variables}}"
+    - variable_name:
+        function: ...
+        type: ...
+        data: ...
+chatbot:
+  is_starter: ...
+  fallback: ...
+  output:
+    - field:
+        type: ...
+        description: ...
+conversation:
+  number: ...
+  goal_style:
+    steps: ... | all_answered: ...
+  interaction_style:
+    - ...
+```
+
+If you ask your LLM to “fill this exact skeleton with appropriate values,” you’re already anchoring it in the right structure.
+
+---
+
+### 🧱 2. Prompt the LLM Section-by-Section
+Break the automation into mini prompts:
+
+1. **User Context & Goals**  
+   - Gather the business scenario.  
+   - List each goal.  
+   - Identify every `{{variable}}` and ask the LLM to define each one with `type`, `data`, and `function`. Remember:
+     * `pairwise()` needs at least two variables using it.
+     * Nested `forward()` requires dependent variables (e.g., `forward(pizza_type)`).
+
+2. **Chatbot Output Contract**  
+   - Remind the LLM that every field in `chatbot.output` must later be used by Sensei-check rules.  
+   - Ask it to describe each field clearly (type + “what to extract”).
+
+3. **Conversation Controls**  
+   - Choose `conversation.number` based on how many combinations you’ll cover.  
+   - Pick a `goal_style` (`steps`, `random steps`, or `all_answered` with optional `limit`).  
+   - Select `interaction_style` values only from the allowed list (e.g., `single question`, `long phrases`, `random: [...]`).
+
+The trick is to nudge the LLM with specific phrases from the docs (“Use `pairwise()` for cross coverage,” “Interaction styles must be chosen from …”). That keeps it aligned with Sensei’s syntax.
+
+---
+
+### ✅ 3. Add Validation Prompts
+Once the LLM drafts a profile, ask it to self-check:
+
+- “Verify every `{{variable}}` mentioned in the goals is declared below.”
+- “Confirm all `chatbot.output` entries specify `type` and `description`.”
+- “Ensure numeric ranges (if any) use `min`/`max`/`step` (or `linspace` for floats).”
+- “Confirm `conversation.number` matches the declared functions (e.g., enough `forward`/`pairwise`).”
+
+Draft ➜ Validate ➜ Revise is the rhythm you want.
+
+---
+
+### 🔄 4. Keep Rules in Mind
+If your automation will also produce Sensei-check rules later, make the LLM document which `chatbot.output` fields each rule will rely on. The more explicit the contract, the easier it is to evolve both in sync.
+
+---
+
+### 🧪 5. Manual Sanity Pass
+Even in an automated pipeline, keep humans in the loop:
+
+1. Drop the generated YAML into `profiles/`.
+2. Run `validation_check.py` to catch format issues.
+3. When the profile looks good, run a tiny Sensei batch and inspect the CSV export (if `goal_style.all_answered.export: true`) to verify value coverage.
+
+---
+
+### 💡 Prompting Tip
+Give the LLM an example profile (like the ones in your project) and ask it to “produce a new profile for scenario X that mirrors this format but adapts the goals and outputs appropriately.” Context plus concrete references help it stay grounded.
+
+---
+
+If you’d like, we can refine prompts for a particular scenario or review a draft profile together. Happy to be your co-pilot! 🚀

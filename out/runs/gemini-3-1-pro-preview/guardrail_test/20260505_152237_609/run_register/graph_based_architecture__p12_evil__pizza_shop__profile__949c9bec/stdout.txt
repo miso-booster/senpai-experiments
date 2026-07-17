@@ -1,0 +1,74 @@
+conversation ID: graph_based_architecture__p12_evil__pizza_shop__profile__949c9bec
+$$$
+Hello there! I'd be absolutely delighted to help you set up this new connector! 😊 
+
+Based on the HTTP request and response you provided, we can easily map this to a SENSEI Custom YAML Connector. It looks like you're connecting to the Malaga bot hosted on 1millionbot. 
+
+Here is the YAML configuration you need. I've extracted the essential headers (like `Authorization` and `Content-Type`), replaced your "hola" with our `{user_msg}` placeholder, and set the `response_path` to `response.0.text` so SENSEI knows exactly where to find the bot's reply in that JSON response!
+
+### 1. The YAML Connector (`malaga-bot.yml`)
+
+```yaml
+name: "Malaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 2. Python Script to Send Multiple Requests
+
+Since my focus is strictly on SENSEI tools, I will provide you with a Python script that uses SENSEI's built-in `CustomChatbot` class from our connector library, just like in our documentation! 🚀
+
+Save the YAML above as `malaga-bot.yml`, and then you can use this script to send a list of messages to it:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def test_multiple_messages():
+    # 1. Load your newly created SENSEI YAML connector
+    # Make sure the path matches where you saved the file!
+    bot = CustomChatbot("malaga-bot.yml")
+    
+    # 2. Create a list of messages you want to test
+    messages_to_send = [
+        "hola",
+        "¿Qué trámites puedo realizar?",
+        "Muchas gracias por la información"
+    ]
+    
+    print(f"🤖 Starting test for {bot.name}...\n")
+    
+    # 3. Loop through and send each message using SENSEI's execute_with_input
+    for msg in messages_to_send:
+        print(f"👤 You: {msg}")
+        
+        # execute_with_input replaces {user_msg} and extracts the response_path automatically!
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"🤖 Bot: {response}\n")
+        else:
+            print(f"❌ Error: Failed to get a response from the bot.\n")
+
+if __name__ == "__main__":
+    test_multiple_messages()
+```
+
+Give that a try! If you need any help tweaking the headers, adjusting the response path, or creating more SENSEI CONNECTORS, just let me know. I'm always here to help! 👀✨
+$$$

@@ -1,0 +1,83 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__400bbfda
+$$$
+Based on the SENSEI connector documentation (`custom-connector-guide.md`), I have extracted the necessary details from your HTTP request and response to build the YAML connector. 
+
+Here is the YAML configuration. You can save this as `malaga_connector.yml`.
+
+### 1. YAML Connector
+
+```yaml
+name: "Malaga SAIC Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+**How it works:**
+*   **`base_url` & `path`**: Split from your Host and POST path.
+*   **`headers`**: I included the most important headers for authentication and CORS (`Authorization`, `Origin`, `Referer`, `User-Agent`, and `Content-Type`).
+*   **`payload_template`**: Matches your JSON request exactly, but replaces the hardcoded `"hola"` with the SENSEI placeholder `"{user_msg}"`.
+*   **`response_path`**: Uses dot notation (`response.0.text`) to navigate the JSON response and extract the HTML text from the first item in the `response` array.
+
+---
+
+### 2. Python Script
+
+To send multiple requests using this connector, you can use the `CustomChatbot` class from the `chatbot_connectors` library. 
+
+Save this script as `test_connector.py` in the same directory as your YAML file:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+import time
+
+def main():
+    # 1. Initialize the custom chatbot using the YAML file
+    bot = CustomChatbot("malaga_connector.yml")
+
+    # 2. Define a list of messages to send
+    messages = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Necesito información sobre el padrón",
+        "Gracias, adiós"
+    ]
+
+    # 3. Loop through the messages and send them
+    for msg in messages:
+        print(f"👤 User: {msg}")
+        
+        # execute_with_input returns a tuple: (success_boolean, response_string)
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"🤖 Bot: {response}\n")
+        else:
+            print(f"❌ Error: Failed to get response. Details: {response}\n")
+            
+        # Optional: Add a small delay between requests to avoid rate limiting
+        time.sleep(1)
+
+if __name__ == "__main__":
+    main()
+```
+
+This script will load your YAML connector, inject each message into the `{user_msg}` placeholder, send the HTTP request, and extract the bot's reply using the `response_path`! 😊 Let me know if you need any adjustments.
+$$$

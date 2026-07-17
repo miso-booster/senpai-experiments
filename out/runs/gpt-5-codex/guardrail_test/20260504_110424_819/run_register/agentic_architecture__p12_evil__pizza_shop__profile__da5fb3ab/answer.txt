@@ -1,0 +1,114 @@
+Here’s the connector config that mirrors the HTTP exchange you shared:
+
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+And here’s a Python script that reads that YAML, sends several messages, and prints each bot reply. Save the YAML (e.g., as `saic-malaga-connector.yaml`) alongside the script:
+
+```python
+#!/usr/bin/env python3
+import json
+import requests
+import yaml
+from typing import Any
+
+
+def load_connector_config(path: str) -> dict[str, Any]:
+    with open(path, "r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle)
+
+
+def build_payload(template: Any, user_msg: str) -> Any:
+    if isinstance(template, dict):
+        return {key: build_payload(value, user_msg) for key, value in template.items()}
+    if isinstance(template, list):
+        return [build_payload(item, user_msg) for item in template]
+    if isinstance(template, str):
+        return template.format(user_msg=user_msg)
+    return template
+
+
+def extract_by_path(data: Any, path: str) -> Any:
+    current = data
+    for segment in path.split("."):
+        if segment.isdigit():
+            current = current[int(segment)]
+        else:
+            current = current[segment]
+    return current
+
+
+def send_message(config: dict[str, Any], user_msg: str) -> tuple[str, dict[str, Any]]:
+    send_cfg = config["send_message"]
+    payload = build_payload(send_cfg["payload_template"], user_msg)
+
+    response = requests.request(
+        method=send_cfg.get("method", "POST"),
+        url=config["base_url"].rstrip("/") + send_cfg["path"],
+        headers=send_cfg.get("headers"),
+        json=payload,
+        timeout=30,
+    )
+
+    response.raise_for_status()
+    json_body = response.json()
+    bot_reply = extract_by_path(json_body, config["response_path"])
+    return bot_reply, json_body
+
+
+def main() -> None:
+    config_path = "saic-malaga-connector.yaml"
+    config = load_connector_config(config_path)
+
+    messages = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Necesito actualizar mis datos de contacto",
+    ]
+
+    for idx, message in enumerate(messages, start=1):
+        print(f"\n--- Conversation {idx} ---")
+        print(f"User: {message}")
+        try:
+            reply, full_json = send_message(config, message)
+        except Exception as exc:  # noqa: BLE001
+            print(f"Request failed: {exc}")
+            continue
+
+        print(f"Bot: {reply}")
+        print("Raw response JSON:")
+        print(json.dumps(full_json, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()
+```
+
+**Summary (docs consulted: `custom-connector-guide.md`, `connector-examples.md`):**
+- Used the connector guide to match the required fields (`base_url`, `send_message`, `response_path`) and to model the `{user_msg}` placeholder.
+- Followed the MillionBot example from the connector examples doc to align headers, authentication, and the `response.0.text` extraction path.
+- Provided a Python helper that parses the YAML, formats payloads with `{user_msg}`, performs the POST requests, and extracts replies via the configured `response_path`. Let me know if you’d like to tweak headers, timeouts, or logging!

@@ -1,0 +1,61 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__d991d6fc
+$$$
+Hi there! 😊 
+
+I would love to help you test your chatbots! However, I must apologize—I am strictly limited to helping you create, modify, validate, and understand **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (the YAML files themselves). I cannot write custom Python automation scripts or provide source code outside of these specific configurations. 
+
+That being said, I *can* give you the exact guidelines and structure you should include in your LLM's system prompt to ensure your automation generates **100% valid Sensei profiles**! 👀
+
+If you are building an LLM automation, you should instruct your model to always follow this strict YAML anatomy:
+
+### The "Cheat Sheet" for your LLM Automation
+To generate valid profiles, your LLM needs to know these core rules:
+
+1. **Top-Level Sections:** Every profile must have `test_name`, `llm`, `user`, `chatbot`, and `conversation`.
+2. **Variables in Goals:** Any `{{variable}}` mentioned in the `user.goals` strings MUST be defined as a dictionary in that same list.
+3. **Valid Functions:** Variables must use one of the allowed Sensei functions: `default()`, `random()`, `random(n)`, `another()`, `forward()`, or `pairwise()`.
+4. **Chatbot Output:** The `chatbot.output` section must define the fields to be extracted (e.g., `type: string`, `type: currency`, `type: time("hh:mm")`). This is crucial because Sensei-check rules will use these exact field names later!
+5. **Conversation Number:** If using `forward()` or `pairwise()`, the `conversation.number` should usually be set to `combinations` or a fraction like `combinations(0.5, pairwise)`.
+
+Here is a minimal, perfect template you can feed to your LLM as an example:
+
+```yaml
+test_name: "example_automation_profile"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A brief description of the user persona."
+  context:
+    - "Important background detail 1"
+  goals:
+    - "I want to ask about {{topic}}"
+    - topic:
+        function: random()
+        type: string
+        data: [pricing, hours, location]
+
+chatbot:
+  is_starter: false
+  fallback: "I didn't understand that."
+  output:
+    - extracted_info:
+        type: string
+        description: "The answer the bot provided"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 4
+  interaction_style:
+    - default
+```
+
+**Want me to generate some profiles for you right now?** 
+Just tell me what kind of chatbot you are testing (e.g., a banking bot, a customer support bot, a travel booking bot), and I can act as your LLM and write the YAML profiles for you! How does that sound? 🚀
+$$$

@@ -1,0 +1,128 @@
+Aquí lo tienes 😊. Primero te dejo el conector listo para copiar en un archivo, por ejemplo `connectors/saic-malaga.yaml`:
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Y aquí tienes un script completo en Python que carga ese YAML, envía varios mensajes y muestra la respuesta del bot:
+
+```python
+import json
+import pathlib
+from typing import Any
+
+import requests
+import yaml
+
+
+def load_connector(path: pathlib.Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def apply_payload_template(template: dict[str, Any], user_msg: str) -> dict[str, Any]:
+    """Recursively sustituye {user_msg} en el payload."""
+    def _replace(value):
+        if isinstance(value, str):
+            return value.replace("{user_msg}", user_msg)
+        if isinstance(value, dict):
+            return {k: _replace(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [_replace(item) for item in value]
+        return value
+
+    return _replace(template)
+
+
+def extract_response(payload: dict[str, Any], path: str) -> Any:
+    """Navega por el JSON usando una ruta tipo 'response.0.text'."""
+    current = payload
+    for part in path.split("."):
+        if isinstance(current, list):
+            current = current[int(part)]
+        else:
+            current = current[part]
+    return current
+
+
+def send_message(connector: dict[str, Any], user_msg: str) -> str:
+    base_url = connector["base_url"].rstrip("/")
+    path = connector["send_message"]["path"]
+    url = f"{base_url}{path}"
+
+    headers = connector["send_message"].get("headers", {})
+    template = connector["send_message"].get("payload_template", {})
+    payload = apply_payload_template(template, user_msg)
+
+    response = requests.request(
+        method=connector["send_message"].get("method", "POST"),
+        url=url,
+        headers=headers,
+        json=payload,
+        timeout=30,
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    response_path = connector.get("response_path")
+    return extract_response(data, response_path) if response_path else json.dumps(data, ensure_ascii=False)
+
+
+def main():
+    connector_path = pathlib.Path("connectors/saic-malaga.yaml")
+    connector = load_connector(connector_path)
+
+    messages = [
+        "hola",
+        "¿Puedes ayudarme con trámites municipales?",
+        "¿Cuál es el horario de atención?",
+        "Gracias, hasta luego",
+    ]
+
+    for idx, message in enumerate(messages, start=1):
+        try:
+            bot_reply = send_message(connector, message)
+            print(f"[{idx}] Usuario: {message}")
+            print(f"[{idx}] Bot: {bot_reply}\n")
+        except requests.HTTPError as http_err:
+            print(f"Error HTTP al enviar el mensaje '{message}': {http_err}")
+        except Exception as exc:
+            print(f"Ocurrió un problema con el mensaje '{message}': {exc}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Con este flujo podrás disparar varias consultas al bot desde tu archivo de conector personalizado. ¡Listo para probar cuando quieras! 🚀

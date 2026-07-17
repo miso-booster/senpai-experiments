@@ -1,0 +1,69 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__b722c679
+$$$
+Hey! Creating a Python automation to generate valid Sensei profiles using LLM models sounds like a fantastic idea to speed up your testing setup 😊.
+
+Since you want to generate **Sensei Profiles** specifically, the automation should produce YAML files that follow the Sensei profile schema, including sections like `test_name`, `llm`, `user` (with `language`, `role`, `context`, `goals`), `chatbot.output`, and `conversation`.
+
+Here's a simple Python example using an LLM (like OpenAI's GPT) to generate a Sensei profile YAML string. You can then save this string as a `.yml` file. The prompt to the LLM will instruct it to produce a valid Sensei profile YAML.
+
+```python
+import openai
+import yaml
+
+# Set your OpenAI API key
+openai.api_key = "your-api-key"
+
+def generate_sensei_profile(description: str) -> str:
+    """
+    Generate a Sensei profile YAML string based on a description using an LLM.
+    """
+    prompt = f"""
+You are an expert in Sensei Profiles for chatbot testing.
+Generate a valid Sensei profile YAML that matches the following description:
+
+{description}
+
+Make sure to include:
+- test_name
+- llm with model and temperature
+- user with language, role, context, and goals (with variables)
+- chatbot output fields with types and descriptions
+- conversation settings (number, goal_style, interaction_style)
+
+Return only the YAML content, no explanations.
+"""
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[{"role": "system", "content": "You generate Sensei profile YAMLs."},
+                  {"role": "user", "content": prompt}],
+        temperature=0.7,
+        max_tokens=800
+    )
+    return response.choices[0].message.content
+
+def save_profile_to_file(yaml_content: str, filename: str):
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(yaml_content)
+
+if __name__ == "__main__":
+    description = "A user profile for ordering a pizza with customizable size, toppings, and drinks."
+    profile_yaml = generate_sensei_profile(description)
+    print(profile_yaml)  # Optional: preview
+    save_profile_to_file(profile_yaml, "generated_pizza_order_profile.yml")
+```
+
+### How this works:
+- You provide a **description** of the profile you want.
+- The LLM generates a YAML profile matching Sensei's schema.
+- You save the YAML to a file, ready to use in your Sensei project.
+
+---
+
+### Tips for improving this automation:
+- Add validation of the generated YAML against Sensei's schema.
+- Use a local YAML parser to check for syntax errors.
+- Extend the prompt with examples or constraints for more precise profiles.
+- Integrate with your Sensei project folder structure automatically.
+
+If you want, I can help you build a more advanced version or add validation steps! Just ask 😊
+$$$

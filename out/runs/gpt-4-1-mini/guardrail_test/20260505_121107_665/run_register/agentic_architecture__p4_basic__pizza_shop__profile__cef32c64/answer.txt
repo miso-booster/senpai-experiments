@@ -1,0 +1,123 @@
+I have reviewed the Sensei profile documentation (`sensei-chat-guide.md`) and the connector documentation (`custom-connector-guide.md` and `connector-examples.md`). Here's a plan and outline for a Python automation script that uses LLM models to create valid Sensei profiles:
+
+---
+
+### Key Points from Docs
+- Sensei profiles are YAML files defining user simulation for chatbot testing.
+- Profiles include sections like `test_name`, `llm` (model, temperature), `user` (language, role, context, goals), `chatbot` (starter flag, fallback, output schema), and `conversation` controls.
+- Variables in `user.goals` can be typed and use functions like `random()`, `forward()`, `pairwise()`.
+- The `chatbot.output` defines fields extracted from chatbot responses, which rules can validate.
+- LLM integration in profiles is specified under `llm` with model details and format.
+- Connectors define how to send messages to chatbots, but for profile creation, focus is on the profile YAML structure.
+
+---
+
+### Automation Script Outline
+
+1. **Input**: User provides high-level parameters for the profile:
+   - Test name
+   - LLM model and temperature
+   - User language, role description, context notes
+   - List of goals with variables and data options
+   - Chatbot output fields to extract
+   - Conversation controls (number, steps, interaction style)
+
+2. **LLM Integration**:
+   - Use an LLM (e.g., OpenAI GPT) to generate or refine parts of the profile, such as:
+     - Role description
+     - Context details
+     - Goal prompts with variables
+     - Variable data lists or instructions for LLM-generated data
+
+3. **YAML Generation**:
+   - Construct the profile YAML structure programmatically.
+   - Validate that variable names in goals match declared variables.
+   - Include `chatbot.output` fields with types and descriptions.
+   - Add conversation controls.
+
+4. **Output**:
+   - Save the generated profile YAML to a file under `profiles/`.
+   - Optionally validate the YAML structure or run a dry test.
+
+---
+
+### Example Python Automation Skeleton
+
+```python
+import yaml
+
+def generate_sensei_profile(params):
+    profile = {
+        "test_name": params["test_name"],
+        "llm": {
+            "temperature": params.get("temperature", 0.7),
+            "model": params.get("model", "gpt-4o"),
+            "model_prov": params.get("model_prov", "openai"),
+            "format": {"type": "text"}
+        },
+        "user": {
+            "language": params["language"],
+            "role": params["role"],
+            "context": params.get("context", []),
+            "goals": []
+        },
+        "chatbot": {
+            "is_starter": params.get("is_starter", False),
+            "fallback": params.get("fallback", "Sorry, could you rephrase that?"),
+            "output": []
+        },
+        "conversation": {
+            "number": params.get("conversation_number", 2),
+            "goal_style": {"steps": params.get("steps", 5)},
+            "interaction_style": params.get("interaction_style", ["random"])
+        }
+    }
+
+    # Add goals with variables
+    for goal in params["goals"]:
+        if isinstance(goal, str):
+            profile["user"]["goals"].append(goal)
+        elif isinstance(goal, dict):
+            profile["user"]["goals"].append(goal)
+
+    # Add chatbot output fields
+    for output_field in params.get("chatbot_output", []):
+        profile["chatbot"]["output"].append(output_field)
+
+    return profile
+
+def save_profile_to_file(profile, filename):
+    with open(filename, "w") as f:
+        yaml.dump(profile, f, sort_keys=False)
+
+# Example usage
+params = {
+    "test_name": "example_profile",
+    "language": "English",
+    "role": "You are a helpful assistant.",
+    "context": ["You like to provide concise answers."],
+    "goals": [
+        "Answer questions about {{topic}}.",
+        {"topic": {"function": "random()", "type": "string", "data": ["sports", "technology", "history"]}}
+    ],
+    "chatbot_output": [
+        {"answer_quality": {"type": "string", "description": "Quality of the answer"}},
+        {"response_time": {"type": "time(\"hh:mm:ss\")", "description": "Response time"}}
+    ],
+    "conversation_number": 3,
+    "steps": 4,
+    "interaction_style": ["long phrases", "make spelling mistakes"]
+}
+
+profile = generate_sensei_profile(params)
+save_profile_to_file(profile, "profiles/example_profile.yml")
+print("Profile saved to profiles/example_profile.yml")
+```
+
+---
+
+### Next Steps
+- Would you like me to help you build a more complete Python script that integrates an LLM API call to generate parts of the profile dynamically?
+- Or do you want a ready-to-use template script for manual parameter input?
+
+Let me know how you'd like to proceed! 😊

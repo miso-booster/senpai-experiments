@@ -1,0 +1,87 @@
+Hey hey! That sounds like a fun project 😊. The high-level idea is:
+
+1. **Prepare a strict prompt** that teaches the LLM the Sensei profile structure (from the docs).
+2. **Ask the model to emit YAML only**, using that template.
+3. **Post-validate** the YAML in Python (check all required keys, types, etc.).
+4. **Save it into `profiles/`** once it passes.
+
+Here’s a minimal automation sketch you can adapt:
+
+```python
+import json
+import yaml
+from pathlib import Path
+from openai import OpenAI
+
+SENSEI_PROFILE_TEMPLATE = """
+You are creating a SENSEI Chat profile (YAML).
+Required top-level sections:
+- test_name (string)
+- llm: temperature, model (e.g. gpt-4o-mini), model_prov (if needed), format.type
+- user: language, role, context (list), goals (list with strings and variable objects)
+- chatbot: is_starter, fallback, output (list of field definitions: name -> {type, description})
+- conversation: number, goal_style, interaction_style, max_cost (optional)
+
+Rules:
+- Emit ONLY YAML (no backticks, no prose).
+- Any {{variable}} used in goals must be declared with matching name, type, data, function.
+- Use default types unless you reference a custom type that actually exists.
+- chatbot.output must define every field Sensei-check rules will need.
+- interaction_style must use valid keywords (long phrases, change your mind, change language, make spelling mistakes, single questions, all questions, default, random:[...]).
+- goal_style can be `steps: N`, `random steps: M`, or `all_answered: {export: bool, limit: int}`.
+"""
+
+DEFENSIVE_PROMPT = SENSEI_PROFILE_TEMPLATE + """
+Create a profile for a polite customer ordering pizzas and drinks on a Friday night.
+Include variables for pizza type, size, drink quantity, and pickup time.
+"""
+
+def generate_profile(prompt: str, output_path: Path):
+    client = OpenAI()
+    response = client.responses.create(
+        model="gpt-4o-mini",
+        input=prompt,
+        temperature=0.4,
+        max_output_tokens=1200,
+    )
+    yaml_raw = response.output[0].content[0].text
+    profile_data = yaml.safe_load(yaml_raw)
+
+    required_top_level = {"test_name", "llm", "user", "chatbot", "conversation"}
+    if not required_top_level.issubset(profile_data):
+        missing = required_top_level - profile_data.keys()
+        raise ValueError(f"Missing sections: {', '.join(missing)}")
+
+    llm = profile_data["llm"]
+    for field in ("model", "temperature"):
+        if field not in llm:
+            raise ValueError(f"llm.{field} must be present")
+
+    goals = profile_data["user"]["goals"]
+    declared_variables = {k for goal in goals if isinstance(goal, dict) for k in goal}
+    mentioned_variables = {
+        token.strip("{}")
+        for g in goals
+        if isinstance(g, str)
+        for token in g.split()
+        if token.startswith("{{") and token.endswith("}}")
+    }
+    if mentioned_variables - declared_variables:
+        raise ValueError(f"Undeclared variables: {mentioned_variables - declared_variables}")
+
+    output_path.write_text(yaml.dump(profile_data, sort_keys=False), encoding="utf-8")
+    print(f"Profile saved to {output_path}")
+
+if __name__ == "__main__":
+    project_root = Path(r"E:\ESCRITORIO\Py_projects\SENPAI\one_node\Senpai-Assistant\sensei_projects\pizza_shop")
+    profiles_dir = project_root / "profiles"
+    profiles_dir.mkdir(exist_ok=True)
+    generate_profile(DEFENSIVE_PROMPT, profiles_dir / "pizza_friday_llm_generated.yaml")
+```
+
+### Why this works
+- The **prompt enforces the schema** straight from the Sensei profile guide.
+- The **validation block** keeps you safe from common mistakes (missing sections, undeclared variables).
+- You can extend validation to check `chatbot.output` fields against your project’s Sensei-check rules.
+
+Feel free to tweak the prompt per persona/use-case, run the script, and you’ll get well-formed Sensei profiles ready for testing 🚀. Let me know if you’d like deeper validation logic or multi-profile generation!

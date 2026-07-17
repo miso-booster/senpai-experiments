@@ -1,0 +1,142 @@
+Hey there! Here’s a complete plan for wiring up a Python automation that asks an LLM to draft Sensei user profiles and keeps them valid.
+
+---
+
+### 1. What the automation must enforce (from `sensei-chat-guide.md`)
+A profile needs these top-level sections:
+
+- `test_name`
+- `llm` (optional but nice to specify model/temperature)
+- `user` → `language`, `role`, `context`, `goals` (with any `{{variables}}` declared explicitly)
+- `chatbot` → `is_starter`, `fallback`, `output` (list of fields with `type` + `description`)
+- `conversation` → `number`, `goal_style`, optional `interaction_style`, cost limits…
+
+Your script should prompt the LLM with this contract, then validate that each required section is present and structurally sound before saving.
+
+---
+
+### 2. Prompting strategy
+1. **System message**: explain the Sensei profile spec and stress YAML output.
+2. **User message**: pass your domain brief (e.g., “travel booking bot for premium customers”) plus any constraints (variables, interaction styles, outputs).
+3. **Guardrails**: remind the LLM that every `{{variable}}` in goal strings must have a matching declaration, outputs need types + descriptions, etc.
+
+---
+
+### 3. Python automation skeleton
+
+```python
+import textwrap
+import yaml
+from openai import OpenAI
+
+client = OpenAI()
+
+PROFILE_SPEC = textwrap.dedent("""
+You write Sensei Chat profiles (see sensei-chat-guide.md summary):
+- Required top-level keys: test_name, user, chatbot, conversation. llm is optional but encouraged.
+- user.goals must declare every {{variable}} in the freeform goals list.
+- chatbot.output is a list; each item maps field_name -> {type, description}.
+- conversation.goal_style must pick steps|random steps|all_answered.
+Return ONLY valid YAML. Do not wrap in ``` fences.
+""")
+
+def build_prompt(domain_brief: str, extra_constraints: str = "") -> list[dict]:
+    return [
+        {"role": "system", "content": PROFILE_SPEC},
+        {"role": "user", "content": f"Create a Sensei profile for:\n{domain_brief}\n\nConstraints:\n{extra_constraints}"}
+    ]
+
+def generate_profile(domain_brief: str, constraints: str = "") -> dict:
+    messages = build_prompt(domain_brief, constraints)
+    completion = client.responses.create(
+        model="gpt-4o-mini",
+        input=messages,
+        temperature=0.4,
+    )
+    yaml_text = completion.output_text.strip()
+    return yaml.safe_load(yaml_text)
+
+REQUIRED_KEYS = {"test_name", "user", "chatbot", "conversation"}
+
+def validate_profile(profile: dict) -> None:
+    missing = REQUIRED_KEYS - profile.keys()
+    if missing:
+        raise ValueError(f"Missing top-level keys: {missing}")
+
+    # user section
+    user = profile["user"]
+    for key in ["language", "role", "goals"]:
+        if key not in user:
+            raise ValueError(f"user.{key} is required")
+
+    # goals variable check
+    freeform_goals = [g for g in user["goals"] if isinstance(g, str)]
+    declared_vars = {k for g in user["goals"] if isinstance(g, dict) for k in g.keys()}
+    for goal in freeform_goals:
+        for token in yaml.safe_load(f'"{goal}"').split():
+            if token.startswith("{{") and token.endswith("}}"):
+                var = token.strip("{}")
+                if var not in declared_vars:
+                    raise ValueError(f"Variable {var} in goal '{goal}' lacks a declaration")
+
+    # chatbot output check
+    outputs = profile["chatbot"].get("output", [])
+    if not outputs:
+        raise ValueError("chatbot.output must define at least one field")
+    for item in outputs:
+        if not isinstance(item, dict):
+            raise ValueError(f"chatbot.output item {item} is not a mapping")
+        name, spec = next(iter(item.items()))
+        for field in ("type", "description"):
+            if field not in spec:
+                raise ValueError(f"chatbot.output.{name} missing '{field}'")
+
+    # conversation basics
+    conv = profile["conversation"]
+    if "number" not in conv:
+        raise ValueError("conversation.number is required")
+    if "goal_style" not in conv:
+        raise ValueError("conversation.goal_style is required")
+
+def main():
+    domain_brief = "A Sensei profile that simulates a Spanish-speaking customer arranging same-day flower deliveries."
+    constraints = (
+        "- include interaction_style random mix of make spelling mistakes and long phrases\n"
+        "- collect price (currency) and delivery_window (time(hh:mm)) in chatbot.output\n"
+        "- limit conversations to combinations(0.6, pairwise)"
+    )
+    profile = generate_profile(domain_brief, constraints)
+    validate_profile(profile)
+
+    with open("profiles/auto_flower_delivery.yml", "w", encoding="utf-8") as f:
+        yaml.safe_dump(profile, f, sort_keys=False, allow_unicode=True)
+
+    print("Profile generated and validated!")
+
+if __name__ == "__main__":
+    main()
+```
+
+**Key points:**
+- `PROFILE_SPEC` encodes the contract from `sensei-chat-guide.md`.
+- `validate_profile` covers structural rules: required keys, goals/variable alignment, `chatbot.output` formatting, and `conversation.goal_style`.
+- Swap `model="gpt-4o-mini"` with whichever LLM you’re using; keep temperature low to maintain structure.
+- For more robust checks, extend validation (e.g., ensure `interaction_style` keywords are from the allowed list).
+
+---
+
+### 4. Post-generation safety
+- Run Sensei’s own `validation_check.py` against the saved profile to catch any DSL issues the script missed.
+- Optionally lint with `ruamel.yaml` or a JSON Schema if you maintain one internally.
+- Keep example prompts in fixtures so you can regression-test the automation.
+
+---
+
+### 5. Extending the automation
+- **Batch generation**: loop over scenarios, then deduplicate / tweak the YAML programmatically.
+- **Interactive editing**: feed the generated YAML back to the LLM with instructions like “revise for French market.”
+- **CI guardrail**: commit profiles only if validation passes and diffs are reviewed.
+
+---
+
+Let me know if you’d like helper functions for custom types or a CLI wrapper around this script!

@@ -1,0 +1,143 @@
+Here's the YAML connector for your described request to the 1millionbot API:
+
+```yaml
+name: "1millionbot SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+---
+
+And here is a complete Python script that uses this connector to send multiple messages sequentially:
+
+```python
+import requests
+import yaml
+
+# Load connector config from YAML string (or file)
+connector_yaml = """
+name: "1millionbot SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+"""
+
+# Parse YAML config
+config = yaml.safe_load(connector_yaml)
+
+def send_message(user_msg):
+    url = config["base_url"] + config["send_message"]["path"]
+    headers = config["send_message"].get("headers", {})
+    payload_template = config["send_message"]["payload_template"]
+
+    # Deep copy payload and replace {user_msg} placeholder
+    import copy
+    payload = copy.deepcopy(payload_template)
+
+    # Replace the placeholder in nested dict
+    def replace_text(obj):
+        if isinstance(obj, dict):
+            return {k: replace_text(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [replace_text(i) for i in obj]
+        elif isinstance(obj, str):
+            return obj.replace("{user_msg}", user_msg)
+        else:
+            return obj
+
+    payload = replace_text(payload)
+
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+
+    # Extract response using response_path
+    keys = config["response_path"].split(".")
+    val = data
+    for key in keys:
+        # Handle numeric keys for lists
+        if key.isdigit():
+            val = val[int(key)]
+        else:
+            val = val.get(key)
+        if val is None:
+            break
+    return val
+
+if __name__ == "__main__":
+    messages = [
+        "hola",
+        "¿Cuál es el horario de atención?",
+        "¿Pueden ayudarme con mi pedido?",
+        "Gracias"
+    ]
+
+    for msg in messages:
+        try:
+            reply = send_message(msg)
+            print(f"User: {msg}")
+            print(f"Bot: {reply}\n")
+        except Exception as e:
+            print(f"Error sending message '{msg}': {e}")
+```
+
+---
+
+This script loads the connector config, sends each message in the `messages` list, and prints the bot's reply extracted from the JSON response according to the `response_path`. Let me know if you'd like it adapted for Sensei or integrated with your project! 😊

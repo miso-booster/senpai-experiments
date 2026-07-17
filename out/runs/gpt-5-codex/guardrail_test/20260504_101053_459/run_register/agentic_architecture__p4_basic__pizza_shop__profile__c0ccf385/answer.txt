@@ -1,0 +1,311 @@
+Hey! Here’s a ready-to-use blueprint for automating Sensei profile creation with an LLM. Everything below is grounded in the structure described in **`sensei-chat-guide.md`** (test name, user, chatbot, conversation, etc.), so the generated YAMLs will match what Sensei expects.
+
+---
+
+## 1. Automation flow
+
+1. **Collect requirements** – capture domain, language, goals, extraction fields, interaction quirks, etc.
+2. **Compose a strict prompt** – tell the LLM to emit *only* valid Sensei profile YAML and remind it of the mandatory sections from the docs.
+3. **Call the model** – e.g., via OpenAI, Anthropic, or Azure endpoints.
+4. **Parse the YAML** – use `yaml.safe_load`.
+5. **Validate** – enforce the minimum contract from `sensei-chat-guide.md` (top-level sections, `user.goals` vars declared, `chatbot.output` schema, `conversation` controls).
+6. **Retry/repair** – if validation fails, feed the errors back to the model or patch locally.
+7. **Persist & lint** – save under `profiles/` and optionally run `validation_check.py` for a second sanity pass.
+
+---
+
+## 2. Prompt template
+
+```text
+You are generating a Sensei profile (see docs in sensei-chat-guide.md).
+Return ONLY valid YAML — no prose, no markdown fences.
+
+Must-have sections:
+- test_name
+- llm (optional, omit if defaults are fine)
+- user.language, user.role, user.context (list), user.goals (list)
+- chatbot.is_starter, chatbot.fallback, chatbot.output (list of mappings, each with type + description)
+- conversation.number, conversation.goal_style, conversation.interaction_style (list)
+
+Rules:
+- Every {{variable}} mentioned in a string goal must have a mapping entry declaring its function/type/data.
+- chatbot.output items must be a list where each element is `field_name: {type: ..., description: ...}`.
+- interaction_style entries must come from the allowed keywords (long phrases, change your mind, ...); do not invent new ones.
+
+{extra_instructions_from_user}
+```
+
+You can dynamically inject the project/domain requirements into `{extra_instructions_from_user}`.
+
+---
+
+## 3. Python automation (example)
+
+```python
+import os
+import re
+from pathlib import Path
+from typing import Any, Dict, List
+
+import yaml
+from openai import OpenAI
+
+VAR_PATTERN = re.compile(r"{{\s*([\w-]+)\s*}}")
+
+REQUIRED_TOP_LEVEL = {"test_name", "user", "chatbot", "conversation"}
+REQUIRED_USER_KEYS = {"language", "role", "goals"}
+REQUIRED_CHATBOT_KEYS = {"is_starter", "fallback", "output"}
+REQUIRED_CONVERSATION_KEYS = {"number", "goal_style"}
+ALLOWED_INTERACTION_STYLES = {
+    "long phrases",
+    "change your mind",
+    "change language",
+    "make spelling mistakes",
+    "single questions",
+    "all questions",
+    "default",
+}
+
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+
+def build_prompt(spec: Dict[str, Any]) -> str:
+    base_prompt = spec.pop("base_prompt", "")
+    domain_blob = yaml.safe_dump(spec, sort_keys=False)
+    return (
+        "You are generating a Sensei profile (sensei-chat-guide.md).\n"
+        "Return ONLY valid YAML — no prose, no markdown fences.\n\n"
+        "Mandatory structure:\n"
+        "- test_name\n"
+        "- user.language, user.role, user.context (list), user.goals (list)\n"
+        "- chatbot.is_starter, chatbot.fallback, chatbot.output (list of mappings)\n"
+        "- conversation.number, conversation.goal_style, conversation.interaction_style (list)\n\n"
+        "Rules:\n"
+        "- Every {{variable}} in a goal string must be declared as a mapping in user.goals.\n"
+        "- chatbot.output items must be list entries like field_name: {type: ..., description: ...}.\n"
+        "- interaction_style values must come from: long phrases, change your mind, change language, "
+        "make spelling mistakes, single questions, all questions, default, or random: [...].\n\n"
+        "Generate a profile that satisfies the following requirements:\n"
+        f"{domain_blob}\n"
+        f"{base_prompt}"
+    )
+
+
+def call_llm(prompt: str, model: str = "gpt-4o-mini") -> str:
+    response = client.responses.create(
+        model=model,
+        input=prompt,
+        max_output_tokens=1800,
+    )
+    return response.output_text.strip()
+
+
+def parse_yaml(yaml_str: str) -> Dict[str, Any]:
+    return yaml.safe_load(yaml_str)
+
+
+def collect_goal_variables(goals: List[Any]) -> Dict[str, Dict[str, Any]]:
+    declared: Dict[str, Dict[str, Any]] = {}
+    for entry in goals:
+        if isinstance(entry, dict):
+            for key, value in entry.items():
+                declared[key] = value
+    return declared
+
+
+def find_template_variables(goals: List[Any]) -> List[str]:
+    vars_found: List[str] = []
+    for entry in goals:
+        if isinstance(entry, str):
+            vars_found.extend(VAR_PATTERN.findall(entry))
+    return vars_found
+
+
+def validate_profile(profile: Dict[str, Any]) -> List[str]:
+    errors: List[str] = []
+
+    missing = REQUIRED_TOP_LEVEL - profile.keys()
+    if missing:
+        errors.append(f"Missing top-level sections: {', '.join(sorted(missing))}")
+
+    user = profile.get("user", {})
+    if not isinstance(user, dict):
+        errors.append("user section must be a mapping")
+    else:
+        missing_user = REQUIRED_USER_KEYS - user.keys()
+        if missing_user:
+            errors.append(f"user is missing keys: {', '.join(sorted(missing_user))}")
+        if not isinstance(user.get("context", []), list):
+            errors.append("user.context must be a list (can be empty)")
+        if not isinstance(user.get("goals", []), list) or not user.get("goals"):
+            errors.append("user.goals must be a non-empty list")
+
+    chatbot = profile.get("chatbot", {})
+    if not isinstance(chatbot, dict):
+        errors.append("chatbot section must be a mapping")
+    else:
+        missing_chatbot = REQUIRED_CHATBOT_KEYS - chatbot.keys()
+        if missing_chatbot:
+            errors.append(f"chatbot is missing keys: {', '.join(sorted(missing_chatbot))}")
+        outputs = chatbot.get("output", [])
+        if not isinstance(outputs, list) or not outputs:
+            errors.append("chatbot.output must be a non-empty list")
+        else:
+            for idx, item in enumerate(outputs):
+                if not isinstance(item, dict) or len(item) != 1:
+                    errors.append(f"chatbot.output[{idx}] must be a single-key mapping")
+                    continue
+                field, config = next(iter(item.items()))
+                if not isinstance(config, dict):
+                    errors.append(f"chatbot.output[{field}] must map to a dict")
+                    continue
+                if "type" not in config or "description" not in config:
+                    errors.append(
+                        f"chatbot.output[{field}] needs both 'type' and 'description'"
+                    )
+
+    conversation = profile.get("conversation", {})
+    if not isinstance(conversation, dict):
+        errors.append("conversation section must be a mapping")
+    else:
+        missing_convo = REQUIRED_CONVERSATION_KEYS - conversation.keys()
+        if missing_convo:
+            errors.append(f"conversation is missing keys: {', '.join(sorted(missing_convo))}")
+        style = conversation.get("interaction_style", [])
+        if style is not None:
+            if not isinstance(style, list):
+                errors.append("conversation.interaction_style must be a list")
+            else:
+                for item in style:
+                    if isinstance(item, str):
+                        if item not in ALLOWED_INTERACTION_STYLES:
+                            errors.append(f"interaction_style '{item}' is not allowed")
+                    elif isinstance(item, dict) and "random" in item:
+                        rand_list = item["random"]
+                        if not isinstance(rand_list, list):
+                            errors.append("random interaction_style must contain a list")
+                    else:
+                        errors.append(f"Unsupported interaction_style entry: {item}")
+
+    goals = user.get("goals") if isinstance(user, dict) else []
+    declared = collect_goal_variables(goals)
+    referenced_vars = find_template_variables(goals)
+    for var in referenced_vars:
+        if var not in declared:
+            errors.append(f"Goal variable '{{{{{var}}}}}' is not declared as a mapping in user.goals")
+
+    return errors
+
+
+def generate_valid_profile(spec: Dict[str, Any], model: str = "gpt-4o-mini", retries: int = 3) -> Dict[str, Any]:
+    last_errors: List[str] = []
+    prompt = build_prompt(spec)
+
+    for attempt in range(1, retries + 1):
+        yaml_text = call_llm(prompt, model=model)
+        try:
+            profile = parse_yaml(yaml_text)
+        except yaml.YAMLError as exc:
+            last_errors = [f"YAML parsing error: {exc}"]
+            prompt += f"\nThe previous attempt produced invalid YAML: {exc}\nRetry with correct YAML."
+            continue
+
+        errors = validate_profile(profile)
+        if not errors:
+            return profile
+
+        last_errors = errors
+        prompt += (
+            "\nThe previous YAML failed validation:\n"
+            + "\n".join(f"- {err}" for err in errors)
+            + "\nRegenerate a corrected profile."
+        )
+
+    raise ValueError(f"Failed to produce a valid profile after {retries} attempts:\n" + "\n".join(last_errors))
+
+
+def save_profile(profile: Dict[str, Any], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fh:
+        yaml.safe_dump(profile, fh, sort_keys=False)
+    print(f"Profile saved to {path}")
+
+
+if __name__ == "__main__":
+    # Example spec – replace with your own project’s requirements or pull from CLI/DB.
+    profile_spec = {
+        "test_name": "hotel_booking_spanish_smoke",
+        "llm": {
+            "temperature": 0.6,
+            "model": "gpt-4o-mini",
+            "model_prov": "openai",
+        },
+        "user": {
+            "language": "Spanish",
+            "role": "Cliente que intenta reservar una habitación de hotel.",
+            "context": [
+                "Prefiere habitaciones silenciosas.",
+                "Viaja con dos adultos y un niño."
+            ],
+            "goals": [
+                "Pedir una habitación {{room_type}} para {{num_nights}} noches",
+                "Solicitar {{add_ons}}",
+                "Preguntar por un precio total en {{currency}}"
+            ],
+        },
+        "chatbot_desired_outputs": [
+            {"total_price": {"type": "currency", "description": "Precio final con impuestos"}},
+            {"booking_id": {"type": "string", "description": "Código de reserva"}},
+            {"check_in": {"type": "date(day-month-year)", "description": "Fecha de check-in"}}
+        ],
+        "conversation": {
+            "number": "combinations(0.6, pairwise)",
+            "goal_style": {"steps": 5},
+            "interaction_style": [
+                "long phrases",
+                {"random": ["make spelling mistakes", "change language"]}]
+        },
+        "base_prompt": (
+            "Ensure the chatbot.is_starter field is set to false and the fallback text is "
+            "\"Lo siento, ¿puedes reformularlo?\". Use pairwise() over room_type and add_ons, "
+            "and forward(num_nights). Offer JSON-like descriptions for context items."
+        ),
+    }
+
+    profile = generate_valid_profile(profile_spec)
+    save_profile(profile, Path("profiles/hotel_booking_spanish_smoke.yml"))
+```
+
+### Notes
+
+- `profile_spec` keeps the dynamic parts; you can wire it to a CLI, database, or a spreadsheet ingestion step.
+- The validator is intentionally strict about the sections enumerated in `sensei-chat-guide.md`.
+- If you prefer structured validation, swap the manual checks for `pydantic` models.
+- `chatbot_desired_outputs` is fed into the prompt as part of the spec. Update `build_prompt` if you want a richer contract.
+
+---
+
+## 4. Post-generation checks
+
+1. **Sensei’s built-in validator**  
+   ```bash
+   python validation_check.py --profile profiles/hotel_booking_spanish_smoke.yml --output output_dir --combined-matrix --verbose
+   ```
+   This leverages the same schema described in `sensei-chat-guide.md` and will flag mismatched variables, invalid interaction styles, etc.
+
+2. **Custom linting** – e.g., run regex checks to ensure `types/` files exist for custom `type` names.
+
+3. **Human review** – still useful for tone, domain accuracy, or any prompts that should reference corporate style guides.
+
+---
+
+## 5. Extending the automation
+
+- Add a **feedback loop** that auto-edits the YAML when a rule complains (e.g., renaming missing outputs to match an existing rule).
+- Generate **multiple profiles** in one call: provide a list of specs and stream completions.
+- Store successful profiles in version control and tag them with metadata (domain, locale, release).
+- Plug into CI so every profile regen runs the validator + selected Sensei rules.
+
+---
+
+Let me know your target domains, preferred LLM provider, or any deployment constraints, and I can tailor the prompt/spec collection part further or adjust the validator.

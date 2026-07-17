@@ -1,0 +1,80 @@
+Based on the SENSEI connector documentation (`custom-connector-guide.md` and `connector-examples.md`), I have mapped your HTTP request and response to the correct YAML format. 
+
+Here is the YAML connector and the Python script to run it! 😊
+
+### 1. The YAML Connector
+
+Save this file as `saic_malaga.yml`. 
+
+Notice how we extract the key headers (`Authorization`, `Origin`, `Referer`), replace the hardcoded `"hola"` with the `{user_msg}` placeholder in the payload, and use dot notation (`response.0.text`) to extract the bot's reply from the JSON response.
+
+```yaml
+name: "SAIC Malaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 2. Python Script
+
+Here is a complete Python script that uses the SENSEI `CustomChatbot` class to load your YAML connector and send multiple requests to it. 
+
+Save this as `test_bot.py` in the same directory as your YAML file:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def main():
+    # 1. Initialize the bot using the YAML configuration file
+    bot_config_path = "saic_malaga.yml"
+    bot = CustomChatbot(bot_config_path)
+    
+    print(f"Successfully loaded connector: {bot_config_path}\n")
+
+    # 2. Define the multiple requests you want to send
+    messages_to_send = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Necesito ayuda con un trámite",
+        "Gracias, adiós"
+    ]
+
+    # 3. Loop through the messages and send them
+    for msg in messages_to_send:
+        print(f"User: {msg}")
+        
+        # execute_with_input replaces {user_msg} in the payload and sends the request
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"Bot: {response}\n")
+        else:
+            print(f"Error: Failed to get a valid response. Details: {response}\n")
+
+if __name__ == "__main__":
+    main()
+```
+
+### How to run it:
+Just execute the Python script in your terminal:
+```bash
+python test_bot.py
+```
+
+Let me know if you need any adjustments to the headers or the payload!

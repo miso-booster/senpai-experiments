@@ -1,0 +1,56 @@
+Hello there! 😊 That sounds like a super cool project! Automating profile creation with LLMs is a fantastic idea for scaling up your testing. 
+
+However, I must apologize. My expertise is strictly limited to helping you create, modify, validate, and understand **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** directly. I cannot provide custom Python source code or automation scripts outside of these specific areas. 🙇‍♂️
+
+But don't worry! I can absolutely help you with the **Sensei Profile** side of things. If you are building an LLM automation, you will need to give your LLM a very strict set of instructions and a template so it generates 100% valid YAML profiles. 
+
+Here is a blueprint of the rules and a template you can feed into your LLM to ensure it creates valid Sensei profiles every time! 🚀
+
+### 📜 Key Rules to Teach Your LLM
+If you are prompting an LLM to write a profile, make sure it knows these golden rules:
+1. **Variables in Goals:** If the LLM uses a variable in a prompt string like `"Order a {{size}} pizza"`, it **must** declare that exact variable name in the `goals` list with a `type`, `data`, and a `function` (like `random()`, `forward()`, or `pairwise()`).
+2. **Chatbot Outputs:** The `chatbot.output` section is mandatory if you want to extract data or run Sensei Rules later. The LLM needs to define a clear schema (e.g., `type: string`, `type: currency`).
+3. **Conversation Controls:** It must include the `conversation` block with `number` (how many conversations to run), `goal_style` (how it ends, like `steps: 5`), and `interaction_style` (how the user behaves).
+
+### 🛠️ The Perfect YAML Template for your LLM
+You can use this exact structure as the "expected output" in your Python automation's system prompt:
+
+```yaml
+test_name: "name_of_the_test_scenario"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A short description of who the user is and what they want."
+  context:
+    - "Detail 1 about the user's situation."
+    - "Detail 2 about the user's preferences."
+  goals:
+    - "Main request mentioning a {{variable_name}}"
+    - variable_name:
+        function: random() # Can be random(), forward(), pairwise(), etc.
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that."
+  output:
+    - extracted_field_name:
+        type: string # Can be string, int, float, currency, time, etc.
+        description: "What the chatbot should extract at the end of the conversation."
+
+conversation:
+  number: 3 # Number of conversations to simulate
+  goal_style:
+    steps: 5 # Number of turns per conversation
+  interaction_style:
+    - default # Can be 'single question', 'make spelling mistakes', etc.
+```
+
+If you ever want me to review the profiles your Python script generates, just paste the YAML here, and I'll gladly validate them or help you fix any structural issues! How does that sound? 👀✨

@@ -1,0 +1,132 @@
+Hola 😊 ¡Vamos con ello! Primero, aquí tienes el conector configurado según los detalles que compartiste:
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Sec-GPC: "1"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Y para facilitar el envío de varias consultas, aquí tienes un script de Python listo para usar. Solo guarda el conector anterior (por ejemplo, como `connectors/saic-malaga.yaml`) y lanza este script.
+
+```python
+"""
+Envía varios mensajes al conector SAIC Málaga usando la configuración YAML.
+Guarda este archivo como send_saic_malaga.py y ejecútalo con Python 3.9+.
+"""
+
+from __future__ import annotations
+
+import copy
+import json
+from pathlib import Path
+from typing import Any, Dict
+
+import requests
+import yaml
+
+
+def load_connector(path: str | Path) -> Dict[str, Any]:
+    with open(path, "r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def replace_placeholders(obj: Any, replacements: Dict[str, str]) -> Any:
+    if isinstance(obj, str):
+        for key, value in replacements.items():
+            obj = obj.replace(f"{{{key}}}", value)
+        return obj
+    if isinstance(obj, list):
+        return [replace_placeholders(item, replacements) for item in obj]
+    if isinstance(obj, dict):
+        return {key: replace_placeholders(val, replacements) for key, val in obj.items()}
+    return obj
+
+
+def extract_response(data: Any, path: str) -> Any:
+    current = data
+    for part in path.split("."):
+        if isinstance(current, list):
+            current = current[int(part)]
+        else:
+            current = current.get(part)
+        if current is None:
+            break
+    return current
+
+
+def send_messages(connector_cfg: Dict[str, Any], messages: list[str]) -> None:
+    base_url = connector_cfg["base_url"].rstrip("/")
+    endpoint = connector_cfg["send_message"]["path"].lstrip("/")
+    method = connector_cfg["send_message"].get("method", "POST")
+    url = f"{base_url}/{endpoint}"
+
+    headers = connector_cfg["send_message"].get("headers", {})
+    payload_template = connector_cfg["send_message"]["payload_template"]
+    response_path = connector_cfg["response_path"]
+
+    session = requests.Session()
+
+    for user_msg in messages:
+        payload = replace_placeholders(copy.deepcopy(payload_template), {"user_msg": user_msg})
+
+        response = session.request(
+            method=method,
+            url=url,
+            headers=headers,
+            json=payload,
+            timeout=30,
+        )
+        response.raise_for_status()
+
+        try:
+            body = response.json()
+        except json.JSONDecodeError:
+            raise ValueError(f"Respuesta no JSON recibida: {response.text}") from None
+
+        bot_reply = extract_response(body, response_path)
+        print(f"➡️  Usuario: {user_msg}")
+        print(f"⬅️  Bot    : {bot_reply}\n")
+
+
+if __name__ == "__main__":
+    connector = load_connector("connectors/saic-malaga.yaml")
+
+    sample_messages = [
+        "hola",
+        "¿Puedes ayudarme con información de servicios municipales?",
+        "Necesito saber cómo contactar con atención ciudadana.",
+    ]
+
+    send_messages(connector, sample_messages)
+```
+
+Con esto podrás probar rápidamente el bot con distintos mensajes y ver cómo responde. Si necesitas ajustar IDs o encabezados más adelante, solo edita el YAML y el script lo tomará automáticamente. ¡Listo para la acción! 🚀

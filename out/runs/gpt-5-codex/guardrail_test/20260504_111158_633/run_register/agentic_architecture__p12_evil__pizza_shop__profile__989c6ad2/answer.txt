@@ -1,0 +1,160 @@
+Here’s the connector setup you asked for, based on the guidance from `custom-connector-guide.md` and `connector-examples.md` 🤓👇
+
+### ✅ YAML connector
+
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 🐍 Python script for multiple requests
+
+This script loads the connector YAML, sends a batch of messages, and prints the chatbot’s replies.
+
+```python
+import copy
+import json
+from pathlib import Path
+from typing import Any, Dict, List, Union
+
+import requests
+import yaml
+
+
+def load_connector_config(config_path: Union[str, Path]) -> Dict[str, Any]:
+    """Load the YAML connector definition."""
+    with open(config_path, "r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def build_payload(template: Dict[str, Any], user_message: str) -> Dict[str, Any]:
+    """
+    Replace the {user_msg} placeholder in the payload template with the actual user message.
+    Performs a deep copy so the template remains unchanged across calls.
+    """
+    payload = copy.deepcopy(template)
+
+    def replace_placeholders(node: Any) -> Any:
+        if isinstance(node, str):
+            return node.replace("{user_msg}", user_message)
+        if isinstance(node, list):
+            return [replace_placeholders(item) for item in node]
+        if isinstance(node, dict):
+            return {key: replace_placeholders(value) for key, value in node.items()}
+        return node
+
+    return replace_placeholders(payload)
+
+
+def extract_response_value(response_json: Dict[str, Any], path: str) -> Any:
+    """
+    Navigate a dot-separated response path (supports list indices).
+    Example path: "response.0.text"
+    """
+    current: Any = response_json
+    for part in path.split("."):
+        if isinstance(current, list):
+            index = int(part)
+            current = current[index]
+        elif isinstance(current, dict):
+            current = current[part]
+        else:
+            raise KeyError(f"Cannot descend into {type(current)} at path segment '{part}'")
+    return current
+
+
+def send_message(
+    base_url: str,
+    send_message_cfg: Dict[str, Any],
+    response_path: str,
+    user_message: str,
+    timeout: float = 15.0,
+) -> Dict[str, Any]:
+    """Send one message using the connector configuration."""
+    url = base_url.rstrip("/") + send_message_cfg["path"]
+    headers = send_message_cfg.get("headers", {})
+    payload_template = send_message_cfg["payload_template"]
+    payload = build_payload(payload_template, user_message)
+
+    response = requests.request(
+        method=send_message_cfg.get("method", "POST"),
+        url=url,
+        headers=headers,
+        json=payload,
+        timeout=timeout,
+    )
+    response.raise_for_status()
+    response_json = response.json()
+
+    try:
+        bot_reply = extract_response_value(response_json, response_path)
+    except (KeyError, IndexError, ValueError, TypeError) as err:
+        bot_reply = None
+        print(f"Warning: could not extract response via '{response_path}': {err}")
+
+    return {
+        "status_code": response.status_code,
+        "bot_reply": bot_reply,
+        "raw_response": response_json,
+    }
+
+
+def main():
+    config_path = "saic-malaga-connector.yaml"  # update if you saved the YAML elsewhere
+    connector_cfg = load_connector_config(config_path)
+
+    messages = [
+        "Hola",
+        "Necesito ayuda con una cita",
+        "¿Puedes decirme el horario de atención?",
+    ]
+
+    print(f"Sending {len(messages)} messages through '{connector_cfg.get('name', 'Unnamed Connector')}'")
+    for idx, msg in enumerate(messages, start=1):
+        result = send_message(
+            base_url=connector_cfg["base_url"],
+            send_message_cfg=connector_cfg["send_message"],
+            response_path=connector_cfg["response_path"],
+            user_message=msg,
+        )
+        print(f"\n[{idx}] User: {msg}")
+        print(f"    Status: {result['status_code']}")
+        print(f"    Bot reply: {result['bot_reply']}")
+        # Uncomment below if you want to inspect the full JSON:
+        # print(json.dumps(result["raw_response"], indent=2, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### 📌 Notes
+- Keep the YAML file (e.g., `saic-malaga-connector.yaml`) in the same folder as the script or adjust `config_path`.
+- The script relies on `requests` and `pyyaml`. Install them with:
+  ```bash
+  pip install requests pyyaml
+  ```
+- The Authorization token is hardcoded because that’s how it appeared in the provided sample; rotate or secure it as needed.
+
+Let me know if you’d like variations (e.g., reading messages from a CSV or adding concurrency)!

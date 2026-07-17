@@ -1,0 +1,86 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__22aaed84
+$$$
+Hey! Creating a Python automation that uses LLM models to generate valid Sensei profiles sounds like a fantastic idea to speed up your testing setup! 😊
+
+Since Sensei profiles have a specific YAML structure defining user simulation, goals, chatbot outputs, and conversation controls, the automation should:
+
+1. Use an LLM to generate profile content based on input prompts or templates.
+2. Validate the generated YAML against Sensei profile schema rules.
+3. Save the valid profiles to the `profiles/` directory.
+
+Here’s a simple example of how you might automate this using OpenAI’s GPT models (you can adapt to your LLM provider) and PyYAML for YAML handling. The example includes generating a profile YAML string, validating basic structure, and saving it.
+
+```python
+import yaml
+import openai
+
+openai.api_key = "YOUR_OPENAI_API_KEY"
+
+def generate_sensei_profile(prompt: str) -> dict:
+    """
+    Generate a Sensei profile YAML from an LLM given a prompt.
+    Returns the parsed YAML as a Python dict if valid.
+    """
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are an expert Sensei profile author."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7,
+        max_tokens=800,
+    )
+    yaml_text = response.choices[0].message.content.strip()
+
+    try:
+        profile = yaml.safe_load(yaml_text)
+    except yaml.YAMLError as e:
+        print(f"YAML parsing error: {e}")
+        return None
+
+    # Basic validation: check required top-level keys
+    required_keys = {"test_name", "user", "chatbot", "conversation"}
+    if not required_keys.issubset(profile.keys()):
+        print(f"Profile missing required keys: {required_keys - profile.keys()}")
+        return None
+
+    # Further validation can be added here (types, fields, etc.)
+    return profile
+
+def save_profile(profile: dict, filename: str):
+    """
+    Save the profile dict as YAML to the given filename.
+    """
+    with open(filename, "w", encoding="utf-8") as f:
+        yaml.dump(profile, f, sort_keys=False)
+    print(f"Profile saved to {filename}")
+
+if __name__ == "__main__":
+    prompt = """
+    Create a Sensei profile YAML for a user ordering a custom pizza.
+    Include variables for size, toppings, and drink.
+    The chatbot output should include price, order_id, and estimated_time.
+    The conversation should have 3 interactions with single questions.
+    """
+    profile = generate_sensei_profile(prompt)
+    if profile:
+        save_profile(profile, "profiles/generated_pizza_order_profile.yml")
+```
+
+### How this works:
+- You provide a prompt describing the profile you want.
+- The LLM generates the YAML text.
+- The script parses and validates the YAML.
+- If valid, it saves the profile YAML file ready to use in Sensei.
+
+---
+
+### Tips to improve:
+- Add schema validation against Sensei profile specs.
+- Generate multiple profiles in batch with different prompts.
+- Integrate with your Sensei project folder structure.
+- Use your preferred LLM or local model instead of OpenAI.
+- Add logging and error handling for robustness.
+
+If you want, I can help you build a more advanced version or tailor it to your specific LLM or project setup! Just let me know 😊
+$$$

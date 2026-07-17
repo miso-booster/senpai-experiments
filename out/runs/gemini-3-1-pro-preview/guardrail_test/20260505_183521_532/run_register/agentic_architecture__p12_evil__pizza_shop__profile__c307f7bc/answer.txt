@@ -1,0 +1,72 @@
+Here is the YAML connector and the Python script you requested, based on the SENSEI Custom Connector documentation (`custom-connector-guide.md` and `connector-examples.md`).
+
+### 1. YAML Connector
+
+Save this file as `saic-malaga.yml`. 
+
+I've extracted the `base_url`, `path`, `headers`, and `payload_template` directly from your HTTP request. The `response_path` is set to `response.0.text` because the chatbot's reply in your JSON response is located inside the first element of the `response` array under the `text` key.
+
+```yaml
+name: "SAIC Malaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 2. Python Script
+
+Here is a complete Python script that uses the SENSEI `CustomChatbot` class to load your YAML connector and send multiple requests to it. 
+
+Save this as `test_connector.py` in the same directory as your YAML file.
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def main():
+    # 1. Initialize the custom chatbot with your YAML configuration file
+    bot = CustomChatbot("saic-malaga.yml")
+
+    # 2. Define a list of messages you want to send
+    messages_to_send = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Necesito ayuda con un trámite"
+    ]
+
+    # 3. Loop through the messages and send them to the connector
+    print(f"--- Starting conversation with {bot.name} ---\n")
+    
+    for msg in messages_to_send:
+        print(f"User: {msg}")
+        
+        # execute_with_input replaces '{user_msg}' in the YAML with the actual message
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"Bot: {response}\n")
+        else:
+            print(f"Error communicating with bot: {response}\n")
+
+if __name__ == "__main__":
+    main()
+```
+
+### How it works:
+* **`{user_msg}` Placeholder**: In the YAML file, `message.text` is set to `"{user_msg}"`. When the Python script calls `bot.execute_with_input(msg)`, it automatically injects the text into that exact spot in the JSON payload.
+* **`response_path`**: The connector automatically parses the JSON response from the server, navigates to `response[0]["text"]`, and returns just the HTML/text string (`<p>¡Buenos días!...`) back to your Python script.

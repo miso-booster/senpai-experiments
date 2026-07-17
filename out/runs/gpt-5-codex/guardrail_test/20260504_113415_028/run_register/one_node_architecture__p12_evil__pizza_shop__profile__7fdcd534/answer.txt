@@ -1,0 +1,69 @@
+¡Claro! Aquí tienes el conector listo para usar con esa API:
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+
+response_path: "response.0.text"
+```
+
+Y aquí va un script de ejemplo en Python para lanzar varias peticiones usando ese conector (ajusta la ruta del archivo según tu entorno):
+
+```python
+from pathlib import Path
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def run_batch_requests():
+    connector_path = Path("connectors/saic-malaga.yaml")  # ajusta la ruta si es necesario
+    bot = CustomChatbot(str(connector_path))
+
+    prompts = [
+        "hola",
+        "¿Cuál es el horario de atención?",
+        "Necesito información sobre trámites municipales.",
+        "Gracias, eso es todo."
+    ]
+
+    for prompt in prompts:
+        success, response = bot.execute_with_input(prompt)
+        if success:
+            print(f"➡️ Pregunta: {prompt}")
+            print(f"🟢 Respuesta del bot: {response}\n")
+        else:
+            print(f"❌ Error al enviar: {prompt}")
+            print(f"Detalle del error: {response}\n")
+
+if __name__ == "__main__":
+    run_batch_requests()
+```
+
+¡Listo! Con esto puedes probar varias interacciones seguidas con el bot sin complicaciones. 😊

@@ -1,0 +1,142 @@
+Hey! Let's start by creating the YAML connector for your provided request. Then I'll help you with a Python script to send multiple requests using that connector. 😊
+
+---
+
+### YAML Connector for your request
+
+```yaml
+name: "SAIC Malaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+---
+
+### Explanation:
+
+- The `payload_template` matches your JSON request, with `{user_msg}` as a placeholder for the message text.
+- The `response_path` extracts the bot's reply from the JSON response array at `response[0].text`.
+- All headers from your request are included to mimic the original request environment.
+
+---
+
+### Python script to send multiple requests to this connector
+
+```python
+import yaml
+import requests
+
+class CustomChatbot:
+    def __init__(self, config_path):
+        with open(config_path, 'r', encoding='utf-8') as f:
+            self.config = yaml.safe_load(f)
+        self.base_url = self.config['base_url']
+        self.path = self.config['send_message']['path']
+        self.method = self.config['send_message'].get('method', 'POST').upper()
+        self.headers = self.config['send_message'].get('headers', {})
+        self.payload_template = self.config['send_message']['payload_template']
+        self.response_path = self.config['response_path']
+
+    def _extract_response(self, response_json):
+        keys = self.response_path.split('.')
+        data = response_json
+        for key in keys:
+            if key.isdigit():
+                data = data[int(key)]
+            else:
+                data = data.get(key)
+            if data is None:
+                return None
+        return data
+
+    def send_message(self, user_msg):
+        # Prepare payload by replacing {user_msg}
+        def replace_msg(obj):
+            if isinstance(obj, dict):
+                return {k: replace_msg(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [replace_msg(i) for i in obj]
+            elif isinstance(obj, str):
+                return obj.replace("{user_msg}", user_msg)
+            else:
+                return obj
+
+        payload = replace_msg(self.payload_template)
+
+        url = self.base_url + self.path
+        if self.method == 'POST':
+            response = requests.post(url, json=payload, headers=self.headers)
+        else:
+            response = requests.get(url, params=payload, headers=self.headers)
+
+        if response.status_code == 200:
+            try:
+                response_json = response.json()
+                return True, self._extract_response(response_json)
+            except Exception as e:
+                return False, f"JSON parse error: {e}"
+        else:
+            return False, f"HTTP error {response.status_code}: {response.text}"
+
+if __name__ == "__main__":
+    # Path to your YAML connector file
+    connector_path = "saic-malaga-bot.yaml"  # Save the YAML content above in this file
+
+    bot = CustomChatbot(connector_path)
+
+    messages = [
+        "hola",
+        "¿Cuál es el horario de atención?",
+        "¿Dónde está la oficina principal?",
+        "Gracias por tu ayuda"
+    ]
+
+    for msg in messages:
+        success, response = bot.send_message(msg)
+        if success:
+            print(f"User: {msg}")
+            print(f"Bot: {response}\n")
+        else:
+            print(f"Error sending message '{msg}': {response}\n")
+```
+
+---
+
+### How to use:
+
+1. Save the YAML connector content into a file named `saic-malaga-bot.yaml`.
+2. Save the Python script in the same folder or adjust the path accordingly.
+3. Run the Python script. It will send the list of messages to the bot and print the responses.
+
+---
+
+If you want, I can help you adapt or extend this! Just let me know 😊.

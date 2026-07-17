@@ -1,0 +1,28 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__bb0e6a20
+$$$
+Hi there! For a Python automation that leans on an LLM to generate Sensei profiles, the key is to shape the prompt/data flow so the model fills in each required section exactly as the docs expect. Here’s a checklist you can follow when designing that workflow:
+
+1. **Feed the LLM a reliable template.**  
+   Start with a base YAML skeleton matching Sensei’s structure (`test_name`, `llm`, `user`, `chatbot`, `conversation`). Include placeholders the model must fill, and embed doc snippets explaining each field so it knows the constraints (e.g., `interaction_style` accepts only reserved keywords, `chatbot.output` is the contract for rules, etc.).
+
+2. **Pre-compute goal variables.**  
+   Before hitting the LLM, decide which variables you want in `user.goals` and define their `type`, `data`, and `function`. You can even pre-generate lists for `forward()` or `pairwise()` to avoid random guesses by the model. Hand those structures to the LLM so it only needs to plug them into the YAML properly.
+
+3. **Emphasize profile–rule alignment.**  
+   If you know which Sensei rules will run against the profile, remind the LLM to keep `chatbot.output` fields consistent with those rule references (e.g., if rules expect `total_cost`, make sure the automation keeps that name). This prevents post-run mismatches.
+
+4. **Post-process the LLM output.**  
+   After you receive the YAML string, run a quick parser in Python (`yaml.safe_load`) to:
+   - Confirm mandatory sections exist.
+   - Verify every `{{variable}}` mentioned in goals has a matching declaration.
+   - Check that `chatbot.output` types are valid (use the allowed primitives or custom types you’ve defined).
+   - Ensure `interaction_style` entries are from the official list and correctly structured.
+
+5. **Optional validation pass.**  
+   You can automatically call `validation_check.py` (from the project’s root) to catch finer issues with combination matrices or invalid function/type combinations. Parsing the tool’s JSON output lets your automation provide actionable feedback or ask the LLM for a revision.
+
+6. **Iterate if needed.**  
+   If your validation step flags problems (missing field, wrong type, etc.), feed that error summary back into the LLM prompt and request a corrected profile.
+
+By keeping the LLM grounded with a template, strong instructions, and a deterministic validation layer, you can reliably produce Sensei-ready profiles—no manual clean-up required. If you need help drafting that template or the validation checklist, just let me know!
+$$$

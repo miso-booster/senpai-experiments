@@ -1,0 +1,172 @@
+Hey there! Happy to help you spin up an automation flow for generating Sensei profiles with an LLM 😊. Below is a suggested approach that keeps everything aligned with the official profile schema and avoids invalid YAML sneaking in.
+
+---
+
+### 🧠 High-level workflow
+
+1. **Define the schema you expect**  
+   Capture the essential sections (`test_name`, `llm`, `user`, `chatbot`, `conversation`). I like to encode this in a Pydantic model or dataclass so validation is painless.
+
+2. **Prompt the LLM with that schema**  
+   Provide the model with:
+   - A short reminder of the required sections.
+   - A JSON/YAML “shape” you want.
+   - Concrete constraints (e.g., `interaction_style` must use the documented keywords, `chatbot.output` must expose fields you plan to reuse in rules).
+
+3. **Parse & validate**  
+   - Parse the model’s answer with `yaml.safe_load`.
+   - Run it through your validation model.
+   - Add custom checks (e.g., `chatbot.output` fields are non-empty, `conversation.number` is compatible with the functions used in `user.goals`, etc.).
+
+4. **Iterate or repair if needed**  
+   - If validation fails, you can either reprompt with clarifications or automatically call the LLM again with the error messages (a “repair” cycle).
+   - Once it passes, save the YAML under `profiles/`.
+
+---
+
+### 🛠️ Sample Python skeleton
+
+This example uses `pydantic` for validation and the OpenAI client, but you can adapt it to any provider. It does one generation + validation pass and shows how you could build a repair loop.
+
+```python
+import yaml
+from pathlib import Path
+from openai import OpenAI
+from pydantic import BaseModel, Field, validator
+
+client = OpenAI()
+
+# 1) Schema definition --------------------------------------------------------
+class ChatbotOutputField(BaseModel):
+    type: str
+    description: str
+
+class ProfileModel(BaseModel):
+    test_name: str
+    llm: dict
+    user: dict
+    chatbot: dict
+    conversation: dict
+
+    @validator("chatbot")
+    def validate_chatbot(cls, value):
+        required_keys = {"is_starter", "fallback", "output"}
+        missing = required_keys - value.keys()
+        if missing:
+            raise ValueError(f"chatbot is missing keys: {missing}")
+        if not isinstance(value["output"], list) or not value["output"]:
+            raise ValueError("chatbot.output must be a non-empty list")
+        # basic structure check for each output field
+        for idx, item in enumerate(value["output"]):
+            if not isinstance(item, dict) or len(item) != 1:
+                raise ValueError(f"chatbot.output[{idx}] must be a single-key mapping")
+            field_name, attrs = next(iter(item.items()))
+            ChatbotOutputField(**attrs)  # use pydantic to ensure type/description exist
+        return value
+
+    @validator("conversation")
+    def validate_conversation(cls, value):
+        if "goal_style" not in value:
+            raise ValueError("conversation.goal_style is required")
+        if "interaction_style" in value:
+            allowed = {
+                "long phrases",
+                "change your mind",
+                "change language",
+                "make spelling mistakes",
+                "single questions",
+                "all questions",
+                "default",
+                "random",
+            }
+            def check_style(style):
+                if isinstance(style, str):
+                    if style not in allowed:
+                        raise ValueError(f"interaction_style '{style}' not allowed")
+                elif isinstance(style, dict) and "random" in style:
+                    for nested in style["random"]:
+                        check_style(nested)
+                else:
+                    raise ValueError(f"interaction_style {style} not supported")
+            for item in value.get("interaction_style", []):
+                check_style(item)
+        return value
+
+# 2) Prompt template ----------------------------------------------------------
+PROFILE_PROMPT = """You are generating a YAML profile for Sensei (chatbot user simulator).
+Follow this schema strictly:
+- test_name: string
+- llm:
+    temperature: float
+    model: gpt-4o-mini (unless instructed otherwise)
+    model_prov: openai
+    format:
+      type: text
+- user:
+    language: English
+    role: string
+    context: list of strings
+    goals: list combining plain strings and variable declarations
+      * each variable declaration is a mapping {variable_name: {...}} with:
+          function: one of [forward(), forward(dep), pairwise(), random(), another()]
+          type: string/int/float/custom_type
+          data: list | range dict | any(...) directives
+- chatbot:
+    is_starter: false
+    fallback: realistic fallback message
+    output: list of fields; each field is {field_name: {type: <allowed>, description: <text>}}
+- conversation:
+    number: integer or combinations(...)
+    goal_style: choose either steps: N or all_answered: {export: bool, limit: int}
+    interaction_style: optional, but if present only use documented keywords:
+      long phrases, change your mind, change language (with nested languages),
+      make spelling mistakes, single questions, all questions, default, random: [...]
+    max_cost: optional float
+
+Constraints:
+- Use actual `chatbot.output` names you intend to reference in rules (e.g., price, order_id, drink_options, etc).
+- Make sure every {{variable}} mentioned in goals has a matching declaration.
+- Only use interaction_style keywords from the list above.
+- Keep the YAML valid; do not wrap code fences.
+- Provide realistic but concise descriptions.
+
+Now produce a profile for a user interested in comparing vegetarian pizza options and drinks before placing an order."""
+
+# 3) LLM call -----------------------------------------------------------------
+response = client.responses.create(
+    model="gpt-4o-mini",
+    input=PROFILE_PROMPT,
+    temperature=0.2,
+)
+
+raw_yaml = response.output_text.strip()
+
+# 4) Parse + validate ---------------------------------------------------------
+try:
+    profile_dict = yaml.safe_load(raw_yaml)
+except yaml.YAMLError as exc:
+    raise RuntimeError(f"Model returned invalid YAML: {exc}\n\n{raw_yaml}")
+
+try:
+    validated = ProfileModel(**profile_dict)
+except Exception as exc:
+    raise RuntimeError(f"Profile schema validation failed: {exc}\n\n{raw_yaml}")
+
+# 5) Save ---------------------------------------------------------------------
+output_path = Path("profiles/auto_generated_profile.yaml")
+output_path.write_text(yaml.dump(validated.dict(), sort_keys=False))
+print(f"Saved profile to {output_path}")
+```
+
+---
+
+### 🔍 Optional enhancements
+
+- **Repair loop**: Catch the validation exception, feed the error message back into another LLM prompt like “Fix these issues: …, here is the previous YAML…” until it passes.
+- **Custom validators**: Add checks that `conversation.number` is compatible with the number of pairwise/forward functions, or ensure `chatbot.output` fields map to existing rules.
+- **Template library**: Maintain reusable prompt templates for different profile archetypes (information seeker, order placement, troubleshooting, etc.).
+- **Rule awareness**: If your automation knows about existing Sensei-check rules, you can inject the list of required `chatbot.output` slots so the generated profile keeps the contract intact.
+
+---
+
+Let me know if you’d like a repair loop example or a ready-to-use prompt template for another profile persona!

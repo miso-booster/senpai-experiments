@@ -1,0 +1,181 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__44101215
+$$$
+Great! Based on the SENSEI profile documentation I loaded (from `sensei-chat-guide.md`) and the rules context (`sensei-check-doc.md`), here is a plan and outline for your Python automation to create valid SENSEI profiles using LLM models:
+
+---
+
+### Key points from docs about SENSEI profiles:
+- Profiles are YAML files defining simulated user behavior for chatbot testing.
+- They include sections like `test_name`, `llm` settings, `user` (language, role, context, goals), `chatbot` (starter flag, fallback, output schema), and `conversation` controls.
+- The `chatbot.output` section defines fields extracted from conversations, which rules later validate.
+- Variables in `user.goals` must be declared with types and data sources.
+- Interaction styles and conversation controls influence the simulation.
+- Profiles must be valid YAML and follow the documented schema.
+
+---
+
+### Python Automation Outline
+
+1. **Input:**
+   - User prompt or specification describing the profile purpose, user role, goals, output fields, and conversation parameters.
+   - Optionally, a template or example profile to base generation on.
+
+2. **LLM Interaction:**
+   - Use an LLM model (e.g., OpenAI GPT) to generate a valid SENSEI profile YAML.
+   - Provide the LLM with a prompt containing:
+     - Instructions about SENSEI profile structure (summarized).
+     - User input details.
+     - Example minimal profile template.
+   - Ask the LLM to produce YAML strictly following the SENSEI profile schema.
+
+3. **Validation:**
+   - Parse the generated YAML to ensure:
+     - Valid YAML syntax.
+     - Required fields exist (`test_name`, `user.language`, `user.role`, `chatbot.output`, etc.).
+     - `chatbot.output` fields are well-defined.
+     - Variable declarations in `user.goals` match usage in goal strings.
+   - Optionally, run a lightweight schema validation or use existing Sensei validation tools.
+
+4. **Output:**
+   - Save the generated profile YAML to a file.
+   - Return the YAML string or file path.
+
+---
+
+### Example Python Script Skeleton
+
+```python
+import yaml
+import openai  # or other LLM API client
+
+def generate_sensei_profile(prompt_details: dict, openai_api_key: str) -> str:
+    """
+    Generate a valid SENSEI profile YAML using an LLM.
+    
+    prompt_details: dict with keys like 'test_name', 'user_role', 'goals', 'output_fields', 'conversation_params'.
+    openai_api_key: API key for OpenAI or other LLM provider.
+    
+    Returns: YAML string of the profile.
+    """
+    openai.api_key = openai_api_key
+    
+    # Compose prompt for LLM
+    system_prompt = """
+    You are an expert in SENSEI chatbot testing profiles.
+    Generate a valid SENSEI profile YAML that matches the given details.
+    Follow this structure strictly:
+    - test_name: string
+    - llm: temperature, model, model_prov, format
+    - user: language, role, context, goals (with variables and functions)
+    - chatbot: is_starter, fallback, output (fields with type and description)
+    - conversation: number, goal_style, interaction_style
+    
+    Use the following example as a template:
+    test_name: "example_profile"
+    llm:
+      temperature: 0.7
+      model: gpt-4o
+      model_prov: openai
+      format:
+        type: text
+    user:
+      language: English
+      role: "Simulated user role description"
+      context:
+        - "Context details"
+      goals:
+        - "Goal with {{variable}}"
+        - variable:
+            function: random()
+            type: string
+            data: [option1, option2]
+    chatbot:
+      is_starter: false
+      fallback: "Sorry, can you rephrase?"
+      output:
+        - field1:
+            type: string
+            description: "Description of field1"
+    conversation:
+      number: 2
+      goal_style:
+        steps: 5
+      interaction_style:
+        - random:
+          - long phrases
+          - make spelling mistakes
+    """
+    
+    user_prompt = f"""
+    Generate a SENSEI profile YAML with these details:
+    Test name: {prompt_details['test_name']}
+    User role: {prompt_details['user_role']}
+    User language: {prompt_details.get('user_language', 'English')}
+    Goals: {prompt_details['goals']}
+    Chatbot output fields: {prompt_details['output_fields']}
+    Conversation parameters: {prompt_details.get('conversation_params', {})}
+    """
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        temperature=0.7,
+        max_tokens=1000,
+    )
+    
+    profile_yaml = response['choices'][0]['message']['content']
+    
+    # Validate YAML syntax
+    try:
+        profile_data = yaml.safe_load(profile_yaml)
+    except yaml.YAMLError as e:
+        raise ValueError(f"Generated YAML is invalid: {e}")
+    
+    # Additional validation can be added here
+    
+    return profile_yaml
+
+# Example usage
+if __name__ == "__main__":
+    prompt_details = {
+        "test_name": "rental_car_quote_smoke",
+        "user_role": "You are a customer trying to book a rental car for a weekend trip.",
+        "user_language": "English",
+        "goals": [
+            "Book a {{car_class}} car with {{transmission}} and {{seats}} seats",
+            "Pickup on {{pickup_date}} and return on {{return_date}}",
+            "Add-ons: {{add_ons}}",
+            "Ask for a total price in {{currency}}"
+        ],
+        "output_fields": [
+            {"total_price": {"type": "currency", "description": "Final price including taxes and add-ons"}},
+            {"pickup_time": {"type": "time(\"hh:mm\")", "description": "Pickup time"}},
+            {"booking_id": {"type": "string", "description": "Confirmation / booking reference"}}
+        ],
+        "conversation_params": {
+            "number": "combinations(0.5, pairwise)",
+            "goal_style": {"steps": 6, "max_cost": 0.1},
+            "interaction_style": ["random: [make spelling mistakes, single questions, long phrases, change language: [Spanish, German]]"]
+        }
+    }
+    
+    api_key = "your_openai_api_key_here"
+    profile_yaml = generate_sensei_profile(prompt_details, api_key)
+    print(profile_yaml)
+```
+
+---
+
+### Summary
+
+- The script uses an LLM to generate a valid SENSEI profile YAML based on user input.
+- It instructs the LLM with a system prompt describing the profile schema.
+- It validates the YAML syntax before returning.
+- You can extend validation and save the YAML to a file.
+- This approach leverages the SENSEI profile structure and best practices from the docs (`sensei-chat-guide.md`).
+
+Would you like me to help you implement this script fully or customize it for your specific use case? 😊
+$$$

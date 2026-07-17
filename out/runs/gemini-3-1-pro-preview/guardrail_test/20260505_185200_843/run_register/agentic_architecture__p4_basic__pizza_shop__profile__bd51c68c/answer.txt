@@ -1,0 +1,114 @@
+To create a Python automation that generates valid SENSEI profiles using an LLM, we need to provide the LLM with a strict **System Prompt** that contains the exact schema and rules defined in the SENSEI documentation (e.g., the structure of `user.goals`, `chatbot.output`, and `conversation` controls).
+
+Below is a complete Python script using the official `openai` library. It takes a natural language description of the test scenario, prompts the LLM to generate the YAML following SENSEI's strict rules, validates that the output is proper YAML, and saves it to a file.
+
+### Prerequisites
+You will need the `openai` and `pyyaml` packages installed:
+```bash
+pip install openai pyyaml
+```
+
+### Python Automation Script
+
+```python
+import os
+import yaml
+from openai import OpenAI
+
+def generate_sensei_profile(description: str, output_filename: str = "generated_profile.yml"):
+    """
+    Generates a valid SENSEI profile YAML using OpenAI's API based on a user description.
+    """
+    # Ensure you have your OPENAI_API_KEY set in your environment variables
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+    # The System Prompt acts as the "contract" to ensure the LLM outputs valid SENSEI DSL
+    system_prompt = """
+    You are an expert in creating SENSEI profiles for chatbot testing.
+    A SENSEI profile is a YAML file that defines how a user simulator behaves.
+
+    Follow these rules strictly to generate a valid SENSEI profile YAML:
+    1. Top-level keys must be exactly: `test_name`, `llm`, `user`, `chatbot`, `conversation`.
+    2. `llm` section: Include `temperature` (float), `model` (e.g., gpt-4o), `model_prov` (e.g., openai), `format` (type: text).
+    3. `user` section:
+       - `language`: e.g., English, Spanish.
+       - `role`: Prompt describing the simulated user.
+       - `context`: List of strings with constraints, facts, or preferences.
+       - `goals`: List of strings with `{{variable}}` placeholders, followed by variable definitions as dictionaries.
+         - Variable definitions must have: `function` (e.g., random(), forward(), pairwise(), another(), default()), `type` (string, int, float), and `data` (list of values, or min/max/step for numbers, or any("...")).
+    4. `chatbot` section:
+       - `is_starter`: boolean (true/false).
+       - `fallback`: string (the bot's fallback message).
+       - `output`: List of dictionaries for fields to extract. Each field needs a `type` (string, int, float, time("..."), date("..."), list[...]) and `description`.
+    5. `conversation` section:
+       - `number`: integer, or `combinations`, or `combinations(0.5, pairwise)`.
+       - `goal_style`: e.g., `steps: 5` or `all_answered: {export: true}`.
+       - `interaction_style`: List of styles (e.g., long phrases, change your mind, make spelling mistakes, single questions, all questions, default) or `random: [...]`.
+
+    Output ONLY valid YAML. Do not include markdown formatting blocks like ```yaml ... ```. Just the raw YAML text.
+    """
+
+    print(f"Generating profile for scenario: '{description}'...")
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Create a SENSEI profile for the following scenario:\n{description}"}
+            ],
+            temperature=0.2, # Low temperature for more deterministic, structured output
+        )
+    except Exception as e:
+        print(f"API Error: {e}")
+        return None
+
+    yaml_content = response.choices[0].message.content.strip()
+
+    # Clean up markdown if the LLM accidentally includes it despite instructions
+    if yaml_content.startswith("```yaml"):
+        yaml_content = yaml_content[7:]
+    if yaml_content.endswith("```"):
+        yaml_content = yaml_content[:-3]
+    
+    yaml_content = yaml_content.strip()
+
+    # Validate that it is valid YAML
+    try:
+        parsed_yaml = yaml.safe_load(yaml_content)
+        print("✅ Successfully generated and validated YAML structure.")
+        
+        # Save to file
+        with open(output_filename, "w", encoding="utf-8") as f:
+            yaml.dump(parsed_yaml, f, sort_keys=False, allow_unicode=True)
+        print(f"📁 Profile saved to {output_filename}")
+        
+        return parsed_yaml
+    except yaml.YAMLError as e:
+        print("❌ Error: The LLM generated invalid YAML.")
+        print(e)
+        print("Raw output:")
+        print(yaml_content)
+        return None
+
+# ==========================================
+# Example usage
+# ==========================================
+if __name__ == "__main__":
+    # Define the scenario you want to test
+    scenario = """
+    A user trying to book a table at an Italian restaurant for 2 to 6 people. 
+    They want to ask for vegan options and need to know the cancellation policy. 
+    They might make spelling mistakes and change their mind about the time.
+    """
+    
+    # Run the automation
+    generate_sensei_profile(scenario, "restaurant_booking_profile.yml")
+```
+
+### How this script works:
+1. **System Prompt Engineering**: The most important part of this automation is the `system_prompt`. It explicitly teaches the LLM the SENSEI DSL (Domain Specific Language). It enforces the required top-level keys (`test_name`, `llm`, `user`, `chatbot`, `conversation`), the syntax for `user.goals` (like `{{variables}}` and functions like `random()`), and the schema for `chatbot.output`.
+2. **Low Temperature**: We set `temperature=0.2` in the API call. This makes the LLM highly deterministic and less likely to hallucinate invalid YAML structures or non-existent SENSEI features.
+3. **Auto-Cleaning & Validation**: LLMs sometimes wrap code in markdown (e.g., ````yaml ````). The script strips this out and then uses `yaml.safe_load()` to guarantee the output is structurally sound before saving it to your `profiles/` directory.
+
+To run it, simply set your API key in your terminal (`export OPENAI_API_KEY="your-key-here"`) and execute the script! Let me know if you'd like to adapt this to use a different LLM provider like Anthropic or local models. 😊

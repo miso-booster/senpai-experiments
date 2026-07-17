@@ -1,0 +1,64 @@
+Hello there! 😊 How can I help you today? 
+
+While I don't write full Python automation scripts or general source code (my specialty is strictly working directly with **SENSEI PROFILES, RULES, and CONNECTORS**! 🥋), I can absolutely give you the exact blueprint and rules you need to feed into your Python LLM script so it generates perfectly valid Sensei profiles every time! 🚀
+
+To automate profile creation, your Python script should use a strong **System Prompt** that teaches the LLM the Sensei Profile schema. 
+
+Here are the key rules you should include in your LLM's instructions, followed by a template you can pass to it:
+
+### 🧠 Instructions for your LLM Prompt
+Tell your LLM to follow these strict rules when generating the YAML:
+1. **Variables:** Any variable used in a goal string (e.g., `"Order a {{size}} pizza"`) MUST be defined as a dictionary in the `goals` list with exactly the same name.
+2. **Functions:** Variables must use valid functions like `random()`, `forward()`, `pairwise()`, or `another()`.
+3. **Chatbot Output:** The `chatbot.output` section must define the fields to extract (like `price`, `order_id`) and their types (e.g., `string`, `currency`, `time("hh:mm")`).
+4. **Conversation Limits:** Always include the `conversation` block with `number`, `goal_style` (like `steps: 5` or `all_answered:`), and `interaction_style`.
+5. **Format:** Output *only* valid YAML without markdown formatting outside the block.
+
+### 📝 The YAML Template to provide to your LLM
+You can inject this template into your Python automation as the "few-shot" example so the LLM knows exactly what a valid profile looks like:
+
+```yaml
+test_name: "generated_test_name"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's persona and objective here."
+  context:
+    - "Add any specific constraints, preferences, or background facts."
+  goals:
+    - "Main request using a {{variable_name}}"
+    - variable_name:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that."
+  output:
+    - extracted_field_name:
+        type: string
+        description: "Description of what the LLM should extract at the end of the chat"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - random:
+      - single question
+      - make spelling mistakes
+      - long phrases
+```
+
+If you set up your Python script to enforce this structure, your LLM will be a Sensei Profile master in no time! 👀 
+
+Do you need help designing a specific profile to test your automation, or perhaps some Sensei-check rules to go with it? Let me know! ✨

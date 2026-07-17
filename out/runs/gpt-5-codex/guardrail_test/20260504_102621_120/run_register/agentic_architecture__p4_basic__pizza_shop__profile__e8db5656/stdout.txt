@@ -1,0 +1,209 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__e8db5656
+$$$
+Sure thing! Here’s a concrete way to automate Sensei profile creation with an LLM, staying aligned with the structure from **`sensei-chat-guide.md`** 😊.
+
+---
+
+## 1. Key requirements from the docs
+
+To keep generated profiles valid:
+
+- Include the top-level blocks: `test_name`, optional `llm`, `user`, `chatbot`, and `conversation`.
+- Make sure `user.goals` variables match the `{{variable}}` placeholders in the goal text.
+- `chatbot.output` defines the fields rules will read later, so insist the LLM fills it with well-typed entries.
+- `conversation.goal_style`, `number`, and `interaction_style` control the simulator run and must follow the allowed keywords.
+
+---
+
+## 2. Automation architecture
+
+1. **Collect specs** from a human or config file (domain, persona, fields to extract).
+2. **Build an LLM prompt** that:
+   - Gives a concise explanation of the required YAML layout.
+   - Lists guardrails (required sections, variable matching, allowed interaction styles).
+   - Injects the user-provided spec.
+3. **Call the LLM** (OpenAI, Azure, Anthropic…).
+4. **Parse & validate**:
+   - Load YAML (e.g., `ruamel.yaml`).
+   - Check required top-level keys.
+   - Ensure every goal variable is declared.
+   - Optionally run Sensei’s own validator (`validation_check.py`) as a final guard.
+5. **Post-process** (rename files, add personalities or custom types if requested).
+6. **Persist** the profile under `profiles/`.
+
+---
+
+## 3. Prompt template idea
+
+```text
+You are assisting the Sensei user simulator. Produce a single YAML profile with fields:
+
+test_name, llm (optional), user (language, role, context, goals), chatbot (is_starter, fallback, output), conversation (number, goal_style, interaction_style).
+
+Rules:
+- user.goals must include both text goals and variable declarations.
+- Every {{variable}} in text must have a mapping entry with function/type/data.
+- interaction_style can only use: long phrases, change your mind, change language: [...], make spelling mistakes, single questions, all questions, default, random: [ ... ].
+- chatbot.output must list the fields specified by the user, each with type and description.
+- Output valid YAML only, no markdown, no explanations.
+
+User requirements:
+<insert specs here>
+```
+
+---
+
+## 4. Sample Python script 🔧
+
+```python
+import pathlib
+from dataclasses import dataclass
+from typing import Optional, Dict, Any
+import yaml
+from openai import OpenAI
+
+PROFILE_PROMPT = """..."""  # paste the template above
+
+@dataclass
+class ProfileSpec:
+    test_name: str
+    user_language: str
+    user_role: str
+    context: list[str]
+    goals: list[str]
+    variables: Dict[str, Dict[str, Any]]
+    chatbot_is_starter: bool
+    chatbot_fallback: str
+    chatbot_outputs: list[Dict[str, str]]  # [{"name": "...", "type": "...", "description": "..."}]
+    conversation_number: str | int
+    goal_style: Dict[str, Any]
+    interaction_style: list[Any]
+
+def build_prompt(spec: ProfileSpec) -> str:
+    spec_block = {
+        "test_name": spec.test_name,
+        "user": {
+            "language": spec.user_language,
+            "role": spec.user_role,
+            "context": spec.context,
+            "goals": spec.goals,
+            "variables": spec.variables,
+        },
+        "chatbot": {
+            "is_starter": spec.chatbot_is_starter,
+            "fallback": spec.chatbot_fallback,
+            "output": spec.chatbot_outputs,
+        },
+        "conversation": {
+            "number": spec.conversation_number,
+            "goal_style": spec.goal_style,
+            "interaction_style": spec.interaction_style,
+        },
+    }
+    return PROFILE_PROMPT.replace("<insert specs here>", yaml.safe_dump(spec_block, sort_keys=False))
+
+def generate_profile(spec: ProfileSpec, client: Optional[OpenAI] = None) -> dict:
+    prompt = build_prompt(spec)
+    client = client or OpenAI()
+    response = client.responses.create(
+        model="gpt-4o-mini",
+        input=[
+            {"role": "system", "content": "You are a careful YAML generator for Sensei profiles."},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.3,
+    )
+    text = response.output[0].content[0].text
+    profile = yaml.safe_load(text)
+    validate_profile(profile, spec)
+    return profile
+
+def validate_profile(profile: dict, spec: ProfileSpec):
+    required_top = {"test_name", "user", "chatbot", "conversation"}
+    missing = required_top - profile.keys()
+    if missing:
+        raise ValueError(f"Missing top-level keys: {missing}")
+
+    # Match goal variables
+    declared_vars = {key for item in profile["user"]["goals"] if isinstance(item, dict) for key in item}
+    used_vars = set()
+    for item in profile["user"]["goals"]:
+        if isinstance(item, str):
+            used_vars.update(part.strip("{}") for part in item.split() if part.startswith("{{"))
+    if used_vars - declared_vars:
+        raise ValueError(f"Undeclared variables: {used_vars - declared_vars}")
+
+    outputs = profile["chatbot"].get("output", [])
+    output_names = {list(field.keys())[0] for field in outputs}
+    spec_outputs = {o["name"] for o in spec.chatbot_outputs}
+    if spec_outputs - output_names:
+        raise ValueError(f"Missing chatbot.output fields: {spec_outputs - output_names}")
+
+def save_profile(profile: dict, output_path: pathlib.Path):
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(profile, f, sort_keys=False)
+
+# Example usage
+if __name__ == "__main__":
+    spec = ProfileSpec(
+        test_name="hotel_booking_pairwise",
+        user_language="English",
+        user_role="Traveler comparing hotels...",
+        context=["You care about breakfast included."],
+        goals=[
+            "Book a {{room_type}} room for {{nights}} nights",
+            "Ask about {{amenities}}",
+            "Confirm total price in {{currency}}"
+        ],
+        variables={
+            "room_type": {"function": "pairwise()", "type": "string", "data": ["standard", "suite"]},
+            "nights": {"function": "forward(room_type)", "type": "int", "data": {"min": 1, "max": 5, "step": 1}},
+            "amenities": {"function": "random()", "type": "string", "data": ["pool access", "gym", "airport shuttle"]},
+            "currency": {"function": "random()", "type": "string", "data": ["USD", "EUR", "GBP"]},
+        },
+        chatbot_is_starter=False,
+        chatbot_fallback="Sorry, could you repeat that?",
+        chatbot_outputs=[
+            {"name": "total_price", "type": "currency", "description": "Final quoted price"},
+            {"name": "cancellation_policy", "type": "string", "description": "Cancellation terms"},
+            {"name": "booking_reference", "type": "string", "description": "Confirmation reference"},
+        ],
+        conversation_number="combinations(0.6, pairwise)",
+        goal_style={"steps": 6, "max_cost": 0.2},
+        interaction_style=[
+            "long phrases",
+            {"random": ["make spelling mistakes", {"change language": ["Spanish", "German"]}]}
+        ],
+    )
+
+    profile_dict = generate_profile(spec)
+    save_profile(profile_dict, pathlib.Path("profiles/hotel_booking_pairwise.yml"))
+    print("Profile saved!")
+```
+
+### Notes
+
+- Swap in your LLM client (Azure, Anthropic, etc.).
+- Temperature `0.3` keeps the model focused on structure.
+- `validate_profile` is minimal; extend it with regex/type checks as needed.
+- After saving, you can run `python validation_check.py --profile profiles/...` for Sensei’s own schema review.
+
+---
+
+## 5. Operational tips
+
+- Keep a library of specs so you can regenerate profiles when requirements change.
+- For reusable text (e.g., persona), reference `personalities/` files directly in the `context`.
+- If you introduce custom types, drop the YAML into `types/` and make sure the LLM knows the name and semantics.
+
+---
+
+## 6. Recap & references
+
+- Based on **`sensei-chat-guide.md`**.
+- Automation pipeline: spec → LLM prompt → YAML → validation → save.
+- Provided example Python skeleton plus validation guards to keep the generated profile compliant.
+
+Let me know if you’d like to extend this to rules or connectors too!
+$$$

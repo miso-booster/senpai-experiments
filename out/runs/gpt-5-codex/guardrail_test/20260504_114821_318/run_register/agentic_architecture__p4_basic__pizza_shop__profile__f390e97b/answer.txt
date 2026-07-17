@@ -1,0 +1,278 @@
+Sure thing! Here’s a full plan for automating Sensei profile creation with an LLM, grounded in the structure described in **sensei-chat-guide.md** 😊.
+
+---
+
+### Key profile requirements (from `sensei-chat-guide.md`)
+Any generated profile must include these building blocks:
+
+- `test_name` and optional `llm` overrides.
+- `user` section with `language`, `role`, contextual facts, and `goals` (including variable declarations with `type`, `data`, and `function`).
+- `chatbot` contract (`is_starter`, `fallback`, and the `output` schema that rules will consume).
+- `conversation` controls (`number`, `goal_style`, `interaction_style`, cost caps, etc.).
+- Optional references to custom types (`types/`) or personalities (`personalities/`).
+
+The automation should guarantee these sections are present and syntactically correct so rules can safely rely on `chatbot.output`.
+
+---
+
+### Automation architecture
+
+1. **Collect requirements**  
+   Gather high-level specs (domain, persona, variables, desired outputs, interaction quirks).
+
+2. **Prompt the LLM with guardrails**  
+   Send a strict templated instruction that mirrors the profile structure from the guide. Ask the model to return YAML only.
+
+3. **Parse & validate**  
+   Load the YAML, run structural validation (required keys, data types, ensure variables declared/used consistently, etc.).
+
+4. **Regenerate or patch if invalid**  
+   If validation fails, either auto-reprompt (include error messages) or allow manual edits.
+
+5. **Write the profile file**  
+   Save to `profiles/*.yml`, optionally format for readability.
+
+6. **Optional extras**  
+   - Auto-generate combo matrices or cost estimates.  
+   - Offer CLI flags for dry-run vs. write.  
+   - Integrate with run configs (`run.yml`) or rules scaffolding later.
+
+---
+
+### Reference implementation (Python)
+
+```python
+import textwrap
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import yaml
+from openai import OpenAI
+from pydantic import BaseModel, Field, ValidationError, root_validator
+
+
+# ---------- Validation models matching sensei-chat-guide.md ---------- #
+
+class GoalVariable(BaseModel):
+    function: str
+    type: str
+    data: Any
+
+
+class ChatbotOutputField(BaseModel):
+    type: str
+    description: str
+
+
+class LLMConfig(BaseModel):
+    temperature: Optional[float]
+    model: Optional[str]
+    model_prov: Optional[str]
+    format: Optional[Dict[str, Any]]
+
+
+class UserSection(BaseModel):
+    language: str
+    role: str
+    context: Optional[List[Any]]
+    goals: List[Any]
+
+    @root_validator
+    def ensure_variables_declared(cls, values):
+        goals = values.get("goals") or []
+        goal_strings = [g for g in goals if isinstance(g, str)]
+        goal_vars = {
+            item.strip("{} ")
+            for g in goal_strings
+            for item in g.split()
+            if item.startswith("{{") and item.endswith("}}")
+        }
+
+        declared_vars = {
+            name
+            for entry in goals
+            if isinstance(entry, dict)
+            for name in entry.keys()
+            if isinstance(entry[name], dict)
+        }
+
+        missing = goal_vars - declared_vars
+        if missing:
+            raise ValueError(
+                f"Variables {missing} used in goal strings but not declared."
+            )
+        return values
+
+
+class ChatbotSection(BaseModel):
+    is_starter: bool
+    fallback: str
+    output: List[Dict[str, ChatbotOutputField]]
+
+
+class GoalStyle(BaseModel):
+    steps: Optional[int] = None
+    **kwargs: Any  # allows random steps, all_answered, max_cost, etc.
+
+
+class ConversationSection(BaseModel):
+    number: Any
+    goal_style: Optional[GoalStyle]
+    max_cost: Optional[float]
+    interaction_style: Optional[List[Any]]
+
+
+class SenseiProfile(BaseModel):
+    test_name: str
+    llm: Optional[LLMConfig]
+    user: UserSection
+    chatbot: ChatbotSection
+    conversation: ConversationSection
+
+
+# ---------- LLM prompt + generator ---------- #
+
+PROFILE_PROMPT = """\
+You are generating a Sensei Chat profile YAML. Follow these rules strictly:
+
+1. Return ONLY valid YAML. Do not wrap it in Markdown fences.
+2. Include these top-level sections: test_name, optional llm, user, chatbot, conversation.
+3. user.goals must mix human-readable strings and variable declarations.
+4. Every {{variable}} used in goal strings must be declared with function/type/data.
+5. chatbot.output must list schemas Sensei rules can consume later.
+6. conversation must include 'number' and at least one control in goal_style or interaction_style.
+7. Keep descriptions concise and domain-specific.
+8. Do not invent custom types unless explicitly requested; use primitives like string, int, float unless told otherwise.
+9. Use double quotes consistently for strings.
+
+You will receive a JSON spec describing the desired profile. Produce the final YAML profile.
+JSON spec:
+{spec}
+"""
+
+
+class ProfileGenerator:
+    def __init__(self, api_key: str, output_dir: Path = Path("profiles")):
+        self.client = OpenAI(api_key=api_key)
+        self.output_dir = output_dir
+
+    def call_llm(self, spec: Dict[str, Any]) -> str:
+        prompt = PROFILE_PROMPT.format(spec=spec)
+        response = self.client.responses.create(
+            model="gpt-4.1-mini",
+            input=prompt,
+            temperature=0.2,
+        )
+        return response.output[0].content[0].text.strip()
+
+    @staticmethod
+    def load_yaml(yaml_text: str) -> Dict[str, Any]:
+        return yaml.safe_load(yaml_text)
+
+    @staticmethod
+    def validate_profile(profile_dict: Dict[str, Any]) -> SenseiProfile:
+        return SenseiProfile.parse_obj(profile_dict)
+
+    def generate(self, spec: Dict[str, Any], retries: int = 2) -> SenseiProfile:
+        last_error = None
+        for attempt in range(retries + 1):
+            raw_yaml = self.call_llm(spec)
+            try:
+                profile_dict = self.load_yaml(raw_yaml)
+                validated = self.validate_profile(profile_dict)
+                # Persist raw YAML after validation
+                self.write_profile_file(validated, raw_yaml)
+                return validated
+            except (yaml.YAMLError, ValidationError, ValueError) as err:
+                last_error = err
+                spec["validation_feedback"] = textwrap.dedent(str(err))[:4000]
+        raise RuntimeError(f"Failed to produce valid profile after retries: {last_error}")
+
+    def write_profile_file(self, profile: SenseiProfile, raw_yaml: str) -> Path:
+        filename = f"{profile.test_name}.yml".replace(" ", "_")
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        path = self.output_dir / filename
+        path.write_text(raw_yaml, encoding="utf-8")
+        return path
+
+
+# ---------- Example usage ---------- #
+
+if __name__ == "__main__":
+    spec = {
+        "test_name": "retail_return_policy_probe",
+        "llm": {"model": "gpt-4o-mini", "temperature": 0.5},
+        "user": {
+            "language": "English",
+            "role": "Customer investigating a retailer's return policy.",
+            "context": [
+                "Recently purchased an item online.",
+                "Wants clarity on return window, restocking fees, and process."
+            ],
+            "goals": [
+                "Ask about {{return_window}} and {{receipt_requirement}}",
+                "Clarify if there is a {{restocking_fee}}",
+                "Understand escalation options for {{damaged_items}}",
+                {
+                    "return_window": {
+                        "function": "forward()",
+                        "type": "string",
+                        "data": ["30 days", "60 days", "90 days"]
+                    }
+                },
+                {
+                    "receipt_requirement": {
+                        "function": "random()",
+                        "type": "string",
+                        "data": ["original receipt", "digital invoice", "order number only"]
+                    }
+                },
+                {
+                    "restocking_fee": {
+                        "function": "random()",
+                        "type": "string",
+                        "data": ["no fee", "10% fee", "15% fee"]
+                    }
+                },
+                {
+                    "damaged_items": {
+                        "function": "random()",
+                        "type": "string",
+                        "data": ["electronics", "home appliances", "clothing"]
+                    }
+                }
+            ],
+        },
+        "chatbot": {
+            "output_fields": [
+                {"return_window": "string"},
+                {"restocking_fee": "string"},
+                {"escalation_path": "string"},
+                {"documentation_required": "list[string]"}
+            ],
+            "fallback": "I'm sorry, could you rephrase that?",
+            "is_starter": False
+        },
+        "conversation": {
+            "number": "combinations(0.6, forward)",
+            "interaction_style": ["long phrases", "random: [make spelling mistakes, single questions]"],
+            "goal_style": {"steps": 5}
+        }
+    }
+
+    generator = ProfileGenerator(api_key="YOUR_OPENAI_KEY")
+    profile = generator.generate(spec)
+    print("Profile generated:", profile.test_name)
+```
+
+#### Notes on the implementation
+- The `SenseiProfile` pydantic model enforces the schema from the guide (required keys, variable declarations, `chatbot.output` structure, etc.).
+- If the LLM’s YAML is invalid, the script feeds the structured error back (via `validation_feedback`) so the next attempt can self-correct.
+- `spec` is free-form; you can build it from CLI args, JSON files, or another UI.
+- Swap `gpt-4.1-mini` for whichever model you prefer; reduce temperature to keep outputs deterministic.
+- Extend validation (e.g., enforce `conversation.number` shapes, custom type lookups) as your project evolves.
+
+---
+
+### How this aligns with the docs
+This solution strictly mirrors the profile anatomy in **sensei-chat-guide.md**: we require the canonical sections (`test_name`, `user`, `chatbot`, `conversation`), enforce matching goal variables, and ensure `chatbot.output` delivers the schemas that downstream Sensei-check rules consume. The guard prompt and validator make sure any generated profile remains faithful to the documented DSL, so you can plug the result straight into Sensei Chat. ✅

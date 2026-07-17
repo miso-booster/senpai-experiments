@@ -1,0 +1,130 @@
+Hey there! That’s a really cool idea 🤩—letting an LLM draft Sensei profiles for you can save tons of time, as long as we wrap it with a bit of structure and validation. Here’s a lightweight automation pattern you can start with.
+
+---
+
+### 🧱 Building blocks
+
+1. **Prompt template** — describe the profile you want and remind the model of the required sections (`test_name`, `llm`, `user.goals`, `chatbot.output`, `conversation`, etc.).
+2. **Python driver** — send that prompt to your LLM (OpenAI in this example), grab the YAML, and parse it.
+3. **Validation** — do a quick schema sanity check before handing the profile to `sensei_chat` or `validation_check.py`.
+
+---
+
+### 📝 Prompt skeleton
+
+```text
+You are helping me author a Sensei profile YAML.
+Always include these sections:
+- test_name
+- llm (model, temperature, format.type)
+- user (language, role, context list, goals list with {{variables}} and variable blocks)
+- chatbot (is_starter, fallback, output list with type + description)
+- conversation (number, goal_style, interaction_style)
+
+Rules:
+- goal variables must be declared exactly once in the goals list.
+- use only supported types (int, float, string, time(...), date(...), list[...], or custom types I mention).
+- interaction_style must use Sensei keywords (long phrases, change your mind, single question, etc.).
+
+Profile request:
+<describe the scenario you want here>
+```
+
+Swap the “Profile request” paragraph for whatever scenario you need (e.g., “A polite user asking for gluten-free pizza options and pickup time”).
+
+---
+
+### 🐍 Minimal Python automation
+
+```python
+import os
+import yaml
+from openai import OpenAI, OpenAIError
+
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])  # or your chosen provider
+
+PROFILE_PROMPT = """<put the prompt template here>"""
+
+def generate_profile(prompt: str) -> dict:
+    try:
+        response = client.responses.create(
+            model="gpt-4o-mini",
+            input=[
+                {"role": "system", "content": "You create Sensei profile YAML files."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+        )
+        yaml_text = response.output_text
+    except OpenAIError as exc:
+        raise RuntimeError(f"LLM request failed: {exc}") from exc
+
+    try:
+        profile = yaml.safe_load(yaml_text)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Failed to parse YAML: {exc}\n---\n{yaml_text}") from exc
+
+    return profile
+
+def sanity_check(profile: dict):
+    required_sections = ["test_name", "user", "chatbot", "conversation"]
+    missing = [key for key in required_sections if key not in profile]
+    if missing:
+        raise ValueError(f"Missing top-level keys: {missing}")
+
+    if "goals" not in profile["user"]:
+        raise ValueError("user.goals is required")
+
+    if "output" not in profile["chatbot"]:
+        raise ValueError("chatbot.output must be defined")
+
+    # simple goal variable vs declaration check
+    goal_texts = [g for g in profile["user"]["goals"] if isinstance(g, str)]
+    declared_vars = {next(iter(k)) for k in profile["user"]["goals"] if isinstance(k, dict)}
+    for text in goal_texts:
+        tokens = [token.strip("{}") for token in text.split() if token.startswith("{{")]
+        for token in tokens:
+            if token not in declared_vars:
+                raise ValueError(f"Variable {token} used in goals but not declared")
+
+    # Add more checks as needed (types, interaction_style keywords, etc.)
+
+def save_profile(profile: dict, path: str):
+    with open(path, "w", encoding="utf-8") as f:
+        yaml.dump(profile, f, allow_unicode=True, sort_keys=False)
+
+if __name__ == "__main__":
+    scenario = "Profile request: A vegan customer asking for menu options, prices, delivery availability."
+    prompt = PROFILE_PROMPT.replace("<describe the scenario you want here>", scenario)
+
+    profile = generate_profile(prompt)
+    sanity_check(profile)
+    save_profile(profile, "profiles/generated_vegan_request.yml")
+    print("Profile saved to profiles/generated_vegan_request.yml")
+```
+
+**Why it works:**
+- Maintains the exact YAML contract Sensei expects.
+- Catches obvious LLM mistakes before they reach Sensei.
+- Keeps the final file nicely formatted with `yaml.dump`.
+
+---
+
+### ✅ After generation
+
+1. Run Sensei’s own validator:
+   ```bash
+   python validation_check.py --profile profiles/generated_vegan_request.yml --output tmp/ --verbose
+   ```
+2. Wire it into `sensei_chat.py` once it passes.
+
+---
+
+### 💡 Tips
+
+- Keep `temperature` low (0.2–0.4) to reduce structural drift.
+- Maintain a library of good example prompts to “few-shot” the model if it starts missing fields.
+- If you need custom types, add the type definition first (`types/*.yml`), then reference it in the prompt so the model uses it correctly.
+- Wrap this into a CLI or batch script if you plan to generate multiple profiles with different scenarios.
+
+Hope this helps you kick off your automation! If you’d like a ready-made prompt or additions like automatic conversation matrix validation, just let me know 😊

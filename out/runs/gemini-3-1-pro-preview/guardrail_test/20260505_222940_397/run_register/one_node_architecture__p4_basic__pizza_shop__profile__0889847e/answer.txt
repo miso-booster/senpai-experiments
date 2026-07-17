@@ -1,0 +1,43 @@
+Hi there! 👋 
+
+While I absolutely love the idea of automating profile creation, I must apologize! My expertise is strictly limited to helping you create, modify, validate, and understand the YAML files for SENSEI PROFILES, RULES, and CONNECTORS. I cannot write Python automation scripts or provide general source code. 🙇‍♂️
+
+However, if you are building an LLM automation in Python, I can absolutely give you the **golden rules and schema** you should include in your LLM's system prompt so it generates 100% valid Sensei profiles! 🤖✨
+
+If you are feeding instructions to an LLM, here are the critical constraints you must tell it to follow for Sensei Profiles:
+
+### 1. The Variable Rule (Crucial!)
+If the LLM writes a prompt in `user.goals` like:
+`- "Order a {{size}} pizza"`
+It **must** define that exact variable in the same `goals` list as a dictionary:
+```yaml
+- size:
+    function: random()
+    type: string
+    data: [small, medium, large]
+```
+
+### 2. Allowed Functions Only
+Tell your LLM it can only use these specific fill functions for variables:
+* `default()`
+* `random()` or `random(n)`
+* `another()` or `another(n)`
+* `forward()` (can be nested, e.g., `forward(other_variable)`)
+* `pairwise()`
+
+### 3. The `chatbot.output` Contract
+The LLM must define what data needs to be extracted at the end of the conversation. This is vital because Sensei-check rules rely on these fields!
+```yaml
+chatbot:
+  output:
+    - total_price:
+        type: currency
+        description: "The final price of the order"
+```
+
+### 4. Conversation Controls
+The LLM must include the `conversation` block with valid interaction styles (e.g., `single question`, `long phrases`, `make spelling mistakes`, `change your mind`, `change language: [list]`, or `default`).
+
+***
+
+Would you like me to write out a complete, structured **"System Prompt" template** that you can copy-paste into your Python script to guide your LLM? Or perhaps I can help you manually create a specific profile right now to get you started? 😊 Let me know how I can help!

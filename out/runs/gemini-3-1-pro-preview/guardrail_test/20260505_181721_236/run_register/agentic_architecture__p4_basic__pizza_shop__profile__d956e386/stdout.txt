@@ -1,0 +1,145 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__d956e386
+$$$
+To create a Python automation that uses an LLM to generate valid SENSEI profiles, you need to provide the LLM with a strict **System Prompt** that outlines the SENSEI profile YAML schema. 
+
+Based on the SENSEI documentation, a valid profile requires specific sections: `test_name`, `llm`, `user` (with `goals` and variables), `chatbot` (with `output` schema), and `conversation`.
+
+Here is a complete Python script using the `openai` library. It defines the rules for SENSEI profiles, asks the LLM to generate the YAML based on a topic, and then validates and saves the output.
+
+### Prerequisites
+Make sure you have the required libraries installed:
+```bash
+pip install openai pyyaml
+```
+
+### Python Automation Script
+
+```python
+import os
+import yaml
+from openai import OpenAI
+
+# Initialize the OpenAI client (ensure your OPENAI_API_KEY is set in your environment variables)
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+def generate_sensei_profile(topic: str, output_filename: str):
+    """
+    Generates a valid SENSEI profile YAML using an LLM based on a given topic.
+    """
+    
+    # The system prompt acts as the "documentation" for the LLM
+    system_prompt = """
+    You are an expert in creating SENSEI profiles for chatbot testing.
+    A SENSEI profile is a YAML file that defines how a simulated user behaves.
+    
+    The YAML MUST strictly follow this structure:
+    test_name: "string_without_spaces"
+    
+    llm:
+      temperature: 0.7
+      model: "gpt-4o"
+      model_prov: "openai"
+      format:
+        type: text
+        
+    user:
+      language: "English"
+      role: "string describing the simulated user's persona and objective"
+      context:
+        - "constraint or preference 1"
+        - "constraint or preference 2"
+      goals:
+        - "Goal text with {{variable_name}}"
+        - variable_name:
+            function: random() # Can also be forward(), pairwise(), another(), default()
+            type: string # Can also be int, float
+            data: [list of items]
+            
+    chatbot:
+      is_starter: false
+      fallback: "Sorry, could you rephrase that?"
+      output:
+        - field_name:
+            type: string # Can also be int, float, currency, time("hh:mm"), date("mm/dd/yyyy")
+            description: "what to extract at the end of the conversation"
+            
+    conversation:
+      number: 3 # Integer or combinations(0.5, pairwise) if using pairwise/forward
+      goal_style:
+        steps: 5
+      interaction_style:
+        - default
+        
+    CRITICAL RULES:
+    1. Never use `list` type in `user.goals`.
+    2. Variables in `goals` text (e.g., {{size}}) must EXACTLY match the declared variable names.
+    3. Output ONLY valid YAML. Do not include markdown formatting like ```yaml or ```.
+    4. The `chatbot.output` section defines the schema extracted for validation rules later.
+    """
+    
+    user_prompt = f"Create a SENSEI profile for testing a chatbot about: {topic}"
+    
+    print(f"Generating SENSEI profile for: '{topic}'...")
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.2 # Low temperature for more deterministic, structured output
+        )
+        
+        yaml_content = response.choices[0].message.content.strip()
+        
+        # Clean up markdown code blocks if the LLM adds them despite instructions
+        if yaml_content.startswith("```yaml"):
+            yaml_content = yaml_content[7:]
+        if yaml_content.endswith("```"):
+            yaml_content = yaml_content[:-3]
+            
+        yaml_content = yaml_content.strip()
+        
+        # Validate that the output is actually valid YAML
+        parsed_yaml = yaml.safe_load(yaml_content)
+        
+        # Save to the profiles directory
+        os.makedirs("profiles", exist_ok=True)
+        filepath = os.path.join("profiles", output_filename)
+        
+        with open(filepath, "w", encoding="utf-8") as f:
+            yaml.dump(parsed_yaml, f, sort_keys=False, allow_unicode=True)
+            
+        print(f"✅ Successfully generated and saved valid profile to {filepath}")
+        
+    except yaml.YAMLError as e:
+        print(f"❌ Error parsing YAML from LLM output: {e}")
+        print("Raw output was:")
+        print(yaml_content)
+    except Exception as e:
+        print(f"❌ An error occurred: {e}")
+
+# Example usage
+if __name__ == "__main__":
+    # Example 1: Pizza ordering
+    generate_sensei_profile(
+        topic="Ordering a pizza with different sizes, crusts, and toppings", 
+        output_filename="pizza_order_profile.yml"
+    )
+    
+    # Example 2: IT Support
+    generate_sensei_profile(
+        topic="Reporting a broken laptop screen to IT support", 
+        output_filename="it_support_profile.yml"
+    )
+```
+
+### How this approach works:
+
+1. **System Prompt as Documentation:** LLMs don't natively know the SENSEI DSL. The `system_prompt` acts as a mini-documentation guide, showing the exact YAML anatomy (`test_name`, `user.goals`, `chatbot.output`, etc.) and the critical rules (like matching `{{variables}}` to their declarations).
+2. **Low Temperature:** We set `temperature=0.2` so the LLM focuses on following the strict schema rather than being overly creative, which reduces YAML syntax errors.
+3. **Post-Processing & Validation:** The script strips out any accidental markdown formatting (like ````yaml`) and uses `yaml.safe_load()` to guarantee the output is syntactically valid YAML before saving it to your `profiles/` directory.
+
+You can easily expand the `system_prompt` if you want the LLM to use specific custom types (like `phone_number` or `currency`) or specific interaction styles (like `make spelling mistakes` or `change language`). Let me know if you'd like to adjust this for a specific use case! 😊
+$$$

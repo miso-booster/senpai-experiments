@@ -1,0 +1,159 @@
+¡Listo! Aquí tienes el conector y un script en Python para lanzar varias peticiones 😊.
+
+### 1. YAML del conector
+Guárdalo, por ejemplo, como `saic_malaga_connector.yaml`.
+
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 2. Script en Python para enviar múltiples mensajes
+Guárdalo como `send_saic_messages.py` (asegúrate de tener instalados `requests` y `pyyaml`).
+
+```python
+#!/usr/bin/env python3
+import argparse
+import json
+from pathlib import Path
+from typing import Any
+
+import requests
+import yaml
+
+
+def load_connector_config(config_path: Path) -> dict[str, Any]:
+    with config_path.open("r", encoding="utf-8") as fp:
+        return yaml.safe_load(fp)
+
+
+def render_payload(template: Any, user_msg: str) -> Any:
+    if isinstance(template, dict):
+        return {key: render_payload(value, user_msg) for key, value in template.items()}
+    if isinstance(template, list):
+        return [render_payload(item, user_msg) for item in template]
+    if isinstance(template, str):
+        return template.replace("{user_msg}", user_msg)
+    return template
+
+
+def extract_response(data: Any, response_path: str) -> Any:
+    current = data
+    for part in response_path.split("."):
+        if isinstance(current, list):
+            index = int(part)
+            current = current[index]
+        else:
+            current = current[part]
+    return current
+
+
+def send_messages(config_path: Path, messages: list[str], timeout: float) -> None:
+    config = load_connector_config(config_path)
+    send_message = config["send_message"]
+
+    base_url = config["base_url"].rstrip("/")
+    path = send_message.get("path", "")
+    method = send_message.get("method", "POST").upper()
+    headers = send_message.get("headers", {})
+    payload_template = send_message["payload_template"]
+    response_path = config["response_path"]
+
+    url = f"{base_url}{path}"
+
+    session = requests.Session()
+
+    for message in messages:
+        payload = render_payload(payload_template, message)
+        print(f">>> Enviando: {message!r}")
+        try:
+            response = session.request(
+                method,
+                url,
+                json=payload,
+                headers=headers,
+                timeout=timeout,
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            print(f"❌ Error en la petición: {exc}")
+            print("-" * 50)
+            continue
+
+        try:
+            json_data = response.json()
+        except json.JSONDecodeError:
+            print("❌ Respuesta no es JSON válido.")
+            print(response.text)
+            print("-" * 50)
+            continue
+
+        try:
+            bot_reply = extract_response(json_data, response_path)
+            print(f"🤖 Bot: {bot_reply}")
+        except (KeyError, IndexError, TypeError, ValueError):
+            print("⚠️ No pude extraer la respuesta usando response_path.")
+            print(json.dumps(json_data, indent=2, ensure_ascii=False))
+        print("-" * 50)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Enviar múltiples mensajes al conector SAIC Málaga.")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path("saic_malaga_connector.yaml"),
+        help="Ruta al archivo YAML del conector.",
+    )
+    parser.add_argument(
+        "--messages",
+        nargs="+",
+        default=["hola", "Necesito información sobre trámites", "gracias"],
+        help="Mensajes a enviar al chatbot.",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=30.0,
+        help="Tiempo máximo de espera por petición (en segundos).",
+    )
+
+    args = parser.parse_args()
+    send_messages(args.config, args.messages, args.timeout)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Ejemplo de uso:
+
+```bash
+python send_saic_messages.py --messages "hola" "¿Cuál es el horario?" "¡Gracias!"
+```
+
+---
+
+**Notas y referencias:** Configuré los campos siguiendo el formato documentado en `custom-connector-guide.md` y me apoyé en los patrones de `connector-examples.md` (especialmente el ejemplo de 1MillionBot) para estructurar los headers, el `payload_template` y el `response_path`. ¡Cualquier duda adicional me dices!

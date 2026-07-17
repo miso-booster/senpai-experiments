@@ -1,7 +1,7 @@
 import argparse
 from itertools import combinations
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Iterable, NamedTuple, Sequence
 
 import numpy as np
 import pandas as pd
@@ -27,10 +27,10 @@ except ImportError:  # Supports `python app/rq2/aggregate_metrics.py`
 
 try:
     from .excel import save_outputs
-    from .plots import generate_plots
+    from .plots import generate_model_comparison_plots, generate_plots
 except ImportError:  # Supports `python app/rq2/aggregate_metrics.py`
     from excel import save_outputs
-    from plots import generate_plots
+    from plots import generate_model_comparison_plots, generate_plots
 
 
 METRICS: dict[str, str] = {
@@ -57,12 +57,32 @@ PAIRWISE_ID_COLUMNS = (
 )
 
 
+class RunSource(NamedTuple):
+    workbook: Path
+    runs_dir: Path
+    model_label: str
+
+
 def default_rq2_runs_dir(model_label: str | None = None) -> Path:
     return resolve_runs_dir(RQ2_EXPERIMENT_DIRNAME, model_label)
 
 
 def default_rq2_out_dir(model_label: str | None = None) -> Path:
     return resolve_model_output_dir(OUT_DIR / "RQ2_architecture_metrics", model_label)
+
+
+def discover_model_run_dirs(runs_root: Path | None = None) -> list[tuple[str, Path]]:
+    root = runs_root or (OUT_DIR / "runs")
+    if not root.exists():
+        return []
+    discovered: list[tuple[str, Path]] = []
+    for candidate in sorted(root.iterdir()):
+        if not candidate.is_dir():
+            continue
+        rq2_dir = candidate / RQ2_EXPERIMENT_DIRNAME
+        if rq2_dir.is_dir():
+            discovered.append((candidate.name, rq2_dir))
+    return discovered
 
 
 def compute_a12(x: pd.Series, y: pd.Series) -> float:
@@ -116,6 +136,13 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--runs-root",
+        help=(
+            "Root directory containing <model-label>/architecture_comparison folders "
+            "for model comparison plots (default: out/runs)."
+        ),
+    )
+    parser.add_argument(
         "--results-name",
         default="results.xlsx",
         help="Workbook filename inside each run folder (default: results.xlsx)",
@@ -146,6 +173,16 @@ def parse_args() -> argparse.Namespace:
         "--no-plots",
         action="store_true",
         help="Skip plot generation",
+    )
+    parser.add_argument(
+        "--no-model-comparison",
+        action="store_true",
+        help="Skip the extra multi-model comparison plots under out/RQ2_architecture_metrics/model_comparison.",
+    )
+    parser.add_argument(
+        "--model-comparison-only",
+        action="store_true",
+        help="Only generate the multi-model comparison folder and skip the per-model aggregation.",
     )
     parser.add_argument(
         "--plot-format",
@@ -207,6 +244,19 @@ def discover_workbooks(runs_dir: Path, results_name: str) -> list[Path]:
     return sorted(p for p in runs_dir.glob(f"*/{results_name}") if p.is_file())
 
 
+def discover_workbook_sources(
+    run_dirs: Sequence[tuple[str, Path]],
+    results_name: str,
+) -> list[RunSource]:
+    sources: list[RunSource] = []
+    for model_label, runs_dir in run_dirs:
+        sources.extend(
+            RunSource(workbook=workbook, runs_dir=runs_dir, model_label=model_label)
+            for workbook in discover_workbooks(runs_dir, results_name)
+        )
+    return sorted(sources, key=lambda source: (source.model_label, str(source.workbook)))
+
+
 def load_workbook(path: Path, sheet_name: str | None) -> pd.DataFrame:
     """Load one results workbook and attach source/run metadata columns."""
     xl = pd.ExcelFile(path)
@@ -223,6 +273,40 @@ def load_workbook(path: Path, sheet_name: str | None) -> pd.DataFrame:
     else:
         missing = df["run_group_id"].isna() | (df["run_group_id"].astype(str).str.strip() == "")
         df.loc[missing, "run_group_id"] = path.parent.name
+    return df
+
+
+def load_all_result_sources(sources: Sequence[RunSource], sheet_name: str | None) -> pd.DataFrame:
+    frames: list[pd.DataFrame] = []
+    for source in sources:
+        try:
+            frame = load_workbook(source.workbook, sheet_name)
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"[WARN] Skipping {source.workbook}: {exc}")
+            continue
+        if not frame.empty:
+            frame["model_label"] = source.model_label
+            frame["source_runs_dir"] = str(source.runs_dir)
+            frames.append(frame)
+
+    if not frames:
+        return pd.DataFrame()
+
+    df = pd.concat(frames, ignore_index=True, sort=False)
+
+    for col in NUMERIC_COLUMNS:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    if "timed_out" in df.columns:
+        df["timed_out"] = _safe_bool(df["timed_out"])
+    if "fallback" in df.columns:
+        df["fallback"] = _safe_bool(df["fallback"])
+
+    for col in ("model_label", "arch_id", "run_group_id", "prompt_id"):
+        if col in df.columns:
+            df[col] = _clean_string_id(df[col])
+
     return df
 
 
@@ -550,9 +634,94 @@ def build_pairwise_wilcoxon_summary(df: pd.DataFrame, metric_cols: Sequence[str]
     return out.sort_values(["metric", "arch_a", "arch_b"]).reset_index(drop=True)
 
 
+def build_model_arch_summary(df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+    for (model_label, arch), group in df.groupby(["model_label", "arch_id"], sort=True):
+        row: dict[str, float | int | str] = {
+            "model_label": str(model_label),
+            "arch_id": str(arch),
+            "n_rows": int(len(group)),
+            "n_executions": int(group["run_group_id"].nunique()),
+        }
+        if "fallback" in group.columns:
+            row["fallback_rate"] = float(_safe_bool(group["fallback"]).fillna(False).astype(bool).mean())
+        if "is_yaml_valid" in group.columns:
+            row["yaml_valid_rate_on_observed"] = _rate_equals_one_for_summary(group["is_yaml_valid"])
+        for metric in metric_cols:
+            values = pd.to_numeric(group[metric], errors="coerce")
+            row[f"{metric}__mean"] = values.mean()
+            row[f"{metric}__std"] = values.std(ddof=1)
+            row[f"{metric}__median"] = values.median()
+        rows.append(row)
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(rows).sort_values(["model_label", "arch_id"]).reset_index(drop=True)
+
+
+def _rate_equals_one_for_summary(series: pd.Series) -> float:
+    numeric = pd.to_numeric(series, errors="coerce")
+    observed = numeric.notna().sum()
+    if not observed:
+        return float("nan")
+    return float((numeric == 1).sum() / observed)
+
+
+def generate_model_comparison_outputs(args: argparse.Namespace, metric_cols: Sequence[str]) -> None:
+    run_dirs = discover_model_run_dirs(Path(args.runs_root) if args.runs_root else None)
+    if not run_dirs:
+        print("[WARN] No model-specific RQ2 run directories found; skipping model comparison plots.")
+        return
+
+    sources = discover_workbook_sources(run_dirs, args.results_name)
+    if not sources:
+        print("[WARN] No model-specific RQ2 workbooks found; skipping model comparison plots.")
+        return
+
+    all_rows = load_all_result_sources(sources, args.sheet)
+    if all_rows.empty:
+        print("[WARN] No rows loaded for RQ2 model comparison plots.")
+        return
+    _require_columns(all_rows, ("model_label", "arch_id", "run_group_id"))
+
+    available_metric_cols = [m for m in metric_cols if m in all_rows.columns]
+    if not available_metric_cols:
+        print("[WARN] No RQ2 metric columns available for model comparison plots.")
+        return
+
+    filtered_rows = filter_rows(all_rows, args.architectures, args.include_failed)
+    if filtered_rows.empty:
+        print("[WARN] No rows left after filtering for RQ2 model comparison plots.")
+        return
+
+    comparison_dir = (OUT_DIR / "RQ2_architecture_metrics") / "model_comparison"
+    comparison_dir.mkdir(parents=True, exist_ok=True)
+    summary = build_model_arch_summary(filtered_rows, available_metric_cols)
+    summary.to_csv(comparison_dir / "rq2_model_architecture_summary.csv", index=False)
+    filtered_rows.to_csv(comparison_dir / "rq2_model_comparison_rows.csv", index=False)
+
+    with pd.ExcelWriter(comparison_dir / "RQ2_model_comparison_metrics.xlsx", engine="openpyxl") as writer:
+        summary.to_excel(writer, index=False, sheet_name="model_arch_summary")
+        filtered_rows.to_excel(writer, index=False, sheet_name="filtered_rows")
+
+    if not args.no_plots:
+        generate_model_comparison_plots(
+            out_dir=comparison_dir,
+            filtered_rows=filtered_rows,
+            metrics={m: METRICS[m] for m in available_metric_cols},
+            architectures=args.architectures,
+            plot_format=args.plot_format,
+            dpi=args.dpi,
+        )
+    print(f"[INFO] RQ2 model comparison output written to: {comparison_dir}")
+
+
 def main() -> None:
     """Run the full RQ2 aggregation pipeline and write workbook/plots outputs."""
     args = parse_args()
+    if args.model_comparison_only:
+        generate_model_comparison_outputs(args, list(METRICS))
+        return
+
     runs_dir = Path(args.runs_dir) if args.runs_dir else default_rq2_runs_dir(args.model_label)
     out_dir = Path(args.out_dir) if args.out_dir else default_rq2_out_dir(args.model_label)
 
@@ -612,6 +781,8 @@ def main() -> None:
             plot_format=args.plot_format,
             dpi=args.dpi,
         )
+    if not args.no_model_comparison:
+        generate_model_comparison_outputs(args, available_metric_cols)
 
     print(f"[INFO] Output written to: {out_dir}")
     print(

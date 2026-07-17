@@ -1,0 +1,31 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__25029633
+$$$
+Hey hey! That sounds like a fun project 🤖🍕 Even though I can’t hand you a full Python script, I’m super happy to walk you through the must-haves so your automation can reliably spit out Sensei-ready profiles.
+
+Here’s the big picture for an LLM-powered profile generator:
+
+1. **Prompt the LLM with constraints**  
+   - Include a **profile skeleton** (YAML structure) in your prompt.
+   - Spell out required sections: `test_name`, `llm`, `user`, `chatbot`, `conversation`.
+   - Remind it that every variable defined in `user.goals` must match a `{{variable}}` in the text goals, and that `chatbot.output` fields will be used by rules.
+
+2. **Post-process the LLM output**  
+   - Parse the response as YAML and fail fast if it doesn’t load.
+   - Validate enum-like fields (e.g., `interaction_style` keywords, `goal_style` options) against the docs.
+   - Check that `chatbot.output` types are valid (primitives, `list[...]`, `time(...)`, etc.) and that descriptions are present.
+   - Confirm `conversation.number` is compatible with the functions used (`combinations` only when you have ≥2 nested `forward` or `pairwise` variables).
+
+3. **Cross-check goals & variables**  
+   - Ensure every `{{var}}` in the freeform goals has a matching variable definition with the same name.
+   - Make sure the declared `function` is allowed (`forward`, `pairwise`, `random`, etc.) and compatible with the provided `data`.
+
+4. **Enforce profile/rule alignment** (super important if you already have rules)
+   - If your rules refer to fields like `price` or `toppings`, ensure those appear in `chatbot.output` with the right type.
+   - Conversely, flag new fields so you can add or adjust rules later.
+
+5. **Add sanity checks before saving**  
+   - Run Sensei’s validation script (`validation_check.py`) programmatically after generating the profile.
+   - Keep any validation errors in a log so you can tweak your prompt or post-processing rules.
+
+If you bake those checks into your automation pipeline, you’ll keep LLM creativity on a tight leash and still get valid, rule-compatible profiles at the end. Happy building! 😊
+$$$

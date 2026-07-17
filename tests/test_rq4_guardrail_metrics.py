@@ -190,6 +190,50 @@ def test_build_pairwise_wilcoxon_summary_uses_matched_pairs_for_guardrail_metric
     assert row["a12_magnitude"] == "large"
 
 
+def test_build_pairwise_wilcoxon_summary_keeps_models_separate() -> None:
+    df = pd.DataFrame(
+        [
+            {
+                "model_label": "model_a",
+                "run_group_id": "r1",
+                "prompt_id": "p1",
+                "arch_id": "arch_a",
+                "correct_behavior_int": 1,
+            },
+            {
+                "model_label": "model_a",
+                "run_group_id": "r1",
+                "prompt_id": "p1",
+                "arch_id": "arch_b",
+                "correct_behavior_int": 0,
+            },
+            {
+                "model_label": "model_b",
+                "run_group_id": "r1",
+                "prompt_id": "p1",
+                "arch_id": "arch_a",
+                "correct_behavior_int": 0,
+            },
+            {
+                "model_label": "model_b",
+                "run_group_id": "r1",
+                "prompt_id": "p1",
+                "arch_id": "arch_b",
+                "correct_behavior_int": 1,
+            },
+        ]
+    )
+
+    summary = build_pairwise_wilcoxon_summary(df, ["correct_behavior_int"])
+
+    assert set(summary["model_label"]) == {"model_a", "model_b"}
+    assert len(summary) == 2
+    model_a = summary[summary["model_label"] == "model_a"].iloc[0]
+    model_b = summary[summary["model_label"] == "model_b"].iloc[0]
+    assert model_a["arch_a_gt_arch_b_count"] == 1
+    assert model_b["arch_a_lt_arch_b_count"] == 1
+
+
 def test_build_pairwise_wilcoxon_summary_handles_all_zero_differences_for_a12() -> None:
     df = pd.DataFrame(
         [

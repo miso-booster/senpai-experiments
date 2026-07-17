@@ -1,0 +1,205 @@
+Hey there! Love the idea of automating profile authoring—let’s make your LLM do the heavy lifting while staying fully compliant with Sensei’s expectations 😊. Below is a suggested workflow plus a Python script you can adapt. The script:
+
+1. Builds a **strict prompt** so the model returns a well-formed YAML profile.
+2. Injects the **Sensei profile template** (only the sections you truly need).
+3. Parses and **sanity-checks** the YAML before saving.
+4. (Optionally) runs `validation_check.py` so you catch issues early.
+
+---
+
+### 🧠 Prompting strategy
+
+- Give the model a **system prompt** that describes the Sensei profile conventions.
+- Provide **structured inputs** (project name, goal, required outputs, etc.).
+- Ask for a **single YAML document** with the exact keys (`test_name`, `llm`, `user`, `chatbot`, `conversation`).
+
+Here’s a prompt template you can reuse inside the script:
+
+```text
+You are generating a SENSEI Chat profile in YAML.
+Follow these rules strictly:
+
+- One YAML document, no prose.
+- Top-level keys: test_name, llm, user, chatbot, conversation.
+- Populate chatbot.output with the fields listed below, keeping the exact name/type.
+
+Project context:
+{project_context}
+
+User goal:
+{user_goal}
+
+Chatbot outputs to expose:
+{output_slots}
+
+Additional constraints:
+{extra_notes}
+```
+
+---
+
+### 🛠️ Python automation (OpenAI Responses API example)
+
+```python
+import os
+import pathlib
+import subprocess
+import textwrap
+import yaml
+
+from openai import OpenAI
+
+# ---------- Configuration ----------
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+MODEL_NAME = "gpt-4o-mini"  # adjust as needed
+PROJECT_ROOT = pathlib.Path(r"E:\ESCRITORIO\Py_projects\SENPAI\one_node\Senpai-Assistant\sensei_projects\pizza_shop")
+PROFILES_DIR = PROJECT_ROOT / "profiles"
+
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+# ---------- Prompt helpers ----------
+SYSTEM_PROMPT = """You are an expert Sensei profile author.
+Return exactly one YAML document per response.
+Obey the Sensei profile structure: test_name, llm, user, chatbot, conversation.
+Only use interaction_style keywords from the official list.
+Do not invent chatbot.output fields; use the ones provided by the caller.
+"""
+
+PROFILE_REQUEST_TEMPLATE = """
+Project context:
+{project_context}
+
+Simulated user goal:
+{user_goal}
+
+Chatbot outputs required:
+{output_slots}
+
+Extra notes or constraints:
+{extra_notes}
+
+Return a valid Sensei profile YAML. Make sure chatbot.output matches the required fields.
+"""
+
+def build_prompt(project_context, user_goal, output_slots, extra_notes=""):
+    return PROFILE_REQUEST_TEMPLATE.format(
+        project_context=project_context,
+        user_goal=user_goal,
+        output_slots="\n".join(f"- {slot}" for slot in output_slots),
+        extra_notes=extra_notes or "None."
+    )
+
+# ---------- LLM call ----------
+def generate_profile(project_context, user_goal, output_slots, extra_notes=""):
+    prompt = build_prompt(project_context, user_goal, output_slots, extra_notes)
+
+    response = client.responses.create(
+        model=MODEL_NAME,
+        temperature=0.4,
+        system=SYSTEM_PROMPT,
+        input=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    content = response.output[0].content[0].text
+    return content.strip()
+
+# ---------- Validation helpers ----------
+REQUIRED_TOP_LEVEL_KEYS = {"test_name", "llm", "user", "chatbot", "conversation"}
+
+def load_yaml(yaml_text):
+    try:
+        return yaml.safe_load(yaml_text)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"YAML parsing failed: {exc}") from exc
+
+def sanity_check_profile(data, required_outputs):
+    missing_keys = REQUIRED_TOP_LEVEL_KEYS - data.keys()
+    if missing_keys:
+        raise ValueError(f"Missing top-level keys: {missing_keys}")
+
+    output_fields = [item for field in data["chatbot"]["output"] for item in field.keys()]
+    missing_outputs = [slot for slot in required_outputs if slot not in output_fields]
+    if missing_outputs:
+        raise ValueError(f"chatbot.output missing required fields: {missing_outputs}")
+
+def save_profile(yaml_text, filename):
+    PROFILES_DIR.mkdir(parents=True, exist_ok=True)
+    destination = PROFILES_DIR / filename
+    destination.write_text(yaml_text, encoding="utf-8")
+    return destination
+
+def run_validation(profile_path):
+    validator = PROJECT_ROOT / "validation_check.py"
+    if not validator.exists():
+        print("⚠️ validation_check.py not found; skipping CLI validation.")
+        return
+
+    cmd = [
+        "python",
+        str(validator),
+        "--profile",
+        str(profile_path),
+        "--output",
+        str(PROJECT_ROOT / "validation_output"),
+        "--combined-matrix",
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode == 0:
+        print("✅ validation_check.py passed.")
+    else:
+        print("❌ validation_check.py found issues:")
+        print(result.stdout)
+        print(result.stderr)
+
+# ---------- Orchestration ----------
+if __name__ == "__main__":
+    project_context = (
+        "We test a pizza shop assistant. Existing profiles cover info-seeking, drink/pizza ordering, "
+        "and recovery flows. Keep temperature around 0.6 unless specified."
+    )
+    user_goal = (
+        "User wants to schedule a pickup order for a vegetarian pizza combo, confirm availability, "
+        "and ask for payment methods."
+    )
+    required_output_slots = [
+        "order_summary: string",
+        "total_cost: currency",
+        "payment_methods: string"
+    ]
+    extra_notes = (
+        "Conversation length should be capped at 6 steps. "
+        "Use interaction styles: ['single question', 'make spelling mistakes'].")
+
+    yaml_text = generate_profile(
+        project_context=project_context,
+        user_goal=user_goal,
+        output_slots=required_output_slots,
+        extra_notes=extra_notes
+    )
+
+    print("LLM output:\n", yaml_text)
+
+    profile_data = load_yaml(yaml_text)
+    sanity_check_profile(profile_data, [slot.split(":")[0] for slot in required_output_slots])
+
+    profile_filename = f"{profile_data['test_name']}.yaml"
+    profile_path = save_profile(yaml_text, profile_filename)
+    print(f"💾 Saved profile to: {profile_path}")
+
+    run_validation(profile_path)
+```
+
+---
+
+### ✅ Tips for reliable automation
+
+1. **Keep required outputs explicit** (names + types) so rules can reference them.
+2. **Post-process** the YAML: add defaults (`llm.format`, `chatbot.is_starter`, etc.) if the model forgets.
+3. **Validate every profile** (your script already runs the CLI validator).
+4. **Log prompts & responses** so you can reproduce or fine-tune later.
+5. Add guardrails (e.g., `temperature=0.4`) to keep the LLM deterministic enough.
+
+With this setup, you can feed different user intents and instantly get Sensei-ready profiles. Let me know if you’d like a version that loops over multiple intents or integrates directly into your project’s run pipeline 🚀

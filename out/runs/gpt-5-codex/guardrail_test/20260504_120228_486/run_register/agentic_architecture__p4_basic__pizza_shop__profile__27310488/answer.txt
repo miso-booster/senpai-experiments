@@ -1,0 +1,278 @@
+Sure thing! 😊 Based on the `sensei-chat-guide.md`, here’s a Python automation template that uses an LLM to draft Sensei profiles, validates that the YAML matches the required structure (`test_name`, `user.goals`, `chatbot.output`, `conversation` controls, etc.), and saves the result only when it’s consistent with the guide.
+
+---
+
+### 🧠 How the flow works (aligned with `sensei-chat-guide.md`)
+1. **LLM prompt engineering** — we inject a structure crib sheet so the model always outputs the sections Sensei expects: `test_name`, `llm` (optional), `user` (with `language`, `role`, `context`, `goals`), `chatbot.output`, and `conversation` controls.
+2. **YAML parsing & validation** — after generation we run light structural checks inspired by the guide (e.g., each `chatbot.output` entry must be a dict with exactly one field → config mapping, the goals list must include variable declarations, etc.).
+3. **Retry loop** — if validation fails, you can choose to automatically re-prompt the LLM with the collected errors until it emits a valid profile.
+4. **Persistence** — when everything looks good, write the YAML to `profiles/<something>.yml`.
+
+---
+
+### 🛠️ Python automation template
+
+```python
+import os
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import yaml
+from openai import OpenAI
+import textwrap
+
+# Initialise your OpenAI (or compatible) client
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+SYSTEM_PROMPT = """
+You are a senior QA engineer who authors Sensei profiles (SENSEI Chat) for chatbot testing.
+Return strictly valid Sensei profile YAML without code fences.
+Keep indentation to two spaces per level.
+"""
+
+PROFILE_STYLE_GUIDE = textwrap.dedent("""
+Follow this schema exactly (see sensei-chat-guide.md):
+- test_name: string
+- llm: optional block with temperature/model/model_prov/format.type
+- user:
+    language: the simulator's default language
+    role: multi-line description of the simulated user
+    context: list (each item string or mapping with personality:)
+    goals:
+      - free-form goal strings (allow {{variables}})
+      - variable declarations:
+          variable_name:
+            function: default()|random()|another()|forward(...)|pairwise()
+            type: string|int|float|<custom type>
+            data: list | range {min,max,step} | any(...) | custom list function
+- chatbot:
+    is_starter: bool
+    fallback: string (real bot fallback message)
+    output:
+      - field_name:
+          type: primitive/list[...] or custom type
+          description: short sentence
+- conversation:
+    number: int|combinations|combinations(p)|combinations(p, pairwise)
+    goal_style:
+      steps|random steps|all_answered with limit/export
+      optional max_cost
+    interaction_style:
+      list of reserved styles (long phrases, change your mind, etc.) or random: [...]
+Never invent helpers that are not in the guide. Use realistic sample values.
+""")
+
+def build_generation_prompt(
+    brief: str,
+    extra_requirements: Optional[str] = None,
+    example_variables: Optional[List[str]] = None,
+) -> str:
+    """Compose the user prompt sent to the LLM."""
+    prompt = [
+        "# Sensei profile request",
+        brief.strip(),
+        "",
+        "# Hard requirements",
+        "- Output only YAML.",
+        "- Ensure every {{variable}} in goals is declared with matching name.",
+        "- Prefer pairwise() or forward() when multiple variables interact.",
+    ]
+    if extra_requirements:
+        prompt.append("")
+        prompt.append("# Additional constraints")
+        prompt.append(extra_requirements.strip())
+    if example_variables:
+        prompt.append("")
+        prompt.append("# Suggested variable names")
+        for var in example_variables:
+            prompt.append(f"- {var}")
+    return "\n".join(prompt)
+
+
+def generate_profile_yaml(
+    brief: str,
+    *,
+    model: str = "gpt-4o",
+    temperature: float = 0.2,
+    extra_requirements: Optional[str] = None,
+    example_variables: Optional[List[str]] = None,
+) -> str:
+    """Call the LLM to produce a raw YAML profile string."""
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": PROFILE_STYLE_GUIDE + "\n\n" + build_generation_prompt(
+                brief,
+                extra_requirements=extra_requirements,
+                example_variables=example_variables,
+            ),
+        },
+    ]
+    response = client.chat.completions.create(
+        model=model,
+        temperature=temperature,
+        messages=messages,
+    )
+    return response.choices[0].message.content.strip()
+
+
+class ProfileValidationError(Exception):
+    """Custom error for invalid profiles."""
+
+
+def validate_profile_structure(profile: Dict[str, Any]) -> List[str]:
+    """Return a list of validation problems (empty if valid)."""
+    errors: List[str] = []
+
+    # Required top-level keys
+    for key in ("test_name", "user", "chatbot", "conversation"):
+        if key not in profile:
+            errors.append(f"Missing top-level key: {key}")
+
+    user = profile.get("user", {})
+    if not isinstance(user, dict):
+        errors.append("user section must be a mapping.")
+    else:
+        for sub_key in ("language", "role", "goals"):
+            if sub_key not in user:
+                errors.append(f"user.{sub_key} is required.")
+        if "goals" in user:
+            if not isinstance(user["goals"], list) or not user["goals"]:
+                errors.append("user.goals must be a non-empty list.")
+            else:
+                declared_vars = {
+                    key
+                    for item in user["goals"]
+                    if isinstance(item, dict)
+                    for key in item.keys()
+                }
+                referenced_vars = {
+                    token.strip("{}")
+                    for item in user["goals"]
+                    if isinstance(item, str)
+                    for token in item.split()
+                    if token.startswith("{{") and token.endswith("}}")
+                }
+                undefined_vars = referenced_vars - declared_vars
+                if undefined_vars:
+                    errors.append(
+                        f"The following goal variables lack declarations: {sorted(undefined_vars)}"
+                    )
+
+    chatbot = profile.get("chatbot", {})
+    if not isinstance(chatbot, dict):
+        errors.append("chatbot section must be a mapping.")
+    else:
+        if "output" not in chatbot:
+            errors.append("chatbot.output is required.")
+        elif not isinstance(chatbot["output"], list) or not chatbot["output"]:
+            errors.append("chatbot.output must be a non-empty list.")
+        else:
+            for idx, output_field in enumerate(chatbot["output"]):
+                if not isinstance(output_field, dict) or len(output_field) != 1:
+                    errors.append(
+                        f"chatbot.output[{idx}] must be a dict with a single field name."
+                    )
+                    continue
+                field_name, config = next(iter(output_field.items()))
+                if not isinstance(config, dict):
+                    errors.append(
+                        f"chatbot.output[{field_name}] must map to a dict with type/description."
+                    )
+                    continue
+                if "type" not in config:
+                    errors.append(f"chatbot.output[{field_name}] is missing type.")
+                if "description" not in config:
+                    errors.append(f"chatbot.output[{field_name}] is missing description.")
+
+    conversation = profile.get("conversation", {})
+    if not isinstance(conversation, dict):
+        errors.append("conversation section must be a mapping.")
+    else:
+        if "number" not in conversation:
+            errors.append("conversation.number is required.")
+        if "goal_style" not in conversation:
+            errors.append("conversation.goal_style is required.")
+        if "interaction_style" not in conversation:
+            errors.append("conversation.interaction_style is required.")
+
+    return errors
+
+
+def create_profile_file(
+    brief: str,
+    output_path: Path,
+    *,
+    max_retries: int = 3,
+    extra_requirements: Optional[str] = None,
+    example_variables: Optional[List[str]] = None,
+) -> Path:
+    """
+    Generate, validate, and persist a Sensei profile YAML file.
+
+    Raises ProfileValidationError if it cannot produce a valid profile.
+    """
+    last_errors: List[str] = []
+    for attempt in range(1, max_retries + 1):
+        raw_yaml = generate_profile_yaml(
+            brief,
+            extra_requirements=extra_requirements,
+            example_variables=example_variables,
+        )
+        try:
+            profile_data = yaml.safe_load(raw_yaml)
+        except yaml.YAMLError as exc:
+            last_errors = [f"YAML parsing failed: {exc}"]
+            continue
+
+        validation_errors = validate_profile_structure(profile_data)
+        if not validation_errors:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(raw_yaml, encoding="utf-8")
+            return output_path
+
+        last_errors = validation_errors
+
+    raise ProfileValidationError(
+        f"Failed to create a valid profile after {max_retries} attempts.\n"
+        f"Last validation errors:\n- " + "\n- ".join(last_errors)
+    )
+
+
+if __name__ == "__main__":
+    # Example usage
+    project_root = Path("/path/to/your/sensei/project")
+    profiles_dir = project_root / "profiles"
+    target_file = profiles_dir / "hotel_booking_smoke.yml"
+
+    brief = """
+    Build a Sensei profile for a traveler booking a hotel room.
+    The user should compare room types, ask about loyalty discounts,
+    and confirm cancellation policy. Extract price, confirmation number,
+    and cancellation terms from the chatbot.
+    """
+    extra = "Limit conversation.goal_style.steps to 6 and include interaction_style random noise."
+    try:
+        saved_path = create_profile_file(
+            brief,
+            target_file,
+            extra_requirements=extra,
+            example_variables=["room_type", "check_in_date", "check_out_date", "loyalty_id"],
+        )
+        print(f"Profile written to {saved_path}")
+    except ProfileValidationError as err:
+        print(err)
+```
+
+---
+
+### 🔍 Tips for extending the automation
+- **Post-generation linting**: After the structural check, you can call `validation_check.py` (see §8/9 of `sensei-chat-guide.md`) to ensure combination matrices make sense before running a full simulation.
+- **Custom types/personas**: If the LLM mentions custom types (e.g., `currency` or `phone_number`), make sure those YAML files exist in `types/`—the script could auto-check and create stubs.
+- **Multiple profiles**: Wrap `create_profile_file` in a loop fed by a CSV/JSON backlog of briefs to bulk-generate variations.
+- **Connector awareness**: If you have different bots to test, add a `connector` field to the brief so the LLM can tailor fallbacks or interaction styles accordingly.
+
+---
+
+Let me know if you’d like this wired into a CLI, integrated with Sensei’s execution pipeline, or adapted for a different LLM provider!

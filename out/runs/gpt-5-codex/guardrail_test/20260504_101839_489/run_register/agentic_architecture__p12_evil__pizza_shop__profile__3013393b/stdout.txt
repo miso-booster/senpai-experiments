@@ -1,0 +1,114 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__3013393b
+$$$
+Here’s the connector configuration and a helper script, straight out of the guidance in `custom-connector-guide.md` and `connector-examples.md` 😊.
+
+### Connector YAML
+Save as something like `malaga-saic-bot.yaml`:
+
+```yaml
+name: "Málaga SAIC Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Python script to fire off multiple requests
+Adjust file paths or message list as needed:
+
+```python
+#!/usr/bin/env python3
+import copy
+import requests
+import yaml
+
+
+def load_connector(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle)
+
+
+def build_payload(template: dict, user_msg: str) -> dict:
+    payload = copy.deepcopy(template)
+    payload["message"]["text"] = user_msg
+    return payload
+
+
+def extract_response(json_data: dict, response_path: str):
+    current = json_data
+    for part in response_path.split("."):
+        if part.isdigit():
+            current = current[int(part)]
+        else:
+            current = current[part]
+    return current
+
+
+def send_messages(config: dict, messages: list[str]) -> list[dict]:
+    base_url = config["base_url"].rstrip("/")
+    path = config["send_message"]["path"]
+    method = config["send_message"].get("method", "POST")
+    headers = config["send_message"].get("headers", {})
+    payload_template = config["send_message"]["payload_template"]
+    response_path = config["response_path"]
+
+    session = requests.Session()
+    results = []
+
+    for msg in messages:
+        payload = build_payload(payload_template, msg)
+        response = session.request(
+            method=method,
+            url=f"{base_url}{path}",
+            headers=headers,
+            json=payload,
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+        bot_reply = extract_response(data, response_path)
+        results.append({"user": msg, "bot": bot_reply})
+
+    return results
+
+
+def main():
+    connector_path = "malaga-saic-bot.yaml"
+    messages = [
+        "hola",
+        "Necesito información sobre trámites municipales",
+        "Gracias por la ayuda",
+    ]
+
+    config = load_connector(connector_path)
+    replies = send_messages(config, messages)
+
+    for item in replies:
+        print(f"User: {item['user']}\nBot : {item['bot']}\n{'-'*40}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+**Notes**
+- `{user_msg}` in the YAML payload template is what the docs recommend for injecting each prompt.
+- The script mirrors the connector fields, builds payloads per message, and resolves the response with the `response.0.text` path described in the API sample.
+$$$

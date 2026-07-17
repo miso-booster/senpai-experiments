@@ -1,0 +1,140 @@
+conversation ID: one_node_architecture__p12_evil__pizza_shop__profile__389915a6
+$$$
+Here's the YAML connector configuration for your described API request:
+
+```yaml
+name: "MillionBot Custom"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+---
+
+And here is a complete Python script to send multiple requests using this connector configuration:
+
+```python
+import requests
+import yaml
+
+# Load connector config from YAML file or define inline
+connector_config = """
+name: "MillionBot Custom"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Connection: "keep-alive"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Priority: "u=4"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+"""
+
+config = yaml.safe_load(connector_config)
+
+def send_message(user_msg):
+    url = config["base_url"] + config["send_message"]["path"]
+    headers = config["send_message"].get("headers", {})
+    payload_template = config["send_message"]["payload_template"]
+
+    # Deep copy payload template and insert user message
+    import copy
+    payload = copy.deepcopy(payload_template)
+    # Replace placeholder with actual user message
+    payload["message"]["text"] = user_msg
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+    data = response.json()
+
+    # Extract response text using response_path
+    # response_path: "response.0.text"
+    parts = config["response_path"].split(".")
+    val = data
+    for part in parts:
+        if part.isdigit():
+            val = val[int(part)]
+        else:
+            val = val.get(part)
+        if val is None:
+            break
+    return val
+
+if __name__ == "__main__":
+    messages = [
+        "hola",
+        "¿Cuál es el horario de atención?",
+        "¿Qué pizzas tienen?",
+        "Quiero hacer un pedido",
+    ]
+
+    for msg in messages:
+        try:
+            reply = send_message(msg)
+            print(f"User: {msg}")
+            print(f"Bot: {reply}\n")
+        except Exception as e:
+            print(f"Failed to send message '{msg}': {e}")
+```
+
+---
+
+This script:
+
+- Loads the connector config inline (you can also load from a YAML file).
+- Sends multiple user messages to the chatbot.
+- Extracts and prints the chatbot's reply from the JSON response using the configured `response_path`.
+
+Let me know if you'd like me to help with anything else related to Sensei connectors or profiles! 😊
+$$$

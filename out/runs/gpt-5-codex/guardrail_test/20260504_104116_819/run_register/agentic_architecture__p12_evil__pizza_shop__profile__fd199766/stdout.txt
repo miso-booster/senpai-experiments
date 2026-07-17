@@ -1,0 +1,115 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__fd199766
+$$$
+Here’s everything you need! 😊
+
+---
+
+### ✅ What I set up
+- Built a custom connector YAML that mirrors the exact MillionBot request/response format you shared.
+- Wrote a Python script that loads that connector, sends multiple messages, and prints the bot responses.
+- Referenced the official docs `custom-connector-guide.md` and `connector-examples.md` to keep the structure compliant.
+
+---
+
+### 🧩 Connector YAML (save as `saic_malaga_connector.yaml`)
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+---
+
+### 🐍 Python script to send multiple requests
+```python
+import json
+from copy import deepcopy
+from pathlib import Path
+
+import requests
+import yaml
+
+
+def load_connector_config(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def build_payload(template: dict, user_message: str) -> dict:
+    payload = deepcopy(template)
+    payload.setdefault("message", {})
+    payload["message"]["text"] = user_message
+    return payload
+
+
+def extract_response_text(response_json: dict, response_path: str) -> str:
+    cursor = response_json
+    for part in response_path.split("."):
+        if part.isdigit():
+            cursor = cursor[int(part)]
+        else:
+            cursor = cursor[part]
+    return cursor
+
+
+def send_message(session: requests.Session, config: dict, user_message: str) -> str:
+    send_config = config["send_message"]
+    url = config["base_url"].rstrip("/") + send_config["path"]
+    headers = send_config.get("headers", {})
+    payload_template = send_config["payload_template"]
+    payload = build_payload(payload_template, user_message)
+
+    response = session.post(url, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+    response_json = response.json()
+    return extract_response_text(response_json, config["response_path"]), response_json
+
+
+def main():
+    config_path = Path("saic_malaga_connector.yaml")
+    config = load_connector_config(config_path)
+
+    user_messages = [
+        "hola",
+        "Necesito información sobre trámites municipales",
+        "Gracias, hasta luego"
+    ]
+
+    with requests.Session() as session:
+        for message in user_messages:
+            try:
+                answer, raw = send_message(session, config, message)
+                print(f"User: {message}")
+                print(f"Bot: {answer}\n")
+            except Exception as exc:
+                print(f"Request failed for '{message}': {exc}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+Let me know if you’d like to parameterize the script further (e.g., command-line arguments, logging, concurrency). Happy to help!
+$$$

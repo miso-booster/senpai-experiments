@@ -1,0 +1,90 @@
+Hey! I’d love to help you with creating an automation that uses LLMs to generate **valid Sensei profiles**. However, since I focus exclusively on **Sensei PROFILES, RULES, and CONNECTORS** and their documentation, I can guide you on how to structure such profiles and how to leverage LLMs for that, but I won’t provide unrelated source code outside those areas.
+
+Here’s a friendly plan to automate profile creation with LLMs, using the Sensei Profiles format as a base:
+
+---
+
+### How to Automate Sensei Profile Creation with LLMs (Conceptual Guide)
+
+1. **Define your profile schema**:  
+   Use the Sensei Profiles YAML structure (like in the guide below) as a template. This includes `test_name`, `llm` config, `user` with `language`, `role`, `context`, and `goals`, plus `chatbot.output` fields and conversation controls.
+
+2. **Prompt the LLM to generate profile content**:  
+   Give the LLM a clear prompt describing the domain, user behavior, goals, and expected chatbot outputs. Ask it to output a valid YAML profile following Sensei’s schema.
+
+3. **Validate the generated YAML**:  
+   Use a YAML parser to check syntax and verify required fields exist (`test_name`, `user.goals`, `chatbot.output`, etc.).
+
+4. **Iterate and refine**:  
+   If the profile misses fields or has invalid types, prompt the LLM again with corrections or constraints.
+
+5. **Save and use the profile**:  
+   Store the YAML file in your `profiles/` directory and run Sensei with it.
+
+---
+
+### Minimal Sensei Profile Template for LLM Generation
+
+Here’s a minimal profile example you can use as a prompt or template for your automation:
+
+```yaml
+test_name: "auto_generated_profile"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Simulated user interested in ordering a pizza with custom toppings."
+  context:
+    - "The user prefers vegetarian options."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}}."
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: random()
+        type: string
+        data: [mushrooms, olives, peppers, onions, tomatoes]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand. Can you please rephrase?"
+  output:
+    - price:
+        type: currency
+        description: "Final price of the pizza order."
+    - estimated_time:
+        type: time("hh:mm")
+        description: "Estimated preparation time."
+    - order_id:
+        type: string
+        description: "Unique order identifier."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+---
+
+### How to prompt an LLM to generate profiles
+
+Example prompt snippet:
+
+> "Generate a valid Sensei profile YAML for a pizza ordering chatbot user simulator. The profile should include user goals with variables for pizza size and toppings, chatbot output fields for price, estimated time, and order ID, and conversation controls with 3 conversations and 5 steps each."
+
+---
+
+If you want, I can help you craft such prompts or validate generated profiles to ensure they conform to Sensei’s schema. Just let me know! 😊
+
+Would you like me to create a sample Python snippet that calls an LLM with a prompt to generate such a profile YAML, or help you validate a profile you already have?

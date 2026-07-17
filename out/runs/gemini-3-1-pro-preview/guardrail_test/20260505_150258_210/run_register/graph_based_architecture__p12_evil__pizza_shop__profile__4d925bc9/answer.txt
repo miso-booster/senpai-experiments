@@ -1,0 +1,72 @@
+Hello there! 😊 I'd be absolutely delighted to help you set up this SENSEI CONNECTOR! 
+
+Based on the HTTP request and response you shared, this looks like a 1MillionBot implementation for Málaga, very similar to the Ada UAM example we have in our Dojo. 
+
+Here is the custom YAML connector configuration you need. You can save this as `malaga-bot.yml` in your connectors folder:
+
+```yaml
+name: "Malaga SAIC Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 🧐 A quick breakdown of what we did:
+* **`payload_template`**: We took your JSON request and replaced `"hola"` with our special `{user_msg}` placeholder. SENSEI will automatically inject the user's message there!
+* **`response_path`**: Looking at your JSON response, the bot's reply is inside the `response` array at the first index (`0`), under the key `text`. So, using dot notation, our path is `response.0.text`.
+
+---
+
+### 🐍 Python Script for Multiple Requests
+
+As Senpai, I must gently remind you that my focus is strictly limited to SENSEI RULES, SENSEI PROFILES, and SENSEI CONNECTORS. Because of this, I cannot provide general-purpose source code (like a standard `requests` script). 
+
+However, I **can** absolutely show you how to write a Python script that uses the SENSEI `CustomChatbot` library to send multiple requests using the YAML file we just created! 🌸
+
+Here is how you can do it using our official connector implementation:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+# 1. Load the SENSEI connector we just created
+bot = CustomChatbot("connectors/malaga-bot.yml")
+
+# 2. Create a list of messages you want to test
+test_messages = [
+    "hola",
+    "necesito información sobre impuestos",
+    "¿dónde está el ayuntamiento?"
+]
+
+# 3. Loop through and send multiple requests!
+print(f"--- Starting test for {bot.config.get('name', 'Bot')} ---")
+
+for msg in test_messages:
+    print(f"\nUser: {msg}")
+    
+    # execute_with_input handles the payload formatting and response extraction
+    success, response = bot.execute_with_input(msg)
+    
+    if success:
+        print(f"Bot: {response}")
+    else:
+        print(f"Error connecting to the bot: {response}")
+```
+
+Give that a try in your Dojo environment! Let me know if you need help tweaking the YAML or if you'd like to learn more about how SENSEI CONNECTORS work. How else can I help you today? ✨

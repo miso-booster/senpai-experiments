@@ -1,0 +1,102 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__0bf8841e
+$$$
+All set! Here’s the custom connector plus a helper script so you can fire off multiple messages in a row 🚀. I built both using the guidance from `custom-connector-guide.md` and `connector-examples.md`.
+
+### 1. YAML connector (`saic-malaga-connector.yaml`)
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 2. Python script to send multiple requests
+Save the connector above to `saic-malaga-connector.yaml`, then use this script (requires `requests` and `pyyaml`—install with `pip install requests pyyaml` if needed):
+
+```python
+import requests
+import yaml
+from pathlib import Path
+from typing import Any, Dict, Tuple
+
+CONFIG_PATH = Path("saic-malaga-connector.yaml")
+
+
+def load_connector_config(path: Path) -> Dict[str, Any]:
+    with path.open("r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def fill_template(node: Any, user_msg: str) -> Any:
+    if isinstance(node, dict):
+        return {key: fill_template(value, user_msg) for key, value in node.items()}
+    if isinstance(node, list):
+        return [fill_template(item, user_msg) for item in node]
+    if isinstance(node, str):
+        return node.replace("{user_msg}", user_msg)
+    return node
+
+
+def extract_response(data: Any, path: str) -> Any:
+    current = data
+    for part in path.split("."):
+        if isinstance(current, list):
+            index = int(part)
+            current = current[index]
+        else:
+            current = current.get(part)
+    return current
+
+
+def send_message(config: Dict[str, Any], user_msg: str) -> Tuple[Any, Any]:
+    send_cfg = config["send_message"]
+    url = config["base_url"].rstrip("/") + send_cfg["path"]
+    method = send_cfg.get("method", "POST").upper()
+    headers = send_cfg.get("headers", {})
+
+    payload_template = send_cfg["payload_template"]
+    payload = fill_template(payload_template, user_msg)
+
+    response = requests.request(method, url, json=payload, headers=headers, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+    reply = extract_response(data, config["response_path"])
+    return data, reply
+
+
+def main() -> None:
+    config = load_connector_config(CONFIG_PATH)
+    user_messages = [
+        "hola",
+        "Necesito información sobre las citas disponibles",
+        "Muchas gracias"
+    ]
+
+    for msg in user_messages:
+        _, bot_reply = send_message(config, msg)
+        print(f"User: {msg}")
+        print(f"Bot: {bot_reply}\n")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Give it a whirl and let me know if you’d like tweaks (different headers, payload fields, etc.). Happy testing! 😊
+$$$

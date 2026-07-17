@@ -1,0 +1,73 @@
+Based on the SENSEI connector documentation (`custom-connector-guide.md` and `connector-examples.md`), I have extracted the necessary fields from your HTTP request and response to create the YAML connector. 
+
+Here is the YAML connector configuration. You can save this as `saic-malaga.yml`:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### How this works:
+- **`payload_template`**: We map the exact JSON structure of your request, replacing the `"hola"` text with the `{user_msg}` placeholder so the connector can inject dynamic messages.
+- **`response_path`**: The API returns `{"response": [{"text": "..."}]}`, so we use the dot notation `response.0.text` to extract the HTML/text reply from the first element of the response array.
+
+---
+
+### Python Script
+
+Using the SENSEI `chatbot_connectors` library, here is a complete Python script to load this YAML connector and send multiple requests to it:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+import time
+
+def main():
+    # 1. Initialize the connector using the YAML file
+    # Make sure the path matches where you saved the YAML file
+    bot = CustomChatbot("saic-malaga.yml")
+
+    # 2. Define multiple messages to send
+    messages_to_send = [
+        "hola",
+        "¿Qué trámites puedo realizar?",
+        "Muchas gracias por la información."
+    ]
+
+    # 3. Loop through the messages and send them via the connector
+    for msg in messages_to_send:
+        print(f"User: {msg}")
+        
+        # execute_with_input automatically injects the message into {user_msg}
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"Bot: {response}\n")
+        else:
+            print(f"Error: {response}\n")
+            
+        # Optional: Add a small delay between requests to be polite to the API
+        time.sleep(1)
+
+if __name__ == "__main__":
+    main()
+```
+
+Let me know if you need any adjustments to the headers or payload! 😊

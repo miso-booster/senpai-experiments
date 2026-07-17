@@ -1,0 +1,71 @@
+Hello there! 😊 
+
+I would absolutely love to help you out with your Sensei project! However, I must apologize—I am specifically designed to help you create, modify, validate, and understand the YAML configurations for **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS**. Because of this, I cannot write custom Python automation scripts or provide source code outside of those specific areas. 🙏
+
+But don't worry! If you are building a Python automation to generate Sensei profiles using an LLM, I can give you the **exact blueprint and rules** you should include in your LLM's system prompt. If you feed this structure to your LLM, it will generate perfectly valid Sensei Profile YAMLs every time! 🚀
+
+### 🧠 What to tell your LLM to generate valid Sensei Profiles
+
+When prompting your LLM to create a profile, make sure it follows these strict structural rules:
+
+1. **Top-Level Sections:** Every profile must have `test_name`, `llm`, `user`, `chatbot`, and `conversation`.
+2. **Variables in Goals:** If the LLM writes a goal like `"Order a {{size}} pizza"`, it **must** declare `size` as a dictionary in the `goals` list with `type`, `data`, and a `function` (like `random()`, `forward()`, or `pairwise()`).
+3. **Chatbot Outputs:** The `chatbot.output` section is crucial. It defines what data is extracted at the end of the conversation (e.g., `total_price`, `order_id`). The LLM must define these as a list of dictionaries with a `type` (like `string`, `int`, `currency`, `time`) and a `description`.
+4. **Conversation Controls:** The LLM needs to specify `conversation.number` (an integer or `combinations`) and a `goal_style` (like `steps: 5` or `all_answered: {limit: 20}`).
+
+Here is a perfect, ready-to-use template you can pass to your LLM as a "few-shot" example for its generations:
+
+```yaml
+test_name: "generated_profile_example"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A brief description of who the user is and what they want."
+  context:
+    - "Any specific constraints, preferences, or background info."
+  goals:
+    - "I want to book a {{room_type}} room for {{nights}} nights."
+    - room_type:
+        function: random()
+        type: string
+        data: [single, double, suite]
+    - nights:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't understand that. Could you rephrase?"
+  output:
+    - total_price:
+        type: currency
+        description: "The final price of the booking"
+    - booking_reference:
+        type: string
+        description: "The unique ID for the reservation"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - random:
+      - single questions
+      - make spelling mistakes
+```
+
+If you set up your Python script to enforce this YAML structure (perhaps using a library like `pydantic` or LangChain's structured output parsers), you'll have a fantastic automated profile generator! 
+
+Let me know if you need help tweaking this template, understanding specific functions like `pairwise()`, or writing Sensei Rules to test the profiles your automation creates! 👀✨

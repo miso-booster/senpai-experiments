@@ -837,7 +837,18 @@ def _generate_plots(
                 edgecolor="white",
                 label=f"Rank {rank_position}",
             )
-            for arch_id, value in zip(arch_list, values):
+            text_color = "white" if sum(color[:3]) / 3 < 0.55 else "black"
+            for idx, (arch_id, value, left_value) in enumerate(zip(arch_list, values, left_values)):
+                if value >= 0.035:
+                    ax.text(
+                        left_value + value / 2,
+                        y_positions[idx],
+                        f"{value:.0%}",
+                        ha="center",
+                        va="center",
+                        fontsize=9,
+                        color=text_color,
+                    )
                 left_by_arch[arch_id] += value
         ax.set_yticks(y_positions, labels)
         ax.set_xlim(0.0, 1.0)

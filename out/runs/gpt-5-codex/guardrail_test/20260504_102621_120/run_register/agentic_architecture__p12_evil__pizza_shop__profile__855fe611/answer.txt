@@ -1,0 +1,118 @@
+Here’s the connector and a helper script, fresh off the forge 😊. They follow the structure and field guidance from **custom-connector-guide.md** and the 1MillionBot example in **connector-examples.md**.
+
+### YAML connector (`saic-malaga-connector.yaml`)
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Python script (`send_requests.py`)
+```python
+import json
+from copy import deepcopy
+from urllib.parse import urljoin
+
+import requests
+import yaml
+
+
+def load_connector_config(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle)
+
+
+def set_user_message(payload_template: dict, user_msg: str) -> dict:
+    payload = deepcopy(payload_template)
+    # This connector only needs to swap the message text.
+    payload["message"]["text"] = user_msg
+    return payload
+
+
+def extract_response_field(response_json: dict, path: str):
+    parts = path.split(".")
+    current = response_json
+    for part in parts:
+        if isinstance(current, list):
+            idx = int(part)
+            current = current[idx]
+        else:
+            current = current.get(part)
+            if current is None:
+                break
+    return current
+
+
+def send_message(config: dict, user_msg: str) -> str:
+    base_url = config["base_url"]
+    send_cfg = config["send_message"]
+
+    url = urljoin(base_url, send_cfg["path"])
+    headers = send_cfg.get("headers", {})
+    payload_template = send_cfg["payload_template"]
+
+    payload = set_user_message(payload_template, user_msg)
+
+    response = requests.request(
+        method=send_cfg.get("method", "POST"),
+        url=url,
+        headers=headers,
+        json=payload,
+        timeout=30,
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    return extract_response_field(data, config["response_path"])
+
+
+def main():
+    config_path = "saic-malaga-connector.yaml"
+    config = load_connector_config(config_path)
+
+    messages = [
+        "Hola, necesito información sobre trámites municipales.",
+        "¿Cómo puedo pedir una cita para atención presencial?",
+        "Gracias por la ayuda."
+    ]
+
+    for msg in messages:
+        try:
+            reply = send_message(config, msg)
+            print(f"User: {msg}")
+            print(f"Bot : {reply}\n")
+        except Exception as exc:
+            print(f"Error sending '{msg}': {exc}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+**Usage tips**
+- Save both files in the same directory, adjust the paths if needed.
+- Install requirements before running the script:
+  ```bash
+  pip install requests pyyaml
+  ```
+- Then execute:
+  ```bash
+  python send_requests.py
+  ```
+
+This setup mirrors the documented payload/response layout for 1MillionBot connectors, so you should be good to go 🚀. Let me know if you’d like variations (e.g., dynamic headers, session IDs, retries, etc.).

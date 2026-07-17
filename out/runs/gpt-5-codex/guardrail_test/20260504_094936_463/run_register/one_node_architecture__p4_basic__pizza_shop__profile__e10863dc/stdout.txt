@@ -1,0 +1,73 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__e10863dc
+$$$
+Hey there! 👋 Sounds like you want to whip up a Python workflow that asks an LLM to draft Sensei profiles and makes sure the result is actually valid. Totally doable—we just need to center everything around the Sensei profile schema. Here’s a comfy step-by-step approach you can follow:
+
+---
+
+### 🧠 1. Anchor everything in the profile schema
+
+Sensei profiles have a predictable structure (see the sections in the guide: `test_name`, `llm`, `user`, `chatbot`, `conversation`). Before you involve an LLM, define a **canonical template** so the model knows exactly what to produce.
+
+Example of the **fields to cover** in your instructions:
+
+```
+test_name, llm (model, temperature,…), user (language, role, context, goals),
+chatbot (is_starter, fallback, output items with type/description),
+conversation (number, goal_style, interaction_style…)
+```
+
+---
+
+### ✍️ 2. Craft a prompt template for the LLM
+
+Guide the model to fill every required section, with guardrails:
+
+- Ask for YAML output only.
+- Remind it that variable names in `goals` must match their declarations.
+- Mention allowed types (`string`, `int`, `list[string]`, custom types…).
+- Tell it to set realistic `conversation.goal_style`, `interaction_style`, etc.
+
+---
+
+### 🐍 3. Python outline (high-level)
+
+Here’s what your automation loop could do:
+
+1. **Collect inputs** (maybe a short description of the scenario).
+2. **Build the LLM prompt**: merge the template with your scenario.
+3. **Call the LLM** (OpenAI, Anthropic, etc.) with temperature around `0.2–0.4` for stability.
+4. **Parse/validate output** before saving:
+   - Check it’s valid YAML (PyYAML or `ruamel.yaml`).
+   - Ensure mandatory sections are present.
+   - Confirm `{{variables}}` match declarations.
+   - Optionally run `validation_check.py` if you want a full Sensei validation.
+5. **Save** the cleaned YAML into `profiles/`.
+
+---
+
+### ✅ 4. Automated validation checklist
+
+After parsing the YAML, run these quick checks:
+
+- `test_name` is a non-empty string.
+- `user.goals`:
+  - All strings with `{{var}}` have matching entries with `function`, `type`, `data`.
+- `chatbot.output`:
+  - Each entry has `type` + `description`.
+  - Types use the allowed inventory (primitive, list[…], time/date, or declared custom types).
+- `conversation.goal_style` has either `steps`, `random steps`, or `all_answered`.
+- `interaction_style` values come from the documented list (e.g., `single question`, `make spelling mistakes`, `change language`, …).
+- Optional: run `validation_check.py --profile <file>` to catch anything subtle.
+
+---
+
+### 🛠️ 5. Helpful extras
+
+- Keep a curated list of example profiles (like the ones in your project) and feed a few as **few-shot examples** to the model.
+- Include **post-generation formatting** (e.g., enforce consistent indentation, ensure strings are quoted when needed).
+- Maintain a **mapping of custom types** available in your project so the LLM doesn’t invent types you can’t validate.
+
+---
+
+If you’d like, I can also help you flesh out the exact prompt template you’d send to the LLM or discuss validation code snippets that focus on profile structure. Just let me know. 😊
+$$$

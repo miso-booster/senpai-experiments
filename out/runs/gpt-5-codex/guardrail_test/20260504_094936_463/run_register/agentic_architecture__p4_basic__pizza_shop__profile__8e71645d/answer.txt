@@ -1,0 +1,146 @@
+¡Claro que sí! 😊 Aquí tienes una guía para automatizar, en Python, la creación de perfiles válidos de Sensei con ayuda de un modelo LLM, apoyándonos en lo que describe `sensei-chat-guide.md`.
+
+---
+
+## 🧠 Enfoque general
+
+1. **Prepara un prompt “de sistema” sólido**  
+   Según la guía, un perfil válido debe cubrir secciones como `test_name`, `llm`, `user`, `chatbot` (incluido `output`) y `conversation`. Tu prompt debe recordarle al LLM esta estructura y las reglas clave (p. ej., que los nombres de variables en `user.goals` coincidan con `{{variables}}`, incluir descripciones en `chatbot.output`, etc.).
+
+2. **Pasa contexto específico como mensaje del usuario**  
+   Por ejemplo, “perfil para reservas de hoteles”, “en español”, etc. Así el modelo adapta el contenido dentro de la estructura fija.
+
+3. **Valida el YAML devuelto**  
+   - Parsear con `yaml.safe_load`.
+   - Comprobar campos mínimos.
+   - Verificar que cada `chatbot.output` tenga `type` y `description`.
+   - (Opcional) Llamar a `validation_check.py` de Sensei para ver si pasa las validaciones oficiales.
+
+4. **Guardar o ajustar**  
+   Si haces más de una iteración, puedes enviar feedback al LLM (p. ej., “faltó `interaction_style`, agrégalo”) hasta que quede perfecto.
+
+---
+
+## 🛠️ Script de ejemplo
+
+```python
+import os
+from pathlib import Path
+from typing import Dict, Any, Tuple, List
+
+import yaml
+from openai import OpenAI
+
+# 1) Configura tu cliente LLM (usa OPENAI_API_KEY en el entorno)
+client = OpenAI()
+
+SYSTEM_PROMPT = """You are an expert Sensei profile author.
+Generate ONLY YAML for a single Sensei profile.
+Required top-level sections:
+- test_name (string)
+- llm (temperature, model, model_prov, format.type)
+- user (language, role, context list, goals list with variable definitions)
+- chatbot (is_starter, fallback, output list with type + description)
+- conversation (number, goal_style, interaction_style)
+Follow the structure from sensei-chat-guide.md. Use descriptive field names.
+Every goal variable declared with {{variable}} must have a matching mapping entry.
+Return valid YAML, no extra markdown fences."""
+
+def build_user_message(domain_instructions: str) -> str:
+    return f"""Create a Sensei profile for this scenario:
+
+{domain_instructions}
+
+Ensure the profile is realistic, self-consistent, and includes at least 2 structured fields in chatbot.output."""
+
+def validate_profile_structure(profile: Dict[str, Any]) -> List[str]:
+    errors = []
+
+    required_top = ["test_name", "user", "chatbot", "conversation"]
+    for key in required_top:
+        if key not in profile:
+            errors.append(f"Missing top-level key: {key}")
+
+    user = profile.get("user", {})
+    for field in ["language", "role", "goals"]:
+        if field not in user:
+            errors.append(f"user.{field} is required")
+
+    chatbot = profile.get("chatbot", {})
+    if "output" not in chatbot or not chatbot["output"]:
+        errors.append("chatbot.output must have at least one field")
+    else:
+        for entry in chatbot["output"]:
+            field_name, meta = next(iter(entry.items()))
+            if "type" not in meta:
+                errors.append(f"chatbot.output.{field_name} missing type")
+            if "description" not in meta:
+                errors.append(f"chatbot.output.{field_name} missing description")
+
+    conversation = profile.get("conversation", {})
+    if "number" not in conversation:
+        errors.append("conversation.number is required")
+    if "goal_style" not in conversation:
+        errors.append("conversation.goal_style is required")
+
+    return errors
+
+def generate_profile(domain_instructions: str) -> Tuple[Dict[str, Any], str]:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": build_user_message(domain_instructions)},
+        ],
+        temperature=0.3,
+    )
+
+    yaml_text = response.choices[0].message.content.strip()
+    data = yaml.safe_load(yaml_text)
+    return data, yaml_text
+
+def main():
+    domain_instructions = """
+Simula a una persona que quiere contratar un seguro de viaje internacional.
+Debe hablar en Español, comparar planes, preguntar por asistencia médica
+y exponer restricciones de presupuesto.
+"""
+    profile_dict, raw_yaml = generate_profile(domain_instructions)
+    errors = validate_profile_structure(profile_dict)
+
+    if errors:
+        print("Validation issues:")
+        for err in errors:
+            print(" -", err)
+    else:
+        output_folder = Path("profiles")
+        output_folder.mkdir(exist_ok=True)
+        profile_path = output_folder / "travel_insurance_es.yml"
+        with profile_path.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(profile_dict, f, sort_keys=False, allow_unicode=True)
+        print("Profile saved to", profile_path)
+
+    print("\nGenerated YAML preview:\n")
+    print(raw_yaml)
+
+if __name__ == "__main__":
+    main()
+```
+
+### Qué hace el script
+
+- **Prompts** al LLM con la estructura oficial descrita en `sensei-chat-guide.md`.
+- **Parses** la respuesta YAML y aplica validaciones básicas.
+- **Guarda** el perfil si pasa los chequeos.
+- Te muestra el YAML generado para que puedas revisarlo a mano.
+
+---
+
+## ✅ Recomendaciones finales
+
+- Ajusta el `SYSTEM_PROMPT` si necesitas estilos muy específicos (p. ej., `interaction_style: change language` con idiomas concretos).
+- Si quieres una validación más estricta, integra directamente `python validation_check.py --profile ...` después de generar cada perfil.
+- Mantén una librería de “dominio_instructions” predefinidas para cada tipo de bot que quieras testear y así generar múltiples perfiles en lote.
+- Usa el campo `llm` solo si necesitas parámetros distintos a los defaults; la guía permite omitirlo cuando no cambias nada.
+
+Con este flujo deberías poder automatizar la creación de perfiles robustos y conformes a la guía oficial. Si quieres evolucionarlo (por ejemplo, incorporar feedback loop o enforcement con análisis de matrices de combinaciones), dime y lo exploramos. ¡Éxitos con tus perfiles Sensei! 🚀

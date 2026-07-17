@@ -1,0 +1,112 @@
+conversation ID: graph_based_architecture__p12_evil__pizza_shop__profile__f8a98faa
+$$$
+¡Claro! Aquí tienes todo listo 😊
+
+---
+
+### ✅ YAML del conector (guárdalo como `saic-malaga.yml`, por ejemplo)
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Referer: "https://saic.malaga.eu/"
+    Origin: "https://saic.malaga.eu"
+    Sec-GPC: "1"
+    Sec-Fetch-Dest: "empty"
+    Sec-Fetch-Mode: "cors"
+    Sec-Fetch-Site: "cross-site"
+    Pragma: "no-cache"
+    Cache-Control: "no-cache"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+---
+
+### 🐍 Script en Python para enviar varias peticiones
+
+```python
+import json
+import time
+import yaml
+import requests
+from pathlib import Path
+
+CONFIG_PATH = Path("saic-malaga.yml")  # Ajusta la ruta si guardaste el YAML en otra carpeta
+
+def load_connector_config(path: Path):
+    with path.open("r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+def send_message(session: requests.Session, config: dict, user_message: str):
+    url = config["base_url"] + config["send_message"]["path"]
+    headers = config["send_message"].get("headers", {})
+    payload_template = config["send_message"]["payload_template"]
+
+    # Creamos el payload reemplazando {user_msg}
+    payload = json.loads(json.dumps(payload_template).replace("{user_msg}", user_message))
+
+    response = session.request(
+        method=config["send_message"].get("method", "POST"),
+        url=url,
+        headers=headers,
+        json=payload,
+        timeout=30
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    # Extraemos la respuesta usando response_path
+    response_path = config["response_path"].split(".")
+    for key in response_path:
+        if key.isdigit():
+            data = data[int(key)]
+        else:
+            data = data[key]
+
+    return data
+
+def main():
+    config = load_connector_config(CONFIG_PATH)
+    messages = [
+        "hola",
+        "¿Puedes darme información sobre trámites municipales?",
+        "Gracias por la ayuda 😊"
+    ]
+
+    with requests.Session() as session:
+        for msg in messages:
+            try:
+                bot_reply = send_message(session, config, msg)
+                print(f"Usuario: {msg}")
+                print(f"Bot: {bot_reply}\n")
+                time.sleep(1)  # Pausa ligera entre peticiones
+            except Exception as exc:
+                print(f"Ocurrió un error con el mensaje '{msg}': {exc}\n")
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+Si necesitas ajustar algo más (por ejemplo, añadir campos dinámicos al payload o cambiar la extracción de la respuesta), dímelo y lo afinamos juntos. 💪✨
+$$$

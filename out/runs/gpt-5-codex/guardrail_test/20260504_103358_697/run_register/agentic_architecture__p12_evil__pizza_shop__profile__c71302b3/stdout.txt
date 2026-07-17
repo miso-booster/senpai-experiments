@@ -1,0 +1,63 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__c71302b3
+$$$
+Here’s the custom connector configuration based on the request you shared:
+
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept-Encoding: "gzip, deflate, br, zstd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+And here’s a complete Python script that sends multiple messages through that connector:
+
+```python
+from pathlib import Path
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+
+def main():
+    connector_path = Path("connectors/saic-malaga-bot.yaml")
+    messages = [
+        "hola",
+        "¿Cuál es el horario de atención?",
+        "Gracias, hasta luego"
+    ]
+
+    bot = CustomChatbot(str(connector_path))
+
+    for user_msg in messages:
+        success, response = bot.execute_with_input(user_msg)
+        print(f"→ Usuario: {user_msg}")
+        if success:
+            print(f"← Bot: {response}\n")
+        else:
+            print(f"✗ Error: {response}\n")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Feel free to adjust the `messages` list or connector path to match your project layout. I leaned on the guidance from `custom-connector-guide.md` and `connector-examples.md` to shape the YAML structure and response path. Let me know if you’d like to tweak headers, payload fields, or add error handling in the script!
+$$$

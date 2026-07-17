@@ -1,0 +1,86 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__6a22837e
+$$$
+Based on the SENSEI connector documentation (`custom-connector-guide.md` and `connector-examples.md`), I have extracted the necessary components from your HTTP request and response to build the configuration.
+
+Here is the plan we followed:
+1. Identified the base URL (`https://api.1millionbot.com`) and path (`/api/public/messages`).
+2. Extracted the essential headers (like `Authorization`, `Content-Type`, `Origin`, and `Referer`).
+3. Mapped the JSON payload, replacing the hardcoded `"hola"` with the `{user_msg}` placeholder.
+4. Set the `response_path` to `response.0.text` to correctly extract the HTML/text reply from the nested JSON array.
+
+### 1. YAML Connector
+
+Save this file as `malaga_saic_connector.yml`:
+
+```yaml
+name: "Malaga SAIC Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 2. Python Script
+
+To send multiple requests using this connector, you can use the `CustomChatbot` class from the SENSEI `chatbot_connectors` library. This script loads the YAML file and loops through a list of messages.
+
+Save this as `test_connector.py` in the same directory as your YAML file:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+def run_multiple_requests():
+    # 1. Initialize the custom chatbot using the YAML configuration file
+    bot = CustomChatbot("malaga_saic_connector.yml")
+    
+    # 2. Define a list of messages you want to send
+    messages_to_send = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Necesito información sobre el pago de impuestos",
+        "Muchas gracias, adiós"
+    ]
+    
+    print("Starting conversation with Malaga SAIC Bot...\n")
+    print("-" * 40)
+    
+    # 3. Loop through the messages and send them to the connector
+    for msg in messages_to_send:
+        print(f"User: {msg}")
+        
+        # execute_with_input replaces {user_msg} in the YAML and sends the request
+        success, response = bot.execute_with_input(msg)
+        
+        if success:
+            print(f"Bot: {response}\n")
+        else:
+            print(f"Error: Failed to get a response. Details: {response}\n")
+
+if __name__ == "__main__":
+    run_multiple_requests()
+```
+
+### How to run it:
+Just make sure you have the SENSEI environment set up, and run the script from your terminal:
+```bash
+python test_connector.py
+```
+
+Let me know if you need to adjust any of the headers or if you'd like to add dynamic session IDs to the payload! 😊
+$$$

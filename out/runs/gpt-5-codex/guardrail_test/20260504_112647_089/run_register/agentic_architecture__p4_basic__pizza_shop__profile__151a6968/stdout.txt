@@ -1,0 +1,235 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__151a6968
+$$$
+¡Hola! 😊 Aquí tienes una propuesta completa para automatizar la creación de perfiles SENSEI con apoyo de un LLM, basándome en lo descrito en `sensei-chat-guide.md`.
+
+---
+
+## 🧠 Enfoque general
+
+1. **Plantilla-base**: construimos un esquema con las secciones obligatorias (`test_name`, `llm`, `user`, `chatbot`, `conversation`) que el modelo debe rellenar.
+2. **Prompting controlado**: le pedimos al LLM que complete cada sección siguiendo exactamente la estructura del guía.
+3. **Validación post-LLM**: al terminar, validamos que:
+   - Existan todas las secciones requeridas.
+   - Las variables declaradas en `user.goals` coincidan con los `{{placeholders}}` (sección 4 del doc).
+   - `chatbot.output` use tipos válidos (primitivos o tipos personalizados).
+   - `conversation.interaction_style` sólo contenga los valores permitidos.
+4. **Corrección iterativa**: si algo falta, aplicamos mensajes de corrección (“drafter → validator → editor”) hasta que el YAML sea válido.
+
+---
+
+## 🏗️ Arquitectura sugerida
+
+```
+automation/
+├─ prompts/
+│  ├─ system_prompt.txt      # recordatorio del formato y reglas
+│  └─ profile_template.yaml  # esqueleto con comentarios
+├─ validators/
+│  └─ profile_schema.py      # validaciones sintácticas y semánticas
+└─ generate_profile.py       # pipeline principal
+```
+
+---
+
+## 🤖 Ejemplo de script (`generate_profile.py`)
+
+```python
+import re
+import yaml
+from pathlib import Path
+from openai import OpenAI
+from validators.profile_schema import validate_profile
+
+SYSTEM_PROMPT = Path("prompts/system_prompt.txt").read_text()
+PROFILE_TEMPLATE = Path("prompts/profile_template.yaml").read_text()
+
+client = OpenAI()
+
+def draft_profile(domain_brief: str, iterations: int = 3) -> dict:
+    """Genera un perfil Sensei válido usando un proceso de draft → validate → edit."""
+    draft_yaml = None
+    feedback = ""
+    for _ in range(iterations):
+        draft_yaml = call_llm(domain_brief, feedback)
+        try:
+            profile_dict = yaml.safe_load(draft_yaml)
+        except yaml.YAMLError as err:
+            feedback = f"El YAML producido no es válido. Error: {err}"
+            continue
+
+        issues = validate_profile(profile_dict)
+        if not issues:
+            return profile_dict
+
+        feedback = "\n".join(issues)
+
+    raise ValueError(f"No se logró un perfil válido tras {iterations} intentos.")
+
+def call_llm(domain_brief: str, feedback: str) -> str:
+    """Llama al LLM con plantilla y feedback."""
+    user_message = f"""
+    CONTEXTO DEL PROYECTO:
+    {domain_brief}
+
+    PERFIL BASE A COMPLETAR:
+    {PROFILE_TEMPLATE}
+
+    FEEDBACK DE VALIDACIÓN (puede estar vacío):
+    {feedback}
+
+    Devuelve SOLO un documento YAML completo y auto-contenido.
+    """
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
+        temperature=0.5,
+    )
+    return response.choices[0].message.content.strip()
+
+if __name__ == "__main__":
+    profile = draft_profile(
+        domain_brief="Necesitamos probar un bot de reservas de restaurantes para cenas grupales."
+    )
+    out_path = Path("profiles/restaurant_group_booking.yml")
+    out_path.write_text(yaml.safe_dump(profile, sort_keys=False), encoding="utf-8")
+    print(f"Perfil guardado en {out_path}")
+```
+
+---
+
+## ✅ Validaciones recomendadas (`validators/profile_schema.py`)
+
+```python
+import re
+
+MANDATORY_TOP_LEVEL = {"test_name", "user", "chatbot", "conversation"}
+VALID_INTERACTION_STYLES = {
+    "long phrases", "change your mind", "single questions", "all questions",
+    "make spelling mistakes", "default", "change language"
+}
+
+def validate_profile(profile: dict) -> list[str]:
+    issues = []
+
+    # 1. Secciones obligatorias
+    missing = MANDATORY_TOP_LEVEL - profile.keys()
+    if missing:
+        issues.append(f"Faltan secciones obligatorias: {sorted(missing)}")
+
+    # 2. Variables en goals
+    issues += _check_goal_variables(profile)
+
+    # 3. Tipos permitidos en chatbot.output
+    issues += _check_output_types(profile)
+
+    # 4. Interaction style
+    issues += _check_interaction_style(profile)
+
+    return issues
+
+def _check_goal_variables(profile: dict) -> list[str]:
+    issues = []
+    goals = profile.get("user", {}).get("goals", [])
+    text_fragments = [g for g in goals if isinstance(g, str)]
+    mappings = [g for g in goals if isinstance(g, dict)]
+
+    placeholders = set()
+    for fragment in text_fragments:
+        placeholders.update(re.findall(r"{{(.*?)}}", fragment))
+
+    declared = {next(iter(m)) for m in mappings}
+    undeclared = placeholders - declared
+    unused = declared - placeholders
+
+    if undeclared:
+        issues.append(f"Variables usadas en texto pero no declaradas: {sorted(undeclared)}")
+    if unused:
+        issues.append(f"Variables declaradas sin uso en los prompts: {sorted(unused)}")
+
+    return issues
+
+def _check_output_types(profile: dict) -> list[str]:
+    allowed_primitives = {"int", "float", "string"}
+    issues = []
+    outputs = profile.get("chatbot", {}).get("output", [])
+
+    for entry in outputs:
+        field, spec = next(iter(entry.items()))
+        type_value = str(spec.get("type"))
+        if type_value in allowed_primitives:
+            continue
+        if type_value.startswith("list["):
+            continue
+        if type_value.startswith(("time", "date")):
+            continue
+        # permitimos tipos custom (deben existir en /types)
+        if not re.match(r"^[A-Za-z0-9_\-]+$", type_value):
+            issues.append(f"Tipo no reconocido en chatbot.output para '{field}': {type_value}")
+    return issues
+
+def _check_interaction_style(profile: dict) -> list[str]:
+    styles = profile.get("conversation", {}).get("interaction_style", [])
+    issues = []
+    for s in styles:
+        if isinstance(s, dict) and "random" in s:
+            random_styles = s["random"]
+            for r in random_styles:
+                if isinstance(r, dict) and "change language" in r:
+                    continue  # ya se valida dentro del propio diccionario
+                if isinstance(r, str) and r not in VALID_INTERACTION_STYLES:
+                    issues.append(f"interaction_style no válido dentro de random: {r}")
+        elif isinstance(s, dict) and "change language" in s:
+            languages = s["change language"]
+            if not isinstance(languages, list) or not all(isinstance(l, str) for l in languages):
+                issues.append("`change language` debe ser una lista de strings.")
+        elif isinstance(s, str) and s not in VALID_INTERACTION_STYLES:
+            issues.append(f"interaction_style no reconocido: {s}")
+    return issues
+```
+
+---
+
+## 📝 Cómo construir el prompt del sistema
+
+En `prompts/system_prompt.txt` conviene recordar al modelo:
+
+```
+Actúa como generador de perfiles Sensei válidos.
+- Sigue exactamente la estructura documentada en `sensei-chat-guide.md`.
+- Cada `user.goals` debe usar variables declaradas explícitamente.
+- `chatbot.output` define el contrato para las reglas; usa tipos válidos.
+- No inventes secciones adicionales ni comentarios.
+- Responde SOLO con YAML bien formado.
+```
+
+---
+
+## 🔄 Flujo completo
+
+1. **Draft**: se llama a `call_llm` con plantilla + briefing.
+2. **Parse + Validate**: si el YAML falla, devolvemos feedback puntual (por ejemplo, “faltó `chatbot.output`”).
+3. **Reintentos**: el LLM recibe el feedback hasta 3 veces (configurable).
+4. **Persistencia**: si pasa las validaciones, se guarda en `profiles/`.
+
+Puedes complementar el pipeline con:
+
+- **Validación CLI** oficial (`python validation_check.py ...`) para doble garantía.
+- **Generación de múltiples perfiles** recorriendo una lista de briefs (batch mode).
+- **Versionado** automático para mantener historial.
+
+---
+
+## 🧩 Relación con la documentación
+
+- Sección **3** de `sensei-chat-guide.md` inspira la plantilla y la validación de secciones.
+- Sección **4** se usa para chequear la coherencia de variables en `user.goals`.
+- Sección **6** guía las validaciones sobre `chatbot.output`.
+- Sección **5** y la lista de estilos marcan los valores aceptados en `conversation.interaction_style`.
+
+---
+
+Si quieres, puedo ayudarte a adaptar los prompts a un dominio específico o integrar este script en tu propio pipeline CI/CD. ¿Te gustaría que avancemos con un ejemplo concreto?
+$$$

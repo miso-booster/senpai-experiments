@@ -1,0 +1,147 @@
+Here is a complete Python automation script that uses an LLM (via the OpenAI API) to generate valid SENSEI profiles based on a simple text description. 
+
+To make sure the LLM generates valid profiles, the script uses a **System Prompt** that injects the core rules and schema from the SENSEI documentation (specifically relying on the `sensei-chat-guide.md` structure).
+
+### Prerequisites
+You will need the `openai` and `pyyaml` Python packages. You can install them via pip:
+```bash
+pip install openai pyyaml
+```
+
+### The Python Automation Script
+
+Save this as `generate_profile.py`:
+
+```python
+import os
+import openai
+import yaml
+
+# Initialize the OpenAI client
+# Make sure you have set your OPENAI_API_KEY environment variable
+client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+def generate_sensei_profile(scenario_description: str, output_filename: str):
+    """
+    Generates a SENSEI profile YAML using an LLM based on a scenario description.
+    """
+    
+    # The system prompt enforces the SENSEI Profile schema and rules
+    system_prompt = """You are an expert in creating SENSEI profiles for chatbot testing.
+A SENSEI profile is a YAML file that defines a simulated user's behavior, goals, and the expected chatbot outputs.
+
+Follow this exact YAML schema structure:
+```yaml
+test_name: "string"
+
+llm:
+  temperature: float
+  model: "gpt-4o"
+  model_prov: "openai"
+  format:
+    type: text
+
+user:
+  language: "English" # or other languages
+  role: "Prompt describing the simulated user"
+  context:
+    - "Freeform constraints, facts, preferences"
+  goals:
+    - "Goal string with {{variable_name}}"
+    - variable_name:
+        function: "random() | default() | forward() | pairwise() | another()"
+        type: "string | int | float"
+        data: ["list", "of", "values"] # or range for int/float (min, max, step)
+
+chatbot:
+  is_starter: true | false
+  fallback: "Bot's real fallback message"
+  output:
+    - field_name:
+        type: "string | int | float | currency | time | date | list[string]"
+        description: "What to extract at the end"
+
+conversation:
+  number: int # or combinations / combinations(0.5, pairwise)
+  goal_style:
+    steps: int # or random steps: int, or all_answered: {export: true, limit: 30}
+  interaction_style:
+    - default # or long phrases, change your mind, make spelling mistakes, single questions, all questions
+```
+
+CRITICAL RULES:
+1. Variables in `goals` text (e.g., {{size}}) MUST exactly match the declared variable names in the list below it.
+2. `chatbot.output` defines the schema extracted at the end of the conversation. Use stable, descriptive names (e.g., total_price, order_id).
+3. If using `pairwise()` or `forward()` for combinations, ensure `conversation.number` is set appropriately (e.g., `combinations`).
+4. Output ONLY valid YAML. Do not include markdown formatting like ```yaml or ``` in the final output string, just the raw YAML.
+"""
+
+    print(f"Generating profile for scenario: '{scenario_description}'...")
+    
+    response = client.chat.completions.create(
+        model="gpt-4o", # You can change this to gpt-4-turbo or gpt-3.5-turbo
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Create a SENSEI profile for the following scenario:\n{scenario_description}"}
+        ],
+        temperature=0.2 # Low temperature for more deterministic, structured output
+    )
+    
+    yaml_content = response.choices[0].message.content.strip()
+    
+    # Clean up markdown code blocks if the LLM still outputs them
+    if yaml_content.startswith("```yaml"):
+        yaml_content = yaml_content[7:]
+    if yaml_content.startswith("```"):
+        yaml_content = yaml_content[3:]
+    if yaml_content.endswith("```"):
+        yaml_content = yaml_content[:-3]
+        
+    yaml_content = yaml_content.strip()
+    
+    # Validate YAML parsing to ensure it's structurally sound
+    try:
+        yaml.safe_load(yaml_content)
+        print("✅ Successfully generated valid YAML syntax.")
+    except yaml.YAMLError as e:
+        print(f"⚠️ Warning: Generated YAML might have syntax errors: {e}")
+
+    # Save to file
+    with open(output_filename, "w", encoding="utf-8") as f:
+        f.write(yaml_content)
+    
+    print(f"📁 Profile saved to {output_filename}\n")
+
+# --- Example Usage ---
+if __name__ == "__main__":
+    # Example 1: A pizza ordering bot
+    scenario_1 = """
+    A user ordering a pizza. They need to choose between small, medium, and large sizes. 
+    They also need to pick a topping (pepperoni, mushrooms, or extra cheese). 
+    The bot should output the final price and the estimated delivery time.
+    The user might make spelling mistakes.
+    """
+    generate_sensei_profile(scenario_1, "pizza_order_profile.yml")
+
+    # Example 2: A flight booking bot
+    scenario_2 = """
+    A user trying to book a flight from New York to London. 
+    They want to ask about baggage allowance and choose between economy and business class.
+    The bot should output the booking reference and the total price.
+    """
+    generate_sensei_profile(scenario_2, "flight_booking_profile.yml")
+```
+
+### How it works:
+1. **System Prompt Engineering**: The LLM is given the exact YAML skeleton required by SENSEI, including the specific functions allowed for variables (`random()`, `pairwise()`, etc.) and the allowed `interaction_style` keywords.
+2. **Low Temperature**: We use `temperature=0.2` to stop the LLM from getting too creative with the YAML structure, ensuring it sticks to the schema.
+3. **Sanitization & Validation**: The script automatically strips out markdown code blocks (like ````yaml ````) that LLMs love to add, and then runs it through `yaml.safe_load()` to verify that the output is syntactically valid YAML before saving it.
+
+### How to run it:
+Just set your OpenAI API key in your terminal and run the script:
+```bash
+export OPENAI_API_KEY="your-api-key-here"
+python generate_profile.py
+```
+
+This will generate the `.yml` files in your current directory, ready to be placed into your SENSEI project's `profiles/` folder! Let me know if you'd like to adapt this to another LLM provider (like Anthropic or local models via LiteLLM). 😊

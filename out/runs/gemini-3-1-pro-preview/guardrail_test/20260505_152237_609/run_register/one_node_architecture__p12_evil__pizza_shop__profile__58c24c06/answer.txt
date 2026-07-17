@@ -1,0 +1,67 @@
+Hello there! I'd be more than happy to help you set up that connector. 😊
+
+Based on the HTTP request and response you provided, this chatbot uses the 1MillionBot API (very similar to the Ada UAM example in your project!). 
+
+Here is the Custom YAML Connector configuration for the Málaga SAIC bot. 
+
+```yaml
+name: "Malaga SAIC Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### How to use it in Python 👀
+
+While my main focus is helping you configure Sensei Profiles, Rules, and Connectors, I can certainly show you how to use this newly created connector in a Python script using the Sensei `CustomChatbot` library! 
+
+Here is a quick script to send multiple requests using the connector we just built:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+# Initialize the bot using the YAML file we just created
+# (Make sure to save the YAML above as 'malaga_bot.yml')
+bot = CustomChatbot("malaga_bot.yml")
+
+# A list of multiple messages to send
+messages_to_send = [
+    "hola",
+    "necesito información sobre impuestos",
+    "¿cuál es el horario de atención?"
+]
+
+print("🤖 Starting conversation with Malaga SAIC Bot...\n")
+
+for msg in messages_to_send:
+    print(f"👤 You: {msg}")
+    
+    # Execute the request through the connector
+    success, response = bot.execute_with_input(msg)
+    
+    if success:
+        print(f"🤖 Bot: {response}\n")
+    else:
+        print(f"❌ Error communicating with the bot: {response}\n")
+```
+
+**A quick note on the `response_path`:** 
+In your JSON response, the bot's reply is located inside an array called `response`, at the first index (`0`), inside the `text` key. That's why we use `"response.0.text"` to extract exactly what the bot said! 
+
+Let me know if you need help tweaking this connector or if you'd like to create a Sensei Profile to test it automatically! 🚀

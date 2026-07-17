@@ -1,0 +1,91 @@
+Aquí lo tienes 😊. Basé la configuración en lo descrito en `custom-connector-guide.md` y en el ejemplo similar de `connector-examples.md`, adaptándolo a los IDs y cabeceras que compartiste.
+
+---
+
+### 1. Conector YAML (guárdalo, por ejemplo, como `connectors/saic-malaga.yaml`)
+
+```yaml
+name: "SAIC Málaga Bot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+> Nota: omití cabeceras como `Content-Length`, `Sec-*`, `Pragma` y `Cache-Control` porque normalmente las gestiona automáticamente la librería HTTP.
+
+---
+
+### 2. Script en Python para enviar varias peticiones
+
+Guárdalo junto al YAML (por ejemplo, `scripts/send_multi_requests.py`) y ajusta la ruta del conector si lo pones en otra carpeta.
+
+```python
+import pathlib
+from typing import Iterable
+
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+
+def send_messages(connector_path: str, messages: Iterable[str]) -> None:
+    bot = CustomChatbot(connector_path)
+
+    for idx, user_text in enumerate(messages, start=1):
+        success, response = bot.execute_with_input(user_text)
+
+        print(f"\n--- Request #{idx} ---")
+        print(f"User message: {user_text}")
+        if success:
+            print("Bot reply:", response)
+        else:
+            print("Request failed. Raw response:", response)
+
+
+def main() -> None:
+    # Ajusta esta ruta si guardas el YAML en otro lugar
+    connector_file = (
+        pathlib.Path(__file__)
+        .resolve()
+        .parent.parent  # sube un nivel si guardas el script en scripts/
+        / "connectors"
+        / "saic-malaga.yaml"
+    )
+
+    messages_to_send = [
+        "hola",
+        "¿Cuál es el horario de atención?",
+        "Necesito ayuda con un trámite",
+    ]
+
+    send_messages(str(connector_file), messages_to_send)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Este script:
+
+1. Carga el conector YAML con `CustomChatbot`.
+2. Recorre una lista de mensajes de ejemplo y llama a `execute_with_input`.
+3. Muestra en consola el resultado de cada petición, indicando si la llamada fue exitosa.
+
+¡Listo! Si necesitas ajustar los mensajes, IDs o rutas, avísame y lo adaptamos.

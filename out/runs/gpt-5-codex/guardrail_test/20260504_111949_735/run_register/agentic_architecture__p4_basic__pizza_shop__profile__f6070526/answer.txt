@@ -1,0 +1,183 @@
+Here’s a blueprint you can follow to spin up Python automation that asks an LLM to draft **valid Sensei profiles** reliably 😊. I’ve grounded everything in `sensei-chat-guide.md`, which spells out the required fields and structure.
+
+---
+
+### 1. High-level workflow
+
+1. **Collect scenario inputs** – e.g., test name, bot persona, the variables you want in `user.goals`, and the `chatbot.output` fields you intend to validate later.
+2. **Build a strict prompt template** – remind the LLM that the profile must include the sections from the guide (`test_name`, `llm`, `user`, `chatbot`, `conversation`) and that goal variables must be declared and used consistently.
+3. **Call the LLM** – send the template plus your scenario metadata. Ask for **YAML output only**.
+4. **Post-process & validate** – parse the YAML, check required keys/fields, ensure every `{{variable}}` has a declaration, and enforce type rules (e.g., only `string|int|float|custom` types in `user.goals`).
+5. **Iterate if needed** – if validation fails, feed the errors back to the LLM and retry (few-shot corrections work well).
+6. **Save & run Sensei validation** – write the YAML to `profiles/` and run `validation_check.py` as a final guard.
+
+---
+
+### 2. Python automation skeleton
+
+```python
+import os
+from pathlib import Path
+from textwrap import dedent
+
+import yaml
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+PROFILE_PROMPT = """You must output a single YAML Sensei profile.
+
+Guidelines (from the Sensei profile spec):
+- Required top-level keys: test_name, llm, user, chatbot, conversation.
+- user.goals must include both the free-text goals and the variable declarations they reference.
+- chatbot.output must contain the fields the test will extract, each with type and description.
+- interaction_style values must be taken from the documented list (long phrases, change your mind, etc.).
+- Do not invent sections outside the spec.
+
+Here is the scenario you must convert into a Sensei profile:
+{scenario}
+"""
+
+REQUIRED_KEYS = {"test_name", "llm", "user", "chatbot", "conversation"}
+REQUIRED_USER_KEYS = {"language", "role", "goals"}
+REQUIRED_CHATBOT_KEYS = {"is_starter", "fallback", "output"}
+
+
+def generate_profile_yaml(scenario_description: str) -> str:
+    prompt = PROFILE_PROMPT.format(scenario=scenario_description.strip())
+    response = client.responses.create(
+        model="gpt-4o-mini",
+        input=[
+            {"role": "system", "content": "You are an expert Sensei profile author."},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.2,
+    )
+    yaml_text = response.output_text.strip()
+    return yaml_text
+
+
+def parse_and_validate(yaml_text: str) -> dict:
+    try:
+        data = yaml.safe_load(yaml_text)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"YAML parsing failed: {exc}") from exc
+
+    if not isinstance(data, dict):
+        raise ValueError("Profile must deserialize into a YAML mapping at the top level.")
+
+    missing = REQUIRED_KEYS - data.keys()
+    if missing:
+        raise ValueError(f"Missing top-level keys: {sorted(missing)}")
+
+    user = data.get("user", {})
+    chatbot = data.get("chatbot", {})
+    for block, required in (("user", REQUIRED_USER_KEYS), ("chatbot", REQUIRED_CHATBOT_KEYS)):
+        missing = required - set((data.get(block) or {}).keys())
+        if missing:
+            raise ValueError(f"{block} block is missing keys: {sorted(missing)}")
+
+    # Ensure every {{variable}} in the free-text goals has a declaration.
+    goals = data["user"]["goals"]
+    if not isinstance(goals, list):
+        raise ValueError("user.goals must be a list.")
+    declared_vars = {next(iter(item)) for item in goals if isinstance(item, dict)}
+    referenced_vars = set()
+    for item in goals:
+        if isinstance(item, str):
+            referenced_vars.update(part[2:-2] for part in item.split() if part.startswith("{{") and part.endswith("}}"))
+    undeclared = referenced_vars - declared_vars
+    if undeclared:
+        raise ValueError(f"Variables referenced but not declared: {sorted(undeclared)}")
+
+    # Check that each declaration has 'function', 'type', and 'data'
+    for item in goals:
+        if isinstance(item, dict):
+            name, spec = next(iter(item.items()))
+            if not {"function", "type", "data"} <= spec.keys():
+                raise ValueError(f"Variable '{name}' must declare function, type, and data.")
+            if spec["type"] not in {"string", "int", "float"} and not spec["type"].islower():
+                raise ValueError(f"Variable '{name}' uses unsupported type '{spec['type']}'.")
+
+    # Ensure chatbot.output is a list of mappings with type + description
+    outputs = chatbot["output"]
+    if not isinstance(outputs, list) or not outputs:
+        raise ValueError("chatbot.output must be a non-empty list.")
+    for entry in outputs:
+        if not isinstance(entry, dict):
+            raise ValueError("Each chatbot.output entry must be a mapping.")
+        field, spec = next(iter(entry.items()))
+        if not {"type", "description"} <= spec.keys():
+            raise ValueError(f"chatbot.output field '{field}' needs type and description.")
+
+    return data
+
+
+def create_profile_file(profile_dict: dict, destination: Path) -> Path:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open("w", encoding="utf-8") as fh:
+        yaml.safe_dump(profile_dict, fh, sort_keys=False)
+    return destination
+
+
+def generate_profile(scenario: str, output_path: Path) -> Path:
+    yaml_text = generate_profile_yaml(scenario)
+    profile_dict = parse_and_validate(yaml_text)
+    return create_profile_file(profile_dict, output_path)
+
+
+if __name__ == "__main__":
+    scenario = dedent(
+        """
+        Test name: retail_return_policy_probe
+        User language: English
+        Persona: frustrated shopper who received a damaged product
+        Goals:
+          1. Ask for refund eligibility with order number {{order_id}}
+          2. Ask about replacement options
+          3. Confirm turnaround time for refunds
+        Variables:
+          - order_id: string, random from explicit list of realistic IDs
+        Bot expectations:
+          - chatbot is_starter = false
+          - provide fallback message "I’m sorry, could you restate your question?"
+          - outputs: refund_policy_summary (string), escalation_required (string), turnaround_days (int)
+        Conversational controls:
+          - goal_style: steps 5
+          - interaction_style: long phrases + make spelling mistakes
+        """
+    )
+
+    project_root = Path("/path/to/sensei/project")
+    output_profile = project_root / "profiles" / "retail_return_policy_probe.yml"
+
+    try:
+        saved_path = generate_profile(scenario, output_profile)
+        print(f"Profile saved to {saved_path}")
+    except ValueError as err:
+        print(f"Generation failed: {err}")
+```
+
+**Key ideas in the script**
+
+- The prompt reminds the LLM of every requirement from the guide.
+- `parse_and_validate` enforces structural rules (`chatbot.output` definitions, variable declarations, etc.).
+- You can extend `parse_and_validate` with additional checks (e.g., allowable `interaction_style` values, numeric ranges).
+- Iterative repair is easy: catch the `ValueError`, append the error message to the next LLM prompt (e.g., “You forgot to declare `turnaround_days`”) and retry.
+
+---
+
+### 3. Extra guardrails & extensions
+
+- **Schema validation**: build a stricter JSON Schema or Pydantic model for the profile structure.
+- **Helper lookup tables**: maintain a whitelist for interaction styles and data types, making the validator friendlier.
+- **CLI wrapper**: expose the automation via `python generate_profile.py --scenario scenario.md`.
+- **Automated Sensei validation**: after writing the file, run `validation_check.py` programmatically (subprocess) and surface errors.
+
+---
+
+### 4. Summary
+
+- Designed an LLM-powered pipeline to create Sensei profiles, including prompt design, YAML generation, parsing, and validation.
+- Shared a ready-to-use Python script skeleton with strong guardrails to guarantee the output matches the Sensei profile schema.
+- Based on the official guidance in `sensei-chat-guide.md` (sections on profile anatomy, `user.goals`, and `chatbot.output` requirements).
