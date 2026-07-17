@@ -1,15 +1,92 @@
 Automated Prompt Interface
 ==========================
 
-Run a shared prompt set against multiple architectures, store the raw results in
-`out/`, and generate the analysis artifacts used for RQ1, RQ2, and RQ3.
+This repository contains the experiment data and analysis artifacts for comparing different assistant architectures. It also includes the Python workflows needed to reproduce or extend the experiments.
 
-This README is organized around the actual execution flow:
+Experiment Results
+------------------
 
-1. Install dependencies
-2. Configure architectures, prompts, and environment variables
-3. Run executions
-4. Run the analysis pipelines you need
+The complete, versioned results are in [`out/`](out/). The summaries below are an entry point; follow the links to inspect the underlying CSV, workbook, figure, and raw-run artifacts. Results are grouped by research question (RQ) and, where applicable, by model.
+
+### At a glance
+
+| Research question | What is available | Primary artifacts |
+| --- | --- | --- |
+| RQ1 | Human ranking of three architectures using `gpt-4o-mini` | [rankings and metrics](out/RQ1/gpt-4o-mini/20260324_134818_560/) |
+| RQ2 | Architecture metrics for `gemini-3-1-pro-preview`, `gpt-4-1-mini`, `gpt-4o-mini`, and `gpt-5-codex` | [per-model reports](out/RQ2_architecture_metrics/) and [model comparison](out/RQ2_architecture_metrics/model_comparison/) |
+| RQ3 | Trace consistency and human-reviewed answer clustering | [tool/node consistency](out/RQ3_tool_consistency_and_node_usage_consistency/) and [clustering results](out/RQ3_clustering/) |
+| RQ4 | Guardrail-test metrics for four models and three architectures | [combined report](out/RQ4_guardrail_metrics/) and [judge-corrected results](out/RQ4_guardrail_metrics_judged/) |
+
+### RQ1 - Result quality
+
+The paper assesses syntactic quality through fallback and YAML-validity rates, and semantic quality through human rankings. The data remain available in [the RQ1 result directory](out/RQ1/gpt-4o-mini/20260324_134818_560/), including the [average-rank metrics](out/RQ1/gpt-4o-mini/20260324_134818_560/metrics_avg_prompt_rank.csv), [pairwise results](out/RQ1/gpt-4o-mini/20260324_134818_560/metrics_pairwise.csv), and [Friedman test](out/RQ1/gpt-4o-mini/20260324_134818_560/metrics_friedman.csv).
+
+**Syntactic quality by model and architecture**
+
+<p align="center">
+  <img src="out/RQ2_architecture_metrics/model_comparison/RQ2_quality_fallback_rate.png" alt="Fallback rate by model and architecture" width="48%">
+  <img src="out/RQ2_architecture_metrics/model_comparison/RQ2_quality_yaml_valid_rate.png" alt="YAML-valid rate by model and architecture" width="48%">
+</p>
+
+**Semantic quality - human ranking**
+
+<p align="center">
+  <img src="out/RQ1/gpt-4o-mini/20260324_134818_560/RQ1_weighted_avg_prompt_rank.png" alt="Confidence-weighted average rank" width="32%">
+  <img src="out/RQ1/gpt-4o-mini/20260324_134818_560/RQ1_pairwise_summary.png" alt="Prompt-level pairwise wins" width="32%">
+  <img src="out/RQ1/gpt-4o-mini/20260324_134818_560/RQ1_position_distribution.png" alt="Distribution of ranking positions" width="32%">
+</p>
+
+### RQ2 - Cost
+
+RQ2 reports response time, input-token consumption, LLM calls, and answer size per response. The model-level workbooks and data are available under [RQ2 architecture metrics](out/RQ2_architecture_metrics/), with a [cross-model comparison](out/RQ2_architecture_metrics/model_comparison/).
+
+<p align="center">
+  <img src="out/RQ2_architecture_metrics/gpt-4o-mini/RQ2_per_response_distribution_latency_s.png" alt="Response-time distribution" width="48%">
+  <img src="out/RQ2_architecture_metrics/gpt-4o-mini/RQ2_per_response_distribution_total_input_tokens.png" alt="Input-token consumption distribution" width="48%">
+</p>
+<p align="center">
+  <img src="out/RQ2_architecture_metrics/gpt-4o-mini/RQ2_per_response_distribution_llm_call_count.png" alt="LLM-call-count distribution" width="48%">
+  <img src="out/RQ2_architecture_metrics/gpt-4o-mini/RQ2_answer_code_lines_violin_distribution.png" alt="Answer-size distribution in lines of code" width="48%">
+</p>
+
+### RQ3 - Predictability
+
+RQ3 combines execution-level trace consistency with human-reviewed semantic clustering of final answers. The corresponding [trace-consistency workbook](out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_and_node_usage_consistency.xlsx) and [reviewed clustering results](out/RQ3_clustering/) provide the underlying data.
+
+**Execution-level predictability**
+
+<p align="center">
+  <img src="out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_presence_heatmap.png" alt="Agentic tool-presence heatmap" width="48%">
+  <img src="out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_node_usage_consistency_presence_heatmap.png" alt="Graph-based node-presence heatmap" width="48%">
+</p>
+
+**Answer-level predictability**
+
+<p align="center">
+  <img src="out/RQ3_clustering/RQ3_clustering_reviewed_overall_mean_majority_share.png" alt="Mean majority-cluster share" width="48%">
+  <img src="out/RQ3_clustering/RQ3_clustering_reviewed_overall_perfect_consensus_rate.png" alt="Perfect-consensus rate" width="48%">
+</p>
+<p align="center">
+  <img src="out/RQ3_clustering/RQ3_clustering_reviewed_overall_mean_cluster_count.png" alt="Mean cluster count" width="48%">
+  <img src="out/RQ3_clustering/RQ3_clustering_reviewed_overall_fallback_rate.png" alt="Fallback rate" width="48%">
+</p>
+
+### RQ4 - Guardrail effectiveness
+
+The combined RQ4 experiment contains 20 runs x 15 prompts x 3 architectures for each of four models. Its [combined workbook](out/RQ4_guardrail_metrics/RQ4_guardrail_metrics.xlsx), [architecture summary](out/RQ4_guardrail_metrics/rq4_architecture_summary.csv), and [prompt/architecture summary](out/RQ4_guardrail_metrics/rq4_prompt_arch_summary.csv) contain the detailed results.
+
+<p align="center">
+  <img src="out/RQ4_guardrail_metrics_judged/RQ4_guardrail_blocked_counts.png" alt="Blocked responses by architecture and model" width="48%">
+  <img src="out/RQ4_guardrail_metrics_judged/RQ4_guardrail_prompt_block_rate_heatmap.png" alt="Prompt-level block rate by architecture and model" width="48%">
+</p>
+
+### Raw data and provenance
+Raw execution workbooks and tracing exports are retained under [`out/runs/`](out/runs/), organized as `<model-label>/<experiment>/<run-group-id>/`. The append-only raw log is [`out/results.jsonl`](out/results.jsonl). Prompt catalogs and architecture configuration used to generate the experiments are in [`configs/`](configs/).
+
+Reproducing and Extending the Experiments
+------------------------------------------
+
+The sections below describe how to install the project, configure it, run new executions, and regenerate each analysis artifact. They are not required to inspect the published results above.
 
 Quick Start
 -----------
