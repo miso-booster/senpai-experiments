@@ -1,25 +1,25 @@
 Automated Prompt Interface
 ==========================
 
-This repository contains the experiment data and analysis artifacts for comparing different assistant architectures. It also includes the Python workflows needed to reproduce or extend the experiments.
+This repository contains the experiment data and analysis artifacts for comparing three assistant architectures: monolithic, graph-based, and agentic. It also includes the Python workflows needed to reproduce or extend the experiments.
 
-Experiment Results
-------------------
+Experiments
+-----------
 
-The complete, versioned results are in [`out/`](out/). The summaries below are an entry point; follow the links to inspect the underlying CSV, workbook, figure, and raw-run artifacts. Results are grouped by research question (RQ) and, where applicable, by model.
+The benchmarks used in the experiments are in [`configs/`](configs/). The complete, versioned results are in [`out/`](out/). The summaries below are an entry point; follow the links to inspect the used benchmark, CSV, workbook, figure, and raw-run artifacts. The results are grouped by research question (RQ) and, where applicable, by model.
 
 ### At a glance
 
-| Research question | What is available | Primary artifacts |
-| --- | --- | --- |
-| RQ1 | Human ranking of three architectures using `gpt-4o-mini` | [rankings and metrics](out/RQ1/gpt-4o-mini/20260324_134818_560/) |
-| RQ2 | Architecture metrics for `gemini-3-1-pro-preview`, `gpt-4-1-mini`, `gpt-4o-mini`, and `gpt-5-codex` | [per-model reports](out/RQ2_architecture_metrics/) and [model comparison](out/RQ2_architecture_metrics/model_comparison/) |
-| RQ3 | Trace consistency and human-reviewed answer clustering | [tool/node consistency](out/RQ3_tool_consistency_and_node_usage_consistency/) and [clustering results](out/RQ3_clustering/) |
-| RQ4 | Guardrail-test metrics for four models and three architectures | [combined report](out/RQ4_guardrail_metrics/) and [judge-corrected results](out/RQ4_guardrail_metrics_judged/) |
+| Research question | Benchmark | What is available | Primary artifacts |
+| --- | --- | --- | --- |
+| RQ1 | [51 autocontained prompts](configs/prompts.json) | Human ranking of three architectures using `gpt-4o-mini` | [rankings and metrics](out/RQ1/gpt-4o-mini/20260324_134818_560/) |
+| RQ2 | [51 autocontained prompts](configs/prompts.json) | Cost metrics of three architectures for `gemini-3-1-pro-preview`, `gpt-4-1-mini`, `gpt-4o-mini`, and `gpt-5-codex` | [per-model reports](out/RQ2_architecture_metrics/) and [model comparison](out/RQ2_architecture_metrics/model_comparison/) |
+| RQ3 | [15 context-project prompts](configs/rq3_prompts.json) | Trace consistency and human-reviewed clusters of responses | [tool/node consistency](out/RQ3_tool_consistency_and_node_usage_consistency/) and [clustering results](out/RQ3_clustering/) |
+| RQ4 | [15 out-of-scope prompts](configs/rq4_prompts.json) | Guardrail-test metrics of three architectures for `gemini-3-1-pro-preview`, `gpt-4-1-mini`, `gpt-4o-mini`, and `gpt-5-codex` | [combined report](out/RQ4_guardrail_metrics/) and [judge-corrected results](out/RQ4_guardrail_metrics_judged/) |
 
 ### RQ1 - Result quality
 
-The paper assesses syntactic quality through fallback and YAML-validity rates, and semantic quality through human rankings. The data remain available in [the RQ1 result directory](out/RQ1/gpt-4o-mini/20260324_134818_560/), including the [average-rank metrics](out/RQ1/gpt-4o-mini/20260324_134818_560/metrics_avg_prompt_rank.csv), [pairwise results](out/RQ1/gpt-4o-mini/20260324_134818_560/metrics_pairwise.csv), and [Friedman test](out/RQ1/gpt-4o-mini/20260324_134818_560/metrics_friedman.csv).
+The paper assesses syntactic quality through fallback and YAML-validity rates, and semantic quality through human rankings. The data are available in [the RQ1 result directory](out/RQ1/gpt-4o-mini/20260324_134818_560/), including the [average-rank metrics](out/RQ1/gpt-4o-mini/20260324_134818_560/metrics_avg_prompt_rank.csv), [pairwise results](out/RQ1/gpt-4o-mini/20260324_134818_560/metrics_pairwise.csv), and [Friedman test](out/RQ1/gpt-4o-mini/20260324_134818_560/metrics_friedman.csv).
 
 **Syntactic quality by model and architecture**
 
@@ -51,7 +51,7 @@ RQ2 reports response time, input-token consumption, LLM calls, and answer size p
 
 ### RQ3 - Predictability
 
-RQ3 combines execution-level trace consistency with human-reviewed semantic clustering of final answers. The corresponding [trace-consistency workbook](out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_and_node_usage_consistency.xlsx) and [reviewed clustering results](out/RQ3_clustering/) provide the underlying data.
+RQ3 analyses both execution trace consistency and semantic clustering of the assistant responses. The corresponding [trace-consistency workbook](out/RQ3_tool_consistency_and_node_usage_consistency/RQ3_tool_consistency_and_node_usage_consistency.xlsx) and [reviewed clustering results](out/RQ3_clustering/) provide the underlying data.
 
 **Execution-level predictability**
 
@@ -73,7 +73,7 @@ RQ3 combines execution-level trace consistency with human-reviewed semantic clus
 
 ### RQ4 - Guardrail effectiveness
 
-The combined RQ4 experiment contains 20 runs x 15 prompts x 3 architectures for each of four models. Its [combined workbook](out/RQ4_guardrail_metrics/RQ4_guardrail_metrics.xlsx), [architecture summary](out/RQ4_guardrail_metrics/rq4_architecture_summary.csv), and [prompt/architecture summary](out/RQ4_guardrail_metrics/rq4_prompt_arch_summary.csv) contain the detailed results.
+The RQ4 experiment entails 20 runs x 15 prompts x 3 architectures x 4 models. Its [combined workbook](out/RQ4_guardrail_metrics/RQ4_guardrail_metrics.xlsx), [architecture summary](out/RQ4_guardrail_metrics/rq4_architecture_summary.csv), and [prompt/architecture summary](out/RQ4_guardrail_metrics/rq4_prompt_arch_summary.csv) contain the detailed results.
 
 <p align="center">
   <img src="out/RQ4_guardrail_metrics_judged/RQ4_guardrail_blocked_counts.png" alt="Blocked responses by architecture and model" width="48%">
@@ -81,7 +81,7 @@ The combined RQ4 experiment contains 20 runs x 15 prompts x 3 architectures for 
 </p>
 
 ### Raw data and provenance
-Raw execution workbooks and tracing exports are retained under [`out/runs/`](out/runs/), organized as `<model-label>/<experiment>/<run-group-id>/`. The append-only raw log is [`out/results.jsonl`](out/results.jsonl). Prompt catalogs and architecture configuration used to generate the experiments are in [`configs/`](configs/).
+Raw execution workbooks and tracing exports are retained under [`out/runs/`](out/runs/), organized as `<model-label>/<experiment>/<run-group-id>/`. The append-only raw log is [`out/results.jsonl`](out/results.jsonl). The prompt benchmarks and architecture configurations used to generate the experiments are in [`configs/`](configs/).
 
 Reproducing and Extending the Experiments
 ------------------------------------------
