@@ -844,7 +844,7 @@ def build_cluster_frames_for_group(
                 "representative_response_id": representative_response_id,
                 "representative_response_index": representative_response_index,
                 "representative_answer": representative_answer,
-                "model": model,
+                "clustering_model": model,
                 "result_source": result_source,
                 "cache_path": cache_path_str,
                 "notes": notes,
@@ -868,7 +868,7 @@ def build_cluster_frames_for_group(
                     "cluster_summary": cluster["cluster_summary"],
                     "cluster_size": cluster_size,
                     "cluster_share": cluster_share,
-                    "model": model,
+                    "clustering_model": model,
                     "result_source": result_source,
                     "cache_path": cache_path_str,
                     "source_run_folder": _clean_text(row.get("source_run_folder")),
@@ -908,7 +908,7 @@ def build_cluster_frames_for_group(
                 "cluster_breakdown": " | ".join(
                     f"{row['cluster_id']}={row['response_count']} ({row['cluster_label']})" for row in cluster_rows
                 ),
-                "model": model,
+                "clustering_model": model,
                 "result_source": result_source,
                 "cache_path": cache_path_str,
                 "notes": notes,
@@ -1141,7 +1141,7 @@ def cluster_all_prompt_groups(
     overall_summary["perfect_consensus_rate"] = (
         overall_summary["perfect_consensus_prompts"] / overall_summary["prompt_count"]
     )
-    overall_summary["model"] = model
+    overall_summary["clustering_model"] = model
 
     return overall_summary, prompt_summary_all, cluster_summary_all, assignments_all
 
