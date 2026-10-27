@@ -8,7 +8,7 @@ Experiments
 
 The benchmarks used in the experiments are in [`configs/`](configs/). The complete, versioned results are in [`out/`](out/). The summaries below are an entry point; follow the links to inspect the used benchmark, CSV, workbook, figure, and raw-run artifacts. The results are grouped by research question (RQ) and, where applicable, by model.
 
-### At a glance
+### Benchmarks at a glance
 
 | Research question | Benchmark | What is available | Primary artifacts |
 | --- | --- | --- | --- |
@@ -16,6 +16,15 @@ The benchmarks used in the experiments are in [`configs/`](configs/). The comple
 | RQ2 | [51 autocontained prompts](configs/prompts.json) | Cost metrics of three architectures for `gemini-3-1-pro-preview`, `gpt-4-1-mini`, `gpt-4o-mini`, and `gpt-5-codex` | [per-model reports](out/RQ2_architecture_metrics/) and [model comparison](out/RQ2_architecture_metrics/model_comparison/) |
 | RQ3 | [15 context-project prompts](configs/rq3_prompts.json) | Trace consistency and human-reviewed clusters of responses | [tool/node consistency](out/RQ3_tool_consistency_and_node_usage_consistency/) and [clustering results](out/RQ3_clustering/) |
 | RQ4 | [15 out-of-scope prompts](configs/rq4_prompts.json) | Guardrail-test metrics of three architectures for `gemini-3-1-pro-preview`, `gpt-4-1-mini`, `gpt-4o-mini`, and `gpt-5-codex` | [combined report](out/RQ4_guardrail_metrics/) and [judge-corrected results](out/RQ4_guardrail_metrics_judged/) |
+
+### Evaluated models
+
+| Model identifier         | Model version           | Access date                                            | 
+|--------------------------|-------------------------|--------------------------------------------------------|
+| `gpt-4o-mini`            | gpt-4o-mini-2024-07-18  | 24 March 2026 (RQ1, RQ2, RQ3),  24/25 March 2026 (RQ4) |
+| `gpt-4.1-mini`           | gpt-4.1-mini-2025-04-14 | 23 April 2026 (RQ1), 5 May 2026 (RQ4)                  |
+| `gpt-5-codex`            | gpt-5-codex             | 27 April 2026 (RQ1), 4 May 2026 (RQ4)                  |
+| `gemini-3.1-pro-preview` | gemini-3.1-pro-preview  | 24 April 2026 (RQ1), 5 May 2026 (RQ4)                  |
 
 ### RQ1 - Result quality
 
