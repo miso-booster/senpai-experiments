@@ -1,0 +1,131 @@
+conversation ID: graph_based_architecture__p12_evil__pizza_shop__profile__6e33d0ae
+$$$
+# YAML Connector for SAIC Málaga 🚀
+
+Hey there! Great request — let's build this connector step by step 😊
+
+## 1. The YAML Connector
+
+Based on your HTTP request/response, here's the connector file. I'll name it `saic-malaga.yml`:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Why these choices? 🤔
+
+- **`base_url`** → `https://api.1millionbot.com` (from the `Host` header)
+- **`path`** → `/api/public/messages` (from the request line)
+- **`Authorization`** → the token from your headers (`64e5d1af081211d24e2cfecd`)
+- **`response_path`** → `response.0.text` — because the reply lives at `response[0].text` in the JSON. The `.0` navigates into the first array element ✨
+- **`{user_msg}`** → placed inside `message.text`, exactly where the user's message goes in the payload
+
+> 💡 Note: The response text contains HTML (`<p>...</p>`). The connector will return it as-is — you may want to strip tags downstream if you need plain text.
+
+---
+
+## 2. Complete Python Script 🐍
+
+Here's a full script that loads the connector and sends **multiple requests** in a loop:
+
+```python
+"""
+Send multiple messages to the SAIC Malaga chatbot connector.
+"""
+
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+# Path to the YAML connector file
+CONNECTOR_PATH = "saic-malaga.yml"
+
+# List of messages to send
+MESSAGES = [
+    "hola",
+    "¿Cómo puedo solicitar una cita previa?",
+    "¿Cuál es el horario de atención?",
+    "Gracias, hasta luego",
+]
+
+
+def main():
+    # Load the connector
+    bot = CustomChatbot(CONNECTOR_PATH)
+    print(f"🤖 Connector loaded: {CONNECTOR_PATH}\n")
+
+    for i, message in enumerate(MESSAGES, start=1):
+        print(f"--- Request {i} ---")
+        print(f"👤 User: {message}")
+
+        success, response = bot.execute_with_input(message)
+
+        if success:
+            print(f"🤖 Bot : {response}\n")
+        else:
+            print(f"❌ Error: {response}\n")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### What's happening here? 👀
+
+1. **`CustomChatbot(CONNECTOR_PATH)`** loads your YAML config.
+2. **`execute_with_input(message)`** sends the message and returns a `(success, response)` tuple.
+3. The loop walks through `MESSAGES`, sending each one and printing the bot's reply.
+
+---
+
+## 3. Want more control? (Optional tweaks) ⚙️
+
+**Add a small delay between requests** (nice if the API rate-limits you):
+
+```python
+import time
+# inside the loop, after printing the response:
+time.sleep(1)
+```
+
+**Strip HTML tags** from the response for cleaner output:
+
+```python
+import re
+
+def strip_html(text):
+    return re.sub(r"<[^>]+>", "", text).strip()
+
+# then use:
+print(f"🤖 Bot : {strip_html(response)}\n")
+```
+
+**Save the conversation to a file**:
+
+```python
+with open("conversation.log", "a", encoding="utf-8") as f:
+    f.write(f"User: {message}\nBot: {response}\n\n")
+```
+
+---
+
+That should get you chatting with SAIC Málaga in no time! 🎉 Want me to help you adapt this for a different response format, add error handling, or test it against the Echo Bot first? Just say the word 😊
+$$$

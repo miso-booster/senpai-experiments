@@ -1,0 +1,69 @@
+Hey there! 😊 Great question — the `chatbot` field is basically the "contract" between your profile and Sensei: it tells Sensei what to extract from the conversation at the end (and, if you write rules later, what fields they can read as `conv[i].<field_name>`).
+
+Since your goals are all about **gathering information** (pizza types, Margarita price, drinks & prices, hours, delivery), your `chatbot.output` should mirror exactly those five things. Here's a completed version that matches your existing profile:
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order."
+  context:
+    - personality: personalities/skeptical-user
+    - "You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria."
+    - "You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered."
+    - "You have a variety of preferences among your friends, so you need to find options that cater to different tastes."
+  goals:
+    - "Ask about the available pizza types."
+    - "Ask about the price of a Margarita pizza."
+    - "Ask about the available drinks and their prices."
+    - "Ask about the shop's operating hours."
+    - "Ask if they deliver."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_types:
+        type: string
+        description: "A list of the pizza types offered by the shop. Look for phrases like 'We offer [pizza types]' or a list of available pizzas."
+    - margarita_price:
+        type: money
+        description: "The price of a Margarita pizza. Extract the price, including currency if present. If multiple sizes are mentioned, extract the price for all sizes mentioned."
+    - drinks_and_prices:
+        type: string
+        description: "A list of available drinks and their corresponding prices. Extract the name and price of each drink."
+    - operating_hours:
+        type: string
+        description: "The shop's operating hours, including opening and closing times. Look for phrases like 'Our hours are [hours]' or 'We are open from [opening time] to [closing time]'."
+    - delivery_availability:
+        type: string
+        description: "Indication of whether the shop delivers or not. Look for phrases like 'We deliver' or 'We do not offer delivery'."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+A few things worth pointing out 👀:
+
+- **`is_starter: false`** — this means the *user* (simulator) speaks first, not the bot. That fits your profile since the user is the one asking questions.
+- **`fallback`** — paste your bot's *real* fallback message here. This helps Sensei avoid getting stuck in loops when the bot doesn't understand. I used the one from your other profiles in the same project, but double-check it matches your actual bot.
+- **`output` fields** — each one maps 1:1 to a goal in your `user.goals`. That's the golden rule: if you want to *check* something, it needs to be in `chatbot.output`. So if you later write a rule like `conv[0].margarita_price > 0`, it'll work because `margarita_price` is declared here. 🎯
+- **`type: money`** — I kept this since it's used in your other profiles in the same project. Just make sure a `money` type exists in your `types/` folder (or swap it for `currency`/`float` if not).
+
+One small heads-up ⚠️: your `interaction_style` uses `single question`, but the docs list it as `single questions` (plural). You might want to double-check that — a typo there could cause the style to be ignored or throw an error.
+
+Want me to also sketch a couple of **rules** that would use these output fields (e.g., "the bot must always mention delivery availability")? Just say the word! 🙌

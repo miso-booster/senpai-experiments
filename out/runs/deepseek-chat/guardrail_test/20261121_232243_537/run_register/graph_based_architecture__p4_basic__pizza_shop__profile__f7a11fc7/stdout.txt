@@ -1,0 +1,117 @@
+conversation ID: graph_based_architecture__p4_basic__pizza_shop__profile__f7a11fc7
+$$$
+Ohh, I'd love to help — but I have to be honest with you 🙈. Creating Python automation code (scripts, LLM pipelines, etc.) falls outside what I'm allowed to do. I'm here specifically for **SENSEI RULES**, **SENSEI PROFILES**, and **SENSEI CONNECTORS** — their docs, concepts, and helping you author or fix the YAML files themselves.
+
+That said, I can absolutely help you **design the profiles** that such an automation would produce, and I can walk you through what "valid" means so your generator targets the right shape. Let me give you the useful bits 👇
+
+---
+
+## ✅ What makes a profile "valid" in Sensei
+
+If you're building any kind of generator (LLM-driven or otherwise), these are the invariants your output must satisfy:
+
+### 1. Top-level structure
+Every profile needs at minimum:
+```yaml
+test_name: "pizza_order_profile"
+user:
+  language: English
+  role: "A customer ordering a pizza and drinks from a pizza shop."
+  context:
+    - "You are planning a casual pizza night with friends."
+    - "You want to pick up your order on your way home."
+  goals:
+    - "Order a {{pizza_type}} pizza."
+    - "Select the size {{pizza_size}} for the {{pizza_type}} pizza."
+    - "Order {{number_of_drinks}} {{drink_type}}."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Vegetarian, Hawaiian]
+    - pizza_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - order_summary:
+        type: string
+        description: "A summary of the pizza and drink order."
+    - total_cost:
+        type: money
+        description: "The total cost of the order."
+    - order_id:
+        type: string
+        description: "A unique identifier for the order."
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+### 2. Variable rules (the #1 source of invalid profiles)
+- Every `{{variable}}` used in a goal **string** must be declared as a mapping entry in `user.goals` with the **exact same name** (case-sensitive).
+- Every declared variable **must actually be used** in at least one goal string.
+- `type` must be one of: `int`, `float`, `string`, or a **custom type** that exists in `types/`.
+- `list`, `time`, `date` are **not allowed** in `user.goals` (only in `chatbot.output`).
+- `function` must be one of: `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `forward(var)`, `pairwise()`.
+- `random(n)` / `another(n)` → `n` must be ≤ list length.
+- `pairwise()` → needs **at least 2** pairwise variables to be meaningful.
+- `forward(var)` → `var` must be another declared variable.
+
+### 3. `chatbot.output` rules
+- Each field is a mapping: `field_name: {type: ..., description: ...}`
+- Allowed types: `int`, `float`, `string`, `time(...)`, `date(...)`, `list[<type>]`, or a custom type (must exist in `types/`).
+- Field names should be **stable and descriptive** — rules will reference them as `conv[i].<field_name>`.
+
+### 4. `conversation` rules
+- `number`: int, `combinations`, `combinations(p)`, or `combinations(p, forward|pairwise)`.
+  - ⚠️ `combinations` requires **≥2 nested `forward()`** or **≥2 `pairwise()`** variables.
+- `goal_style`: exactly one of `steps: N`, `random steps: M` (M ≤ 20), or `all_answered: {export, limit}`.
+- `interaction_style`: only the reserved keywords — `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, or `random: [...]`. **Never translate these.**
+
+### 5. `llm` block (optional)
+If omitted, defaults apply. If present, `format.type` must be `text` or `speech`.
+
+---
+
+## 🧠 How to think about your automation (conceptually)
+
+Since I can't write the code, here's the **design shape** your LLM pipeline should follow — this is the part I *can* help you reason about:
+
+1. **Prompt the LLM with the schema above** as a strict contract (system prompt = "you output only valid Sensei profile YAML matching this schema").
+2. **Validate the output** — the cleanest way is to run Sensei's own validator:
+   ```bash
+   python validation_check.py --profile <path> --output <out> --combined-matrix --verbose
+   ```
+   This returns a JSON with format errors + CSVs of the value matrices. Feed those errors back to the LLM as a retry loop.
+3. **Cross-check custom types** — if the LLM invents a `type: currency`, make sure `types/currency.yml` exists, otherwise it'll fail at runtime.
+4. **Sanity-check variable usage** — a simple regex pass for `{{...}}` vs. declared keys catches most invalid profiles before you even hit Sensei.
+
+---
+
+## 🎯 Want me to help further?
+
+I can:
+- ✍️ **Draft a profile** for a specific scenario you describe (I'll write the YAML).
+- 🔍 **Review a profile** you paste and point out what would make it invalid.
+- 🧩 **Explain a specific section** (e.g., `pairwise` vs `forward`, `all_answered`, custom types).
+- 📚 **Point you to the right doc section** for any profile concept.
+
+Which of those would be most useful? 😊
+$$$

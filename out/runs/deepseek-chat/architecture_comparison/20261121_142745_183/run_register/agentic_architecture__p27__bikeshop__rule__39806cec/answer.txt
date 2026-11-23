@@ -1,0 +1,31 @@
+I found a strong candidate. Before writing the rule, I need to confirm the target profile with you.
+
+## 📋 Candidate profile found
+
+**`appointment.yml`** — a bike shop appointment booking profile. Its `chatbot.output` fields are:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `confirmed_date` | `date` | The appointment date confirmed by the assistant |
+| `confirmed_time` | `str` | The appointment hour confirmed by the assistant |
+| `confirmed_service` | `str` | The service to be done |
+
+## ⚠️ One important design question
+
+Your request is: *"if we tell the assistant the same date twice, it must refuse to accept the second one."*
+
+There are two ways to interpret this, and they lead to different rule designs:
+
+1. **Within a single conversation** — the user gives a date, then repeats the same date later in the same conversation, and the bot should refuse the duplicate. This is a **single-conversation rule** (`conversations: 1`), but it needs the profile to expose something like a list of dates mentioned / a "duplicate rejected" signal — which `appointment.yml` currently does **not** have.
+
+2. **Across two conversations** — two separate conversations with the same date, and the bot should not confirm both (i.e., the second should be refused). This is a **metamorphic rule** (`conversations: 2`) and works with the existing `confirmed_date` field.
+
+Also note: the current profile's `ap_date` uses `forward(service)` over only 2 dates, so duplicate-date pairs across conversations are possible but the profile doesn't explicitly generate "same date twice" scenarios.
+
+## ❓ My questions before I write the YAML
+
+1. **Which interpretation do you want?** (within one conversation, or across two conversations?)
+2. **Is `appointment.yml` the right profile**, or should we target another one (e.g., `bike_repair_and_maintenance_scheduler.yaml`)?
+3. If you want the **within-one-conversation** version, I'd need to extend `chatbot.output` with a field like `duplicate_date_rejected: bool` (or `dates_mentioned: list[string]`). Are you OK with me proposing that profile change too?
+
+Tell me your preference and I'll generate the rule (and the profile tweak if needed) right away 😊

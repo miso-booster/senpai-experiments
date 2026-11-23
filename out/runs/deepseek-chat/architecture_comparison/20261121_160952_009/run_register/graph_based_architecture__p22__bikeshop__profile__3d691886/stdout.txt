@@ -1,0 +1,108 @@
+conversation ID: graph_based_architecture__p22__bikeshop__profile__3d691886
+$$$
+Hey there! 😊 Great use case — a rider who's uncomfortable but not ready to commit to a booking is a really nice "soft inquiry" profile. Let me walk you through a profile that captures exactly that vibe, then explain the key choices so you can tweak it to taste.
+
+## The profile
+
+Save this as `profiles/bike_discomfort_advice_seeker.yaml`:
+
+```yaml
+test_name: "bike_discomfort_advice_seeker"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who has been experiencing discomfort while riding your bike.
+    You are not sure whether the bike is not fitted correctly to your body or whether
+    some components are simply worn out. You want advice on possible adjustments and
+    on the services the shop offers, but you are NOT ready to book an appointment yet —
+    you are just exploring your options.
+  context:
+    - "You ride regularly, mostly for commuting and weekend rides."
+    - "Lately you get sore knees and lower back pain after longer rides."
+    - "You suspect either a poor bike fit or worn components (saddle, pedals, drivetrain)."
+    - "You are curious but cautious — you want information before committing to anything."
+    - "You do not want to schedule an appointment during this conversation."
+  goals:
+    - "Explain that you feel discomfort when riding and you're not sure if it's a fit issue or worn components."
+    - "Ask whether the shop offers bike fitting or adjustment services."
+    - "Ask what kind of adjustments could help with {{discomfort_area}} discomfort."
+    - "Ask how you could tell whether your {{worn_component}} is worn out and needs replacing."
+    - "Ask what services the shop offers that could address your problem."
+    - "Ask for a rough idea of what such a service would involve, without booking anything."
+    - discomfort_area:
+        function: random()
+        type: string
+        data: [knee, lower back, wrist, neck, saddle]
+    - worn_component:
+        function: random()
+        type: string
+        data: [saddle, pedals, chain, drivetrain, tires]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - bike_fitting_offered:
+        type: string
+        description: "Whether the chatbot confirms the shop offers bike fitting or adjustment services."
+    - adjustment_advice:
+        type: string
+        description: "The advice the chatbot gives about possible adjustments for the user's discomfort."
+    - worn_component_guidance:
+        type: string
+        description: "The chatbot's guidance on how to tell whether a component is worn and needs replacing."
+    - available_services:
+        type: string
+        description: "The list of services the shop offers that could address the user's problem."
+    - appointment_not_pushed:
+        type: string
+        description: "Whether the chatbot respected the user's wish not to book an appointment (i.e., did not force a booking)."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+## Why it's built this way 👀
+
+- **`role` + `context`** set the emotional stance: *uncomfortable, unsure, exploring*. The explicit line *"You do not want to schedule an appointment"* is important — it keeps the simulator from drifting into booking behaviour, which is exactly the boundary you want to test.
+- **`goals`** are phrased as *questions and explorations*, never as "book me in". The last goal even reinforces the "no booking" intent.
+- **Variables** (`discomfort_area`, `worn_component`) use `random()` so each conversation varies a bit — nice for coverage without exploding the case count. If you want more systematic coverage, swap to `forward()` or `pairwise()`.
+- **`chatbot.output`** captures the things you'd want to validate later:
+  - Did the bot actually confirm fitting/adjustment services?
+  - Did it give useful advice?
+  - Did it respect the "no booking" wish? (`appointment_not_pushed` — great for a rule later!)
+- **`interaction_style: single question`** keeps each turn focused, which matches a cautious, information-gathering user.
+- **`goal_style.all_answered`** ends the conversation once all goals are covered (with a safety `limit`).
+
+## A little tip for rules later 💡
+
+Because `appointment_not_pushed` is in `chatbot.output`, you can later write a Sensei-check rule like:
+
+```yaml
+name: appointment_not_pushed_no_booking
+description: When the chatbot reports an appointment was not pushed, it must not mention booking
+conversations: 1
+if: conv[0].appointment_not_pushed is not None
+then: |
+  "book" not in conv[0].appointment_not_pushed.lower()
+```
+
+…to assert the bot never pushed a booking. Handy, right? 😄
+
+Want me to also add a `personality` reference (e.g. a "cautious-user" snippet), or adjust the variables to use `pairwise()` for tighter coverage? Just say the word!
+$$$

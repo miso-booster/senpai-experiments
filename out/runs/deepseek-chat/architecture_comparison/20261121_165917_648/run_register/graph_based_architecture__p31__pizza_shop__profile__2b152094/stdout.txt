@@ -1,0 +1,78 @@
+conversation ID: graph_based_architecture__p31__pizza_shop__profile__2b152094
+$$$
+Hey there! 👋 Happy to help you fix this profile — I spotted a few things that would trip up Sensei. Let me walk you through them, then give you the corrected version. 😊
+
+## What's wrong 🔍
+
+1. **`chatbot:` section is missing.** Your `is_starter`, `fallback`, and `output` are currently nested under `user:` (because of the indentation). They need to be their own top-level `chatbot:` block. This is the biggest issue — as written, Sensei won't find any output schema.
+
+2. **`conversation.number` is missing.** It's a required field. You'll want to set it (e.g. `number: 3`).
+
+3. **`export: 1`** — this should be a boolean (`true`/`false`), not an integer. Use `export: false` (or `true` if you want the CSV).
+
+4. **`interaction_style: single question`** — the reserved keyword is **`single questions`** (plural). Also, interaction styles are a list, so it should be `- single questions`.
+
+5. **`type: str`** on `custom_pizza_pricing` — the valid primitive is **`string`**, not `str`. (Note: `str` *is* valid inside a custom type's `extraction`, but not in `chatbot.output`.)
+
+6. **`llm.model_prov` is missing.** Not strictly required, but recommended — add `model_prov: openai` for clarity.
+
+## Corrected profile ✅
+
+```yaml
+test_name: general_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+  - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+  - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+  - Ask what types of questions the chatbot can answer.
+  - Ask what the daily opening hours are.
+  - Ask about the estimated order time, without specifying the number of pizzas.
+  - Ask what drink options are available and their prices.
+  - Ask about the pricing for a custom pizza.
+
+chatbot:
+  is_starter: false
+  fallback: 'I''m sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks.'
+  output:
+  - available_information:
+      type: string
+      description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+  - opening_hours:
+      type: string
+      description: The daily opening hours of the pizza shop, as stated by the chatbot.
+  - estimated_order_time:
+      type: string
+      description: The chatbot's explanation of the estimated order time, including factors that influence it.
+  - drink_options_and_prices:
+      type: string
+      description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+  - custom_pizza_pricing:
+      type: string
+      description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single questions
+```
+
+## A couple of friendly notes 💡
+
+- I also trimmed the trailing `` `\nFor troubleshooting... `` bit from your `fallback` — that looks like a leaked error message rather than the bot's real fallback text. You'll want the actual fallback your pizza bot returns, so double-check it matches. 🍕
+- Since your goals are all plain strings with no `{{variables}}`, you don't need any variable declarations — that part is fine as-is. 👍
+
+Want me to also suggest a `run.yml` snippet or a validation command to double-check this profile? Just say the word! 😄
+$$$

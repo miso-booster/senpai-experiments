@@ -1,0 +1,91 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__79eac0ac
+$$$
+Hey there! 😊 Happy to help you build that profile — a new-bike owner who wants their ride tailored with a new seat and handlebar grips is a great, realistic scenario for a bike shop test! 🚲
+
+Let me walk you through a solid profile you can drop into your `profiles/` folder, and I'll explain the key choices so you can tweak it to your liking.
+
+## Suggested profile
+
+```yaml
+test_name: "new_bike_setup_and_customization"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike and wants the shop to
+    set it up and tailor it to your liking, specifically by changing the seat
+    and the handlebar grips.
+  context:
+    - "You just bought a new bike and haven't had it adjusted yet."
+    - "The current seat is uncomfortable and the grips feel too thin for your hands."
+    - "You want the shop to help you pick comfortable replacements and fit them."
+    - "You're friendly but a bit unsure about what options exist, so you ask for recommendations."
+  goals:
+    - "Explain that you recently bought a new bike and want it set up for your comfort."
+    - "Ask if the shop can help you change the seat and the handlebar grips."
+    - "Ask what {{seat_type}} seats they recommend for comfort."
+    - "Ask what {{grip_type}} handlebar grips they have available."
+    - "Ask for the price of the {{seat_type}} seat and the {{grip_type}} grips."
+    - "Ask if they can fit the new seat and grips for you, and when."
+    - seat_type:
+        function: pairwise()
+        type: string
+        data: [gel, ergonomic, wide comfort]
+    - grip_type:
+        function: pairwise()
+        type: string
+        data: [ergonomic, lock-on, foam, rubber]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_recommendation:
+        type: string
+        description: "The seat(s) the chatbot recommends for comfort."
+    - grip_recommendation:
+        type: string
+        description: "The handlebar grips the chatbot recommends or has available."
+    - seat_price:
+        type: money
+        description: "The price of the recommended seat."
+    - grip_price:
+        type: money
+        description: "The price of the recommended handlebar grips."
+    - fitting_confirmation:
+        type: string
+        description: "Confirmation of whether the shop can fit the new seat and grips, and when."
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+  interaction_style:
+    - single questions
+```
+
+## Why these choices 👇
+
+- **`role` + `context`** paint the picture: a new-bike owner who wants comfort tweaks. This keeps the simulated user focused and natural.
+- **`goals`** follow a realistic flow: explain the situation → ask about seat & grips → ask prices → ask about fitting. The `{{seat_type}}` and `{{grip_type}}` variables make it reusable across options.
+- **`forward()` on `seat_type`** and **`pairwise()` on `grip_type`** give you a nice coverage matrix without exploding the number of conversations. Since you have two combination functions, `number: combinations(0.6, pairwise)` works — it uses 60% of the pairwise matrix. 🎯
+- **`chatbot.output`** captures the business facts you'll likely want to validate later (recommendations, prices, fitting confirmation). These become `conv[i].seat_price`, etc., in Sensei-check rules.
+- **`all_answered` with `export: true`** gives you a CSV showing which outputs got satisfied — super handy for debugging.
+- **`single question`** interaction style keeps each turn focused, which fits a Q&A-style shop bot nicely.
+
+## A couple of things to double-check ⚠️
+
+- I used `type: money` in `chatbot.output` because your existing profiles (e.g. `qa.yml`, `bike_service_and_repair_inquirer.yaml`) use it — just make sure a `types/money.yml` exists in your project. If it doesn't, swap it for `currency` or `float`.
+- The `fallback` text matches your other profiles, so the bot's real fallback is respected. 👍
+
+Want me to adjust anything — like adding a `change your mind` interaction style (fits well when picking seats/grips!), or wiring in a specific appointment goal? Just say the word! 😄
+$$$

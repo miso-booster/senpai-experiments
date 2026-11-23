@@ -1,0 +1,26 @@
+conversation ID: one_node_architecture__p9__ada_uam__rule__3eb682ef
+$$$
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el horario de la biblioteca sea de 9 a 20.
+
+Como tu perfil ya expone el campo `library_hours` en `chatbot.output`, la regla puede leerlo directamente como `library_hours` (en reglas de una sola conversación) y comprobar que el texto contiene las horas esperadas. Para evitar falsos negativos por formatos como "9:00 a 20:00" o "de 9 a 20 h", uso `extract_float` sobre el texto y verifico que aparezcan el 9 y el 20.
+
+```yaml
+name: library_hours_9_to_20
+description: El horario de la biblioteca debe ser de 9 a 20 (perfil Préstamos y Recursos de la Biblioteca)
+conversations: 1
+active: true
+when: library_hours is not None
+oracle: |
+  9 in [int(x) for x in __import__('re').findall(r'\d+', str(library_hours))] and 20 in [int(x) for x in __import__('re').findall(r'\d+', str(library_hours))]
+yields: |
+  f"Horario de biblioteca inesperado: {library_hours} (se esperaba de 9 a 20)"
+```
+
+Un par de notas para que quede clarísimo 👀:
+
+- **`when: library_hours is not None`** → solo evalúa la regla cuando el extractor sí capturó el horario. Si el bot nunca lo menciona, la regla no aplica (así no la marcamos como fallo por algo que no se preguntó).
+- **El `oracle`** busca los números dentro del texto del horario y confirma que aparezcan tanto el `9` como el `20`. Es tolerante a formatos como `"9:00 - 20:00"`, `"de 9 a 20 h"`, etc.
+- **`yields`** te da un mensaje de error legible con el valor real capturado, ideal para depurar 💡.
+
+Si quieres una versión más estricta (por ejemplo, exigir que el 9 sea la apertura y el 20 el cierre, o validar también los minutos), dime y la ajustamos. ¿Te gustaría además una regla global para que el bot mencione el horario en todas las conversaciones? 😊
+$$$

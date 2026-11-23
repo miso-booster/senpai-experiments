@@ -1,0 +1,143 @@
+conversation ID: graph_based_architecture__p12_evil__pizza_shop__profile__f762cfee
+$$$
+# YAML Connector for SAIC Málaga 🚀
+
+Hey there! Great request — let's build this connector step by step 😊
+
+## 📄 The YAML Connector
+
+Based on the HTTP request/response you shared, here's the connector file. I'll call it `saic-malaga.yml`:
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 🔍 Quick breakdown of the key fields
+
+| Field | Value | Why |
+|-------|-------|-----|
+| `base_url` | `https://api.1millionbot.com` | The host from your request |
+| `send_message.path` | `/api/public/messages` | The endpoint |
+| `Authorization` | `64e5d1af081211d24e2cfecd` | Your API token |
+| `bot` | `64e5d1af081211d24e2cfec8` | The bot ID for SAIC Málaga |
+| `response_path` | `response.0.text` | Extracts the first reply's `text` field from the JSON |
+
+> 💡 **Note:** The response text comes wrapped in HTML (`<p>...</p>`). If you want plain text in your script, you'll need to strip the tags — I'll show you how below!
+
+---
+
+## 🐍 Complete Python Script
+
+Here's a full script that loads the connector and sends **multiple requests** to it. It uses the `CustomChatbot` class from your `chatbot_connectors` package, and includes a small HTML-stripping helper so the replies look clean.
+
+```python
+"""
+send_multiple.py
+----------------
+Loads the SAIC Málaga YAML connector and sends multiple messages to it.
+"""
+
+import re
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+
+def strip_html(text: str) -> str:
+    """Remove HTML tags and decode basic entities from a response string."""
+    if not text:
+        return ""
+    # Remove tags
+    clean = re.sub(r"<[^>]+>", "", text)
+    # Decode common entities
+    clean = (
+        clean.replace("&nbsp;", " ")
+             .replace("&amp;", "&")
+             .replace("&lt;", "<")
+             .replace("&gt;", ">")
+             .replace("&quot;", '"')
+             .replace("&#39;", "'")
+    )
+    # Collapse whitespace
+    return re.sub(r"\s+", " ", clean).strip()
+
+
+def main():
+    # 1. Load the connector
+    bot = CustomChatbot("saic-malaga.yml")
+
+    # 2. Define the messages you want to send
+    messages = [
+        "hola",
+        "¿Cómo puedo pedir cita previa?",
+        "¿Cuál es el horario de atención?",
+        "Gracias, ¡hasta luego!",
+    ]
+
+    # 3. Send each message and print the reply
+    for i, msg in enumerate(messages, start=1):
+        print(f"\n[{i}/{len(messages)}] 👤 User: {msg}")
+        success, response = bot.execute_with_input(msg)
+
+        if success:
+            clean_reply = strip_html(response)
+            print(f"🤖 Bot : {clean_reply}")
+        else:
+            print(f"❌ Error: {response}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### 🧪 What this script does
+
+1. **Loads** the YAML connector via `CustomChatbot("saic-malaga.yml")`.
+2. **Iterates** over a list of messages — you can add as many as you like.
+3. **Calls** `execute_with_input(msg)` for each one, which returns `(success, response)`.
+4. **Cleans** the HTML tags from the bot's reply so it's readable in the terminal.
+5. **Prints** a friendly log for each exchange.
+
+### 🎯 Sample output
+
+```yaml
+name: "Cita Previa Bot"
+base_url: "https://api.example.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+---
+
+## ⚠️ A couple of things to keep in mind
+
+- **Session continuity:** The `conversation` and `sender` IDs are fixed in the YAML. That means all messages in the script share the same conversation context — which is usually what you want for a coherent dialogue. If you need a *fresh* conversation per message, you'd have to generate new IDs dynamically (that would require a small code tweak, not just YAML).
+- **HTML in responses:** As noted, the bot returns HTML. The `strip_html()` helper handles the common cases, but if you see leftover tags, you can swap it for `BeautifulSoup` for a more robust cleanup.
+- **Rate limits:** If you're sending many messages quickly, add a small `time.sleep(0.5)` between calls to be polite to the API 🙏
+
+Want me to adapt the script to **save the conversation to a file**, **run it interactively from the terminal**, or **generate new conversation IDs per run**? Just say the word! 😊
+$$$

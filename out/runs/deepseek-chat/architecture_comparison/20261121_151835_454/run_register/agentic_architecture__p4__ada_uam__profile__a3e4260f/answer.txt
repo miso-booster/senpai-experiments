@@ -1,0 +1,104 @@
+¡Buena noticia! 🎉 Ya existe un perfil en tu proyecto que encaja casi perfectamente con lo que pides: **`consultante_de_servicios_y_asistencia_del_cau.yaml`**.
+
+Déjame contarte lo que ya cubre y luego te propongo los ajustes para que consigas exactamente los cuatro datos que quieres (teléfono, email, dirección física y horarios).
+
+## Lo que ya tiene el perfil existente
+
+- **Idioma:** Spanish ✅
+- **Rol:** usuario que busca información sobre los servicios del CAU y cómo contactarlos ✅
+- **`chatbot.output`** ya incluye justo los campos que te interesan:
+  - `contact_email` (correo del CAU)
+  - `contact_phone` (teléfono del CAU)
+  - `physical_address` (dirección física)
+  - `service_hours` (horarios)
+  - y además: `service_catalog_link`, `faq_link`, `specific_service_id_uam`, `contact_method`, `service_count`, `response_time`
+
+## Lo que le falta para tu objetivo
+
+Los **`goals`** actuales piden "información de contacto" de forma genérica, pero **no piden explícitamente la dirección física ni los horarios**. Como el extractor solo rellena `physical_address` y `service_hours` si el bot los menciona, conviene añadir esos objetivos explícitos.
+
+## Propuesta de perfil ajustado
+
+Aquí tienes la versión con los `goals` enfocados en los cuatro datos que buscas (mantengo el resto de la estructura y los campos de `output` intactos):
+
+```yaml
+test_name: Consultante de servicios y asistencia del CAU
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: Spanish
+  role: Usuario que busca información sobre los servicios ofrecidos por el Centro de Atención a Usuarios (CAU) y cómo contactarlos.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - Estás buscando información sobre los servicios que ofrece el Centro de Atención a Usuarios (CAU) para resolver algunas dudas que tienes respecto a su funcionamiento.
+  - Quieres contactarles de manera efectiva y necesitas conocer todos sus canales de contacto y su ubicación.
+  - Además, es importante para ti conocer los servicios relacionados con el ID-UAM que pueden ayudarte en tu situación actual.
+  goals:
+  - Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU).
+  - Pedir el correo electrónico de contacto del CAU.
+  - Preguntar por la dirección física (ubicación) del CAU.
+  - Consultar los horarios de atención del CAU.
+  - Preguntar por el catálogo de servicios ofrecidos por el CAU.
+  - Consultar las preguntas frecuentes relacionadas con los servicios del CAU.
+  - Solicitar información sobre los servicios específicos que incluye el ID-UAM.
+chatbot:
+  is_starter: false
+  fallback: Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+  - contact_email:
+      type: string
+      description: Correo electrónico del CAU
+  - contact_phone:
+      type: string
+      description: Número de teléfono del CAU
+  - physical_address:
+      type: string
+      description: Dirección física del CAU
+  - service_hours:
+      type: string
+      description: Horas de servicio del CAU
+  - service_catalog_link:
+      type: string
+      description: Enlace al catálogo de servicios
+  - faq_link:
+      type: string
+      description: Enlace a preguntas frecuentes
+  - specific_service_id_uam:
+      type: string
+      description: Información sobre servicios específicos del ID-UAM
+  - contact_method:
+      type: string
+      description: Modo de contacto preferido (correo o teléfono)
+  - service_count:
+      type: int
+      description: Número total de servicios ofrecidos
+  - response_time:
+      type: float
+      description: Tiempo estimado de respuesta del CAU
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 30
+  interaction_style:
+  - single questions
+```
+
+## Cambios respecto al original
+
+1. **`goals` reescritos** para pedir explícitamente los cuatro datos: teléfono, email, dirección física y horarios (antes eran genéricos).
+2. **`context`** ajustado para reflejar que necesitas "todos sus canales de contacto y su ubicación".
+3. **`output` sin cambios** — ya tenía los campos correctos (`contact_phone`, `contact_email`, `physical_address`, `service_hours`), así que cualquier regla que dependa de ellos seguirá funcionando.
+
+---
+
+Antes de dejarlo cerrado, un par de preguntas rápidas para afinar bien el perfil 😊:
+
+1. **¿Quieres que lo guarde como un perfil nuevo** (p. ej. `consultante_cau_contacto.yaml`) o **prefieres que actualice el existente** `consultante_de_servicios_y_asistencia_del_cau.yaml`?
+2. **¿Te sirven los `interaction_style` y `conversation` actuales** (`single questions`, 3 conversaciones, 30 pasos), o quieres variar el estilo (p. ej. añadir `make spelling mistakes` o `long phrases`)?
+3. **¿Necesitas también una regla (SENSEI-check)** que valide que el bot devuelve los cuatro datos? Si es así, la preparo después de confirmar el perfil.
+
+Dime y lo dejo listo 🚀

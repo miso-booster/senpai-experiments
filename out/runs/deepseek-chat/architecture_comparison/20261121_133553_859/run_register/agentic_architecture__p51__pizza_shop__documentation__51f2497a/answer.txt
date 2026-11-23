@@ -1,0 +1,43 @@
+# What connectors are for 🔌
+
+Based on `custom-connector-guide.md` and `connector-examples.md`:
+
+A **Custom YAML Connector** lets you connect the Chatbot Dojo to **any chatbot API without writing code**. You just write a YAML file describing how to talk to that API. It's the **transport layer** between the user simulator and the target chatbot: it sends the user's message to the bot's endpoint and extracts the bot's reply from the JSON response.
+
+So in the big picture: **profiles** generate conversations → **connectors** send/receive messages from the real bot → **rules** validate the results.
+
+# Fields 📋
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | **Yes** |
+| `send_message.path` | API endpoint path (appended to `base_url`) | **Yes** |
+| `send_message.method` | HTTP method (POST, GET, PUT, DELETE) | No (default: `POST`) |
+| `send_message.headers` | Custom headers (e.g., `Authorization`) | No |
+| `send_message.payload_template` | JSON structure with the `{user_msg}` placeholder | **Yes** |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | **Yes** |
+
+# Minimal example ✨
+
+```yaml
+name: "My Custom Bot"
+base_url: "https://api.mychatbot.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+# Quick notes 💡
+
+- **`{user_msg}`** is the placeholder that gets replaced with the user's message inside `payload_template`.
+- **`response_path`** uses dot notation to walk the JSON, e.g.:
+  - `"message"` → `response["message"]`
+  - `"data.text"` → `response["data"]["text"]`
+  - `"results.0.content"` → `response["results"][0]["content"]`
+- Add auth headers under `send_message.headers` if the API needs them.
+
+Want me to help you write a connector for a specific chatbot API? If so, tell me the endpoint URL and the shape of its response, and I'll draft the YAML for you 😊

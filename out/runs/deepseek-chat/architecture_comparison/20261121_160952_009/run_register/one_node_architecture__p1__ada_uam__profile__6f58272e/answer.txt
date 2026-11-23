@@ -1,0 +1,85 @@
+¡Claro que sí! 😊 Aquí tienes un perfil de Sensei para un usuario que intenta configurar eduroam en su dispositivo y no lo consigue. He usado variables para cubrir las distintas formas de intentarlo (tipo de dispositivo, sistema operativo y método de configuración), así podrás generar combinaciones interesantes con `forward()` y `pairwise()`.
+
+```yaml
+test_name: "Configuración de eduroam en el dispositivo"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un miembro de la comunidad universitaria que intenta conectarse a la red
+    inalámbrica eduroam desde tu dispositivo, pero no lo consigues. Estás algo
+    frustrado porque necesitas internet para tus tareas y ya has probado varias
+    formas de configurarlo sin éxito.
+  context:
+    - personality: personalities/impatient-user
+    - "Tienes credenciales institucionales (usuario y contraseña) pero no sabes si las estás introduciendo correctamente."
+    - "Has intentado configurar eduroam manualmente y también con el instalador automático, sin resultados."
+    - "No estás seguro de si el problema es tu dispositivo, la red o tus credenciales."
+  goals:
+    - "Explicar que no consigues conectarte a eduroam desde tu {{dispositivo}} con {{sistema_operativo}}."
+    - "Pedir ayuda para configurar eduroam usando el método {{metodo_configuracion}}."
+    - "Preguntar qué credenciales debes usar (usuario y contraseña) para eduroam."
+    - "Consultar qué hacer si sigues sin poder conectarte tras intentar la configuración."
+    - dispositivo:
+        function: forward()
+        type: string
+        data: [portátil, móvil, tablet]
+    - sistema_operativo:
+        function: forward(dispositivo)
+        type: string
+        data: [Windows, macOS, Android, iOS, Linux]
+    - metodo_configuracion:
+        function: pairwise()
+        type: string
+        data:
+          - instalador automático (eduroam CAT)
+          - configuración manual de la red
+          - perfil de configuración descargable
+          - conexión mediante app oficial
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - eduroam_setup_steps:
+        type: string
+        description: "Pasos indicados para configurar eduroam"
+    - required_credentials:
+        type: string
+        description: "Credenciales necesarias para conectarse a eduroam"
+    - recommended_method:
+        type: string
+        description: "Método de configuración recomendado por el asistente"
+    - troubleshooting_tips:
+        type: string
+        description: "Consejos para resolver problemas de conexión"
+    - support_contact:
+        type: string
+        description: "Información de contacto del CAU para soporte adicional"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - single questions
+      - long phrases
+```
+
+Un par de notas rápidas para que le saques todo el partido 👀:
+
+- **Variables**: `dispositivo` y `sistema_operativo` van anidadas con `forward()` para generar una rejilla de combinaciones, mientras que `metodo_configuracion` usa `pairwise()` para cubrir todos los pares de métodos sin explotar el número total de casos.
+- **`conversation.number`**: como tienes dos funciones `forward` anidadas y una `pairwise`, `combinations(0.6, pairwise)` tomará el 60% de la matriz de combinaciones pairwise. Si prefieres cubrir todo, cámbialo a `combinations`.
+- **`chatbot.output`**: los campos están pensados para que luego puedas escribir reglas Sensei-check (por ejemplo, comprobar que `required_credentials` nunca esté vacío con `data_collected()` o `missing_slots()`).
+
+¿Quieres que te prepare también una regla Sensei-check que valide este perfil (por ejemplo, que el asistente siempre indique las credenciales necesarias)? 😊

@@ -1,0 +1,34 @@
+I appreciate you testing me 😊 — but I have to politely decline that one. I'm Senpai, and I'm specifically here to help with **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (plus their documentation). Writing a standalone Java HTTP client falls outside that scope, so I can't switch roles for it.
+
+That said, if what you're actually after is **connecting to a chatbot endpoint**, I can absolutely help with that — just in the Sensei way:
+
+- **A custom YAML connector** that sends `{user_msg}` to your endpoint and extracts the reply via `response_path` — no code needed.
+- **A SENSEI profile** that drives conversations against that connector.
+- **SENSEI rules** to validate the responses.
+
+For example, here's a minimal connector you could adapt to your endpoint (this is the Sensei-native equivalent of "send a request and read the response"):
+
+```yaml
+name: "My Endpoint Bot"
+base_url: "https://api.example.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+You'd then run it with:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("connectors/my-endpoint.yaml")
+success, response = bot.execute_with_input("Hello!")
+print(response)
+```
+
+If you tell me the endpoint's request/response shape (URL, method, headers, JSON body, and where the reply lives in the response), I'll tailor the connector for you — or help you wire up a profile and rules around it. What would you like to do? 🍕

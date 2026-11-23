@@ -1,0 +1,97 @@
+conversation ID: one_node_architecture__p22__bikeshop__profile__32fc8296
+$$$
+Here's a profile that captures that "something feels off but I'm not sure what" vibe — the user describes discomfort, wonders whether it's fit or worn parts, and asks for advice/services without ever asking to book 🚲
+
+```yaml
+test_name: "bike_discomfort_advice_seeker"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who has been experiencing discomfort while riding your bike.
+    You are not sure whether the bike is not fitted correctly to your body or whether
+    some of your components are simply worn out. You want advice on possible
+    adjustments and on the services the shop offers, but you do NOT explicitly ask
+    to book an appointment — you are only gathering information for now.
+  context:
+    - "You ride regularly (commuting and weekend rides) and the discomfort has been building up over the last few weeks."
+    - "You feel it mostly in your {{discomfort_area}} after longer rides."
+    - "You are unsure whether the cause is bike fit or worn components, and you say so openly."
+    - "You are friendly but a bit uncertain — you ask follow-up questions when the assistant gives vague answers."
+    - "You are not ready to commit to a booking; if the assistant offers to schedule something, you politely say you just want information for now."
+  goals:
+    - "Explain that you feel discomfort while riding and that you are not sure if it is a fit issue or worn components."
+    - "Mention that the discomfort is mainly in your {{discomfort_area}}."
+    - "Ask what adjustments could help make the bike fit better."
+    - "Ask whether worn components (like the {{worn_component}}) could be causing the discomfort."
+    - "Ask what services the shop offers that could help with this kind of problem."
+    - "Ask how you could tell the difference between a fit problem and a worn-part problem."
+    - discomfort_area:
+        function: forward()
+        type: string
+        data: [lower back, knees, wrists and hands, neck and shoulders, saddle area]
+    - worn_component:
+        function: forward(discomfort_area)
+        type: string
+        data: [saddle, handlebars, pedals, chain and drivetrain, tires]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: >
+          The advice the chatbot gives about possible bike-fit adjustments
+          (e.g., saddle height, saddle position, handlebar reach, stem length,
+          cleat position) that could reduce the user's discomfort.
+    - worn_component_advice:
+        type: string
+        description: >
+          The chatbot's explanation of whether worn components (saddle, chain,
+          drivetrain, tires, etc.) could be causing the discomfort and how to
+          check for wear.
+    - offered_services:
+        type: string
+        description: >
+          The services the chatbot says the shop offers that are relevant to
+          discomfort, fit, or worn components (e.g., bike fitting, tune-up,
+          component replacement, inspection).
+    - fit_vs_wear_guidance:
+        type: string
+        description: >
+          The chatbot's guidance on how to distinguish a bike-fit problem from
+          a worn-component problem.
+    - appointment_offer:
+        type: string
+        description: >
+          Any offer by the chatbot to book an appointment or visit the shop.
+          The user does not request this, so this field captures whether the
+          chatbot proactively suggested it.
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single question
+  max_cost: 0.5
+```
+
+A couple of notes so it behaves the way you described 👇
+
+- **No booking goal** — the user never asks to schedule anything, and the `context` explicitly tells the simulator to decline politely if the bot offers to book. The `appointment_offer` output lets you check *whether* the bot pushed a booking anyway (handy for a rule later).
+- **`forward()` nesting** — `worn_component` depends on `discomfort_area`, so you get a nice deterministic grid of area/component combos across the 3 conversations.
+- **`single question` style** keeps each turn focused, which pairs well with the `all_answered` goal style.
+
+Want me to add a matching Sensei-check rule (e.g., "the bot must offer at least one relevant service" or "the bot must not push a booking when the user only asked for advice")? Just say the word 😊
+$$$

@@ -1,0 +1,78 @@
+¡Claro que sí! 😊 Es un caso perfecto para adaptar el connector de MillionBot. La estructura es idéntica, solo cambian los identificadores (Authorization, conversation, sender, bot) y la URL de referencia. ¡Vamos allá! 🚀
+
+## Connector adaptado para el Ayuntamiento de Morón de la Frontera
+
+```yaml
+name: "Gallo de Morón"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+  payload_template:
+    conversation: "67ea76f4e213b2dcbc146e2b"
+    sender_type: "User"
+    sender: "67ea76f40643a3dd27e59411"
+    bot: "65ca19e7dbbb4e26cbeadf24"
+    language: "es"
+    url: "https://www.morondelafrontera.es/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+## Qué he cambiado y por qué 🔍
+
+| Campo | Ada UAM | Gallo de Morón | De dónde sale |
+|-------|---------|----------------|---------------|
+| `name` | "Ada UAM" | "Gallo de Morón" | Nombre amigable (lo puse por el saludo del bot 🐓) |
+| `Authorization` | `60a3bee2...` | `65ca19e7dbbb4e26cbeadf28` | Header `Authorization` de tu petición |
+| `conversation` | `682ce1ce...` | `67ea76f4e213b2dcbc146e2b` | Campo `conversation` del JSON |
+| `sender` | `682ce1ce...` | `67ea76f40643a3dd27e59411` | Campo `sender` del JSON |
+| `bot` | `60a3be81...` | `65ca19e7dbbb4e26cbeadf24` | Campo `bot` del JSON |
+| `url` | UAM | `https://www.morondelafrontera.es/` | Campo `url` del JSON |
+| `response_path` | `response.0.text` | `response.0.text` | ¡Igual! La respuesta tiene la misma forma ✅ |
+
+## Un detalle importante 👀
+
+Fíjate en que la respuesta que me pasaste tiene esta forma:
+
+```json
+{"request":{"text":"hola"},"response":[{"text":"<p>¡Hola! Soy el Gallo..."}]}
+```
+
+Como `response` es un **array**, el `response_path` correcto es `response.0.text` — exactamente igual que en Ada UAM. ¡Así que no hay que tocar nada ahí! 🎯
+
+## Nota sobre los headers extra
+
+En tu petición original aparecen headers como `Origin`, `Referer`, `User-Agent`, etc. En el caso de Ada UAM no fueron necesarios, así que **probablemente tampoco lo sean aquí**. Pero si al probarlo el bot no responde, puedes añadirlos así:
+
+```yaml
+name: "Morón de la Frontera"
+base_url: "https://www.morondelafrontera.es"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+    Origin: "https://www.morondelafrontera.es"
+    Referer: "https://www.morondelafrontera.es/"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+## Cómo probarlo 🧪
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("yaml-examples/gallo-moron.yml")
+success, response = bot.execute_with_input("Hola, ¿qué horario tiene el ayuntamiento?")
+print(response)
+```
+
+Si te da algún error al ejecutarlo, pásame el mensaje y lo revisamos juntos 😄. ¿Quieres que también te ayude a guardarlo en tu carpeta de connectors con un nombre de archivo concreto?

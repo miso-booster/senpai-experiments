@@ -1,0 +1,30 @@
+Hey there! 😊 Happy to help you draft that rule.
+
+Since there's no profile yet, this is a **rule-first design** — so I'll pick clear, descriptive field names and document what a future profile's `chatbot.output` must expose for the rule to work. I'll assume the profile will expose something like `lactose_free_available` (a string/boolean-ish confirmation) and `lactose_free_products` (a list of products). The rule checks that when a user asks about lactose-free availability, the bot actually confirms it and lists products.
+
+```yaml
+name: lactose_free_availability
+description: >
+  Checks that when a user asks about lactose-free products, the assistant
+  confirms availability and lists at least one lactose-free product.
+  Rule-first design: requires a future profile whose chatbot.output exposes
+  `lactose_free_available` (string) and `lactose_free_products` (list[string]).
+conversations: 1
+active: true
+if: >
+  utterance_index('user', 'lactose-free') > 0
+then: >
+  conv[0].lactose_free_available is not None
+  and len(conv[0].lactose_free_products) > 0
+on-error: >
+  f"Lactose-free availability not confirmed or no products listed: available={conv[0].lactose_free_available}, products={conv[0].lactose_free_products}"
+```
+
+A couple of notes so this plays nicely later 👇
+
+- **Fields to add to the future profile's `chatbot.output`:**
+  - `lactose_free_available` → `type: string` (e.g., "Yes, available")
+  - `lactose_free_products` → `type: list[string]` (e.g., lactose-free milk, cheese, yogurt)
+- If you'd rather keep it **profile-agnostic** for now, I can swap the field checks for a generic helper like `only_talks_about(...)` or `utterance_index('assistant', 'lactose-free') > 0` — just say the word and I'll adjust! 🙌
+
+Want me to also draft the matching profile skeleton so the rule has a real target?

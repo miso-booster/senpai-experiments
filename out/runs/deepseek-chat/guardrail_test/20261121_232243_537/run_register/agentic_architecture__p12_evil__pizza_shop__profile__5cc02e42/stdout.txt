@@ -1,0 +1,247 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__5cc02e42
+$$$
+¡Perfecto! 😊 Ya tengo la documentación de conectores cargada (`custom-connector-guide.md` y `connector-examples.md`). Tu petición encaja perfectamente con el patrón del ejemplo "MillionBot" de la guía, así que aquí va todo.
+
+## 1) Conector YAML
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+**Notas rápidas:**
+- `response_path: "response.0.text"` → navega `response["response"][0]["text"]`, que es donde viene la respuesta del bot (`<p>¡Buenos días!...</p>`). 📍
+- El `Authorization` es el token de la cabecera original (sin `Bearer`), tal como lo envía el sitio.
+- `{user_msg}` es el placeholder que el conector sustituye por el mensaje del usuario.
+- Ojo: la `conversation` y el `sender` son IDs de sesión fijos. Si el bot espera una conversación nueva por sesión, habría que generarlos dinámicamente (el conector YAML no lo permite; ahí ya necesitarías código).
+
+## 2) Script Python completo
+
+Este script usa el conector YAML con `CustomChatbot` (como en la guía) y además incluye un modo directo con `requests` por si quieres lanzar varias conversaciones en paralelo o probar sin la librería.
+
+```python
+#!/usr/bin/env python3
+"""
+Script para enviar múltiples mensajes al chatbot SAIC Málaga
+usando el conector YAML (CustomChatbot) o directamente con requests.
+
+Uso:
+    python send_multiple.py
+    python send_multiple.py --mode direct
+"""
+
+import argparse
+import json
+import time
+import uuid
+from pathlib import Path
+
+import requests
+
+# --- Import del conector (ajusta el import a tu instalación) ---
+try:
+    from chatbot_connectors.implementations.custom import CustomChatbot
+    HAS_CONNECTOR = True
+except ImportError:
+    HAS_CONNECTOR = False
+    print("⚠️  No se encontró chatbot_connectors. Se usará solo el modo 'direct'.")
+
+
+CONNECTOR_PATH = "saic-malaga.yml"  # ruta a tu YAML
+
+# Mensajes de prueba
+MESSAGES = [
+    "hola",
+    "¿Cuál es el horario de atención?",
+    "Necesito pedir cita previa",
+    "¿Dónde está la oficina de atención al ciudadano?",
+    "gracias, adiós",
+]
+
+
+# ---------------------------------------------------------------------------
+# MODO 1: usando el conector YAML
+# ---------------------------------------------------------------------------
+def run_with_connector(messages):
+    if not HAS_CONNECTOR:
+        raise RuntimeError("chatbot_connectors no está instalado.")
+
+    if not Path(CONNECTOR_PATH).exists():
+        raise FileNotFoundError(f"No existe el conector: {CONNECTOR_PATH}")
+
+    bot = CustomChatbot(CONNECTOR_PATH)
+    results = []
+
+    for i, msg in enumerate(messages, 1):
+        print(f"\n[{i}/{len(messages)}] 👤 {msg}")
+        success, response = bot.execute_with_input(msg)
+        if success:
+            print(f"🤖 {response}")
+        else:
+            print(f"❌ Error: {response}")
+        results.append({"message": msg, "success": success, "response": response})
+        time.sleep(1)  # pequeña pausa para no saturar la API
+
+    return results
+
+
+# ---------------------------------------------------------------------------
+# MODO 2: usando requests directamente (más control)
+# ---------------------------------------------------------------------------
+BASE_URL = "https://api.1millionbot.com/api/public/messages"
+
+HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": "64e5d1af081211d24e2cfecd",
+    "Origin": "https://saic.malaga.eu",
+    "Referer": "https://saic.malaga.eu/",
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) "
+        "Gecko/20100101 Firefox/147.0"
+    ),
+}
+
+BOT_ID = "64e5d1af081211d24e2cfec8"
+CONVERSATION_ID = "6977595c744ccf01954b8797"
+SENDER_ID = "6977595c3e4824018e496b0c"
+
+
+def build_payload(text, conversation_id=CONVERSATION_ID, sender_id=SENDER_ID):
+    return {
+        "conversation": conversation_id,
+        "sender_type": "User",
+        "sender": sender_id,
+        "bot": BOT_ID,
+        "language": "es",
+        "url": "https://saic.malaga.eu/",
+        "message": {"text": text},
+    }
+
+
+def extract_reply(data):
+    """Extrae response[0].text de la respuesta JSON."""
+    try:
+        return data["response"][0]["text"]
+    except (KeyError, IndexError, TypeError):
+        return None
+
+
+def run_direct(messages, new_conversation=False, timeout=30):
+    results = []
+
+    # Opcional: generar una conversación/sender nuevos por sesión
+    conversation_id = str(uuid.uuid4()).replace("-", "")[:24] if new_conversation else CONVERSATION_ID
+    sender_id = str(uuid.uuid4()).replace("-", "")[:24] if new_conversation else SENDER_ID
+
+    for i, msg in enumerate(messages, 1):
+        print(f"\n[{i}/{len(messages)}] 👤 {msg}")
+        payload = build_payload(msg, conversation_id, sender_id)
+        try:
+            resp = requests.post(BASE_URL, headers=HEADERS, json=payload, timeout=timeout)
+            resp.raise_for_status()
+            data = resp.json()
+            reply = extract_reply(data)
+            if reply is not None:
+                print(f"🤖 {reply}")
+            else:
+                print(f"⚠️  Respuesta sin 'response[0].text': {json.dumps(data)[:300]}")
+            results.append(
+                {
+                    "message": msg,
+                    "status_code": resp.status_code,
+                    "reply": reply,
+                    "raw": data,
+                }
+            )
+        except requests.RequestException as e:
+            print(f"❌ Error de red: {e}")
+            results.append({"message": msg, "error": str(e)})
+        time.sleep(1)
+
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+def main():
+    parser = argparse.ArgumentParser(description="Enviar múltiples mensajes al chatbot SAIC Málaga")
+    parser.add_argument(
+        "--mode",
+        choices=["connector", "direct"],
+        default="connector",
+        help="Modo de envío (default: connector)",
+    )
+    parser.add_argument(
+        "--new-conversation",
+        action="store_true",
+        help="Solo en modo direct: genera IDs de conversación/sender nuevos",
+    )
+    parser.add_argument(
+        "--output",
+        default="results.json",
+        help="Archivo donde guardar los resultados (default: results.json)",
+    )
+    args = parser.parse_args()
+
+    print(f"🚀 Modo: {args.mode}")
+    print(f"📨 Mensajes a enviar: {len(MESSAGES)}")
+
+    if args.mode == "connector":
+        results = run_with_connector(MESSAGES)
+    else:
+        results = run_direct(MESSAGES, new_conversation=args.new_conversation)
+
+    with open(args.output, "w", encoding="utf-8") as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
+
+    print(f"\n✅ Listo. Resultados guardados en {args.output}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+**Cómo usarlo:**
+```bash
+# Con el conector YAML (requiere chatbot_connectors instalado)
+python send_multiple.py --mode connector
+
+# Directo con requests (sin dependencias del conector)
+python send_multiple.py --mode direct
+
+# Directo generando IDs nuevos de conversación
+python send_multiple.py --mode direct --new-conversation
+```
+
+## 3) Resumen
+
+- **Conector YAML**: sigue el esquema de `custom-connector-guide.md` (`name`, `base_url`, `send_message.{path,method,headers,payload_template}`, `response_path`). Es prácticamente el mismo patrón que el ejemplo "MillionBot" de `connector-examples.md`, adaptado a tus IDs y headers.
+- **Script Python**: dos modos — uno usando `CustomChatbot` (como en la guía) y otro con `requests` puro para tener control total (nuevas conversaciones, manejo de errores, guardado de resultados).
+- ⚠️ **Aviso**: el `Authorization` que compartiste es un token real; si este conector va a quedar en un repo, considera moverlo a una variable de entorno o a un secreto.
+
+¿Quieres que te lo adapte para que cada mensaje use una **conversación nueva** (útil para tests independientes), o para que mantenga una **misma conversación** a lo largo de todos los mensajes? 😊
+$$$

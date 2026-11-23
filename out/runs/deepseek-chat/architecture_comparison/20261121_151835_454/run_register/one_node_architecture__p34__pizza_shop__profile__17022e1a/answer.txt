@@ -1,0 +1,75 @@
+Here's a profile that captures exactly that "changed my mind" behaviour — the user starts building a custom pizza, then pivots to a predefined one 🍕
+
+```yaml
+test_name: "custom_to_predefined_pizza_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza. You begin by asking for a custom pizza
+    and start specifying its size and toppings, but partway through the conversation
+    you change your mind and decide to order a predefined pizza instead.
+  context:
+    - "You are ordering for a casual dinner at home."
+    - "You initially want full control over your toppings, but then realize a predefined option is simpler."
+  goals:
+    - "Ask to order a custom pizza."
+    - "Specify a {{size}} custom pizza with {{toppings}}."
+    - "Change your mind and ask to switch to a predefined {{pizza_type}} pizza instead."
+    - "Confirm the final order and ask for the total price."
+    - size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives]
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Vegetarian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - initial_custom_request:
+        type: string
+        description: "The chatbot's response to the initial custom pizza request, including any questions about size or toppings."
+    - order_change_acknowledgement:
+        type: string
+        description: "The chatbot's response when the user switches to a predefined pizza, confirming the change."
+    - final_pizza_type:
+        type: string
+        description: "The predefined pizza type in the final confirmed order."
+    - total_price:
+        type: currency
+        description: "The final total price of the order, including currency symbol."
+
+conversation:
+  number: combinations(1, forward)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - change your mind
+    - single questions
+```
+
+A few notes on the design 👇
+
+- **`change your mind`** in `interaction_style` reinforces the pivot behaviour, so the simulator naturally expresses the switch mid-conversation.
+- The **goals** are ordered to mirror the real flow: custom request → customization details → switch → confirmation → price.
+- **`chatbot.output`** exposes `initial_custom_request`, `order_change_acknowledgement`, `final_pizza_type`, and `total_price` — these are the fields you'd reference in Sensei-check rules (e.g., `conv[0].final_pizza_type`).
+- I used `combinations(1, forward)` with two `forward()` variables (`size`, `pizza_type`) to generate a coverage matrix. If you'd rather keep it simple, swap `number` for a fixed integer like `3`.
+
+Want me to also draft a matching Sensei-check rule (e.g., "the final pizza type must be one of the predefined options, never the custom one")? 😊

@@ -1,0 +1,48 @@
+# YAML Connector for SAIC Málaga 🚀
+
+Here's the connector built from your request, following the same structure as the existing **Ada UAM** connector (same API, different bot) 😊
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+## A few notes 👀
+
+- **`response_path: "response.0.text"`** — this points to the first element of the `response` array and grabs its `text` field, which is exactly where the bot's reply lives in your sample response ✅
+- **`{user_msg}`** replaces the hardcoded `"hola"` from your request — that's the placeholder the connector fills in with whatever the user types.
+- I kept the **`Origin`**, **`Referer`**, and **`User-Agent`** headers since they were in your request and some APIs validate them (like Metro Madrid does). You can trim them if the API doesn't care, but keeping them is the safer bet.
+- The **`Authorization`** header value is the API key from your request — same pattern as Ada UAM, just a different key.
+
+## Quick test 💡
+
+You can try it right away in a Python shell:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("yaml-examples/saic-malaga.yml")
+success, response = bot.execute_with_input("Hola, necesito ayuda")
+print(response)
+```
+
+Want me to tweak anything — like renaming it, trimming headers, or adjusting the `response_path`? Just say the word! 😊

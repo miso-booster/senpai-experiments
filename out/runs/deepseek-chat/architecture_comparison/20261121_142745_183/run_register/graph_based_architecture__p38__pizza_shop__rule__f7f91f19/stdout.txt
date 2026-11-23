@@ -1,0 +1,50 @@
+conversation ID: graph_based_architecture__p38__pizza_shop__rule__f7f91f19
+$$$
+Great question! 😊 Let me walk you through how I'd build that rule for your pizza shop project.
+
+## The idea 💡
+
+You want to verify that the chatbot **actually provides an order ID** in the conversation. Since `order_id` is one of your `chatbot.output` fields, the cleanest approach is a **single-conversation oracle** that checks the field is present and non-empty.
+
+## The rule
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide a non-empty order_id in the conversation
+conversations: 1
+oracle: conv[0].order_id is not None and str(conv[0].order_id).strip() != ''
+```
+
+## Why this works 🔍
+
+- **`conversations: 1`** — this is a simple oracle over a single conversation, no metamorphic pairing needed.
+- **`conv[0].order_id`** — references the `order_id` field from your profile's `chatbot.output` (exactly the name you mentioned).
+- **`is not None`** — guards against the slot never being filled.
+- **`str(...).strip() != ''`** — guards against empty or whitespace-only values, which would technically be "present" but useless to a customer.
+
+## A couple of alternatives depending on your intent 👀
+
+**If you want to be stricter** (e.g., require a specific format like `ORD-1234`), you could add a pattern check:
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide a well-formed order_id
+conversations: 1
+oracle: conv[0].order_id is not None and str(conv[0].order_id).startswith('ORD-')
+```
+
+**If you'd rather use the built-in slot helpers** (which check *all* extracted outputs), you could combine it with `data_collected()` — but note that checks *every* slot, not just `order_id`, so it's broader than what you asked for:
+
+```yaml
+name: order_id_provided
+description: All outputs including order_id are collected
+conversations: 1
+oracle: data_collected() is True and conv[0].order_id is not None
+```
+
+## One thing to double-check ✅
+
+Make sure your profile's `chatbot.output` actually exposes a slot named **`order_id`** — if it's named differently (e.g., `order_number`, `id`), the rule will fail to resolve the field. Your existing rules like `more_toppings_cost_more` already reference `conv[0].price`, `conv[0].size`, etc., so as long as `order_id` lives alongside those in the same profile, you're good to go! 🍕
+
+Want me to also draft a **global uniqueness** companion rule (like `is_unique('order_id')`) so no two conversations share the same ID? That pairs really nicely with this one 😄
+$$$

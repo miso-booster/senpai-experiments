@@ -1,0 +1,310 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__e57bef0e
+$$$
+Hey there! 😊 Quick heads-up before we dive in: I'm Senpai, and my lane is SENSEI **rules, profiles, and connectors** — so I can't build you a full production Python automation framework. But I *can* do something arguably more useful: give you a **doc-grounded generator skeleton** that uses an LLM to emit profiles that actually pass SENSEI's validation, plus the guardrails your automation must enforce. Let's go 🚀
+
+**Docs I relied on:** `sensei-chat-guide.md` (plus I peeked at your existing `pizza_order_test_custom.yml` to see real-world structure).
+
+---
+
+## 1. What "valid profile" actually means (the invariants your generator must enforce)
+
+From `sensei-chat-guide.md`, a profile is only valid if it respects these hard rules. Your automation should validate them **after** the LLM generates YAML, and re-prompt on failure:
+
+| # | Invariant | Why it breaks otherwise |
+|---|-----------|--------------------------|
+| 1 | Every `{{variable}}` in a goal string has a **matching declared variable** in `user.goals` (case-sensitive) | Undefined variable → runtime error |
+| 2 | Every declared variable is **actually used** in at least one goal string | Dead variable / validation warning |
+| 3 | `type` in `user.goals` ∈ `{int, float, string}` or a **custom type** present in `types/` | `list`, `time`, `date` are **not** allowed in goals |
+| 4 | `type` in `chatbot.output` ∈ primitives + `time(...)`, `date(...)`, `list[...]`, or custom types | Invalid schema |
+| 5 | `random(n)` / `another(n)` → `n ≤ len(data)` | Runtime error |
+| 6 | `conversation.number: combinations(...)` requires **≥2** `forward()` or **≥2** `pairwise()` variables | No matrix to derive from |
+| 7 | `pairwise()` needs **≥2** variables assigned to it | Documented minimum |
+| 8 | `goal_style` is exactly one of `steps: N`, `random steps: M` (M ≤ 20), or `all_answered:` | Ambiguous termination |
+| 9 | `interaction_style` entries are **reserved keywords only** (never translated/freeform) | Silently ignored |
+| 10 | `chatbot.fallback` should be the **real bot fallback text** | Endless loops |
+| 11 | `chatbot.output` field names should be **stable & descriptive** — they become `conv[i].<field>` in rules | Rule/profile contract breaks |
+
+That last one is the big one for your project: your generated profiles are the **contract** that SENSEI-check rules read via `conv[i].field_name`. So the generator should be told *which business properties* you want to be rule-testable, and emit them in `chatbot.output`.
+
+---
+
+## 2. Architecture for the automation
+
+```
+description (natural language)
+        │
+        ▼
+ [LLM call #1] ──► draft profile YAML  (system prompt = schema + invariants)
+        │
+        ▼
+ [yaml.safe_load] ──► structural validation (invariants 1–9)
+        │
+        ├── fail ──► [LLM call #2] repair prompt with the exact errors ──► loop (max N)
+        │
+        ▼
+ [optional] validation_check.py --profile ...   (SENSEI's own validator)
+        │
+        ▼
+ write to profiles/<test_name>.yml
+```
+
+Two LLM calls matter: **generate** and **repair**. The repair loop is what makes it reliable — LLMs almost never nail all invariants first try.
+
+---
+
+## 3. The generator skeleton
+
+```python
+"""
+profile_generator.py — LLM-assisted SENSEI profile generator.
+
+Requires: pip install openai pyyaml
+Grounded in sensei-chat-guide.md (profile anatomy, goals/variables, functions,
+conversation controls, chatbot.output schema).
+"""
+
+import json
+import re
+import subprocess
+from pathlib import Path
+
+import yaml
+from openai import OpenAI
+
+client = OpenAI()
+
+# ---------------------------------------------------------------- schema prompt
+SYSTEM_PROMPT = """You generate SENSEI user-simulator profiles as YAML.
+Output ONLY valid YAML, no markdown fences, no commentary.
+
+TOP-LEVEL SECTIONS (all required unless noted):
+test_name: string
+llm:                      # optional
+  temperature: float
+  model: string
+  model_prov: string
+  format: {type: text}    # or speech + config
+user:
+  language: string
+  role: string
+  context: [string | {personality: path}]
+  goals: [string with {{vars}}, ..., {var_name: {function, type, data}}]
+chatbot:
+  is_starter: bool
+  fallback: string        # the REAL bot fallback message
+  output: [{field: {type, description}}, ...]
+conversation:
+  number: int | combinations | combinations(p) | combinations(p, pairwise)
+  goal_style: {steps: N} | {random steps: M} | {all_answered: {export: bool, limit: int}}
+  interaction_style: [reserved keywords]
+
+HARD RULES (violating any = invalid):
+1. Every {{var}} in a goal string MUST be declared in goals with the SAME name.
+2. Every declared variable MUST appear in at least one goal string.
+3. Variable `type` MUST be int, float, string, or a custom type name. NEVER list/time/date.
+4. chatbot.output `type` may be int, float, string, time(...), date(...), list[...], or custom.
+5. random(n)/another(n): n <= len(data).
+6. conversation.number: combinations(...) requires >=2 forward() OR >=2 pairwise() vars.
+7. pairwise() requires >=2 variables using it.
+8. goal_style is EXACTLY ONE of: steps:N | random steps:M (M<=20) | all_answered.
+9. interaction_style values are RESERVED KEYWORDS ONLY, never translated:
+   long phrases | change your mind | change language: [langs] | make spelling mistakes |
+   single questions | all questions | default | random: [<styles>]
+10. chatbot.output field names must be stable, descriptive snake_case
+    (they become conv[i].<field> in SENSEI-check rules).
+"""
+
+# ---------------------------------------------------------------- validation
+RESERVED_STYLES = {
+    "long phrases", "change your mind", "make spelling mistakes",
+    "single questions", "all questions", "default",
+}
+GOAL_TYPES = {"int", "float", "string"}
+VAR_RE = re.compile(r"\{\{\s*([A-Za-z0-9_]+)\s*\}\}")
+
+
+def validate_profile(p: dict) -> list[str]:
+    """Return a list of human-readable errors (empty = valid)."""
+    errs: list[str] = []
+
+    for key in ("test_name", "user", "chatbot", "conversation"):
+        if key not in p:
+            errs.append(f"missing top-level key: {key}")
+    if errs:
+        return errs
+
+    goals = p["user"].get("goals") or []
+    goal_strings = [g for g in goals if isinstance(g, str)]
+    declared = {k: v for g in goals if isinstance(g, dict) for k, v in g.items()}
+
+    # 1 & 2: variable <-> placeholder consistency
+    used = {m for s in goal_strings for m in VAR_RE.findall(s)}
+    for v in used - declared.keys():
+        errs.append(f"variable {{{{{v}}}}} used in goals but not declared")
+    for v in declared.keys() - used:
+        errs.append(f"variable '{v}' declared but never used in a goal string")
+
+    # 3: goal variable types
+    for name, spec in declared.items():
+        t = str(spec.get("type", ""))
+        if t not in GOAL_TYPES and not t:  # custom types allowed if non-empty
+            errs.append(f"variable '{name}' has invalid/missing type '{t}'")
+        if t in {"list", "time", "date"}:
+            errs.append(f"variable '{name}': type '{t}' is NOT allowed in user.goals")
+
+    # 5: random(n)/another(n) bounds
+    for name, spec in declared.items():
+        fn = str(spec.get("function", ""))
+        m = re.match(r"(random|another)\((\d+)\)", fn)
+        data = spec.get("data")
+        if m and isinstance(data, list) and int(m.group(2)) > len(data):
+            errs.append(f"variable '{name}': {fn} exceeds data length {len(data)}")
+
+    # 6 & 7: combination / pairwise preconditions
+    fns = [str(s.get("function", "")) for s in declared.values()]
+    n_forward = sum(f.startswith("forward") for f in fns)
+    n_pairwise = sum(f.startswith("pairwise") for f in fns)
+    num = p["conversation"].get("number")
+    if isinstance(num, str) and num.startswith("combinations"):
+        if n_forward < 2 and n_pairwise < 2:
+            errs.append("conversation.number uses combinations() but needs "
+                        ">=2 forward() or >=2 pairwise() variables")
+    if n_pairwise == 1:
+        errs.append("pairwise() requires at least 2 variables using it")
+
+    # 8: goal_style
+    gs = p["conversation"].get("goal_style") or {}
+    if not ({"steps", "random steps", "all_answered"} & gs.keys()):
+        errs.append("goal_style must define steps, random steps, or all_answered")
+    if "random steps" in gs and int(gs["random steps"]) > 20:
+        errs.append("goal_style 'random steps' must be <= 20")
+
+    # 9: interaction_style keywords
+    for style in p["conversation"].get("interaction_style") or []:
+        key = style if isinstance(style, str) else next(iter(style))
+        if key not in RESERVED_STYLES and key != "random":
+            errs.append(f"interaction_style '{key}' is not a reserved keyword")
+
+    # 10: output field naming
+    for field in p["chatbot"].get("output") or []:
+        for fname in field:
+            if not re.fullmatch(r"[a-z][a-z0-9_]*", fname):
+                errs.append(f"chatbot.output field '{fname}' should be snake_case")
+
+    return errs
+
+
+# ---------------------------------------------------------------- LLM helpers
+def _chat(messages: list[dict]) -> str:
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        temperature=0.4,
+        messages=messages,
+    )
+    return resp.choices[0].message.content.strip()
+
+
+def _strip_fences(text: str) -> str:
+    return re.sub(r"^```(?:yaml)?|```$", "", text, flags=re.MULTILINE).strip()
+
+
+def generate_profile(description: str, max_repairs: int = 3) -> dict:
+    """Generate a profile from a natural-language description, with repair loop."""
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": f"Create a SENSEI profile for:\n{description}"},
+    ]
+    raw = _strip_fences(_chat(messages))
+
+    for attempt in range(max_repairs + 1):
+        try:
+            profile = yaml.safe_load(raw)
+        except yaml.YAMLError as e:
+            errs = [f"YAML parse error: {e}"]
+            profile = None
+        else:
+            errs = validate_profile(profile)
+
+        if not errs:
+            return profile
+
+        print(f"[repair {attempt + 1}] {len(errs)} issue(s):")
+        for e in errs:
+            print("  -", e)
+
+        messages += [
+            {"role": "assistant", "content": raw},
+            {"role": "user", "content":
+                "Fix ONLY these problems and return the full corrected YAML:\n"
+                + "\n".join(f"- {e}" for e in errs)},
+        ]
+        raw = _strip_fences(_chat(messages))
+
+    raise RuntimeError(f"Could not produce a valid profile after {max_repairs} repairs")
+
+
+# ---------------------------------------------------------------- entry point
+def save_profile(profile: dict, profiles_dir: str = "profiles") -> Path:
+    path = Path(profiles_dir) / f"{profile['test_name']}.yml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump(profile, sort_keys=False, allow_unicode=True))
+    return path
+
+
+def run_sensei_validator(profile_path: Path, output_dir: str) -> bool:
+    """Optional: delegate to SENSEI's own validator (see guide §8.4)."""
+    try:
+        subprocess.run(
+            ["python", "validation_check.py",
+             "--profile", str(profile_path),
+             "--output", output_dir,
+             "--combined-matrix", "--verbose"],
+            check=True,
+        )
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        print(f"[warn] SENSEI validator not run: {e}")
+        return False
+
+
+if __name__ == "__main__":
+    desc = (
+        "A user booking a hotel room. They want to choose room type, check-in and "
+        "check-out dates, ask about breakfast, and get a total price and booking id. "
+        "Use pairwise coverage on room type and breakfast, forward on dates. "
+        "Extract total_price (currency), booking_id (string), checkin_time (time)."
+    )
+    prof = generate_profile(desc)
+    path = save_profile(prof)
+    print(f"✅ wrote {path}")
+    run_sensei_validator(path, "output")
+```
+
+---
+
+## 4. Why this design (and where to extend it)
+
+- **The system prompt is the spec.** It's a condensed restatement of `sensei-chat-guide.md` §3–§6. Keep it in sync with the docs — that's your single source of truth.
+- **`validate_profile()` is your safety net.** LLMs will happily emit `type: list` in goals or `pairwise()` on one variable. The validator catches it *before* SENSEI does.
+- **The repair loop is non-negotiable.** In practice, expect 1–2 repairs for anything non-trivial.
+- **`chatbot.output` should be driven by your rule intentions.** If you tell the generator "I want to write a rule checking price monotonicity," it should emit `total_price: {type: currency}`. That's the profile↔rule contract from §2.1.
+- **Custom types need a pre-step.** If the description mentions a domain type (phone, currency, booking ref), your automation should first ensure a matching YAML exists in `types/` — otherwise the profile references a type that doesn't resolve.
+
+---
+
+## 5. Things I'd flag before you build this for real
+
+1. **Custom types are a separate artifact.** The generator above assumes `currency` etc. already exist in `types/`. You'll want a second generator (or a curated library) for those.
+2. **`personalities/` references** (`personality: personalities/calm-user.yml`) must point to real files — validate those paths too.
+3. **Don't let the LLM invent `chatbot.fallback`.** It should be *your bot's actual fallback string*, passed in as a parameter. Otherwise you get infinite loops.
+4. **`combinations()` is fragile.** If the LLM picks it without enough `forward`/`pairwise` vars, validation fails — the validator catches this, but consider defaulting to a plain integer `number` for generated profiles.
+
+---
+
+Want me to go further on any of these? I can:
+- 🎯 Draft the **system prompt as a reusable file** tuned to your project's existing profiles (pizza ordering, info seeker, etc.)
+- 🔗 Show how to make the generator **rule-aware** — i.e., take a target rule's `conv[i].field` references and ensure the profile emits those fields
+- 🧩 Sketch the **custom-type generator** for `types/`
+
+Just say the word! 😊
+$$$

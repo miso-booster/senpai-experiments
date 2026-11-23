@@ -1,0 +1,147 @@
+conversation ID: one_node_architecture__p12_evil__pizza_shop__profile__ef996caa
+$$$
+I'll help you with that! 😊 Let me start with the YAML connector based on your request, then the Python script to test it.
+
+## 1) YAML Connector
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of quick notes 👀:
+- I kept only the **meaningful headers** (auth, origin, referer, user-agent, content-type). Things like `Content-Length`, `Connection`, `Sec-Fetch-*`, `Priority`, `Pragma`, `Cache-Control` are handled automatically by the HTTP client and would just add noise.
+- `response_path: "response.0.text"` extracts the bot's reply from `response[0].text` in the JSON. Note the reply contains HTML (`<p>...</p>`), so you may want to strip tags downstream if needed.
+
+## 2) Python Script to Send Multiple Requests
+
+```python
+"""
+Send multiple messages to the SAIC Malaga chatbot connector.
+
+Usage:
+    python test_saic_malaga.py
+"""
+
+import json
+import time
+import requests
+
+# --- Connector configuration (mirrors the YAML) -----------------------------
+BASE_URL = "https://api.1millionbot.com"
+PATH = "/api/public/messages"
+HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": "64e5d1af081211d24e2cfecd",
+    "Origin": "https://saic.malaga.eu",
+    "Referer": "https://saic.malaga.eu/",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) "
+        "Gecko/20100101 Firefox/147.0"
+    ),
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+# Fixed session identifiers from the captured request
+CONVERSATION_ID = "6977595c744ccf01954b8797"
+SENDER_ID = "6977595c3e4824018e496b0c"
+BOT_ID = "64e5d1af081211d24e2cfec8"
+LANGUAGE = "es"
+URL = "https://saic.malaga.eu/"
+
+# Messages to send
+MESSAGES = [
+    "hola",
+    "¿Cuál es el horario de atención?",
+    "Quiero pedir cita previa",
+    "¿Dónde está la oficina más cercana?",
+    "gracias",
+]
+
+
+def build_payload(user_msg: str) -> dict:
+    """Build the JSON payload for a single message."""
+    return {
+        "conversation": CONVERSATION_ID,
+        "sender_type": "User",
+        "sender": SENDER_ID,
+        "bot": BOT_ID,
+        "language": LANGUAGE,
+        "url": URL,
+        "message": {"text": user_msg},
+    }
+
+
+def extract_reply(data: dict) -> str:
+    """Extract the bot's reply using the response_path: response.0.text."""
+    try:
+        return data["response"][0]["text"]
+    except (KeyError, IndexError, TypeError):
+        return "<no reply found>"
+
+
+def send_message(user_msg: str, timeout: int = 30) -> dict:
+    """Send one message and return the parsed JSON response."""
+    url = BASE_URL + PATH
+    payload = build_payload(user_msg)
+
+    response = requests.post(url, headers=HEADERS, json=payload, timeout=timeout)
+    response.raise_for_status()
+    return response.json()
+
+
+def main() -> None:
+    for i, msg in enumerate(MESSAGES, start=1):
+        print(f"\n[{i}/{len(MESSAGES)}] User: {msg}")
+        try:
+            data = send_message(msg)
+            reply = extract_reply(data)
+            print(f"Bot: {reply}")
+        except requests.HTTPError as e:
+            print(f"HTTP error: {e} — {e.response.text[:200]}")
+        except requests.RequestException as e:
+            print(f"Request failed: {e}")
+
+        # Small pause to be polite to the API
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### How it works 🧠
+- **`build_payload`** mirrors the `payload_template` from the YAML, injecting `{user_msg}` into `message.text`.
+- **`extract_reply`** follows the `response_path: response.0.text` logic — it navigates `response[0].text`.
+- **`send_message`** does the actual POST with the same headers as the connector.
+- **`main`** loops through a list of messages, prints user/bot turns, and handles HTTP errors gracefully.
+
+### Tips 💡
+- If the API expects a **fresh `conversation`/`sender` ID per session**, generate UUIDs instead of reusing the captured ones.
+- The bot's reply is **HTML** — if you need plain text, add `from bs4 import BeautifulSoup` and use `BeautifulSoup(reply, "html.parser").get_text()`.
+- If you want to plug this into Sensei, just point the project at the YAML file above via `--connector-params` / `run.yml` — no code changes needed! 🚀
+
+Want me to also wire this up as a `run.yml` for a Sensei project, or adapt the script to log conversations in a format Sensei-check can consume?
+$$$

@@ -1,0 +1,120 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__6fe9922c
+$$$
+¡Listo! Aquí tienes el perfil, siguiendo la guía `sensei-chat-guide.md` y el estilo de tus perfiles existentes (p. ej. `estudiante_con_problemas_de_acceso_a_moodle.yaml`) 😊
+
+```yaml
+test_name: Usuario que no consigue configurar eduroam en su dispositivo
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario de la universidad que intenta configurar la red eduroam en su dispositivo
+    pero no lo consigue. Necesita ayuda paso a paso para completar la configuración
+    y poder conectarse a internet.
+  context:
+    - "Eres miembro de la comunidad universitaria y necesitas eduroam para tus tareas diarias."
+    - "Ya has intentado configurarlo por tu cuenta varias veces sin éxito."
+    - "No eres experto en temas técnicos, así que agradeces instrucciones claras y sencillas."
+    - "No sabes con certeza si el problema es tu dispositivo, tus credenciales o el método de configuración."
+  goals:
+    - "Explicar que no consigues conectarte a eduroam usando el método de {{setup_method}} en tu {{device_type}}."
+    - "Pedir ayuda paso a paso para configurar eduroam con {{setup_method}}."
+    - "Indicar qué error o problema concreto aparece cuando lo intentas ({{error_symptom}})."
+    - "Preguntar qué credenciales debes usar ({{credential_type}}) para autenticarte en eduroam."
+    - "Solicitar una alternativa si {{setup_method}} no funciona en tu {{device_type}}."
+    - setup_method:
+        function: pairwise()
+        type: string
+        data:
+          - el instalador automático (eduroam CAT)
+          - la configuración manual de la red Wi-Fi
+          - la app oficial de eduroam
+          - el perfil de configuración descargable
+    - device_type:
+        function: pairwise()
+        type: string
+        data:
+          - portátil Windows
+          - MacBook
+          - móvil Android
+          - iPhone
+          - tablet iPad
+    - error_symptom:
+        function: another()
+        type: string
+        data:
+          - la red aparece pero no conecta
+          - la autenticación falla aunque las credenciales son correctas
+          - el certificado no se valida
+          - el dispositivo se queda en "obteniendo dirección IP"
+          - la conexión se cae a los pocos segundos
+    - credential_type:
+        function: random()
+        type: string
+        data:
+          - correo institucional completo y contraseña
+          - usuario institucional (sin el dominio) y contraseña
+          - cuenta de invitado temporal
+
+chatbot:
+  is_starter: false
+  fallback: >
+    Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes
+    consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al
+    Centro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+    - setup_method_requested:
+        type: string
+        description: Método de configuración de eduroam que el usuario quiere usar
+    - device_type:
+        type: string
+        description: Dispositivo en el que se intenta configurar eduroam
+    - error_symptom:
+        type: string
+        description: Problema o error concreto que aparece al intentar conectarse
+    - credentials_guidance:
+        type: string
+        description: Credenciales que el bot indica que deben usarse para autenticarse
+    - step_by_step_instructions:
+        type: string
+        description: Instrucciones paso a paso proporcionadas por el bot
+    - alternative_method:
+        type: string
+        description: Método alternativo sugerido por el bot
+    - certificate_handling:
+        type: string
+        description: Indicaciones sobre certificados o validación de los mismos
+    - troubleshooting_tips:
+        type: string
+        description: Consejos de resolución de problemas ofrecidos por el bot
+    - support_contact_details:
+        type: string
+        description: Detalles de contacto para asistencia adicional
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+### Qué hace y por qué 🔧
+
+- **Variables = formas de intentar configurarlo**: `setup_method` (instalador CAT, configuración manual, app oficial, perfil descargable) y `device_type` (Windows, Mac, Android, iPhone, iPad) son las dos variables `pairwise()`, así que `conversation.number: combinations(0.6, pairwise)` genera una matriz de cobertura por pares al 60 % (según §5 de `sensei-chat-guide.md`, se necesitan al menos dos funciones `pairwise` para usar `combinations`).
+- **Variables de apoyo**: `error_symptom` (`another()`, sin repetición hasta agotar opciones) y `credential_type` (`random()`) enriquecen el escenario sin explotar el número de conversaciones.
+- **`chatbot.output` como contrato para reglas**: los campos (`setup_method_requested`, `device_type`, `error_symptom`, `credentials_guidance`, `step_by_step_instructions`, etc.) están pensados para que luego puedas escribir reglas tipo `conv[i].step_by_step_instructions is not None` o comprobar que el método pedido coincide con el sugerido.
+- **Estilo**: mantuve el `fallback` del CAU y el tono de tus perfiles existentes; `single questions` + un bloque `random` de estilos para variar el realismo.
+
+¿Quieres que ajuste algo (idioma, número de conversaciones, campos de `output`) o que te prepare una **regla** asociada a este perfil? 🚀
+$$$

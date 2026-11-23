@@ -1,0 +1,30 @@
+conversation ID: one_node_architecture__p9__ada_uam__rule__d3ada696
+$$$
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el horario de la biblioteca sea de 9 a 20.
+
+Como el perfil expone el campo `library_hours` en `chatbot.output`, la regla puede leerlo directamente como `library_hours` (o `conv[0].library_hours`). El truco está en que el horario puede venir escrito de muchas formas ("9:00 - 20:00", "de 9 a 20 h", "9am a 8pm"...), así que lo más robusto es usar el helper `semantic_content`, que hace una comprobación semántica con LLM y tolera variaciones de formato.
+
+Aquí tienes la regla lista para pegar en `rules/`:
+
+```yaml
+name: library_hours_9_to_20
+description: >
+  El horario de atención de la biblioteca debe ser de 9:00 a 20:00.
+  Regla ligada al perfil "Préstamos y Recursos de la Biblioteca"
+  (campo chatbot.output: library_hours).
+conversations: 1
+active: true
+oracle: |
+  semantic_content(library_hours, "horario de atención de la biblioteca de 9:00 a 20:00")
+yields: |
+  f"Horario de biblioteca incorrecto o no informado: {library_hours}"
+```
+
+Un par de notas para que la regla te funcione redondo 👀:
+
+- **Depende del campo `library_hours`**: si en algún momento renombras ese campo en el `chatbot.output` del perfil, recuerda actualizar la regla.
+- **`semantic_content` es LLM-backed**, así que tolera variaciones de formato ("9-20", "de 9 a 20h", "9:00 a 20:00"...) pero puede tener pequeñas variaciones. Si quieres una comprobación más estricta y determinista, podrías combinar con `extract_float`, aunque eso solo captura el primer número y no valida el rango completo.
+- Si prefieres que la regla **solo aplique cuando la conversación realmente preguntó por el horario**, puedes añadir un `when` que filtre por conversaciones donde el usuario lo solicitó. Pero como el perfil siempre incluye ese goal, no es imprescindible.
+
+¿Quieres que te prepare también una variante más estricta (por ejemplo, extrayendo los números y comprobando que el mínimo sea 9 y el máximo 20)? ¡Dímelo y la montamos! 🚀
+$$$

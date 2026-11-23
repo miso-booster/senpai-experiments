@@ -1,0 +1,48 @@
+Great question! 😊 Let me break it down in a friendly way.
+
+## What is a metamorphic rule in Sensei?
+
+A **metamorphic rule** is a rule in Sensei-check that checks a **relationship between two or more conversations** — instead of checking one conversation's answer against a fixed "correct" value.
+
+Think of it like this 🍕: you might not know the *exact* price of a pizza, but you *do* know that **adding more toppings should make it cost more**. That's a metamorphic relation — you're checking how outputs *change* when inputs change, rather than checking an absolute answer.
+
+This is super useful for chatbots, because often there's no single "right" answer to compare against (the *oracle problem*). Instead, you assert invariants and monotonic relations that should always hold.
+
+## The key idea
+
+Metamorphic rules compare **pairs or tuples of conversations** that meet a selection filter, and assert how outputs should relate. They typically use:
+
+- `conversations: 2` (or more) — how many conversations the rule needs
+- `when:` — a filter to pick *comparable* conversations (ceteris paribus!)
+- `if:` / `then:` — the relation to check (reads like a law: "if X changes this way, then Y should change that way")
+
+## A quick example from your own project 👀
+
+You already have one! Here's `more_toppings_cost_more.yaml`:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Reading it out loud: *"When two orders have the same size and drink, if one has more toppings than the other, then its price must be higher."* 🎯
+
+## How it differs from a "normal" rule
+
+- **Single-conversation oracle** (traditional): checks one conversation against a fixed expectation, e.g. `extract_float(price) >= 10`.
+- **Metamorphic rule**: checks a *relation across conversations*, e.g. "more toppings ⇒ higher price."
+
+Both live in the same YAML rule format — the difference is whether you use `conversations: 1` with a simple `oracle:`, or `conversations: 2+` with `when`/`if`/`then` (or an `oracle` over `conv[0]`, `conv[1]`, …).
+
+## Why they're powerful 💪
+
+- **No oracle needed** — you don't need to know the exact answer, just how it should behave.
+- **Catches regressions** — if a bot suddenly charges *less* for more toppings, the rule fails.
+- **Works with LLM variability** — relations are more stable than exact strings.
+
+Want me to help you write a new metamorphic rule, or tweak one of the existing ones in your `rules/` folder? Just say the word! 😊

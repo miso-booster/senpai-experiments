@@ -1,0 +1,75 @@
+Here's your profile, ready to drop into `profiles/`:
+
+```yaml
+test_name: bike_shop_general_info_and_pricing
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer visiting a bike shop's virtual assistant to get
+    general information about the shop and its standard services. You behave
+    like a typical customer: you phrase your questions clearly and directly,
+    one at a time, and you stay focused on basic pricing, shop hours, and
+    general bike care.
+  context:
+    - "You are a regular cyclist who wants straightforward answers before visiting the shop in person."
+    - "You only care about basic information: opening/closing times, the price of a few common items and services, and general bike-care advice."
+    - "You do NOT ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or anything outside basic pricing, shop hours, and general bike care."
+    - "You expect the assistant to use appropriate bike-shop terminology, clearly state prices, and not push unrelated services or unsolicited suggestions."
+  goals:
+    - "Ask about the bike shop's opening and closing times."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices rather than advanced repairs."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_closing_times:
+        type: string
+        description: "The shop's opening and closing times as stated by the chatbot (e.g., weekday and weekend hours)."
+    - tire_price:
+        type: currency
+        description: "The price of a new bike tire as stated by the chatbot."
+    - tune_up_price:
+        type: currency
+        description: "The price of a standard bike tune-up as stated by the chatbot."
+    - seat_price:
+        type: currency
+        description: "The price of a new bike seat as stated by the chatbot."
+    - bike_care_advice:
+        type: string
+        description: "The chatbot's general advice on properly taking care of a bike, focusing on basic maintenance and good practices (e.g., cleaning, lubrication, tire pressure, storage) rather than advanced repairs."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+### What this does and why 🚲
+
+- **`user.role` + `context`** encode the customer persona and the hard boundaries you described (no appointments, models, advanced repairs, warranties, delivery, or off-topic questions). The context lines explicitly tell the simulator to stay within basic pricing, shop hours, and general bike care.
+- **`user.goals`** are the five requests you listed: opening/closing times, tire price, tune-up price, seat price, and general bike-care advice. They're plain strings (no variables needed here), so the simulator asks them naturally.
+- **`chatbot.output`** defines the extraction schema — this is the contract that future SENSEI-check rules will read as `conv[i].<field>`. I used `currency` for the three prices (so numeric/price rules work cleanly) and `string` for hours and advice. Field names are stable and descriptive, per the best-practices section of `sensei-chat-guide.md`.
+- **`conversation`** mirrors the existing bike-shop profiles: `all_answered` goal style (so the run continues until every goal is covered, with a safety `limit`), `single questions` interaction style (one clear, direct question per turn — matching your "phrase questions clearly and directly" requirement), and a `max_cost` cap for safety.
+
+### Notes / things you might tweak
+- I set `is_starter: false` (the chatbot greets first) to match your other bike profiles — flip to `true` if your bot expects the user to open.
+- The `fallback` text is copied from your existing bike profiles; swap it for your bot's real fallback if it differs.
+- If you later want rules on these outputs, the `currency` fields (`tire_price`, `tune_up_price`, `seat_price`) are ready for numeric checks, and `opening_closing_times` / `bike_care_advice` are ready for content/topic checks.
+
+Want me to also draft a matching SENSEI-check rule (e.g., verifying prices are stated and the bot stays on-topic)? Just say the word and I'll load the rules docs and build it against these output fields 😊.

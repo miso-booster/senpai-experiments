@@ -1,0 +1,37 @@
+Here's a rule that checks whether the chatbot shared information about current promotions, without tying it to any profile 🎉
+
+```yaml
+name: chatbot_provides_promotions_info
+description: The chatbot informs the user about current promotions when asked (profile-agnostic, uses only generic helpers)
+conversations: 1
+active: True
+oracle: |
+  utterance_index('assistant', 'current promotions, discounts or special offers') > 0
+yields: |
+  f"The chatbot did not provide information about current promotions"
+```
+
+### Why it's built this way
+
+- **Profile-agnostic** — as you asked, it doesn't reference any `chatbot.output` field. It only uses `utterance_index`, a generic LLM-backed helper listed in `sensei-check-doc.md` (section 6.4) and used in `rules-examples.md` (e.g. `ordering_conversation_turns_assistant`).
+- **`conversations: 1`** — single-conversation oracle, since we're checking one dialogue at a time.
+- **`utterance_index('assistant', ...) > 0`** — returns the turn index where the assistant mentions promotions; `> 0` means "it happened somewhere in the dialogue". Note the docs' convention: the 3rd param of `utterance_index` should be omitted.
+- **`yields`** — optional failure message, following the pattern in `rules-examples.md`.
+
+### Heads-up ⚠️
+
+`utterance_index` is **LLM-backed**, so expect minor variability. If you want a stricter/looser check, you can:
+
+- Make it conditional on the user actually asking about promotions:
+  ```yaml
+  name: chatbot_provides_promotions_info_when_asked
+  description: When the user asks about promotions, the chatbot must share current promotions (profile-agnostic)
+  conversations: 1
+  active: True
+  if: utterance_index('user', 'asking about promotions or discounts') > 0
+  then: utterance_index('assistant', 'current promotions, discounts or special offers') > 0
+  yields: f"The chatbot did not provide information about current promotions when asked"
+  ```
+- Or combine with `chatbot_returns(...)` for a literal keyword match if your bot always uses a fixed phrase like "PROMO:".
+
+Want me to save this as a file (e.g. `promotions_info.yaml`) or tweak it into the `if`/`then` variant? 😊

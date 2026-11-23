@@ -1,0 +1,81 @@
+conversation ID: one_node_architecture__p14__alcampo__profile__7f9a9d05
+$$$
+¡Buena idea! 🍳 Un perfil enfocado en recetas y planificación de menús encaja perfecto con el proyecto de Alcampo, y además complementa el que ya tienes (`recipe_management_and_cooking_support.yaml`) sin duplicarlo: este se centra más en la *recomendación activa* y la *planificación semanal*.
+
+Aquí tienes un perfil listo para pegar en `profiles/`:
+
+```yaml
+test_name: "Recipe Recommendations and Menu Planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A home cook planning meals for the week who wants the chatbot to recommend
+    recipes and help build a coherent weekly menu using Alcampo's products.
+  context:
+    - "You cook for a family of four and want to plan dinners for the whole week."
+    - "You prefer seasonal ingredients and want to keep the weekly grocery budget reasonable."
+    - "You have one vegetarian in the household, so at least a couple of dinners must be meat-free."
+    - "You like step-by-step guidance and want to know which ingredients you'd need to buy."
+  goals:
+    - "Ask the chatbot to recommend recipes for a weekly family menu."
+    - "Request recipe suggestions that use {{main_ingredient}} as the star ingredient."
+    - "Ask for at least one vegetarian dinner option suitable for the whole family."
+    - "Ask which ingredients from the recommended recipes are available at Alcampo."
+    - "Request a step-by-step preparation guide for the {{dish_type}} recipe."
+    - "Ask the chatbot to help organize the recipes into a day-by-day weekly menu."
+    - main_ingredient:
+        function: forward()
+        type: string
+        data: [chicken, salmon, chickpeas, pasta]
+    - dish_type:
+        function: forward(main_ingredient)
+        type: string
+        data: [main course, side dish, dessert]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recommended_recipes:
+        type: list[string]
+        description: "Names of the recipes recommended by the chatbot"
+    - recipe_ingredients:
+        type: list[string]
+        description: "Ingredients listed for the recommended recipes"
+    - vegetarian_option:
+        type: string
+        description: "Vegetarian recipe suggested, if any"
+    - preparation_steps:
+        type: string
+        description: "Step-by-step preparation instructions for a recipe"
+    - weekly_menu:
+        type: string
+        description: "Day-by-day weekly menu proposed by the chatbot"
+    - product_availability:
+        type: string
+        description: "Confirmation that ingredients are available at Alcampo"
+
+conversation:
+  number: combinations
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👇
+
+- **`conversation.number: combinations`** funciona porque tienes dos variables con `forward()` anidadas (`main_ingredient` → `dish_type`). Si prefieres un número fijo, cámbialo por un entero.
+- Los campos de `chatbot.output` (`recommended_recipes`, `weekly_menu`, etc.) son el **contrato** para futuras reglas: si luego quieres una regla tipo *"el menú semanal debe incluir al menos una opción vegetariana"*, ya tienes el campo listo para referenciarlo como `conv[0].vegetarian_option`.
+- Si quieres que el usuario simulado sea más exigente o más relajado, puedes añadir una personalidad en `context` (por ejemplo `personality: personalities/conversational-user`).
+
+¿Quieres que te prepare también una **regla de Sensei-check** que valide, por ejemplo, que el menú semanal siempre incluya una opción vegetariana o que las recetas recomendadas no estén vacías? 😊
+$$$

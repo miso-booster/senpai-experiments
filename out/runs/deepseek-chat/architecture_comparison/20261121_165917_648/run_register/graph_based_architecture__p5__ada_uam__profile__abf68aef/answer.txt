@@ -1,0 +1,66 @@
+¡Hola! 😊 ¡Claro que sí! I'd be happy to help you craft a profile for testing the UAM chatbot around CAU support. Let me put together a clean, runnable YAML that captures exactly what you described — a user hunting for the CAU's phone, email, physical location, and opening hours.
+
+Here's a profile you can drop into your `profiles/` folder:
+
+```yaml
+test_name: "CAU_contact_and_hours_support"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario que necesita contactar con el Centro de Atención a Usuarios (CAU)
+    de la UAM y quiere reunir toda la información de contacto y horarios
+    para poder resolver sus dudas por el canal que le resulte más cómodo.
+  context:
+    - personality: personalities/formal-user
+    - "Tienes varias dudas sobre servicios de la universidad y prefieres hablar con una persona del CAU."
+    - "Quieres comparar los canales disponibles (teléfono, correo, presencial) antes de decidir cómo contactar."
+    - "Necesitas saber en qué horario puedes llamar o acudir en persona para no perder el viaje."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico del CAU."
+    - "Preguntar por la ubicación física (dirección) de la oficina del CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - cau_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - cau_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - cau_address:
+        type: string
+        description: "Dirección física de la oficina del CAU"
+    - cau_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.1
+  interaction_style:
+    - single questions
+```
+
+A few friendly notes on the design choices 👇
+
+- **`chatbot.output`** — I named the fields `cau_phone`, `cau_email`, `cau_address`, and `cau_hours` so they're stable and descriptive. That way, if you later write Sensei-check rules, you can reference them cleanly as `conv[i].cau_phone`, etc. 🎯
+- **`interaction_style: single questions`** — since the user is gathering four distinct pieces of info, asking one at a time keeps the conversation focused and easy to validate.
+- **`goal_style.steps: 20`** — plenty of room for the four goals plus any clarifying back-and-forth, without letting the conversation wander.
+- **`fallback`** — I reused the real CAU fallback text from your existing profiles so the bot doesn't loop endlessly if it doesn't understand something. 🙌
+- **`personality: personalities/formal-user`** — matches the polite, service-seeking tone. Feel free to swap it for `skeptical-user` or `impatient-user` if you want to stress-test different vibes.
+
+If you'd like, I can also add a **`change your mind`** interaction style (e.g., the user first asks by phone, then decides email is better) or wire in a **custom `phone_number` type** for stricter extraction. Just say the word! 😄

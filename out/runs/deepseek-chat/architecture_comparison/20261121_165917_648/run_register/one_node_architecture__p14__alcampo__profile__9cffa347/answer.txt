@@ -1,0 +1,88 @@
+¡Buena idea! 🍳 Un perfil enfocado en **recomendaciones de recetas y planificación de menús** encaja perfecto con el dominio de Alcampo. Te dejo un perfil listo para pegar en `profiles/`, siguiendo el estilo de tus otros perfiles (mismo modelo, `single questions`, `max_cost`, etc.).
+
+Un par de notas rápidas antes del YAML 👀:
+- Uso variables con `forward()` para que el usuario pida recetas para **distintas ocasiones y preferencias**, generando variedad entre conversaciones.
+- Los campos de `chatbot.output` están pensados para que luego puedas escribir reglas profile-bound (p. ej. que siempre se devuelva una lista de ingredientes, o que el número de comensales coincida con lo pedido).
+
+```yaml
+test_name: Recipe Recommendations and Menu Planning
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A customer planning meals for the week who wants recipe ideas and help
+    organizing a menu, using Alcampo's products and the 'La Cocina de Alcampo'
+    recipe resources.
+  context:
+    - personality: personalities/conversational-user
+    - You are planning meals for the week and want to save time by getting recipe ideas that use ingredients available at Alcampo.
+    - You care about using seasonal ingredients and keeping the menu balanced and healthy.
+    - You want to know how to turn a recipe's ingredients into a shopping list for your online order.
+  goals:
+    - Ask the chatbot to recommend recipes for a {{meal_occasion}} using {{main_ingredient}}.
+    - Request a weekly menu plan for {{number_of_people}} people with {{dietary_preference}} options.
+    - Ask which seasonal ingredients are best to use for the {{meal_occasion}} recipes.
+    - Inquire how to add the ingredients of a recommended recipe to your shopping list or cart.
+    - Ask for a dessert or side dish suggestion that pairs with the {{main_ingredient}} main course.
+    - meal_occasion:
+        function: forward()
+        type: string
+        data: [weeknight dinner, weekend family lunch, quick lunch, special celebration]
+    - main_ingredient:
+        function: forward()
+        type: string
+        data: [chicken, fish, pasta, vegetables, legumes]
+    - number_of_people:
+        function: forward()
+        type: int
+        data:
+          min: 2
+          max: 6
+          step: 2
+    - dietary_preference:
+        function: forward()
+        type: string
+        data: [vegetarian, vegan, low-calorie, no restrictions]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recommended_recipes:
+        type: list[string]
+        description: Names of the recipes recommended by the chatbot
+    - recipe_ingredients:
+        type: list[string]
+        description: Ingredients listed for the recommended recipe
+    - menu_plan:
+        type: string
+        description: The weekly or occasion-based menu plan proposed
+    - seasonal_ingredients:
+        type: list[string]
+        description: Seasonal ingredients suggested for the recipes
+    - shopping_list_instructions:
+        type: string
+        description: Instructions on how to add recipe ingredients to the shopping list or cart
+    - dessert_or_side_suggestion:
+        type: string
+        description: Suggested dessert or side dish pairing
+    - number_of_servings:
+        type: int
+        description: Number of servings or people the recipe/menu is planned for
+
+conversation:
+  number: combinations(0.6, forward)
+  max_cost: 0.6
+  goal_style:
+    steps: 28
+  interaction_style:
+    - single questions
+```
+
+Si quieres, puedo también prepararte una **regla profile-bound** que verifique, por ejemplo, que cuando se recomienda una receta siempre venga acompañada de su lista de ingredientes (`recipe_ingredients` no vacía) o que el `number_of_servings` coincida con lo pedido. ¿Te la armo? 😊

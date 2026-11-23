@@ -1,0 +1,55 @@
+¡Claro que sí! 😊 Vamos a montar ese conector YAML para el bot de Alcampo paso a paso.
+
+## Análisis rápido 🔍
+
+- **base_url**: `https://alcampo.botslovers.com`
+- **path**: `/bot/web`
+- **method**: `POST`
+- **Placeholder**: el mensaje del usuario va en `data.message.message.message.text` → `{user_msg}`
+- **response_path**: la respuesta está en `messages[0][0].message.text` → `messages.0.0.message.text`
+
+## YAML Connector ✅
+
+```yaml
+name: "Alcampo"
+base_url: "https://alcampo.botslovers.com"
+send_message:
+  path: "/bot/web"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Origin: "https://alcampo.botslovers.com"
+    Referer: "https://alcampo.botslovers.com/Admin/Widget?mobile=0&user=0&lang=es"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+  payload_template:
+    data:
+      id_user: "377611"
+      idweb_user: "ea38fe92-ad92-4610-9d62-ef7fecb1679b"
+      session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+      message:
+        message:
+          message:
+            text: "{user_msg}"
+        iduser: "377611"
+        session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+        channel: "web"
+      widget_form: "TRUE"
+      contexto_extra: []
+      lang: "es"
+    accion: "response_bot"
+response_path: "messages.0.0.message.text"
+```
+
+## Notas importantes 📝
+
+1. **`response_path` con doble índice**: la respuesta viene como `messages: [[{...}]]` — es un array dentro de otro array. Por eso usamos `messages.0.0.message.text` (primero el índice `0` del array externo, luego el `0` del interno). ¡Ojo con esto, que es fácil de pasar por alto! 👀
+
+2. **Headers mínimos**: dejé los que realmente importan (`Content-Type`, `Origin`, `Referer`, `User-Agent`). Los de `Sec-Fetch-*`, `Priority`, `TE`, etc. suelen ser generados automáticamente por el navegador y no son necesarios para que la API responda.
+
+3. **IDs de sesión y usuario**: los dejé fijos tal como venían en tu captura. Si el bot requiere sesiones dinámicas por usuario, podrías necesitar generar esos valores en cada petición — pero con el conector YAML actual no hay soporte para eso, así que se mantienen estáticos.
+
+4. **`contexto_extra: []`**: lo dejé como lista vacía, tal como en el request original.
+
+¿Quieres que lo probemos con un mensaje de ejemplo o necesitas ajustar algo (por ejemplo, quitar headers o cambiar el `name`)? 🚀

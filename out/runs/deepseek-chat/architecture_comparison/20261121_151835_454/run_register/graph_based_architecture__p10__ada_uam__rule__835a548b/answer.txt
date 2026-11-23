@@ -1,0 +1,120 @@
+¡Hola! 😊 ¡Qué buena pregunta! Tienes un perfil muy rico en `chatbot.output` (¡16 campos!) y eso es genial porque te da muchísimo material para escribir reglas de prueba. Vamos a aprovecharlo.
+
+Antes de lanzarte, un recordatorio rápido: en Sensei-check, los campos que uses en tus reglas (`conv[0].admission_deadline`, etc.) **deben existir** en el `chatbot.output` de tu perfil. En tu caso, ¡todos los que te propongo ya están ahí! 👌
+
+---
+
+## 🎯 Reglas que te sugiero para probar este perfil
+
+Te las agrupo por tipo para que veas la variedad. Puedes copiarlas tal cual en archivos `.yaml` dentro de tu carpeta `rules/`.
+
+### 1. Regla global: todos los slots deben rellenarse
+
+Como tu perfil expone muchos campos, una regla muy útil es verificar que el chatbot **efectivamente extrae** toda la información que el usuario pide.
+
+```yaml
+name: all_slots_collected
+description: El chatbot debe rellenar todos los slots de output tras la conversación
+conversations: 1
+oracle: data_collected() is True
+```
+
+Y su prima, para ver qué falta cuando falla:
+
+```yaml
+name: no_missing_slots
+description: No debe quedar ningún slot sin rellenar
+conversations: 1
+oracle: missing_slots() == []
+```
+
+---
+
+### 2. Regla de idioma: respuestas en español
+
+Tu usuario habla en español, así que el bot debería responder en español. ¡Clásico y muy efectivo!
+
+```yaml
+name: responds_in_spanish
+description: El chatbot responde en el mismo idioma que el usuario (español)
+conversations: 1
+oracle: responds_in_same_language() is True
+```
+
+---
+
+### 3. Regla de alcance: no salirse del tema
+
+Tu perfil es de admisiones universitarias. Una regla de scope evita que el bot se vaya por las ramas.
+
+```yaml
+name: scope_admissions_only
+description: El asistente solo habla de admisiones, grados, cursos y Welcome Day
+conversations: 1
+oracle: only_talks_about('admisión universitaria, grados, cursos, listas de espera, Welcome Day, futuros estudiantes')
+```
+
+---
+
+### 4. Regla de coherencia semántica: Welcome Day
+
+Aquí brillan tus campos `welcome_day_date`, `welcome_day_time` y `event_location`. Puedes verificar que la info extraída tenga sentido.
+
+```yaml
+name: welcome_day_has_date_and_time
+description: Si se menciona el Welcome Day, debe haber fecha y hora extraídas
+conversations: 1
+if: conv[0].welcome_day_date is not None
+then: conv[0].welcome_day_time is not None and conv[0].event_location is not None
+```
+
+---
+
+### 5. Regla de unicidad global: enlaces únicos
+
+Tienes varios campos de tipo URL (`admission_to_grados_link`, `waitlist_info_link`, etc.). Una regla global interesante: los enlaces no deberían repetirse entre conversaciones (si esperas URLs distintas por tema).
+
+```yaml
+name: unique_admission_links
+description: Los enlaces de admisión no se repiten entre conversaciones
+conversations: all
+oracle: is_unique('admission_to_grados_link')
+```
+
+> ⚠️ Ojo: esto solo tiene sentido si esperas que cada conversación genere un enlace distinto. Si el bot siempre devuelve la misma URL oficial, esta regla fallará "por diseño". Úsala con criterio. 😉
+
+---
+
+### 6. Regla de repetición: evitar respuestas duplicadas
+
+Muy útil para detectar un bot que se queda "atascado" repitiendo la misma frase.
+
+```yaml
+name: no_repeated_answers
+description: El chatbot no repite respuestas casi idénticas
+conversations: 1
+oracle: len(repeated_answers('tf-idf', 0.85)) == 0
+```
+
+---
+
+### 7. Regla de longitud: conversaciones razonables
+
+Tu perfil tiene `goal_style.steps: 30`, así que conviene vigilar que no se alargue demasiado.
+
+```yaml
+name: conversation_not_too_long
+description: La conversación no debe superar los 20 turnos del asistente
+conversations: 1
+oracle: conversation_length('assistant') <= 20
+```
+
+---
+
+## 💡 Un consejo de amigo
+
+Empieza con las **reglas globales** (1, 2, 3, 6) porque no dependen de campos concretos y te dan feedback rápido sobre la calidad general del bot. Luego añade las **reglas profile-bound** (4, 5, 7) que sí usan tus campos específicos.
+
+Y recuerda: si algún día renombras un campo en `chatbot.output` (por ejemplo `welcome_day_date` → `welcome_day_fecha`), tendrás que actualizar las reglas que lo usan. ¡Así se mantienen sincronizados! 🔗
+
+¿Quieres que te ayude a afinar alguna de estas reglas, o prefieres que diseñemos una regla metamórfica comparando dos conversaciones (por ejemplo, distintos `grados`)? ¡Dime y lo montamos! 🚀

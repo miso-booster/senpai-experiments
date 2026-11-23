@@ -1,0 +1,91 @@
+¡Hola! 😊 ¡Qué buena idea! Un perfil que ponga a prueba la recomendación de recetas y la planificación de menús es súper útil para un chatbot de supermercado como Alcampo. Te ayudo a montarlo.
+
+Antes de escribir el YAML, un par de apuntes rápidos para que quede bien alineado con cómo funciona Sensei:
+
+- En `user.goals` puedes usar variables con `{{...}}` y declararlas con su `function`, `type` y `data`.
+- En `chatbot.output` defines lo que quieres extraer al final (y que luego podrán leer las reglas de Sensei-check como `conv[i].<campo>`).
+- Los `interaction_style` son palabras reservadas (no las traduzcas): `long phrases`, `change your mind`, `make spelling mistakes`, `single questions`, `all questions`, `change language: [...]`, `default`.
+
+Aquí tienes un perfil completo y listo para copiar en `profiles/recipe_and_menu_planning.yaml` 👇
+
+```yaml
+test_name: "recipe_and_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a home cook planning meals for the week and looking for recipe ideas
+    and menu planning help from the Alcampo chatbot. You want recipes that use
+    seasonal ingredients, and you want to be able to turn a recipe into a shopping list.
+  context:
+    - "You cook for a family of four and prefer healthy, home-made meals."
+    - "You care about seasonal and sustainable ingredients."
+    - "You like convenience: turning a recipe into a shopping list saves you time."
+  goals:
+    - "Ask the chatbot for recipe ideas for a {{meal_type}} using {{main_ingredient}}"
+    - "Ask how to search recipes by {{search_criterion}}"
+    - "Request that the ingredients of the chosen recipe be added to your shopping list"
+    - "Ask for a suggested weekly menu plan for {{diet_preference}} meals"
+    - "Ask whether there are prepared vegetable mixes available to save time"
+    - meal_type:
+        function: forward()
+        type: string
+        data: [lunch, dinner]
+    - main_ingredient:
+        function: pairwise()
+        type: string
+        data: [chicken, fish, vegetables, legumes]
+    - search_criterion:
+        function: pairwise()
+        type: string
+        data: [season, product category, difficulty]
+    - diet_preference:
+        function: random()
+        type: string
+        data: [vegetarian, balanced, low-calorie]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - recipe_recommendations:
+        type: list[string]
+        description: "Recipes suggested by the chatbot"
+    - recipe_search_method:
+        type: string
+        description: "How to search recipes by season and category"
+    - shopping_list_action:
+        type: string
+        description: "How to add recipe ingredients to the shopping list"
+    - weekly_menu_plan:
+        type: string
+        description: "Suggested weekly menu plan"
+    - prepared_vegetable_mixes:
+        type: string
+        description: "Availability of prepared vegetable mixes"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 8
+    max_cost: 0.1
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+      - single questions
+```
+
+Un par de detalles que quizá quieras ajustar 👀:
+
+- **`conversation.number`**: usé `combinations(0.6, pairwise)` porque tienes dos funciones (`forward` y `pairwise`) que generan una matriz de combinaciones. Si prefieres un número fijo de conversaciones, cámbialo por un entero (por ejemplo `number: 3`).
+- **`chatbot.output`**: los nombres son estables y descriptivos, pensando en que luego puedas escribir reglas de Sensei-check que lean `conv[i].recipe_recommendations`, etc.
+- **`interaction_style`**: incluí estilos que estresan al bot de forma realista (frases largas, errores de ortografía, preguntas sueltas). Puedes añadir `change your mind` si quieres probar cómo reacciona si cambias de receta a mitad de conversación.
+
+¿Quieres que te lo adapte para que también pruebe el **cambio de idioma** (por ejemplo, que el usuario cambie a español a mitad de conversación), o que añada un campo de `chatbot.output` para validar con reglas el número de recetas devueltas? ¡Dime y lo afinamos! 🙌

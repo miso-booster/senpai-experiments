@@ -1,0 +1,43 @@
+I found the profiles, but there's an important mismatch I need to flag before writing the rule 👇
+
+## The problem: no profile exposes a `drink` output
+
+Your request says the output name should be `drink`, and the rule needs to compare prices with/without a drink. But looking at the candidate profiles:
+
+| Profile | Drink-related output | Price output |
+|---|---|---|
+| `pizza_and_drink_order_placement.yaml` | `drink_options`, `order_summary` (no `drink` field) | `total_cost` (type `money`) |
+| `pizza_order_test_custom.yml` | `drink` is only a *user goal variable*, not in `chatbot.output` | `price` (type `currency`) |
+| `pizzaorder_ivan_test.yml` | `selected_drink_type`, `drink_quantity_requested` | ❌ no price field at all |
+
+So **none of them has a `chatbot.output` field literally named `drink`** — and per the docs (`sensei-check-doc.md` §3.1, §3.3), a profile-bound rule must only reference fields that actually exist in `chatbot.output`. Inventing `conv[i].drink` would make the rule silently fail.
+
+## What I need from you
+
+**1) Which profile should this rule target?** My best guess is `pizza_order_test_custom.yml` (it has `price` + a `drink` goal variable), but its `chatbot.output` would need a `drink` field added.
+
+**2) How should "adding a drink costs $2 extra" be expressed?** The cleanest metamorphic form is:
+
+> Two conversations with the **same pizza** (size, toppings, quantity), one **with** a drink and one **without** → the one with a drink costs exactly $2 more.
+
+That requires the profile to expose:
+- `drink` (string, `None`/empty when no drink ordered) ← the output name you asked for
+- `price` (currency) — already in `pizza_order_test_custom.yml`
+- `size`, `toppings`, `cans`/quantity — already there as goal variables, but **not** in `chatbot.output`
+
+So to make this rule work I'd also need to add `size`, `toppings`, and `cans` to `chatbot.output`.
+
+## Proposed rule (draft, pending your confirmation)
+
+```yaml
+name: drink_adds_two_dollars
+description: Adding a drink to an otherwise identical pizza order costs exactly 2 dollars more (profile pizza_order_test_custom)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings and conv[0].cans == conv[1].cans
+if:   (conv[0].drink is None or conv[0].drink == '') != (conv[1].drink is None or conv[1].drink == '')
+then: abs(extract_float(conv[0].price) - extract_float(conv[1].price)) == 2
+```
+
+⚠️ Note: this only works if the profile's `conversation.number` is high enough to produce comparable pairs (with/without drink). `pizza_order_test_custom.yml` currently has `number: 2` and always orders a drink — so we'd likely need to make `drink` optional in the goals (e.g. add a "no drink" option) and raise the conversation count.
+
+**Shall I go ahead and (a) update `pizza_order_test_custom.yml` to expose `drink`, `size`, `toppings`, `cans` in `chatbot.output` and allow a no-drink case, then (b) create the rule above?** Or would you prefer a different profile / a different way of expressing the $2 check? 🙂

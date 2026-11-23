@@ -1,0 +1,120 @@
+¡Hola! 😊 Claro que sí, te ayudo a arreglarlo. Ya cargué la guía de perfiles (`sensei-chat-guide.md`) y comparé tu YAML con lo que dice la documentación. Encontré varios problemas de estructura. Te los explico y luego te dejo la versión corregida.
+
+## 🔍 Problemas detectados
+
+1. **Variables mal declaradas en `user.goals`** (el más grave):
+   - `{{identificador_id_uam}}` y `{{user_account}}` se usan en los goals, pero **no están declaradas** como variables con `function`/`type`/`data`.
+   - El bloque de `identificador_id_uam` está **roto**: le falta el nombre de la variable (`- identificador_id_uam:`) y el `function`, y además tiene `type`/`data` colgando dentro de un goal de texto. Según la guía (§4.1 y §4.4), cada `{{variable}}` debe declararse con **exactamente el mismo nombre** y con `function`, `type` y `data`.
+   - `user_account` está declarada pero **sin `function`** (obligatoria para elegir valores).
+
+2. **Falta `user.role`**: la guía (§3) lo incluye en la anatomía del perfil y es muy recomendable para darle rol al usuario simulado.
+
+3. **`chatbot.output` con campos duplicados/solapados**: tienes `contact_info` y `contact_information` (casi iguales), y `user_account` / `identificador_id_uam` como *outputs* cuando en realidad son **datos de entrada del usuario** (variables), no algo que el bot deba extraer. Según §2.1.1, `chatbot.output` es el **contrato** para las reglas, así que conviene que sea limpio y sin redundancias.
+
+4. **`conversation.goal_style.steps: 30`**: la guía (§5) recomienda usar `all_answered` o un número de pasos razonable; 30 pasos fijos es muy alto y encarece la conversación. Mejor `all_answered` con `limit` o un `steps` más bajo.
+
+5. **Falta `model_prov`** en `llm` (opcional, pero recomendable; §3 y §7).
+
+6. **`interaction_style` ausente**: opcional, pero útil. Lo dejo comentado/opcional.
+
+## ✅ Versión corregida
+
+```yaml
+test_name: Asistencia Técnica y Cuentas
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita ayuda con el Centro de Atención a Usuarios (CAU)
+    del servicio de Tecnologías de la Información de la UAM: acceso a plataformas
+    virtuales, cuentas ID-UAM y gestión de contraseñas.
+  context:
+    - Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad.
+    - Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias.
+    - Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento.
+  goals:
+    - Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU).
+    - Preguntar sobre los procedimientos para obtener una cuenta ID-UAM.
+    - Solicitar los pasos necesarios para establecer la contraseña por primera vez.
+    - Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado.
+    - Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}.
+    - identificador_id_uam:
+        function: random()
+        type: string
+        data:
+          - '123456789'
+          - '987654321'
+          - '112233445'
+          - '556677889'
+          - '998877665'
+    - user_account:
+        function: random()
+        type: string
+        data:
+          - usuario123
+          - maria.garcia
+          - juan_lopez_2023
+          - pedro.salas
+          - sara.martinez
+
+chatbot:
+  is_starter: false
+  fallback: >
+    ¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar
+    nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de
+    Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+    - contact_info:
+        type: string
+        description: Detalles de contacto del CAU
+    - operational_hours:
+        type: string
+        description: Horarios operativos del CAU
+    - available_services_list:
+        type: string
+        description: Servicios disponibles para crear cuenta
+    - password_setup_link:
+        type: string
+        description: Enlace para establecer contraseña
+    - recovery_steps:
+        type: string
+        description: Pasos para recuperar ID-UAM
+    - activation_code:
+        type: string
+        description: Código de activación para cambiar contraseña
+    - password_change_steps:
+        type: string
+        description: Pasos para cambiar la contraseña
+
+conversation:
+  number: 5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 15
+```
+
+## 📝 Resumen de cambios
+
+| Cambio | Motivo (según `sensei-chat-guide.md`) |
+|---|---|
+| Declaré `identificador_id_uam` correctamente (nombre + `function` + `type` + `data`) | §4.1/§4.4: cada `{{variable}}` debe declararse con el mismo nombre y con `function` |
+| Añadí `function: random()` a `user_account` | §4.4: la función de relleno es obligatoria |
+| Añadí `user.role` | §3: anatomía del perfil |
+| Eliminé `contact_information` (duplicado de `contact_info`) | §2.1.1: `chatbot.output` debe ser limpio y sin redundancias |
+| Quité `user_account` e `identificador_id_uam` de `chatbot.output` | Son datos de entrada del usuario, no outputs a extraer |
+| Cambié `steps: 30` por `all_answered` con `limit: 15` | §5: control de conversación más eficiente y con export de verificación |
+| Añadí `model_prov: openai` | §3/§7: recomendable para el proveedor del modelo |
+
+## ⚠️ Nota importante sobre las reglas
+
+Si tienes (o vas a crear) **reglas SENSEI** que lean `conv[i].contact_information`, `conv[i].user_account` o `conv[i].identificador_id_uam`, esas reglas **se romperán** al quitarlos de `chatbot.output`. Dime si quieres que revise tus reglas para alinearlas con este nuevo esquema. 🔧
+
+¿Quieres que ajuste algo más (por ejemplo, añadir `interaction_style`, cambiar el número de conversaciones, o revisar las reglas asociadas)?

@@ -1,0 +1,186 @@
+¡Perfecto! 😊 Ya tengo la documentación de conectores cargada (`custom-connector-guide.md` y `connector-examples.md`). Tu petición es prácticamente idéntica al ejemplo real de MillionBot de los docs, así que solo hay que adaptar los IDs, la URL y el `response_path`.
+
+## 1) YAML connector
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Notas rápidas:
+- `response_path: "response.0.text"` → en tu respuesta el texto está en `response[0].text` (los docs explican la notación con puntos y el índice `0`).
+- Solo he incluido las cabeceras relevantes (las de `Sec-Fetch-*`, `Priority`, `Pragma`, etc. son ruido del navegador y no aportan).
+- `Content-Length` y `Accept-Encoding` los gestiona el cliente HTTP automáticamente; no conviene fijarlos.
+- Ojo ⚠️: `conversation` y `sender` son IDs de sesión. Si el bot espera una conversación nueva por cada test, tendrás que generar/rotar esos valores (el `conversation` de tu ejemplo ya es uno existente). Si quieres, te ayudo a montar un perfil/script que los rote.
+
+## 2) Script Python completo
+
+```python
+#!/usr/bin/env python3
+"""
+Script para enviar múltiples mensajes al chatbot SAIC Málaga
+usando el conector YAML de SENSEI (CustomChatbot).
+
+Uso:
+    python send_multiple.py
+    python send_multiple.py --config saic_malaga.yml --delay 1.0
+"""
+
+import argparse
+import json
+import sys
+import time
+from pathlib import Path
+
+try:
+    from chatbot_connectors.implementations.custom import CustomChatbot
+except ImportError:
+    print(
+        "ERROR: no se encontró 'chatbot_connectors'. "
+        "Instala/activa el paquete de conectores de SENSEI antes de ejecutar.",
+        file=sys.stderr,
+    )
+    raise
+
+
+DEFAULT_CONFIG = "saic_malaga.yml"
+
+MESSAGES = [
+    "hola",
+    "¿Qué servicios ofrece el SAIC?",
+    "Necesito pedir cita previa",
+    "¿Cuál es el horario de atención?",
+    "Gracias, eso es todo",
+]
+
+
+def strip_html(text: str) -> str:
+    """Quita etiquetas HTML simples y normaliza <br> a saltos de línea."""
+    if not isinstance(text, str):
+        return str(text)
+    import re
+
+    text = re.sub(r"<\s*br\s*/?\s*>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+    return text.strip()
+
+
+def run_conversation(bot, messages, delay: float, verbose: bool = True):
+    """Envía una lista de mensajes y devuelve los resultados."""
+    results = []
+    for i, msg in enumerate(messages, start=1):
+        if verbose:
+            print(f"\n[{i}/{len(messages)}] 👤 Usuario: {msg}")
+
+        success, response = bot.execute_with_input(msg)
+
+        if success:
+            clean = strip_html(response)
+            if verbose:
+                print(f"🤖 Bot: {clean}")
+            results.append({"input": msg, "success": True, "response": clean})
+        else:
+            if verbose:
+                print(f"❌ Error: {response}")
+            results.append({"input": msg, "success": False, "error": str(response)})
+
+        if delay > 0 and i < len(messages):
+            time.sleep(delay)
+
+    return results
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Envía múltiples mensajes al chatbot SAIC Málaga."
+    )
+    parser.add_argument(
+        "--config",
+        default=DEFAULT_CONFIG,
+        help=f"Ruta al YAML del conector (por defecto: {DEFAULT_CONFIG})",
+    )
+    parser.add_argument(
+        "--delay",
+        type=float,
+        default=1.0,
+        help="Segundos de espera entre mensajes (por defecto: 1.0)",
+    )
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        default=1,
+        help="Número de veces que se repite la conversación completa (por defecto: 1)",
+    )
+    parser.add_argument(
+        "--output",
+        default="results.json",
+        help="Fichero JSON donde guardar los resultados (por defecto: results.json)",
+    )
+    args = parser.parse_args()
+
+    config_path = Path(args.config)
+    if not config_path.exists():
+        print(f"ERROR: no existe el fichero de configuración: {config_path}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"🔌 Cargando conector: {config_path}")
+    bot = CustomChatbot(str(config_path))
+
+    all_results = []
+    for run_idx in range(1, args.repeat + 1):
+        print(f"\n{'=' * 60}")
+        print(f"🗣️  Conversación {run_idx}/{args.repeat}")
+        print("=" * 60)
+        all_results.append(
+            {
+                "conversation_index": run_idx,
+                "turns": run_conversation(bot, MESSAGES, args.delay),
+            }
+        )
+
+    output_path = Path(args.output)
+    output_path.write_text(
+        json.dumps(all_results, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(f"\n💾 Resultados guardados en: {output_path.resolve()}")
+
+    total = sum(len(c["turns"]) for c in all_results)
+    ok = sum(1 for c in all_results for t in c["turns"] if t["success"])
+    print(f"✅ Completado: {ok}/{total} mensajes con éxito.")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Cómo funciona
+- Usa `CustomChatbot` tal y como indican los docs (`custom-connector-guide.md`), cargando el YAML por ruta.
+- `execute_with_input(msg)` devuelve `(success, response)`; el `{user_msg}` del `payload_template` se sustituye automáticamente.
+- Añado `strip_html` porque tu bot devuelve `<p>…<br><br>…</p>` y queda más limpio en consola/JSON.
+- `--repeat` te permite lanzar varias conversaciones seguidas (útil para tests de SENSEI), y `--output` guarda todo en JSON.
+
+### ⚠️ Aviso importante sobre la sesión
+El `conversation` y el `sender` están fijos en el YAML. Si el bot mantiene contexto por conversación, al repetir con `--repeat` estarás **continuando la misma conversación**, no empezando una nueva. Si necesitas conversaciones independientes, hay dos opciones:
+1. Generar nuevos IDs de `conversation`/`sender` por ejecución (requiere un endpoint de creación de sesión de MillionBot), o
+2. Crear varias copias del YAML con IDs distintos.
+
+¿Quieres que te prepare una variante del script que genere/rote IDs de sesión automáticamente, o un perfil SENSEI que use este conector? 🚀

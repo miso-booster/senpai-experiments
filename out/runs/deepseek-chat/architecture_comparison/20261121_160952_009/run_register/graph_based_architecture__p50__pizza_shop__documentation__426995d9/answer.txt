@@ -1,0 +1,51 @@
+Great question! 😊 Let me break down what an **oracle** means in the context of Sensei-check rules.
+
+## The Oracle Problem (the "why")
+
+In software testing, an **oracle** is simply *the mechanism you use to decide whether a test passed or failed*. In traditional testing, that's easy — if you compute `2 + 2`, the oracle is "the answer should be `4`."
+
+But with chatbots, there's often **no single correct answer** — the bot can phrase things a thousand different ways. That's called the *oracle problem*, and it's exactly what Sensei-check is designed to help with. 🎯
+
+## Oracle in a Sensei-check Rule
+
+In a rule YAML, the `oracle:` field is a **Python expression that must evaluate to `True` for the rule to pass**. It's the actual condition being checked over one or more conversations.
+
+Here's a simple example from your project:
+
+```yaml
+name: only_talks_about_pizzas
+description: The chatbot only talks about pizzas
+conversations: 1
+oracle: only_talks_about('pizza orders, drink orders, information on delivery of pizzas, information about the pizza shop')
+```
+
+Here, the oracle is `only_talks_about(...)` — if it returns `True`, the rule passes; if it returns a list of out-of-scope responses, it fails. ✅
+
+## Oracle vs. `if`/`then`
+
+Sensei-check gives you **two ways** to express the check:
+
+| Style | When to use |
+|-------|-------------|
+| **`oracle:`** | A single condition over `conv[*]` (or scalar slots) |
+| **`if:` / `then:`** | An implication — "if X holds, then Y must hold" (great for metamorphic relations) |
+
+They're mutually exclusive — you use one *or* the other in a rule. For example, your `more_toppings_cost_more` rule uses `if`/`then` instead of `oracle`:
+
+```yaml
+name: more_toppings_cost_more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+The `then:` clause here plays the role of the oracle — it's the relation that must hold. 💡
+
+## Quick mental model
+
+Think of it like a **bouncer at a club** 🕴️:
+- `when:` decides *who gets in line* (which conversations are eligible)
+- `oracle:` (or `if`/`then`) decides *who actually gets in* (pass/fail)
+
+Want me to help you write an oracle for a specific check you have in mind? Just tell me what behavior you want to verify! 🙌

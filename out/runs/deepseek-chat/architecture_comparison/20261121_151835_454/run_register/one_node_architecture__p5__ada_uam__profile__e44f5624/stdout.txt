@@ -1,0 +1,64 @@
+conversation ID: one_node_architecture__p5__ada_uam__profile__e44f5624
+$$$
+¡Claro que sí! 😊 Aquí tienes un perfil listo para usar, enfocado en un usuario que busca información de contacto y horarios del CAU. Está alineado con el estilo de tus otros perfiles (español, `single questions`, extracción en `chatbot.output`) y expone exactamente los campos que quieres validar: teléfono, correo, ubicación física y horario.
+
+```yaml
+test_name: "Contacto y horarios del CAU"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario que necesita contactar con el Centro de Atención a Usuarios (CAU)
+    de la UAM y quiere conocer sus datos de contacto y su horario de atención.
+  context:
+    - personality: personalities/formal-user
+    - "Necesitas resolver una duda sobre los servicios de Tecnologías de la Información y prefieres contactar directamente con el CAU."
+    - "Antes de escribir o llamar, quieres tener a mano todos los datos de contacto y saber cuándo están disponibles."
+    - "Valoras la precisión: si un dato no está claro, lo vuelves a preguntar."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico de contacto del CAU."
+    - "Preguntar por la ubicación física (dirección) de la oficina del CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - cau_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - cau_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - cau_location:
+        type: string
+        description: "Dirección física de la oficina del CAU"
+    - cau_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+Un par de detalles útiles 👀:
+
+- Los cuatro campos de `chatbot.output` (`cau_phone`, `cau_email`, `cau_location`, `cau_hours`) son los que luego podrás leer en reglas como `conv[0].cau_phone`, etc. Así mantienes el contrato perfil ↔ reglas bien claro.
+- Si más adelante quieres una regla que verifique que **todos** esos datos se recogieron, puedes usar `data_collected() == True` o `missing_slots() == []` en una regla global.
+- Ajusta `number` y `steps` según cuántas conversaciones quieras generar; con `single questions` y 4 objetivos, 20 pasos suele ser suficiente.
+
+¿Quieres que te prepare también una regla de Sensei-check que valide que el bot devuelve los cuatro datos sin dejar ninguno vacío? 😊
+$$$

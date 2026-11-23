@@ -1,0 +1,27 @@
+Hey there! 😊 Happy to help you build that metamorphic rule — it's a nice, clean one: hold everything else equal, add a drink, and the price should go up by exactly $2.
+
+Here's a rule that does exactly that, using your `drink` output field:
+
+```yaml
+name: adding_drink_costs_two_dollars
+description: Adding a drink to an otherwise identical pizza order costs exactly 2 dollars extra
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].pizza_type == conv[1].pizza_type and len(conv[0].toppings) == len(conv[1].toppings)
+if:   conv[0].drink != conv[1].drink and (conv[0].drink in [None, '', 'none'] or conv[1].drink in [None, '', 'none'])
+then: abs(extract_float(conv[0].price) - extract_float(conv[1].price)) == 2
+```
+
+### A quick walkthrough 👀
+
+- **`conversations: 2`** — we're comparing a pair of conversations (classic metamorphic style).
+- **`when`** — keeps the *ceteris paribus* conditions tight: same size, same pizza type, same number of toppings. That way the only meaningful difference is the drink.
+- **`if`** — makes sure exactly one of the two orders has a drink (the other has none). This is what isolates the "adding a drink" effect.
+- **`then`** — the price difference must be exactly `2` (using `abs(...)` so it works regardless of which conversation is which).
+
+### A couple of things worth double-checking 🔍
+
+1. **Field names** — I used `size`, `pizza_type`, `toppings`, `drink`, and `price`. Please confirm these all exist in your profile's `chatbot.output`. If your toppings field is named differently (e.g. `selected_toppings`), just swap it in.
+2. **How "no drink" is represented** — I assumed it could be `None`, `''`, or `'none'`. If your profile uses something else (like `'no drink'` or `'water'` as a free default), tweak that list to match.
+3. **Currency** — `extract_float` pulls the number out of the price string, so `"18.50 EUR"` → `18.50`. That's fine as long as both prices are in the same currency (which they should be here).
+
+If you'd like, I can also make a variant that checks *"adding a drink costs **at least** $2"* (more forgiving if your pricing has rounding), or one that compares against a specific drink name. Just say the word! 🍕🥤

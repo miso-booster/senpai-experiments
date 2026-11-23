@@ -1,0 +1,123 @@
+# YAML Connector for SAIC Málaga 🚀
+
+Here's the YAML connector based on your request. I've mapped the headers, payload, and response path from the HTTP trace you shared:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Why these values? 🤔
+- **`response_path: "response.0.text"`** → In the response JSON, the bot's reply lives at `response[0].text`. That's exactly what dot notation `response.0.text` resolves to.
+- **`Authorization`** → Kept as a plain string (same style as your existing `ada-uam.yaml`).
+- **`{user_msg}`** → Placeholder for the user's message inside `message.text`.
+- **Extra headers** (`Origin`, `Referer`, `User-Agent`) → Included because the API is called cross-site from `saic.malaga.eu`, so they help mimic the real browser request.
+
+> 💡 Tip: The bot's reply contains HTML (`<p>...</p>`). If you want clean text, you can strip tags after receiving the response — I'll show that in the script below.
+
+---
+
+# Complete Python Script 🐍
+
+This script uses the `CustomChatbot` implementation from your connector guide, sends multiple messages, and cleans the HTML from the responses.
+
+```python
+"""
+Send multiple messages to the SAIC Malaga chatbot connector.
+"""
+
+import re
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+
+def strip_html(text: str) -> str:
+    """Remove HTML tags and collapse whitespace."""
+    if not text:
+        return ""
+    clean = re.sub(r"<[^>]+>", "", text)
+    return re.sub(r"\s+", " ", clean).strip()
+
+
+def main():
+    # Path to the YAML connector file
+    connector_path = "yaml-examples/saic-malaga.yml"
+
+    # Create the chatbot instance
+    bot = CustomChatbot(connector_path)
+
+    # Messages to send
+    messages = [
+        "hola",
+        "¿Cómo puedo pedir cita previa?",
+        "¿Cuál es el horario de atención?",
+        "Gracias, adiós",
+    ]
+
+    print("=" * 60)
+    print("SAIC Malaga Chatbot - Multi-message Test")
+    print("=" * 60)
+
+    for i, msg in enumerate(messages, start=1):
+        print(f"\n[{i}] 👤 User: {msg}")
+
+        success, response = bot.execute_with_input(msg)
+
+        if success:
+            clean_reply = strip_html(response)
+            print(f"    🤖 Bot : {clean_reply}")
+        else:
+            print(f"    ❌ Error: {response}")
+
+    print("\n" + "=" * 60)
+    print("Done ✅")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### What's happening here? 👀
+1. **`CustomChatbot(connector_path)`** loads your YAML config.
+2. **`execute_with_input(msg)`** sends the message and returns `(success, response)`.
+3. **`strip_html()`** cleans the `<p>...</p>` tags so the output is readable.
+4. The loop sends **multiple messages** in sequence — handy for testing conversation flow.
+
+### Optional: using the factory instead 🏭
+If you prefer the factory pattern from the docs:
+
+```python
+from chatbot_connectors.factory import ChatbotFactory
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+ChatbotFactory.register_chatbot(
+    "custom",
+    CustomChatbot,
+    description="Custom YAML-configured chatbot",
+)
+
+bot = ChatbotFactory.create_chatbot("custom", config_path="yaml-examples/saic-malaga.yml")
+```
+
+---
+
+Want me to also generate a **SENSEI RULE** or **PROFILE** that uses this connector (e.g., to validate the bot's replies or simulate a full conversation)? Just say the word 😊

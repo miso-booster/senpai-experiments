@@ -1,0 +1,50 @@
+conversation ID: agentic_architecture__p26__bikeshop__rule__f05d9734
+$$$
+I checked your rule against the docs (`sensei-check-doc.md`, `rules-examples.md`) and against the profiles in your project. Here's what I found 👇
+
+## ❌ What's wrong with the current rule
+
+```yaml
+name: check_tune_up_price
+description: Checks if the tune-up price is equal to $50.
+conversations: 2
+when: conv[0].tune_up_price == 50
+if: conv[0].tune_up_price is not None
+then: "The tune-up price is $50."
+```
+
+1. **`conversations: 2` is wrong for this check.** You're only inspecting `conv[0]`, so this isn't a metamorphic (2-conversation) rule — it's a single-conversation oracle. It should be `conversations: 1`.
+2. **`then:` is a plain string, not an expression.** In the DSL, `then:` must be a boolean Python expression (e.g. `extract_float(conv[0].price) == 50`). A quoted sentence like `"The tune-up price is $50."` is not evaluable — that text belongs in `yields:` (the error message), not `then:`.
+3. **`when:` is doing the check instead of filtering.** `when:` is a *filter* to select eligible conversations, not the assertion. The actual assertion should live in `oracle:` (or `if`/`then`).
+4. **Comparing a `money`/`currency` field directly to `50` won't work reliably.** `tune_up_price` is typed `money` in your profiles, so it's a string like `"$50"` or `"50 USD"`. You need `extract_float(...)` to parse the number (docs: "Prefer numeric comparisons on parsed values").
+5. **`if`/`then` is the wrong shape here.** There's no implication to express — you just want a straight assertion, so `oracle:` is the right choice.
+
+## ✅ Fixed version
+
+I found two profiles that expose `tune_up_price`:
+- `bike_service_and_repair_inquirer.yaml` → outputs: `available_services`, `tire_price`, `tune_up_details`, `tune_up_price`, `maintenance_advice`, `lubrication_steps`, `appointment_details`
+- `bike_repair_and_maintenance_scheduler.yaml` → outputs: `tune_up_offered`, `tune_up_price`, `tune_up_description`, `tune_up_duration`, `appointment_confirmation`
+
+Both have a `tune_up_price` field, so the rule works for either. Here's the corrected rule:
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price is $50 (profile-bound to bike tune-up profiles exposing tune_up_price).
+conversations: 1
+when: conv[0].tune_up_price is not None
+oracle: extract_float(conv[0].tune_up_price) == 50
+yields: f"Expected tune-up price of $50, got {conv[0].tune_up_price}"
+```
+
+### What changed and why
+| Field | Before | After | Reason |
+|-------|--------|-------|--------|
+| `conversations` | `2` | `1` | Single-conversation oracle, not metamorphic |
+| `when` | `conv[0].tune_up_price == 50` | `conv[0].tune_up_price is not None` | `when` filters; it shouldn't be the assertion |
+| `if`/`then` | implication with a string `then` | removed | No implication needed; `then` must be a boolean expression |
+| `oracle` | — | `extract_float(conv[0].tune_up_price) == 50` | Parses the money string to a number before comparing |
+| `yields` | — | error message | The human-readable message goes here, not in `then` |
+
+## One thing to confirm 🙋
+Which profile should this rule target — `bike_service_and_repair_inquirer.yaml` or `bike_repair_and_maintenance_scheduler.yaml`? The rule above works for both since they share the `tune_up_price` field, but if you want me to tailor the `description` (and maybe add a `currency(...) == 'USD'` check) to one specific profile, just tell me which one and I'll adjust it. 😊
+$$$

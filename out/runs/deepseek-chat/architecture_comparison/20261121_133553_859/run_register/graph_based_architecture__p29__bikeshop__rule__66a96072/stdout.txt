@@ -1,0 +1,65 @@
+conversation ID: graph_based_architecture__p29__bikeshop__rule__66a96072
+$$$
+Absolutely, happy to help! 🚴‍♂️ Let's build a rule that checks the chatbot confirms an appointment when a user asks to schedule a bike service.
+
+Quick heads-up before we dive in: since this is a **profile-bound rule**, the fields we reference (like `appointment_date`, `service_type`, etc.) must exist in your SENSEI Chat profile's `chatbot.output`. Let me show you a couple of options depending on what your profile exposes 👇
+
+---
+
+### Option A — Simple confirmation check (single conversation)
+
+If your profile exposes something like `appointment_confirmed` (a boolean) or `appointment_date`, this is the cleanest version:
+
+```yaml
+name: bike_service_appointment_confirmed
+description: Chatbot confirms an appointment when the user requests a bike service
+conversations: 1
+when: conv[0].service_type is not None
+oracle: conv[0].appointment_confirmed is True and conv[0].appointment_date is not None
+```
+
+This says: *whenever a service type was requested, the chatbot must have confirmed the appointment and provided a date.*
+
+---
+
+### Option B — Check the confirmation appears in the dialogue
+
+If your profile doesn't expose a boolean but you want to verify the assistant actually *said* something confirming, use `utterance_index`:
+
+```yaml
+name: bike_service_appointment_confirmed
+description: Chatbot confirms a bike service appointment in the dialogue
+conversations: 1
+when: conv[0].service_type is not None
+oracle: utterance_index('assistant', 'appointment confirmed') > 0
+```
+
+⚠️ Note: `utterance_index` is LLM-backed, so it's a bit fuzzy — it looks for the *idea* of a confirmation, not an exact string. That's usually what you want for natural language, but expect minor variability.
+
+---
+
+### Option C — Metamorphic version (comparing two conversations)
+
+If you want to be extra thorough — e.g., *"a confirmed appointment should always have a date, while an unconfirmed one shouldn't"* — you can compare two conversations:
+
+```yaml
+name: appointment_confirmation_consistency
+description: Confirmed appointments always carry a date; unconfirmed ones do not
+conversations: 2
+when: conv[0].service_type == conv[1].service_type
+if:   conv[0].appointment_confirmed is True and conv[1].appointment_confirmed is False
+then: conv[0].appointment_date is not None and conv[1].appointment_date is None
+```
+
+---
+
+### A few things to double-check on your side ✅
+
+1. **Field names** — swap `service_type`, `appointment_confirmed`, `appointment_date` for whatever your profile's `chatbot.output` actually exposes. If you don't have an `appointment_confirmed` slot yet, you'd need to add it to the profile first.
+2. **`when` filter** — I used `service_type is not None` to only check conversations where a service was actually requested. Adjust to match your profile's logic (e.g., `conv[0].intent == 'schedule_service'`).
+3. **Scope** — if you want this to apply across *all* conversations, you could drop the `when` and use `conversations: all` with a global helper instead.
+
+---
+
+Would you like to share your profile's `chatbot.output` fields? I can tailor the rule exactly to your schema and make sure the field names line up perfectly 😊
+$$$

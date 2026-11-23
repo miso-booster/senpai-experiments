@@ -1,0 +1,52 @@
+Hey there! 😊 Great question — connectors are basically the **bridge** between Sensei and your chatbot. They tell Sensei *how to actually talk* to your bot's API, without you having to write any code. Let me break it down for you 👇
+
+## What connectors are used for
+
+A **connector** is a YAML file that describes how to send a message to your chatbot and how to read its reply back. Sensei uses it to:
+
+- 📤 **Send** the simulated user's message to your chatbot's API endpoint
+- 📥 **Receive** the response and **extract** just the bot's reply from the JSON
+- 🔁 Do this over and over during a conversation, so the whole dialogue can run automatically
+
+In short: connectors let Sensei *drive* your chatbot — any chatbot with an HTTP API — so you can generate conversations and then check them with rules. 🎯
+
+## The fields a connector has
+
+Here's the full set of configuration fields:
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | ✅ Yes |
+| `send_message.path` | API endpoint path (appended to `base_url`) | ✅ Yes |
+| `send_message.method` | HTTP method (`POST`, `GET`, `PUT`, `DELETE`) | No (default: `POST`) |
+| `send_message.headers` | Custom headers (e.g., `Authorization`, `Content-Type`) | No |
+| `send_message.payload_template` | JSON structure with the `{user_msg}` placeholder | ✅ Yes |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | ✅ Yes |
+
+## A quick example 🍕
+
+Here's a simple one (your "Echo Bot" connector):
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  method: POST
+  path: /post
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+A couple of things worth highlighting:
+
+- **`{user_msg}`** is the magic placeholder — that's where Sensei drops the user's message into your payload. ✨
+- **`response_path`** uses dot notation to dig into the JSON. For example:
+  - `"message"` → `response["message"]`
+  - `"data.text"` → `response["data"]["text"]`
+  - `"response.0.text"` → `response["response"][0]["text"]` (like in your Ada UAM connector!)
+
+So if your bot wraps its answer in something like `{"messages": [{"content": "..."}]}`, you'd set `response_path: "messages.0.content"` — exactly like your Metro Madrid connector does. 👌
+
+Want me to help you build or tweak a connector for a specific chatbot API? Just tell me what the request and response look like, and I'll help you shape the YAML! 🙌

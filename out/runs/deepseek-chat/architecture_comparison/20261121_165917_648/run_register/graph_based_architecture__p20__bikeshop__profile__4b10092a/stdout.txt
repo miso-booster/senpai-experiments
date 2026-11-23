@@ -1,0 +1,93 @@
+conversation ID: graph_based_architecture__p20__bikeshop__profile__4b10092a
+$$$
+Hey there! 😊 Happy to help you build that profile — testing date/time handling with a wheel-change appointment is a great use case. Let me walk you through it.
+
+## Quick note before we dive in 👀
+
+I noticed you already have an `appointment.yml` in your project that does something similar (tune-up/repair with `ap_date` and `hour`). Your new profile is a nice complement because it focuses specifically on **wheels** and exercises **more date/time combinations** — so let's make it distinct and thorough.
+
+## The profile
+
+Save this as `profiles/wheel_change_appointment.yaml`:
+
+```yaml
+test_name: "wheel_change_appointment"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who wants to book an appointment at a bike shop
+    to have the wheels on your bike changed. You are polite and clear,
+    and you want to confirm the date, time, and service before ending
+    the conversation.
+  context:
+    - "Your current wheels are worn out and you'd like them replaced."
+    - "You are flexible on the day but want a specific time slot."
+    - "You want the shop to confirm the appointment details back to you."
+  goals:
+    - "Ask to book an appointment to have my wheels changed on {{ap_date}} at {{hour}}."
+    - "Confirm the appointment details (date, time, and service) with the assistant."
+    - ap_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - "next Monday"
+          - "November 6th, 2024"
+          - "the 15th of December"
+    - hour:
+        function: forward(ap_date)
+        type: string
+        data: ["09:00", "11:30", "14:00", "16:45"]
+    - service:
+        function: default()
+        type: string
+        data: ["wheel change"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmed_date:
+        type: date
+        description: "the date of the appointment, confirmed by the assistant"
+    - confirmed_time:
+        type: time("hh:mm")
+        description: "the time of the appointment, confirmed by the assistant"
+    - confirmed_service:
+        type: string
+        description: "the service to be performed (wheel change), confirmed by the assistant"
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 8
+  interaction_style:
+    - default
+```
+
+## Why it's built this way 🛠️
+
+- **`forward()` nesting on `ap_date` → `hour`** gives you a full grid of every date × every time, so the chatbot gets tested against many date/time combos. That's exactly the "test how the chatbot manages dates" goal you mentioned.
+- **`conversation.number: combinations`** uses that full matrix automatically — no need to count by hand. (You need at least two nested `forward()` functions for this, and you have them. ✅)
+- **`all_answered` with `export: true`** produces a CSV showing which outputs were satisfied — super handy for spotting date/time parsing failures.
+- **`confirmed_time` uses `time("hh:mm")`** so you get a clean, comparable time value instead of a raw string. If your bot returns times like "2 PM", you can loosen it to `time(show time in hours and minutes)`.
+- **`goal_style.limit: 8`** is a safety cap — bump it if you want more turns per conversation.
+
+## A couple of things to double-check 👀
+
+1. **`service` variable** — I declared it with `default()` and a single value, and it's *not* referenced with `{{service}}` in the goal text (I hardcoded "wheels changed"). If you'd rather parameterize it, add `{{service}}` to the goal string. Right now it's harmless but optional — feel free to remove it if you prefer a leaner profile.
+2. **Date formats** — mixing "tomorrow", "next Monday", and explicit dates is intentional: it stresses the bot's natural-language date handling. If your bot only accepts one format, trim the `ap_date` list.
+3. **`model_prov: openai`** — I added it explicitly; if your project defaults to OpenAI you can drop it.
+
+Want me to also add a **`change your mind`** interaction style (e.g., the user switches the requested day mid-conversation) to test how the bot handles rescheduling? That could be a fun stress test 😄 — just say the word!
+$$$

@@ -1,0 +1,51 @@
+Hey there! 👋 Happy to help you check this rule 😊
+
+Short answer: **it's not quite correct** — it won't actually verify what you want. Let me walk you through why, then give you a fixed version.
+
+## What's off 🔍
+
+1. **`conversations: 2` is unnecessary.** You're only inspecting a single conversation (`conv[0]`). Metamorphic rules need 2+ conversations; a simple "price equals $50" check is a **single-conversation oracle**, so it should be `conversations: 1`.
+
+2. **`when: conv[0].tune_up_price == 50` is doing the check in the wrong place.** `when:` is a *filter* — it selects which conversations the rule applies to. If you filter on `== 50`, you're only ever running the rule on conversations that already pass, which makes the check meaningless (it can never fail). The actual assertion belongs in `oracle:` (or `then:`).
+
+3. **`then:` is a plain English string, not an expression.** Sensei-check expects a **Python expression** that evaluates to `True`/`False`. `"The tune-up price is $50."` is just a string literal — it's always truthy, so the rule would always "pass" regardless of the actual price. 🚩
+
+4. **`conv[0].tune_up_price` must exist in the profile's `chatbot.output`.** Make sure your SENSEI Chat profile actually exposes a `tune_up_price` field — otherwise the rule can't read it.
+
+## Fixed version ✅
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price equals $50.
+conversations: 1
+oracle: extract_float(conv[0].tune_up_price) == 50
+```
+
+### What I changed and why
+
+| Change | Reason |
+|--------|--------|
+| `conversations: 2` → `1` | Only one conversation is inspected; this is a single-conversation oracle. |
+| Removed `when: conv[0].tune_up_price == 50` | That was the assertion, not a filter. Filtering on it would make the rule unable to fail. |
+| Removed `if: ... is not None` | Redundant — `extract_float(...) == 50` already handles it. If the field is `None`, the comparison simply fails, which is what you want. |
+| `then: "The tune-up price is $50."` → `oracle: extract_float(conv[0].tune_up_price) == 50` | Replaced the string literal with a real boolean expression. |
+| Wrapped in `extract_float(...)` | In case the price comes back as text like `"$50.00"` or `"50 USD"`, this parses the number reliably. |
+
+## A couple of friendly tips 💡
+
+- If your `tune_up_price` field is already a numeric type (e.g., `int` or `float` in `chatbot.output`), you can simplify to:
+  ```yaml
+name: tune_up_price_exact
+description: The tune-up price is exactly 50
+conversations: 1
+oracle: conv[0].tune_up_price == 50
+```
+- If you want to also confirm the currency, you could add:
+  ```yaml
+name: tune_up_price_exact
+description: A tune-up costs exactly 50 USD
+conversations: 1
+oracle: extract_float(conv[0].tune_up_price) == 50 and currency(conv[0].tune_up_price) == 'USD'
+```
+
+Want me to help you double-check that your profile actually exposes `tune_up_price` in `chatbot.output`? Just share the profile and I'll take a look 👀

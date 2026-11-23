@@ -1,0 +1,70 @@
+¡Claro que sí! 😊 Vamos a crear un perfil enfocado en un usuario que busca soporte del CAU y quiere obtener esos cuatro datos clave: teléfono, email, dirección física y horarios.
+
+Te dejo un perfil listo para usar. He puesto en `chatbot.output` exactamente esos campos (más algunos de apoyo) para que luego puedas escribir reglas de Sensei-check que los inspeccionen como `conv[i].contact_phone`, etc.
+
+```yaml
+test_name: "soporte_cau_datos_de_contacto"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita contactar con el Centro de Atención a Usuarios (CAU)
+    de la UAM para resolver una incidencia con tu cuenta ID-UAM. Quieres obtener los
+    datos de contacto y el horario de atención para poder comunicarte por el canal
+    que más te convenga.
+  context:
+    - personality: personalities/formal-user
+    - "Tienes una incidencia con tu cuenta ID-UAM y no sabes a quién dirigirte."
+    - "Prefieres contactar por teléfono si es posible, pero también te vale el correo."
+    - "Necesitas saber la dirección física por si tienes que acudir en persona."
+    - "Te interesa conocer el horario de atención para no llamar fuera de plazo."
+  goals:
+    - "Solicitar el número de teléfono de contacto del CAU."
+    - "Pedir la dirección de correo electrónico del CAU."
+    - "Preguntar por la dirección física de la oficina de atención del CAU."
+    - "Consultar el horario de atención del CAU."
+    - "Confirmar cuál es el mejor canal para resolver una incidencia con mi cuenta ID-UAM."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono de contacto del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física de la oficina de atención del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+    - recommended_channel:
+        type: string
+        description: "Canal recomendado para resolver una incidencia con ID-UAM"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👀:
+
+- **Los cuatro campos que pediste** (`contact_phone`, `contact_email`, `physical_address`, `service_hours`) están en `chatbot.output`, así que podrás escribir reglas como `data_collected() is True` o `missing_slots() == []` para verificar que el bot los proporciona.
+- Si quieres que el usuario insista hasta obtener **todos** los datos, puedes cambiar `goal_style` a `all_answered:` con `export: true` y así verás en un CSV qué slots quedaron sin cubrir.
+- Si prefieres variar el tono del usuario (impaciente, escéptico, etc.), solo cambia la línea de `personality`.
+
+¿Quieres que te prepare también una **regla de Sensei-check** que valide que el bot devuelve los cuatro datos sin dejarse ninguno? 😊

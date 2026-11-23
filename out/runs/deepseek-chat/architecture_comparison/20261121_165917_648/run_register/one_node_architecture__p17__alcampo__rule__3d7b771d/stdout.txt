@@ -1,0 +1,48 @@
+conversation ID: one_node_architecture__p17__alcampo__rule__3d7b771d
+$$$
+¡Buena pregunta! 😊 Vamos a destripar esa regla, porque tiene varios problemillas que explican por qué no te funciona.
+
+## Qué está mal
+
+1. **`conversations:` está vacío.** El campo es obligatorio y debe ser un número (`1`, `2`, …) o `all`. Sin él, Sensei-check no sabe cuántas conversaciones necesita la regla.
+2. **`membership_benefits` a secas no existe en el contexto de la regla.** En una regla de una sola conversación, los campos del `chatbot.output` se acceden como `conv[0].membership_benefits` (o directamente por nombre si el slot es escalar, pero lo más seguro y explícito es `conv[0].`). Tal como está, la expresión no resuelve el campo.
+3. **`!= ''` es frágil.** Si el extractor no rellena el slot, el valor será `None`, no `''`. Comparar contra cadena vacía no cubre ese caso y puede dar falsos positivos/negativos.
+4. **Falta `active`** (opcional, pero útil para dejarla explícita) y un `yields` que te diga *qué* falló cuando falle.
+
+## Regla corregida
+
+Aquí tienes una versión que sí funciona contra tu perfil `general_shopper_and_member_support.yaml` (que expone `membership_benefits` de tipo `string`):
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits (profile general_shopper_and_member_support)
+conversations: 1
+active: true
+oracle: conv[0].membership_benefits is not None and len(conv[0].membership_benefits.strip()) > 0
+yields: f"Missing or empty membership_benefits, got: {conv[0].membership_benefits}"
+```
+
+## Por qué esta versión sí funciona
+
+- **`conversations: 1`** → la regla se evalúa sobre cada conversación individual.
+- **`conv[0].membership_benefits`** → accede al slot real que tu perfil declara en `chatbot.output`.
+- **`is not None and len(...strip()) > 0`** → cubre tanto el caso "no extraído" (`None`) como el caso "extraído pero vacío" (`''` o solo espacios).
+- **`yields`** → te muestra el valor real cuando falla, lo que hace el debugging muchísimo más fácil 👀.
+
+## Un extra opcional (más robusto)
+
+Si quieres además comprobar que el contenido *menciona* algo de membresía (no solo que no esté vacío), puedes apoyarte en el helper `semantic_content`:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot informs users about Club de Socios membership benefits
+conversations: 1
+active: true
+oracle: conv[0].membership_benefits is not None and semantic_content(conv[0].membership_benefits, 'benefits of Club de Socios membership')
+yields: f"Membership benefits not properly explained, got: {conv[0].membership_benefits}"
+```
+
+⚠️ Ojo: `semantic_content` es LLM-backed, así que puede tener pequeña variabilidad. Para un chequeo puramente estructural, quédate con la primera versión.
+
+¿Quieres que te la deje también como regla **global** (sin depender del perfil) o prefieres mantenerla *profile-bound* como está? 😊
+$$$

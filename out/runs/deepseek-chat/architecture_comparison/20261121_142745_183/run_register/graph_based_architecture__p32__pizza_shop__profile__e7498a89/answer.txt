@@ -1,0 +1,91 @@
+¡Hola! 😊 ¡Con gusto te ayudo a crear ese perfil para tu pizzería! 🍕
+
+Antes de escribir el YAML, déjame comentarte un par de cosas importantes para que el perfil funcione bien:
+
+- Los campos de `chatbot.output` que pides son: **tipo de pizza**, **bebida**, **id del pedido** y **precio final en dólares**.
+- Para el precio en dólares, lo ideal es usar el tipo `currency` (que ya tienes disponible en tu proyecto, según veo en `pizza_order_test_custom.yml`). Si prefieres forzar dólares, puedes describirlo explícitamente en el `description`.
+- Para el ID del pedido, `string` es lo más seguro.
+- Para tipo de pizza y bebida, `string` funciona bien.
+
+Aquí tienes un perfil listo para copiar en `profiles/` 👇
+
+```yaml
+test_name: "pizza_order_output_test"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza and a drink from a pizza shop for pickup.
+    Be friendly and clear about what you want.
+  context:
+    - "You are ordering dinner for yourself tonight."
+    - "You want to pick up the order on your way home."
+  goals:
+    - "Ask what kinds of pizzas are available."
+    - "Order a {{pizza_type}} pizza in {{size}} size."
+    - "Ask what drinks are available."
+    - "Order {{number_of_drinks}} {{drink_type}}."
+    - "Ask for the total price in dollars and the order ID."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Four cheese, Hawaiian, Vegetarian]
+    - size:
+        function: forward(pizza_type)
+        type: string
+        data: [small, medium, large]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+    - number_of_drinks:
+        function: forward(drink_type)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the customer ordered (e.g., Margarita, Pepperoni)."
+    - drink_type:
+        type: string
+        description: "The type of drink the customer ordered (e.g., Coke, Sprite)."
+    - order_id:
+        type: string
+        description: "The unique order identifier provided by the chatbot (e.g., 'order number', 'order ID')."
+    - total_price:
+        type: currency
+        description: "The final total price of the order in US dollars (USD). Look for currency symbols like '$' or 'USD'."
+
+conversation:
+  number: combinations(0.5, forward)
+  goal_style:
+    steps: 8
+    max_cost: 0.15
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### 🔍 Un par de notas rápidas:
+
+1. **`conversation.number: combinations(0.5, forward)`** → usa el 50% de la matriz de combinaciones generada por los `forward()` anidados. Si prefieres un número fijo, cámbialo por un entero (ej. `number: 5`).
+2. **`total_price` con `type: currency`** → como pediste dólares, lo dejé con la descripción explícita en USD. Si tu tipo `currency` no fuerza USD, el extractor tomará lo que el bot diga; si quieres ser más estricto, podrías crear un tipo custom `usd_price` con regex `r'\$\s?\d+(?:\.\d{2})?'`.
+3. **`goal_style.steps: 8`** → ajusta según cuántos turnos suele necesitar tu bot para completar el pedido.
+4. **`fallback`** → copié el fallback real que aparece en tus otros perfiles de pizzería, para evitar bucles infinitos.
+
+¿Quieres que te lo adapte para que el usuario hable en español 🇪🇸, o que añada un `interaction_style` de `change your mind` para probar cómo reacciona el bot si el cliente cambia de pizza a mitad del pedido? 😄

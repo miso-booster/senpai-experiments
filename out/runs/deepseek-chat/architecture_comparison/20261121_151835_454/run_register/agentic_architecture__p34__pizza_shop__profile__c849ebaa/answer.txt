@@ -1,0 +1,111 @@
+Here's the profile. The user opens with a **custom pizza** request (size + toppings), then — driven by the `change your mind` interaction style — switches to a **predefined pizza** from the menu partway through. The `chatbot.output` fields (`price`, `time`, `order_id`) match your existing pizza profiles so any profile-bound rules stay compatible.
+
+```yaml
+test_name: "pizza_order_change_mind_custom_to_predefined"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza over the phone. You start by asking
+    for a custom pizza with your own chosen size and toppings, but halfway
+    through the conversation you change your mind and decide to order a
+    predefined pizza from the shop's menu instead.
+  context:
+    - personality: personalities/conversational-user.yml
+    - your name is Jon Doe
+    - you are not sure what you want at first, so you begin with a custom pizza
+  goals:
+    - "I'd like a {{size}} custom pizza with {{toppings}}"
+    - "Actually, I've changed my mind — can I get the {{pizza_type}} pizza from your menu instead?"
+    - "{{cans}} cans of {{drink}}"
+    - how much will it cost
+    - how long will it take to be ready
+
+    - size:
+        function: random()
+        type: string
+        data:
+          - small
+          - medium
+          - big
+          - extra large
+
+    - toppings:
+        function: random(2)
+        type: string
+        data:
+          - cheese
+          - mushrooms
+          - pepperoni
+          - olives
+          - ham
+
+    - pizza_type:
+        function: another()
+        type: string
+        data:
+          - Margherita
+          - Pepperoni
+          - Four Cheese
+          - Vegetarian
+          - Hawaiian
+
+    - cans:
+        function: forward(drink)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+    - drink:
+        function: forward()
+        type: string
+        data:
+          - sprite
+          - coke
+          - Orange Fanta
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my pizza shop, can you say that again?"
+  output:
+    - price:
+        type: currency
+        description: The final price of the pizza order
+    - time:
+        type: time("hh:mm:ss")
+        description: how long the pizza will take to be ready
+    - order_id:
+        type: string
+        description: my order ID
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - change your mind
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### What it does & how it maps to the docs 📄
+- **`change your mind`** is the key interaction style here (from `sensei-chat-guide.md` §5) — the reserved keyword meant for cases where the user provides info (like toppings) and then revises it. That drives the custom → predefined switch.
+- **Goals** are ordered so the custom request comes first, then the "I've changed my mind" line, then drinks and price/ETA questions.
+- **Variables** (`size`, `toppings`, `pizza_type`, `cans`, `drink`) are all declared in `user.goals` with matching `{{...}}` usage, per the docs' best practices. `random(2)` picks two toppings (≤ list length, as required).
+- **`chatbot.output`** reuses `price`, `time`, `order_id` — the same field names as your `pizza_order_test_custom.yml` and `user_sim_pizzaorder_predefined.yml`, so any existing profile-bound rules referencing those fields will still work. The `time` field uses the `time("hh:mm:ss")` format specifier.
+
+A couple of things you might want to tweak:
+- I set `conversation.number: 2` and `goal_style.steps: 5` (the switch needs a few turns). Bump `steps` if you want more back-and-forth.
+- I referenced `personalities/conversational-user.yml` since both existing profiles use it — make sure that file exists in your project.
+
+Want me to also write a **rule** that verifies the final order is the predefined pizza (not the custom one), or adjust any of the values? 😊

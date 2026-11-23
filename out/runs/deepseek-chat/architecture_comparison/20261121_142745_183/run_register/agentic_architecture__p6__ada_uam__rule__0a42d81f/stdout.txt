@@ -1,0 +1,34 @@
+conversation ID: agentic_architecture__p6__ada_uam__rule__0a42d81f
+$$$
+¡Perfecto! 😊 Encontré el perfil `consultante_de_servicios_y_asistencia_del_cau.yaml` y confirmé que expone exactamente los campos que mencionas: `contact_email`, `contact_phone` y `physical_address` (además de otros como `service_hours`, `faq_link`, etc.).
+
+Aquí tienes la regla, basada en `sensei-check-doc.md` y `rules-examples.md`:
+
+```yaml
+name: cau_contact_info_complete
+description: >
+  El chatbot del CAU debe proporcionar toda la información de contacto necesaria:
+  correo electrónico, número de teléfono y dirección física.
+  Perfil objetivo: consultante_de_servicios_y_asistencia_del_cau.
+conversations: 1
+active: true
+oracle: |
+  conv[0].contact_email is not None and conv[0].contact_email != ''
+  and conv[0].contact_phone is not None and conv[0].contact_phone != ''
+  and conv[0].physical_address is not None and conv[0].physical_address != ''
+yields: |
+  f"Información de contacto incompleta del CAU — email: {conv[0].contact_email}, "
+  f"teléfono: {conv[0].contact_phone}, dirección: {conv[0].physical_address}"
+```
+
+### Qué hace esta regla 🧐
+- **`conversations: 1`** → es una regla de una sola conversación (un *oracle* clásico), no metamórfica.
+- **`oracle`** → comprueba que los tres campos (`contact_email`, `contact_phone`, `physical_address`) estén presentes y no vacíos. Si alguno falta, la regla falla.
+- **`yields`** → mensaje de error que muestra qué valores se obtuvieron, útil para depurar.
+
+### Notas importantes 💡
+- Los nombres de los campos (`contact_email`, `contact_phone`, `physical_address`) coinciden **exactamente** con los `chatbot.output` del perfil `consultante_de_servicios_y_asistencia_del_cau.yaml`, así que la regla está correctamente alineada con el contrato del perfil.
+- Si prefieres una versión más estricta que también valide el **formato** (por ejemplo, que el email contenga `@` y el teléfono tenga dígitos), puedo ampliarla. Por ejemplo, usando `extract_float(conv[0].contact_phone)` para verificar que hay un número, o un chequeo de `'@' in conv[0].contact_email`.
+
+¿Quieres que la deje así, o la refuerzo con validación de formato (email con `@`, teléfono con dígitos)? También puedo guardarla con un nombre de archivo concreto si me lo indicas. 🚀
+$$$

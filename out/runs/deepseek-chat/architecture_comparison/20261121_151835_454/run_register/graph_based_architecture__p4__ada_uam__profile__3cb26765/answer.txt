@@ -1,0 +1,81 @@
+¡Claro que sí! 😊 Me encanta ayudarte a montar un perfil para testear el CAU. Vamos a ello paso a paso.
+
+## Lo que quieres conseguir
+
+Un perfil donde el usuario simulado pida **soporte del CAU** y, en concreto, quiera obtener:
+- 📞 Número de teléfono
+- 📧 Email
+- 📍 Dirección física
+- 🕐 Horarios de atención
+
+Esto encaja perfecto con el patrón de extracción: cada dato será un campo en `chatbot.output` para que luego puedas validarlo (o escribir reglas sobre él).
+
+## Perfil propuesto
+
+Aquí tienes un YAML listo para copiar en `profiles/soporte_cau_contacto.yml`:
+
+```yaml
+test_name: "Soporte CAU - Datos de contacto"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita contactar con el Centro de Atención a Usuarios
+    (CAU) de la UAM y quieres reunir todos sus datos de contacto y horarios
+    para poder resolver una incidencia.
+  context:
+    - personality: personalities/formal-user
+    - "Tienes una incidencia con tu cuenta y prefieres contactar al CAU por el canal más adecuado."
+    - "Quieres tener a mano todos los datos de contacto antes de escribir o llamar."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir el correo electrónico de contacto del CAU."
+    - "Preguntar por la dirección física de la oficina del CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física de la oficina del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+## Por qué está montado así 🧐
+
+- **`chatbot.output`** define exactamente los 4 campos que quieres extraer: `contact_phone`, `contact_email`, `physical_address` y `service_hours`. Así, al terminar cada conversación, el extractor los rellenará y podrás validarlos (o usar reglas tipo `conv[0].contact_phone is not None`).
+- **`goals`** son frases claras y una por dato, para que el simulador vaya pidiendo cada cosa. Con `single questions` hará una pregunta por interacción, lo cual encaja genial con este caso.
+- **`fallback`** usa el mensaje real del bot de la UAM (lo he tomado de tus perfiles existentes) para evitar bucles raros.
+- **`steps: 20`** es margen de sobra para 4 preguntas; puedes bajarlo si quieres conversaciones más cortas.
+
+## Un par de consejos 💡
+
+- Si quieres que el usuario **insista** o pregunte de forma más natural (por ejemplo, "¿y por teléfono cómo os localizo?"), puedes añadir más variantes en `goals` o usar `interaction_style: [long phrases]`.
+- Si más adelante quieres escribir reglas sobre estos campos, recuerda que se leen como `conv[i].contact_phone`, etc. — por eso los nombres son estables y descriptivos.
+- Puedes validar el perfil antes de lanzarlo con `validation_check.py` para asegurarte de que no hay errores de formato.
+
+¿Quieres que te lo adapte para que también pregunte por el **catálogo de servicios** o las **preguntas frecuentes**? O si prefieres, te ayudo a escribir una regla que compruebe que los 4 datos vienen rellenos. ¡Dime! 🙌

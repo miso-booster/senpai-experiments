@@ -1,0 +1,30 @@
+conversation ID: one_node_architecture__p25__bikeshop__rule__c6e62836
+$$$
+Hey there! 😊 Happy to help you build that rule. Quick heads-up before the YAML: your `opening_and_closing` field is a **string** (like "10:00 - 20:00"), so we can't do a numeric comparison on it directly — we need to parse the hours out of the text. Also, `seat_price` is typed as `str` in your profile, so I'll wrap it with `extract_float` to compare it numerically.
+
+Here's a rule that checks all four price points plus the opening/closing hours:
+
+```yaml
+name: qa_prices_and_hours
+description: >
+  Checks the qa profile outputs: opening/closing hours are within 10-20,
+  tune-up costs 50, seat costs 20, and tire costs 20.
+conversations: 1
+active: True
+oracle: |
+  extract_float(tune_up) == 50
+  and extract_float(seat_price) == 20
+  and extract_float(tire) == 20
+  and all(10 <= int(h) <= 20 for h in __import__('re').findall(r'\d{1,2}', opening_and_closing))
+yields: |
+  f"Expected tune_up=50, seat=20, tire=20 and hours in 10-20. Got tune_up={tune_up}, seat={seat_price}, tire={tire}, hours={opening_and_closing}"
+```
+
+A couple of things worth flagging so the rule behaves the way you expect 👀:
+
+- **`extract_float` on `money` fields** — since `tire` and `tune_up` are `money` type, `extract_float` grabs the first number it finds (e.g. `"$50"` → `50`). That works fine here.
+- **The hours check** — I'm pulling every number out of `opening_and_closing` with a regex and asserting each one is between 10 and 20. So `"10:00 - 20:00"` passes ✅, but `"9:00 - 21:00"` would fail ❌. If your bot formats hours differently (e.g. `"10am to 8pm"`), let me know and I'll adjust the parsing.
+- **`seat_price` is a `str`** in your profile — if you'd rather compare it cleanly, consider changing its `type` to `money` in the profile. That keeps the contract tidy for future rules too. Want me to show you that tweak?
+
+If you'd like, I can also split this into **separate rules** (one per check) so failures are easier to pinpoint — just say the word! 🚲
+$$$

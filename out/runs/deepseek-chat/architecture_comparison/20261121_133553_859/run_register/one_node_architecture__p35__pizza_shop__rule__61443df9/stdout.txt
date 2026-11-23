@@ -1,0 +1,24 @@
+conversation ID: one_node_architecture__p35__pizza_shop__rule__61443df9
+$$$
+Here's a rule that checks a small pizza costs at least $10 in USD 👇
+
+```yaml
+name: small_pizza_price
+description: Checks the base price of small pizzas (>= $10 USD)
+active: true
+conversations: 1
+when: size[0] == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+yields: f"Wrong price for small pizzas, it should be (>= 10 USD)"
+```
+
+A couple of quick notes so it behaves as you expect 😊:
+
+- **`when: size[0] == 'small'`** — this filters to conversations where the extracted `size` field contains `'small'`. The `[0]` indexing matches how the field is stored in your project (as a list-like value).
+- **`extract_float(price)`** — parses the numeric part of the `price` output, so `"$10.50"` becomes `10.5`.
+- **`currency(price) == 'USD'`** — makes sure we're comparing dollars, not euros or pounds.
+
+⚠️ One thing to double-check: this rule assumes your profile's `chatbot.output` exposes fields named **`size`** and **`price`**. Looking at your project, the closest matches are in `pizza_order_test_custom.yml` (which has `price`) and `pizzaorder_ivan_test.yml` (which has `selected_pizza_size`). If you're targeting a specific profile, make sure the field names in the rule match that profile's `chatbot.output` exactly — otherwise the rule won't find the values it needs.
+
+Want me to adapt it to a specific profile's field names? Just tell me which one and I'll tailor it 🍕
+$$$

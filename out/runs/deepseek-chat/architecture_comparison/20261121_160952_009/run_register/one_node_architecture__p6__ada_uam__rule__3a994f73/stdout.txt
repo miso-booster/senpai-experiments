@@ -1,0 +1,30 @@
+conversation ID: one_node_architecture__p6__ada_uam__rule__3a994f73
+$$$
+¡Claro! 😊 Vamos a crear una regla que verifique que el chatbot (Ada UAM) haya proporcionado los tres datos de contacto del CAU: correo, teléfono y dirección física.
+
+La idea es usar `data_collected()` para asegurarnos de que todos los slots se rellenaron, y además comprobar explícitamente que cada uno de los tres campos no está vacío (por si el extractor devuelve algo raro). Aquí tienes la regla lista para pegar:
+
+```yaml
+name: cau_contact_info_complete
+description: >
+  Ada UAM must provide complete CAU contact information:
+  email, phone number and physical address.
+conversations: 1
+active: true
+oracle: |
+  data_collected() == True
+  and conv[0].contact_email not in (None, '', 'N/A')
+  and conv[0].contact_phone not in (None, '', 'N/A')
+  and conv[0].physical_address not in (None, '', 'N/A')
+yields: |
+  f"Missing CAU contact info — email: {conv[0].contact_email}, phone: {conv[0].contact_phone}, address: {conv[0].physical_address}"
+```
+
+Un par de notas rápidas 👀:
+
+- **`data_collected()`** ya comprueba que ningún slot de `chatbot.output` quede en `None`, pero añadimos las comprobaciones explícitas por si el extractor devuelve cadenas vacías o placeholders como `'N/A'`.
+- Si prefieres una versión más estricta que también valide el **formato** (por ejemplo, que el email contenga `@` y que el teléfono tenga dígitos), dímelo y te la amplío con `semantic_content` o expresiones regulares.
+- Esta regla es **profile-bound**: depende directamente de los campos `contact_email`, `contact_phone` y `physical_address` del perfil `consultante_de_servicios_y_asistencia_del_cau`. Si renombras esos campos en el `chatbot.output`, recuerda actualizar la regla también. ✅
+
+¿Quieres que te la deje también en versión "global" (sin depender del perfil) o con validación de formato incluida? 🚀
+$$$

@@ -1,0 +1,80 @@
+Here's your bike shop profile, built following the structure in `sensei-chat-guide.md`:
+
+```yaml
+test_name: "bike_shop_info_assistant"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer visiting a bike shop's virtual assistant.
+    You are looking for general information about the shop and its standard
+    services. You behave like a typical, polite customer and phrase your
+    questions clearly and directly.
+  context:
+    - "You are interested only in basic pricing, shop hours, and general bike care."
+    - "You do NOT ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or anything outside basic pricing, shop hours, and general bike care."
+    - "You keep your questions simple, direct, and relevant to a normal customer."
+  goals:
+    - "Ask about the shop's opening and closing times."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices rather than advanced repairs."
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you rephrase your question?"
+  output:
+    - opening_hours:
+        type: string
+        description: "The shop's opening and closing times as stated by the chatbot"
+    - tire_price:
+        type: currency
+        description: "The price of a new bike tire"
+    - tune_up_price:
+        type: currency
+        description: "The price of a standard bike tune-up"
+    - seat_price:
+        type: currency
+        description: "The price of a new bike seat"
+    - bike_care_advice:
+        type: string
+        description: "General advice on basic bike maintenance and good practices"
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+    max_cost: 0.15
+  interaction_style:
+    - default
+```
+
+### What this profile does 🚲
+
+- **User role & context** — The simulated user is a normal customer, English-speaking, focused strictly on shop hours, basic pricing, and general bike care. The `context` entries explicitly forbid off-topic areas (appointments, specific models, advanced repairs, warranties, delivery), so the simulator stays in scope.
+- **Goals** — Five clear, direct goals matching exactly what you asked for: opening/closing times, tire price, tune-up price, seat price, and general bike-care advice.
+- **`chatbot.output`** — This is the extraction contract (per §2.1.1 of the guide). I chose stable, descriptive field names and appropriate types:
+  - `opening_hours` (string)
+  - `tire_price`, `tune_up_price`, `seat_price` (currency — so later rules can do numeric comparisons)
+  - `bike_care_advice` (string)
+  
+  These fields are what future SENSEI-check rules would read as `conv[i].tire_price`, etc.
+- **Conversation controls** — `all_answered` with `export: true` ensures the run continues until every goal is addressed (and exports a CSV of satisfied outputs), with a `limit` safety cap and a per-conversation `max_cost`. `interaction_style: default` keeps the user behaving like a natural, normal customer (no forced typos or language switching).
+
+### A couple of things to confirm with you ✍️
+
+1. **`chatbot.fallback`** — I used a generic placeholder. If you know the bot's *real* fallback message, paste it in to avoid endless loops (best practice from the guide).
+2. **`conversation.number: 3`** — I set a small number of conversations for a quick smoke test. Bump it up if you want broader coverage.
+3. **Currency type** — I used `currency` for the three prices so rules can compare them numerically. If your project doesn't have a `currency` custom type defined under `types/`, let me know and I can switch those to `string` (or help you add the type).
+
+Want me to also draft a **SENSEI-check rule** that validates this profile (e.g., "each price is stated and positive", "no off-topic services mentioned")? If so, I'll load the rules docs and align the rule to these exact `chatbot.output` fields. 😊

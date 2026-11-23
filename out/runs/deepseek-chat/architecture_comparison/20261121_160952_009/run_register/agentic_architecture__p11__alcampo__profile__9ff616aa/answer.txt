@@ -1,0 +1,71 @@
+Here's your profile — goals only, no variables, following the structure in `sensei-chat-guide.md` (sections 3, 4, 5 and 6). I kept `chatbot.output` minimal but present, since it's the contract rules will read later.
+
+```yaml
+test_name: "subscription_services_and_benefits_inquiry"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer interested in learning about subscription services and the
+    benefits they offer. You want to understand what each plan includes, how much
+    it costs, and whether it is worth it for your needs.
+  context:
+    - "You are considering subscribing but have not decided yet."
+    - "You care about value for money and clear explanations of benefits."
+    - "You prefer straightforward answers without marketing fluff."
+  goals:
+    - "Ask which subscription services or plans are available."
+    - "Ask what benefits and perks each subscription plan includes."
+    - "Ask how much each subscription plan costs and how often you are charged."
+    - "Ask whether there is a free trial or a minimum commitment period."
+    - "Ask how you can cancel or change your subscription."
+    - "Ask whether there are any discounts or promotions for new subscribers."
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't quite get that. Could you rephrase your question?"
+  output:
+    - available_plans:
+        type: list[string]
+        description: "Names of the subscription plans or services offered"
+    - plan_benefits:
+        type: string
+        description: "Benefits and perks included in the subscription plans"
+    - plan_price:
+        type: string
+        description: "Cost of the subscription and billing frequency"
+    - trial_or_commitment:
+        type: string
+        description: "Free trial availability and any minimum commitment period"
+    - cancellation_policy:
+        type: string
+        description: "How the subscription can be cancelled or changed"
+    - new_subscriber_promotions:
+        type: string
+        description: "Discounts or promotions for new subscribers"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+### What I did and why
+
+- **Docs used:** `sensei-chat-guide.md` — specifically the profile anatomy (§3), `user.goals` (§4), conversation controls (§5), and `chatbot.output` (§6).
+- **Goals only, no variables:** all `user.goals` entries are plain strings with no `{{variables}}` and no variable declarations, as you asked. That means `conversation.number` is a fixed integer (`3`) rather than `combinations`, since combinations require `forward`/`pairwise` variables.
+- **`chatbot.output` kept:** it's the schema rules will read as `conv[i].<field>`, so I included a small set of descriptive fields. If you'd rather have *no* output at all, just say so and I'll strip it.
+- **Conventions matched:** I followed the style of your existing `delivery_and_subscription_services.yaml` (English, `single questions`, `is_starter: false`, a real fallback message, `max_cost` cap).
+
+⚠️ One heads-up: you already have `delivery_and_subscription_services.yaml`, which also touches subscription benefits. This new one is narrower (plans, pricing, trials, cancellation, promos) and variable-free, so they can coexist — but if you'd prefer to merge them or rename this one, let me know 😊.
+
+Want me to also create a matching rule (e.g., checking that all plans mentioned have a price)? That would be a profile-bound rule reading `available_plans` and `plan_price`.

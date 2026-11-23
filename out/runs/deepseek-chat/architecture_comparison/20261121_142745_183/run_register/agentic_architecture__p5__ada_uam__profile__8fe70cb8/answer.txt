@@ -1,0 +1,66 @@
+Here's a profile tailored exactly to your request — a user seeking CAU support who wants the phone number, email, physical location, and opening hours. I've kept it focused on those four contact details (unlike the existing broader `consultante_de_servicios_y_asistencia_del_cau.yaml`, which also covers service catalog, FAQs, and ID-UAM).
+
+```yaml
+test_name: "Soporte de contacto del CAU (UAM)"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario de la Universidad Autónoma de Madrid (UAM) que necesita
+    contactar con el Centro de Atención a Usuarios (CAU) para resolver una duda.
+    Tu objetivo es obtener los datos de contacto del CAU: teléfono, correo
+    electrónico, ubicación física y horario de atención.
+  context:
+    - "Eres miembro de la comunidad universitaria y necesitas ayuda del CAU."
+    - "Prefieres comunicarte de forma clara y directa, pidiendo los datos uno a uno."
+    - "Quieres asegurarte de tener toda la información de contacto antes de terminar."
+  goals:
+    - "Solicitar el número de teléfono del CAU."
+    - "Pedir la dirección de correo electrónico del CAU."
+    - "Preguntar por la ubicación física (dónde se encuentra) del CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Ubicación o dirección física del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+### What this profile does and why
+
+- **`user.role` / `context`** — describes a UAM community member whose sole mission is to get the CAU's contact details, matching your scenario.
+- **`user.goals`** — four plain-string goals, one per requested detail (phone, email, location, hours). No variables needed here, so it stays simple and readable.
+- **`chatbot.output`** — the extraction schema, and importantly the **contract for future rules**. I named the fields to match the existing CAU profile conventions (`contact_phone`, `contact_email`, `physical_address`, `service_hours`) so any profile-bound rules you write later can reuse the same field names. These are the fields a rule would read as `conv[i].contact_phone`, etc.
+- **`chatbot.fallback`** — I reused the real fallback message from the existing CAU profile to avoid endless loops.
+- **`conversation`** — 3 conversations, `single questions` style (asks one thing at a time, natural for gathering contact details), a modest `steps: 8` and a `max_cost` cap for cost safety.
+
+### Note on the existing profile
+There's already `consultante_de_servicios_y_asistencia_del_cau.yaml` in your project, which overlaps but is broader (it also extracts service catalog, FAQ links, ID-UAM info, etc.). I created this one as a **focused** contact-info profile per your exact request. If you'd rather just extend the existing one instead of having two, let me know and I can merge them. 😊
+
+Would you like me to also draft a **rule** (e.g., checking that all four contact fields were actually provided) to pair with this profile?

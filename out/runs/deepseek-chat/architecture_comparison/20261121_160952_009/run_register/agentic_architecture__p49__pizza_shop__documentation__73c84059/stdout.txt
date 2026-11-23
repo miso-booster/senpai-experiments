@@ -1,0 +1,48 @@
+conversation ID: agentic_architecture__p49__pizza_shop__documentation__73c84059
+$$$
+I checked the rules docs (`sensei-check-doc.md` and `rules-examples.md`) and I have to be straight with you: **there is no `pairwise` function documented** in the SENSEI-check helper library. So I can't explain its exact signature or semantics without guessing — and I don't want to invent DSL features 😅.
+
+Here's what the docs *do* say, which is probably what you're after:
+
+## How "pairwise" comparisons actually work in SENSEI-check
+
+Instead of a `pairwise()` helper, pairwise/metamorphic logic is expressed **declaratively** through the rule structure:
+
+- **`conversations: 2`** → the rule is evaluated over pairs of conversations.
+- **`when:`** → filters which conversations form a comparable pair (the *ceteris paribus* cohort).
+- **`if:` / `then:`** (or a single `oracle:`) → the relation asserted between `conv[0]` and `conv[1]`.
+
+Example from `sensei-check-doc.md`:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Under the hood (section 8 of `sensei-check-doc.md`), Sensei-check selects conversations via `when:` and **applies the oracle / if-then relation across the matching tuple(s)** — i.e., it does the pairing for you.
+
+## Related helpers that *do* exist
+
+If you were thinking of something that iterates over conversations, these are the documented dataset/global helpers:
+
+| Helper | What it does |
+|---|---|
+| `exists(condition)` | True if **any** conversation satisfies the expression |
+| `num_exist(condition)` | Count of conversations satisfying the expression |
+| `is_unique(property)` | Property unique across all conversations |
+
+And for `conversations: all`, rules run globally rather than pairwise.
+
+## Can you clarify?
+
+A couple of quick questions so I can help precisely:
+
+1. Did you see `pairwise` somewhere specific (a rule file in your project, an error message, another doc)? If it's in a project rule, tell me the filename and I'll read it.
+2. Or are you asking how to write a **pairwise comparison rule** (2-conversation metamorphic)? If so, tell me which profile/outputs you want to compare and I'll draft it for you.
+
+Which one is it? 😊
+$$$

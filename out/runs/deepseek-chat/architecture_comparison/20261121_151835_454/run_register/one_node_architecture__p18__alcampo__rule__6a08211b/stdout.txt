@@ -1,0 +1,40 @@
+conversation ID: one_node_architecture__p18__alcampo__rule__6a08211b
+$$$
+¡Buena idea! 🌱 Esa regla encaja perfecto con el perfil **Pet Products Inquiry**, que ya expone un output llamado `eco_friendly_toys` (tipo `string`). Así que la regla puede apoyarse directamente en ese campo.
+
+Un detalle importante: como `eco_friendly_toys` está tipado como `string`, lo más seguro es comprobar que **no esté vacío** y que mencione algo relacionado con juguetes eco-friendly. Aquí tienes una regla sencilla y robusta:
+
+```yaml
+name: eco_friendly_toys_returned
+description: The chatbot returns a non-empty list of eco-friendly toys (Pet Products Inquiry profile)
+conversations: 1
+active: true
+oracle: |
+  eco_friendly_toys is not None and len(str(eco_friendly_toys).strip()) > 0
+yields: |
+  f"Expected a list of eco-friendly toys, but got: {eco_friendly_toys}"
+```
+
+Si quieres una comprobación un poco más estricta (que además mencione el término "eco" o "sustainable"), puedes usar esta variante:
+
+```yaml
+name: eco_friendly_toys_returned
+description: The chatbot returns a non-empty list of eco-friendly toys (Pet Products Inquiry profile)
+conversations: 1
+active: true
+oracle: |
+  eco_friendly_toys is not None and len(str(eco_friendly_toys).strip()) > 0 and (
+    'eco' in str(eco_friendly_toys).lower() or 'sustain' in str(eco_friendly_toys).lower()
+  )
+yields: |
+  f"Expected a list of eco-friendly toys, but got: {eco_friendly_toys}"
+```
+
+Un par de notas para que todo funcione redondo 👇
+
+- **El nombre del campo debe coincidir exactamente** con el `chatbot.output` del perfil. En tu perfil actual es `eco_friendly_toys`, así que la regla lo referencia tal cual. ✅
+- Si en algún momento cambias el tipo del output a `list[string]` (más semántico para "una lista de juguetes"), la regla seguiría funcionando, pero podrías incluso comprobar `len(eco_friendly_toys) > 0` directamente.
+- Como es una regla **profile-bound**, conviene que el `description` mencione el perfil objetivo (ya lo hice) para mantener la trazabilidad.
+
+¿Quieres que también te prepare una regla **global** (sin depender del perfil) que verifique que el bot menciona juguetes eco-friendly usando `utterance_index`? 😊
+$$$

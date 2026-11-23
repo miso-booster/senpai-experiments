@@ -1,0 +1,59 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__2f05aff4
+$$$
+# Checking your `check_cau_information` rule 🔍
+
+Great question! Let me walk you through it — and I've got some good news and a small fix for you 😊
+
+## Verdict: it *runs*, but it's not really testing anything
+
+Your rule is **syntactically valid**, but it has a **logical problem**: the `when` filter and the `oracle` are **identical**. That means:
+
+- The rule only ever *selects* conversations where the contact details are already exactly correct.
+- Then it *checks* that those same details are exactly correct.
+
+So it's essentially saying: *"If the answer is right, assert that the answer is right."* That will always pass for any conversation that gets selected — and any conversation where the CAU got the details **wrong** will simply be **filtered out** and never flagged. 🚩
+
+In other words, it can never fail. That's a classic "tautological rule" — it gives you a false sense of coverage.
+
+## What you probably want
+
+You want to **check** that the CAU always provides the correct contact info — so the check belongs in the `oracle`, and the `when` should either be removed or used to select *relevant* conversations (e.g., ones where the user actually asked about contact details).
+
+Here's a fixed version:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the correct contact details (email, phone, address).
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+### Optional refinement — only check when relevant
+
+If you only want to verify this for conversations where the user *asked* about contact info, use `when` to select those (not to pre-filter on correctness):
+
+```yaml
+name: check_cau_information
+description: When the user asks for contact details, the CAU must return the correct email, phone and address.
+conversations: 1
+when: conv[0].asked_about_contact == True
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+> ⚠️ Note: `asked_about_contact` must be a real field exposed in your profile's `chatbot.output`. If it isn't, either add it to the profile or just drop the `when` and use the first (simpler) version.
+
+## Why the fix works 🧠
+
+Think of `when` as a **bouncer at the door** and `oracle` as the **quality inspector inside**:
+
+- **`when`** decides *which conversations are allowed in* to be checked. It should filter on **input conditions** (e.g., "the user asked about contact info"), *not* on whether the output is already correct.
+- **`oracle`** is the actual **assertion** — the thing that can pass or fail.
+
+In your original rule, the bouncer was only letting in people who *already* passed inspection — so the inspector never had anything to catch. By moving the correctness check entirely into the `oracle` (and using `when` only for relevance, if at all), the rule can now actually **fail** when the CAU gives wrong details — which is exactly what you want. ✅
+
+## One more tip 💡
+
+Since `contact_email`, `contact_phone`, and `physical_address` are compared against fixed strings, make sure those exact field names exist in your profile's `chatbot.output`. If any are named differently (e.g., `email` instead of `contact_email`), the rule will error out — so double-check the profile schema.
+
+Want me to help you adapt this rule to a different scenario, or write a companion rule (e.g., checking the CAU *doesn't* invent a fake phone number)? Just say the word! 🙌
+$$$

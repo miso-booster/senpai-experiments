@@ -1,0 +1,69 @@
+¡Hola! 😊 Claro que sí, te ayudo con esa regla. Antes de escribirla, déjame aclararte un par de cosas para que quede bien alineada con tu proyecto 👇
+
+## 1) La regla depende del `chatbot.output` del perfil
+
+Para que la regla funcione, el perfil de SENSEI Chat que estés usando debe exponer un campo llamado `eco_friendly_toys` en su `chatbot.output`. Algo así:
+
+```yaml
+# profiles/<tu_perfil>.yaml
+test_name: "eco_friendly_toys_profile"
+
+user:
+  language: Spanish
+  role: "Eres un cliente interesado en juguetes eco-friendly."
+  context:
+    - "Buscas juguetes sostenibles y respetuosos con el medio ambiente."
+  goals:
+    - "Preguntar por juguetes eco-friendly disponibles"
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, ¿puedes reformular tu pregunta?"
+  output:
+    - eco_friendly_toys:
+        type: list[string]
+        description: Lista de juguetes eco-friendly devueltos por el chatbot
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+Si el campo no existe en el perfil (o se llama distinto), la regla no podrá leerlo. Así que asegúrate de añadirlo o renombrarlo antes de activar la regla ✅
+
+## 2) La regla propuesta
+
+Aquí tienes una regla de una sola conversación que comprueba que el chatbot ha devuelto una lista de juguetes eco-friendly (es decir, que el campo existe y no está vacío):
+
+```yaml
+name: eco_friendly_toys_returned
+description: El chatbot devuelve una lista no vacía de juguetes eco-friendly (campo eco_friendly_toys del chatbot.output)
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) > 0
+```
+
+### ¿Qué hace exactamente? 🔍
+- `conv[0].eco_friendly_toys is not None` → el campo se ha rellenado (no está vacío ni ausente).
+- `len(conv[0].eco_friendly_toys) > 0` → la lista tiene al menos un juguete.
+
+## 3) Variante más estricta (opcional)
+
+Si quieres además comprobar que **todos** los elementos son textos válidos (por ejemplo, que no haya `None` sueltos en la lista):
+
+```yaml
+name: eco_friendly_toys_returned_strict
+description: El chatbot devuelve una lista de juguetes eco-friendly con elementos válidos
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) > 0 and all(isinstance(t, str) and t.strip() != '' for t in conv[0].eco_friendly_toys)
+```
+
+## 4) Un detalle importante sobre el nombre del campo ⚠️
+
+En tu mensaje dices *"algo como `eco_friendly_toys`"*. En SENSEI-check el nombre debe coincidir **exactamente** con el del `chatbot.output`. Si en el perfil lo llamas `eco_friendly_toys`, usa ese nombre en la regla; si lo llamas `ecoToys` o `toys_eco`, tendrás que ajustar la expresión. No inventes un nombre distinto al del perfil, porque la regla fallará 😅
+
+---
+
+¿Quieres que te ayude también a **definir el campo en el perfil** (`chatbot.output`) para que todo encaje? Si me pasas el YAML del perfil o me dices cómo se llama, te lo dejo listo para pegar. ¡Aquí estoy! 🙌

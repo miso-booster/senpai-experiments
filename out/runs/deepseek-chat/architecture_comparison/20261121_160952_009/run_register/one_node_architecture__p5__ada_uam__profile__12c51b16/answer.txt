@@ -1,0 +1,61 @@
+Here's a profile that simulates a user reaching out to the CAU for its contact details and service hours 😊
+
+```yaml
+test_name: "CAU Contact and Hours Inquiry"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario que necesita ponerse en contacto con el Centro de Atención a Usuarios (CAU)
+    de la UAM y quiere conocer sus datos de contacto y horario de atención.
+  context:
+    - personality: personalities/formal-user
+    - "Necesitas resolver una duda sobre los servicios de Tecnologías de la Información y prefieres contactar al CAU directamente."
+    - "Quieres saber si puedes escribir un correo, llamar por teléfono o acudir en persona, y en qué horario."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico de contacto del CAU."
+    - "Preguntar por la ubicación física o dirección de la oficina del CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - cau_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - cau_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - cau_address:
+        type: string
+        description: "Dirección física de la oficina del CAU"
+    - cau_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+A few notes on the design 👀:
+
+- **`chatbot.output`** exposes exactly the four fields you asked for (`cau_phone`, `cau_email`, `cau_address`, `cau_hours`), so any profile-bound Sensei-check rule can read them as `conv[i].cau_phone`, etc.
+- **`single questions`** keeps each goal as its own turn, which is handy for checking that each piece of contact info is answered independently.
+- **`is_starter: false`** assumes the bot greets first; flip it to `true` if your UAM bot waits for the user to open.
+- The **fallback** mirrors the real UAM bot text so the simulator doesn't loop endlessly.
+
+Want me to pair this with a Sensei-check rule (e.g., verifying all four fields are filled via `data_collected()`)? Just say the word! 🙌

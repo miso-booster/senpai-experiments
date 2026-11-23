@@ -1,0 +1,74 @@
+conversation ID: one_node_architecture__p2_basic__pizza_shop__profile__2ef0f9df
+$$$
+I'd love to help, but that request is outside what I can do 😊 — I'm Senpai, and I focus exclusively on **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (plus their documentation). A standalone C program for a bike shop scheduler isn't part of that scope, so I'll have to pass on it.
+
+That said, if you're building something bike-shop-related in Sensei, I can absolutely help with things like:
+
+- 🚲 **A profile** that simulates a customer booking an appointment (with `date`/`time` variables, `forward()`/`pairwise()` coverage, etc.)
+- ✅ **Rules** to validate the chatbot's behavior (e.g., appointment times are unique, prices are monotonic, the bot stays on topic)
+- 🔌 **A connector** to wire Sensei up to your bike shop's chatbot API
+
+Here's a quick taste of what a booking profile could look like in your project:
+
+```yaml
+test_name: "bike_shop_appointment_booking"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer booking a bike repair appointment at a local shop.
+    Ask about availability, confirm a date and time, and request a price estimate.
+  context:
+    - "You need a tune-up before a weekend ride."
+    - "You prefer morning slots."
+  goals:
+    - "Book a {{service_type}} appointment on {{appointment_date}} at {{appointment_time}}"
+    - "Ask for the estimated price"
+    - service_type:
+        function: forward()
+        type: string
+        data: [tune-up, brake adjustment, wheel truing, full service]
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - any(3 dates within the next 14 days)
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data: ["09:00", "11:00", "14:00", "16:30"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - appointment_id:
+        type: string
+        description: "Booking reference for the appointment"
+    - confirmed_time:
+        type: time("hh:mm")
+        description: "Confirmed appointment time"
+    - estimated_price:
+        type: currency
+        description: "Estimated price for the service"
+
+conversation:
+  number: combinations(0.5, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - single questions
+```
+
+Want me to go further — say, add a **rule** that checks appointment IDs are unique, or a **connector** for your shop's API? Just point me in that direction and I'm happy to dig in! 🙌
+$$$

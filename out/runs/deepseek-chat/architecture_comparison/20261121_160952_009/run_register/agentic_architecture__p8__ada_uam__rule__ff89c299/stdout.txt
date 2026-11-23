@@ -1,0 +1,57 @@
+conversation ID: agentic_architecture__p8__ada_uam__rule__ff89c299
+$$$
+¡Hola! 😊 Revisé tu regla contra la documentación (`sensei-check-doc.md` y `rules-examples.md`) y también el perfil que parece ser el objetivo: `consultante_de_servicios_y_asistencia_del_cau.yaml`. Te cuento qué encontré.
+
+## ¿Está bien la regla? — Casi, pero tiene un problema clave ⚠️
+
+Los campos que usas **sí existen** en el `chatbot.output` del perfil (`contact_email`, `contact_phone`, `physical_address`), así que la alineación perfil↔regla es correcta.
+
+Pero hay un **error conceptual importante** en cómo estás usando `when` y `oracle`:
+
+### El problema: `when` no es un filtro de "datos correctos"
+
+Según la doc (`sensei-check-doc.md`, §4 y §6.2), `when` sirve para **seleccionar conversaciones comparables** (crear cohortes), NO para comprobar la corrección de los datos. Si pones la misma condición de corrección en `when` y en `oracle`:
+
+- `when` filtra **solo** las conversaciones donde los datos ya son correctos.
+- Luego `oracle` comprueba exactamente lo mismo sobre esas conversaciones → **siempre pasará**.
+- Las conversaciones donde el CAU dio datos **incorrectos** quedan **excluidas** y nunca se detectan como fallo. 💥
+
+Es decir, la regla se auto-sabotea: nunca falla, aunque el chatbot se equivoque.
+
+### Segundo detalle: `conversations: 1` + `when` sobre `conv[0]`
+
+Esto es válido sintácticamente, pero para una comprobación de un solo diálogo lo idiomático (ver `rules-examples.md`, p. ej. `small_pizza_price`) es usar `when` solo si necesitas filtrar por algo, y poner la comprobación en `oracle`. Aquí no necesitas filtrar por nada: quieres validar **todas** las conversaciones.
+
+## Versión corregida ✅
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details (profile consultante_de_servicios_y_asistencia_del_cau).
+conversations: 1
+active: true
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+yields: |
+  f"Wrong CAU contact info: email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+### Qué cambié y por qué
+
+| Cambio | Motivo |
+|---|---|
+| **Eliminé el `when`** | Era un filtro que ocultaba los fallos. Sin él, la regla evalúa todas las conversaciones. |
+| **Mantuve el `oracle`** | Es la comprobación real y correcta. |
+| **Añadí `active: true`** | Buena práctica (opcional; las reglas inactivas se ignoran). |
+| **Añadí `yields`** | Mensaje de error útil que muestra los valores reales cuando falla (patrón de `rules-examples.md`). |
+| **Añadí el perfil en `description`** | La doc (§3.3) recomienda documentar a qué perfil apunta la regla. |
+
+## Cómo funciona ahora 🧠
+
+- `conversations: 1` → la regla se aplica a cada conversación individual.
+- `oracle` → exige que los tres campos extraídos coincidan **exactamente** con los valores correctos del CAU.
+- Si el chatbot da un email, teléfono o dirección distintos → la regla **falla** y `yields` te muestra qué valores recibió. 🎯
+
+### Un consejo extra 💡
+Las comparaciones son de **igualdad exacta de strings**. Si el chatbot devuelve variaciones (p. ej. `"914974029"` sin espacio, o la dirección con otro formato), la regla fallará aunque la info sea "correcta". Si quieres tolerar eso, podríamos normalizar (quitar espacios, comparar solo el número, etc.). ¿Quieres que te prepare una versión más tolerante a formatos?
+
+¿Te dejo esta versión tal cual o afinamos la comparación? 😊
+$$$

@@ -1,0 +1,85 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__488728d8
+$$$
+Hey there! 😊 Love this scenario — a fresh bike owner wanting it dialed in just right. Let me put together a clean profile for that. I'll make the seat and grips variables so you get nice coverage across options, and I'll expose the key outputs so you can later write rules against them (e.g. appointment confirmation, price, etc.).
+
+```yaml
+test_name: "bike_setup_customization"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike and wants the shop to
+    set it up to your liking. You want to change the seat and the handlebar
+    grips, and you'd like to book an appointment to have this done.
+  context:
+    - "You just got a brand-new bike and it doesn't feel comfortable yet."
+    - "You want a more comfortable seat and grips that suit your riding style."
+    - "You'd like to get this done soon, ideally in the next few days."
+    - "You are friendly but a bit particular about comfort."
+  goals:
+    - "Explain that you recently bought a new bike and want it set up for your comfort."
+    - "Ask to change the {{seat_type}} seat for a more comfortable one."
+    - "Ask to change the handlebar grips to {{grip_type}} grips."
+    - "Ask how much the seat and grips would cost."
+    - "Ask to schedule an appointment for {{appointment_date}} at {{appointment_time}}."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [narrow, wide, gel-padded, ergonomic]
+    - grip_type:
+        function: forward()
+        type: string
+        data: [rubber, ergonomic, lock-on, foam]
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - any(3 dates within the next 7 days)
+    - appointment_time:
+        function: random()
+        type: string
+        data: ["10:00", "12:30", "15:00", "17:30"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_change_confirmation:
+        type: string
+        description: "Confirmation from the chatbot that the seat can be changed, including the type of seat chosen."
+    - grip_change_confirmation:
+        type: string
+        description: "Confirmation from the chatbot that the handlebar grips can be changed, including the type of grips chosen."
+    - customization_price:
+        type: money
+        description: "The total price quoted by the chatbot for changing the seat and the handlebar grips."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the scheduled appointment, including the date and time for the bike setup."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - single questions
+  max_cost: 0.6
+```
+
+A couple of quick notes so it fits your project nicely 👇
+
+- **`combinations`** works here because you have two nested `forward()` variables (`seat_type` and `grip_type`), giving you a nice grid of seat × grip combinations.
+- The **`chatbot.output`** fields (`seat_change_confirmation`, `grip_change_confirmation`, `customization_price`, `appointment_confirmation`) are the contract for any future Sensei-check rules — e.g. you could later write a rule checking that `customization_price` is always positive, or that an appointment is confirmed whenever the user asks for one.
+- I used `money` for the price since your other profiles use it — just make sure a `money` type exists in your `types/` folder (your `qa.yml` and others already reference it, so you're likely good).
+
+Want me to also draft a **metamorphic rule** to pair with this profile (like "a more expensive seat/grip combo should never cost less")? Just say the word and I'll whip it up! 🚲✨
+$$$

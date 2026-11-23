@@ -1,0 +1,75 @@
+conversation ID: one_node_architecture__p34__pizza_shop__profile__0225dc5c
+$$$
+Here's a profile for that scenario — the user starts customizing a pizza, then switches to a predefined one mid-conversation 🍕
+
+```yaml
+test_name: "custom_to_predefined_pizza_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza. You initially want a custom pizza
+    with your own chosen toppings, but partway through the conversation you
+    change your mind and decide to order a predefined pizza instead.
+  context:
+    - "You are ordering for a casual dinner at home."
+    - "You start by describing a custom pizza with specific toppings."
+    - "After the chatbot starts processing your custom order, you reconsider and prefer a predefined pizza from their menu."
+  goals:
+    - "Ask for a custom {{size}} pizza with {{toppings}}."
+    - "Then change your mind and ask for a predefined {{pizza_type}} pizza instead."
+    - "Confirm the final order and ask for the total price."
+    - size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives]
+    - pizza_type:
+        function: forward(size)
+        type: string
+        data: [Margarita, Pepperoni, Vegetarian, Hawaiian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - order_summary:
+        type: string
+        description: "A summary of the final pizza order, including pizza type, size, and toppings. Look for phrases like 'Your order is' or 'You have ordered'."
+    - total_cost:
+        type: money
+        description: "The total cost of the order. Look for currency symbols like '$' or '€'."
+    - order_id:
+        type: string
+        description: "A unique identifier for the order. Look for phrases like 'order number' or 'order ID'."
+
+conversation:
+  number: combinations(0.6, forward)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - change your mind
+    - single questions
+  max_cost: 0.8
+```
+
+A couple of notes so it fits your project nicely 😊:
+
+- **`change your mind`** is the key interaction style here — it nudges the simulator to actually pivot mid-conversation, which is exactly the behavior you described.
+- I used **`combinations(0.6, forward)`** since you have two `forward()` variables (`size` and `pizza_type` nested on it). If you'd rather keep it simple, you can swap `conversation.number` for a fixed integer like `4`.
+- The `chatbot.output` fields (`order_summary`, `total_cost`, `order_id`) are ready to be referenced by rules like `conv[0].total_cost` if you want to add a metamorphic check later.
+
+Want me to also draft a matching rule (e.g., verifying the final order reflects the *predefined* pizza, not the custom one)? Just say the word 👀
+$$$

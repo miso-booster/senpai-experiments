@@ -1,0 +1,49 @@
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el campo `library_hours` del perfil realmente refleje el horario de **9 a 20**.
+
+Como el perfil expone `library_hours` en `chatbot.output`, esta será una **regla profile-bound** (ligada al perfil). Usaremos el helper `semantic_content` para comprobar que el contenido extraído coincide semánticamente con "9 a 20" (ya que el texto puede venir como "9:00-20:00", "de 9 a 20 h", etc.).
+
+```yaml
+name: library_hours_9_to_20
+description: >
+  El horario de atención de la biblioteca debe ser de 9 a 20.
+  Regla profile-bound sobre el campo library_hours del perfil
+  "Préstamos y Recursos de la Biblioteca".
+conversations: 1
+oracle: semantic_content(library_hours, 'horario de atención de 9 a 20')
+```
+
+### 🔍 ¿Por qué así?
+
+- **`conversations: 1`** → es una comprobación sobre una sola conversación (un oráculo simple, no metamórfico).
+- **`library_hours`** → es el nombre exacto del slot en `chatbot.output`, así que la regla queda ligada al perfil.
+- **`semantic_content(...)`** → es el helper ideal aquí porque el texto puede variar ("9:00 a 20:00", "de 9h a 20h", "9-20", etc.) y no queremos depender de coincidencias literales.
+
+### 💡 Alternativa más estricta (si quieres forzar el formato)
+
+Si en tu proyecto el bot **siempre** devuelve el horario en un formato numérico reconocible, puedes combinar `extract_float` para ser más determinista:
+
+```yaml
+name: library_hours_9_to_20_strict
+description: >
+  El horario de la biblioteca debe empezar a las 9 y terminar a las 20.
+  Regla profile-bound sobre library_hours.
+conversations: 1
+oracle: >
+  extract_float(library_hours) == 9
+  and '20' in library_hours
+```
+
+⚠️ Ojo: esta versión es más frágil porque depende de que el primer número sea siempre el de apertura. La versión con `semantic_content` es más robusta frente a variaciones de redacción.
+
+### 🧠 Un consejo extra
+
+Si quieres asegurarte de que **todas** las conversaciones (el perfil genera 3) reporten el horario correcto, puedes usar una regla global con `num_exist`:
+
+```yaml
+name: all_conversations_report_9_to_20
+description: Todas las conversaciones deben reportar horario 9-20.
+conversations: all
+oracle: num_exist("semantic_content(conv[0].library_hours, 'horario de atención de 9 a 20')") == 3
+```
+
+¿Quieres que te ayude a adaptarla a otro formato de horario o a combinarla con otras comprobaciones del mismo perfil (como el proceso de préstamo de laptops)? 🚀

@@ -1,0 +1,36 @@
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el horario de la biblioteca extraído en `library_hours` sea de 9 a 20.
+
+Un par de notas antes del YAML:
+
+- Tu perfil expone el campo `library_hours` (tipo `string`) en `chatbot.output`, así que la regla puede leerlo directamente como `library_hours` (en reglas de 1 conversación) o `conv[0].library_hours` (en reglas de varias).
+- Como el horario viene como texto libre, lo más robusto es usar `semantic_content(...)` para comprobar que el contenido coincide con "9 a 20". Es una comprobación LLM-backed, así que puede haber mínima variabilidad — pero es la forma más fiable con texto libre.
+
+Aquí tienes la regla:
+
+```yaml
+name: library_hours_9_to_20
+description: El horario de la biblioteca debe ser de 9 a 20 (perfil Préstamos y Recursos de la Biblioteca)
+conversations: 1
+active: true
+oracle: |
+  semantic_content(library_hours, "El horario de atención de la biblioteca es de 9:00 a 20:00")
+yields: |
+  f"Horario de biblioteca incorrecto o no coincide con 9-20: {library_hours}"
+```
+
+Si prefieres una versión más estricta basada en números (por si el bot responde con horas en formato numérico tipo "9:00" y "20:00"), puedes añadir una comprobación con `extract_float`:
+
+```yaml
+name: library_hours_9_to_20_numeric
+description: El horario de la biblioteca debe contener las horas 9 y 20 (perfil Préstamos y Recursos de la Biblioteca)
+conversations: 1
+active: true
+oracle: |
+  extract_float(library_hours) == 9 and 20 in [extract_float(x) for x in library_hours.split()]
+yields: |
+  f"Horario de biblioteca no contiene 9 y 20: {library_hours}"
+```
+
+⚠️ Ojo con la segunda: `extract_float` solo devuelve el **primer** número del texto, así que la parte de `20 in [...]` es un poco frágil según cómo venga formateado el string. Por eso te recomiendo la primera versión (`semantic_content`), que entiende el significado del texto y es más tolerante a variaciones como "de 9:00 a 20:00", "9-20h", "abierto de 9 a 8 de la tarde", etc.
+
+¿Quieres que la adapte para que también cubra el caso de que el bot no responda nada sobre el horario (campo vacío o `None`)? 😊

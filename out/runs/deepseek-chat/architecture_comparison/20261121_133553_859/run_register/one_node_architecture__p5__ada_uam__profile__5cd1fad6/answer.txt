@@ -1,0 +1,60 @@
+¡Claro que sí! 😊 Aquí tienes un perfil listo para probar el chatbot de la UAM, centrado en un usuario que busca información de contacto y horarios del CAU.
+
+```yaml
+test_name: "Soporte CAU - Datos de contacto y horarios"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita contactar con el Centro de Atención a Usuarios (CAU)
+    de la UAM y quieres reunir sus datos de contacto y horarios de atención para
+    poder resolver una duda por tu cuenta.
+  context:
+    - personality: personalities/formal-user
+    - "Necesitas localizar el CAU tanto por teléfono como por correo electrónico."
+    - "También te interesa saber dónde está físicamente la oficina por si tienes que acudir en persona."
+    - "Quieres conocer el horario de atención para no llamar ni escribir en un momento inoportuno."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico de contacto del CAU."
+    - "Preguntar por la ubicación física (dirección) de la oficina del CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física de la oficina del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 15
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que le saques todo el partido 👀:
+
+- Los cuatro campos de `chatbot.output` (`contact_phone`, `contact_email`, `physical_address`, `service_hours`) están pensados para que puedas escribir reglas de Sensei-check que los lean como `conv[i].contact_phone`, etc.
+- Usé `single questions` para que el usuario vaya pidiendo cada dato por separado, lo que facilita verificar que el bot responde a cada consulta concreta.
+- Si quieres, puedo añadirte una regla global tipo `data_collected()` para comprobar que el bot rellena los cuatro campos en cada conversación. ¿Te la preparo? 😊

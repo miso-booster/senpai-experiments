@@ -1,0 +1,213 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__9e76e5f5
+$$$
+# Building an LLM-powered profile generator for SENSEI 🚀
+
+Quick heads-up: my lane is SENSEI rules/profiles/connectors, so I won't hand you a full production script — but I'll give you the **exact contract** the generator must satisfy (from `sensei-chat-guide.md`), plus a **concrete Python architecture** you can drop an LLM into. That's the part that actually makes it work.
+
+Docs I relied on: `sensei-chat-guide.md` (profile schema, §3–§7, §8 validation), `sensei-check-doc.md` (§3.1 `chatbot.output` as rule contract), `rules-examples.md` (field naming conventions). I also inspected your project: `pizza_and_drink_order_placement.yaml` is a great real-world reference (note it uses `type: money` and `type: time` — see the caveat below).
+
+---
+
+## 1. The pipeline (5 stages)
+
+```
+prompt/domain ──► LLM generate YAML ──► static validation ──► semantic validation ──► repair loop ──► write to profiles/
+                                              │                      │
+                                              └──── errors ──────────┴──► feed back into LLM
+```
+
+The key insight: **don't trust the LLM's YAML**. Validate it deterministically, and only feed *structured error messages* back for repair. That's what makes it converge.
+
+---
+
+## 2. The validation contract (what your checker MUST enforce)
+
+This is the checklist your Python validator should implement — straight from the docs:
+
+**Structural**
+- Top-level keys: `test_name`, `user`, `chatbot`, `conversation` (required); `llm` optional (defaults apply).
+- `user.language`, `user.role` present; `user.context` is a list; `user.goals` is a list.
+- `chatbot.is_starter` is bool, `chatbot.fallback` is a non-empty string, `chatbot.output` is a list of single-key mappings.
+- `conversation.number` is int or `combinations(...)`; `goal_style` has exactly one of `steps` / `random steps` / `all_answered`.
+
+**Variable integrity (the #1 source of broken profiles)**
+- Every `{{var}}` in goal strings has a matching declaration in `goals` — **case-sensitive, exact**.
+- Every declared variable is actually used in at least one goal string.
+- `random(n)` → `n <= len(data)`; `another(n)` → same.
+- `forward(x)` / `pairwise()` dependencies reference **declared** variables.
+- `pairwise()` needs **≥2** variables assigned to it.
+- `conversation.number: combinations` needs **≥2 nested `forward` or ≥2 `pairwise`** variables.
+- `random steps: M` → `M <= 20`.
+
+**Type legality (subtle but critical)**
+- In `user.goals`: only `int`, `float`, `string`, or a **custom type from `types/`**. `list`, `time`, `date` **raise exceptions** here.
+- In `chatbot.output`: primitives + `time(...)`, `date(...)`, `list[...]`, custom types.
+- Custom types must exist as `types/<name>.yml` with `name` matching the filename.
+- ⚠️ **Your project uses `type: money` and `type: time` in `pizza_and_drink_order_placement.yaml`** — `money` is not in the documented default set. Either it's a custom type in `types/` or it's a latent bug. Have your validator check `types/` and flag unknown types.
+
+**Interaction style legality**
+- Only these keywords allowed: `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, `random: [...]`.
+- Never translated, never invented. A common LLM failure is emitting `"long sentences"` or `"cambiar de opinión"`.
+
+**Rule-readiness (optional but high value)**
+- If the profile is meant to be tested by rules, `chatbot.output` field names should be stable/descriptive (`total_price`, `order_id`) and use `currency`/`time(...)`/`date(...)` types where rules will call `extract_float` / `currency`.
+
+---
+
+## 3. Python architecture
+
+```python
+# profile_generator.py  — sketch, not production-ready
+import json, re, yaml
+from pathlib import Path
+from pydantic import BaseModel, ValidationError
+
+class ProfileGenerator:
+    def __init__(self, llm, project_path: Path, max_repairs: int = 3):
+        self.llm = llm                      # any chat-completion callable
+        self.project = project_path
+        self.max_repairs = max_repairs
+        self.types = self._load_custom_types()   # {name: yaml}
+
+    def _load_custom_types(self):
+        d = {}
+        for f in (self.project / "types").glob("*.yml"):
+            spec = yaml.safe_load(f.read_text())
+            d[spec["name"]] = spec
+        return d
+
+    def generate(self, description: str) -> dict:
+        messages = [{"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": self._user_prompt(description)}]
+
+        for attempt in range(self.max_repairs + 1):
+            raw = self.llm(messages)
+            doc = self._extract_yaml(raw)          # strip ```yaml fences, yaml.safe_load
+            errors = validate_profile(doc, self.types)
+
+            if not errors:
+                return doc
+            # structured repair: give the model ONLY the errors, not the whole doc again
+            messages += [
+                {"role": "assistant", "content": raw},
+                {"role": "user", "content":
+                    "Your YAML failed validation. Fix ONLY these issues and return "
+                    "the complete corrected YAML:\n" + "\n".join(f"- {e}" for e in errors)}
+            ]
+        raise RuntimeError(f"Failed after {self.max_repairs} repairs: {errors}")
+```
+
+### The validator (deterministic, no LLM)
+
+```python
+ALLOWED_STYLES = {"long phrases", "change your mind", "make spelling mistakes",
+                  "single questions", "all questions", "default"}
+GOAL_TYPES = {"int", "float", "string"}          # + custom types
+OUTPUT_TYPES = {"int", "float", "string"}        # + time(...), date(...), list[...], custom
+
+def validate_profile(doc: dict, custom_types: dict) -> list[str]:
+    errs = []
+    for k in ("test_name", "user", "chatbot", "conversation"):
+        if k not in doc: errs.append(f"missing top-level key '{k}'")
+
+    user, bot, conv = doc.get("user", {}), doc.get("chatbot", {}), doc.get("conversation", {})
+    goals = user.get("goals", [])
+
+    # --- split goal strings vs variable declarations
+    strings = [g for g in goals if isinstance(g, str)]
+    decls   = {k: v for g in goals if isinstance(g, dict) for k, v in g.items()}
+
+    # --- variable integrity
+    used = {m for s in strings for m in re.findall(r"\{\{(\w+)\}\}", s)}
+    for v in used - decls.keys():
+        errs.append(f"variable '{{{{{v}}}}}' used in goals but never declared")
+    for v in decls.keys() - used:
+        errs.append(f"variable '{v}' declared but never used in any goal string")
+
+    # --- function/data constraints
+    pairwise_count = 0
+    for name, spec in decls.items():
+        fn, data = str(spec.get("function", "")), spec.get("data", [])
+        if spec.get("type") not in GOAL_TYPES | custom_types.keys():
+            errs.append(f"variable '{name}': type '{spec.get('type')}' invalid in user.goals")
+        m = re.match(r"(random|another)\((\d+)\)", fn)
+        if m and isinstance(data, list) and int(m.group(2)) > len(data):
+            errs.append(f"variable '{name}': {fn} exceeds data length {len(data)}")
+        if fn.startswith("pairwise"): pairwise_count += 1
+        dep = re.match(r"forward\((\w+)\)", fn)
+        if dep and dep.group(1) not in decls:
+            errs.append(f"variable '{name}': forward() depends on undeclared '{dep.group(1)}'")
+
+    if pairwise_count == 1:
+        errs.append("pairwise() requires at least 2 variables assigned to it")
+
+    # --- conversation.number vs combinations
+    num = conv.get("number")
+    if isinstance(num, str) and num.startswith("combinations") and pairwise_count < 2:
+        errs.append("conversation.number uses combinations but <2 pairwise/forward vars declared")
+
+    # --- chatbot.output types
+    for entry in bot.get("output", []):
+        (fname, spec), = entry.items()
+        t = str(spec.get("type", ""))
+        if not (t in OUTPUT_TYPES or t in custom_types
+                or t.startswith(("time", "date", "list["))):
+            errs.append(f"output '{fname}': unknown type '{t}' (not in types/ nor built-in)")
+
+    # --- interaction styles
+    for style in conv.get("interaction_style", []):
+        base = style.split(":")[0].strip() if isinstance(style, str) else next(iter(style))
+        if base not in ALLOWED_STYLES and base != "random":
+            errs.append(f"invalid interaction_style '{style}'")
+
+    return errs
+```
+
+---
+
+## 4. The system prompt (the part that decides quality)
+
+```text
+You generate SENSEI Chat profiles: YAML files describing a simulated user
+for chatbot testing. Output ONE YAML document, no prose, no ``` fences.
+
+HARD RULES:
+- Top-level keys: test_name, llm (optional), user, chatbot, conversation.
+- Every {{variable}} in a goal string MUST have a declaration in user.goals
+  with the EXACT same name (case-sensitive). Every declared variable MUST be used.
+- user.goals types: only int, float, string, or a custom type from this list:
+  {custom_types}. NEVER use list, time, or date in user.goals.
+- chatbot.output types: int, float, string, time(<fmt>), date(<fmt>),
+  list[<type>], or a custom type. Use `currency` for money and `time(...)` for ETAs.
+- interaction_style: ONLY these exact English keywords:
+  long phrases | change your mind | make spelling mistakes | single questions
+  | all questions | default | change language: [<languages>] | random: [...]
+- random(n)/another(n): n must be <= len(data).
+- pairwise() needs >= 2 variables. combinations needs >= 2 forward/pairwise vars.
+- chatbot.fallback must be a realistic bot fallback message.
+- Name chatbot.output fields descriptively and stably (total_price, order_id,
+  pickup_time) because SENSEI rules will read them as conv[i].<field>.
+```
+
+Then a user prompt like: *"Domain: hotel booking. Simulated user: a business traveler. Outputs to extract: total_price (currency), check_in_date (date), booking_id (string)."*
+
+---
+
+## 5. Practical tips that save you pain
+
+- **Two-model setup**: cheap model generates, stronger model repairs. Repairs are short and targeted, so they're cheap.
+- **Cache by description hash** — LLM YAML is non-deterministic; you want reproducibility.
+- **Golden-file tests**: keep 3–5 hand-verified profiles (like your `pizza_and_drink_order_placement.yaml`) and assert your validator passes them. If it flags a golden file, your validator is wrong, not the file.
+- **Run `validation_check.py`** (docs §8) on generated profiles as a second opinion — it emits JSON format errors + combination matrices.
+- **Don't let the LLM invent custom types.** Pass the actual `types/` inventory in the prompt; if it needs a new one, have it emit a *separate* `types/*.yml` document for human review.
+- **Flag `money`** in your existing profile — worth checking whether `types/money.yml` exists.
+
+---
+
+Want me to go further on any piece? I can:
+1. Write the **full system prompt** tuned to your pizza domain (using your real `chatbot.output` fields), or
+2. Draft a **rule** that validates generated profiles' output fields (e.g., `data_collected()`), or
+3. Help you **fix the `money` type** question in `pizza_and_drink_order_placement.yaml`.
+
+Which one? 😊
+$$$

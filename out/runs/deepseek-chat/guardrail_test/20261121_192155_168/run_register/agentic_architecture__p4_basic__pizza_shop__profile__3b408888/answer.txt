@@ -1,0 +1,73 @@
+Hey! 😊 Happy to help — but let me be straight with you about scope so we don't waste your time.
+
+## What I can and can't do here
+
+I'm **Senpai**, specialized in the SENSEI DSL — **rules**, **profiles**, and **connectors** (the YAML side). I'm *not* a general Python/LLM-automation engineer, so I won't hand you a polished, production-ready Python script that calls an LLM to auto-generate profiles. That's outside my lane, and I'd rather not fake it.
+
+**What I *can* do really well** is make that automation actually work, because the hard part isn't the Python — it's knowing the exact profile schema the LLM must emit. I just loaded `sensei-chat-guide.md`, so I can give you:
+
+1. A **precise, validated profile schema** (the contract your generator must satisfy).
+2. A **prompt template** you feed to your LLM so it outputs *valid* SENSEI profiles.
+3. A **validation checklist** (and pointer to `validation_check.py`) so your automation can reject bad output.
+4. A **skeleton Python flow** (pseudo-ish) that wires LLM → YAML → validation, which you or a dev can flesh out.
+
+## Before I go further — a couple of quick questions 🙋
+
+1. **What's the goal of the generator?** e.g. "given a chatbot's description/API, produce a profile that tests it" — or "given a domain, produce N varied profiles"?
+2. **Do you want me to inspect your existing project profiles** so the generated ones match your current conventions (field names, types, `chatbot.output` style)? I can list/read them.
+3. **How strict should validation be?** Do you want the automation to also run `validation_check.py` and retry on failure, or just emit YAML?
+
+## The core contract your LLM must respect (from `sensei-chat-guide.md`)
+
+So you can see where I'm headed, here's the minimal valid profile shape your generator should target:
+
+```yaml
+test_name: "string"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "what the simulated user wants and how they behave"
+  context:
+    - "constraints, preferences, facts"
+  goals:
+    - "Main request with a {{variable}}"
+    - variable:
+        function: random()          # default|random|another|forward|pairwise
+        type: string                # int|float|string|<custom type>
+        data: [option1, option2]
+
+chatbot:
+  is_starter: false
+  fallback: "the bot's real fallback message"
+  output:
+    - important_field:
+        type: string                # int|float|string|time(...)|date(...)|list[...]|<custom>
+        description: "what to extract"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+**Key gotchas** your automation must enforce (these are the #1 sources of invalid profiles):
+- Every `{{variable}}` in a goal string **must** be declared in `goals` with the *exact same name* (case-sensitive).
+- `random(n)` requires `n ≤ list length`.
+- `conversation.number: combinations(...)` requires **≥2** nested `forward()` or `pairwise()` variables.
+- `list`, `time`, `date` types are valid in `chatbot.output` but **not** in `user.goals`.
+- `interaction_style` values are **reserved keywords** — never translate them.
+
+---
+
+Tell me your answers to the 3 questions above (and whether you want me to peek at your existing profiles), and I'll build you the **prompt template + validation checklist + Python skeleton** tailored to your setup. 🚀

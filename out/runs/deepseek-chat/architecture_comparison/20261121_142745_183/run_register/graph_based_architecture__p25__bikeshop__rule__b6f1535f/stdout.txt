@@ -1,0 +1,89 @@
+conversation ID: graph_based_architecture__p25__bikeshop__rule__b6f1535f
+$$$
+# Hey there! 👋 Happy to help you build that rule!
+
+Let me walk you through this step by step 😊
+
+## First, a quick heads-up about your profile 👀
+
+Looking at your `chatbot.output`, I noticed a small inconsistency that will affect the rule:
+
+- `tire` → `type: money` ✅
+- `tune_up` → `type: money` ✅
+- `seat_price` → `type: str` ⚠️ (should probably be `money` too, since you want to check it's 20)
+- `opening_and_closing` → `type: str` ✅ (fine, since it's a time range)
+
+If you want to compare `seat_price` numerically (like `extract_float(conv[0].seat_price) == 20`), it's cleaner to declare it as `money`. Otherwise `extract_float` will still work on the string, but the profile will be more consistent if you fix the type. Your call! 🛠️
+
+---
+
+## The rule 🎯
+
+Since you want to check **fixed expected values** (opening/closing between 10–20, tune-up = 50, seat = 20, tyre = 20), this is actually a **single-conversation oracle** — not a metamorphic rule. You're asserting absolute values, not relations between conversations. That's totally fine and supported! 👍
+
+```yaml
+name: bike_shop_prices_and_hours
+description: >
+  Checks that the bike shop bot reports opening/closing hours between 10 and 20,
+  a tune-up price of 50, a seat price of 20, and a tyre price of 20.
+conversations: 1
+oracle: >
+  extract_float(conv[0].opening_and_closing) >= 10
+  and extract_float(conv[0].opening_and_closing) <= 20
+  and extract_float(conv[0].tune_up) == 50
+  and extract_float(conv[0].seat_price) == 20
+  and extract_float(conv[0].tire) == 20
+on-error: >
+  Expected hours in [10,20], tune_up=50, seat=20, tire=20 — got
+  opening_and_closing={conv[0].opening_and_closing},
+  tune_up={conv[0].tune_up},
+  seat_price={conv[0].seat_price},
+  tire={conv[0].tire}
+```
+
+---
+
+## ⚠️ Important caveat about `opening_and_closing`
+
+`extract_float` returns **only the first number** it finds in the string. So if the bot says something like:
+
+> "We open at 10 and close at 20"
+
+…then `extract_float` will return `10` — which passes your `>= 10 and <= 20` check, but it **won't actually verify the closing time**. 😬
+
+If you want to be stricter and check **both** the opening and closing values, you'd need to split the string first. Since the DSL doesn't have a built-in "extract all numbers" helper, a practical approach is to check that the string contains both expected values:
+
+```yaml
+name: bike_shop_prices_and_hours
+description: >
+  Checks that the bike shop bot reports opening/closing hours 10 and 20,
+  a tune-up price of 50, a seat price of 20, and a tyre price of 20.
+conversations: 1
+oracle: >
+  '10' in conv[0].opening_and_closing
+  and '20' in conv[0].opening_and_closing
+  and extract_float(conv[0].tune_up) == 50
+  and extract_float(conv[0].seat_price) == 20
+  and extract_float(conv[0].tire) == 20
+on-error: >
+  Expected hours 10–20, tune_up=50, seat=20, tire=20 — got
+  opening_and_closing={conv[0].opening_and_closing},
+  tune_up={conv[0].tune_up},
+  seat_price={conv[0].seat_price},
+  tire={conv[0].tire}
+```
+
+This version is more faithful to your intent: it verifies that **both** `10` and `20` appear in the hours string. 🎯
+
+---
+
+## A couple of extra tips 💡
+
+1. **`conv[0]` vs bare field names** — In a `conversations: 1` rule, both `conv[0].field` and bare `field` work. I used `conv[0].` for clarity and consistency with the docs.
+
+2. **`on-error` is your friend** — It's an f-string, so `{conv[0].tune_up}` gets interpolated with the actual value. Super handy for debugging failures! 🐛
+
+3. **If you later want metamorphic checks** — e.g., "if the user asks about tyre and seat in the same conversation, the total should be 40" — that would be a 2-conversation rule with `when:`/`if:`/`then:`. Just say the word and I'll draft it! 🚀
+
+Want me to also write a version that checks the `care_bike` field is non-empty (using `data_collected()` or a `semantic_content` check)? Just let me know! 😊
+$$$

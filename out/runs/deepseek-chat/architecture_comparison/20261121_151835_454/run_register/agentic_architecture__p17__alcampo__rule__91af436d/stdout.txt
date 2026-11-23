@@ -1,0 +1,55 @@
+conversation ID: agentic_architecture__p17__alcampo__rule__91af436d
+$$$
+¡Buena pregunta! 😊 Ya revisé la documentación (`sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`) y tu proyecto, y encontré el problema.
+
+## Por qué no funciona
+
+Tu regla tiene tres problemas:
+
+1. **`conversations:` está vacío.** Es un campo obligatorio: debe ser un número (`1`, `2`, …) o `all`. Sin él, la regla no se puede evaluar.
+2. **`membership_benefits != ''` no es una expresión válida.** En reglas de **una sola conversación** (oráculo simple), los campos de `chatbot.output` se referencian **directamente por su nombre** (p. ej. `membership_benefits`), no como variables sueltas sin contexto. Además, si el extractor no rellena el campo, el valor es `None`, no `''`, así que la comparación con cadena vacía no detecta el caso real de "no se informó".
+3. **Falta `active: true`** (opcional pero recomendable) y un `yields` para que el fallo sea legible.
+
+## Perfil objetivo
+
+Encontré el perfil que expone ese campo:
+
+- **`general_shopper_and_member_support.yaml`** → `chatbot.output` incluye `membership_benefits` (type: `string`, "Benefits of Club de Socios membership"), entre otros campos como `current_promotions_link`, `services_overview`, `delivery_options`, etc.
+
+## Regla corregida
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits (profile general_shopper_and_member_support)
+conversations: 1
+active: true
+oracle: |
+  membership_benefits is not None and len(str(membership_benefits).strip()) > 0
+yields: |
+  f"Membership benefits were not provided: {membership_benefits}"
+```
+
+### Qué cambié y por qué
+
+- `conversations: 1` → la regla es de una sola conversación (oráculo simple).
+- `active: true` → para que no quede desactivada.
+- `membership_benefits is not None and len(str(...).strip()) > 0` → cubre tanto el caso `None` (no extraído) como el de cadena vacía/solo espacios.
+- `yields` → mensaje de error útil con el valor real.
+
+### Un detalle importante ⚠️
+
+Esta regla comprueba que **se haya informado** de los beneficios (campo no vacío), pero **no** que la información sea *correcta*. Si quieres validar el contenido real, puedes usar el helper `semantic_content`, por ejemplo:
+
+```yaml
+name: membership_benefits_accuracy
+description: Membership benefits mention Club de Socios savings and promotions
+conversations: 1
+active: true
+oracle: |
+  semantic_content(membership_benefits, "benefits of Club de Socios membership, including savings and promotions")
+yields: |
+  f"Membership benefits content looks incorrect: {membership_benefits}"
+```
+
+¿Quieres que te deje solo la versión de "no vacío", solo la de contenido semántico, o ambas? Y confírmame que el perfil objetivo es `general_shopper_and_member_support.yaml` para dejarlo cerrado 👍
+$$$

@@ -1,0 +1,121 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__dd6f492e
+$$$
+¡Buena pregunta! 😊 Tu perfil de **Usuarios Nuevos y Admisiones** es rico en `chatbot.output`, así que hay mucho que puedes verificar. Te propongo un set de reglas que combinan lo **global** (no dependen del esquema) con lo **profile-bound** (usan tus campos reales).
+
+Antes de las reglas, dos avisos rápidos 👀:
+
+1. **`application_fee` usa `type: money`**, pero `money` no es un tipo por defecto ni está en `types/`. Deberías cambiarlo a `currency` (o crear `types/money.yml`). Si no, la extracción puede fallar y las reglas que lo usen no tendrán datos.
+2. Tus `grados` y `cursos` usan `forward()` anidados → `conversation.number: 6` está bien, pero recuerda que `forward()` recorre **en orden**, así que las parejas comparables serán las que compartan índice. Lo tengo en cuenta en las reglas.
+
+Aquí van las reglas sugeridas 👇
+
+```yaml
+name: welcome_day_date_is_future
+description: La fecha del Welcome Day debe ser una fecha válida (no vacía) cuando se menciona el evento
+conversations: 1
+when: welcome_day_date is not None
+oracle: welcome_day_date is not None and welcome_day_time is not None
+yields: f"Welcome Day sin fecha u hora: date={welcome_day_date}, time={welcome_day_time}"
+```
+
+```yaml
+name: admission_links_are_urls
+description: Los enlaces de admisión, lista de espera, futuros estudiantes y Welcome Day deben parecer URLs
+conversations: 1
+when: admission_to_grados_link is not None
+oracle: |
+  all(
+    ('http' in str(x)) for x in [
+      admission_to_grados_link,
+      waitlist_info_link,
+      future_students_link,
+      welcome_day_link
+    ] if x is not None
+  )
+yields: f"Algún enlace no parece URL: admisión={admission_to_grados_link}, waitlist={waitlist_info_link}, futuros={future_students_link}, welcome={welcome_day_link}"
+```
+
+```yaml
+name: application_fee_is_positive
+description: El costo de solicitud debe ser un importe positivo si se extrae
+conversations: 1
+when: application_fee is not None
+oracle: extract_float(application_fee) > 0
+yields: f"Costo de solicitud no positivo: {application_fee}"
+```
+
+```yaml
+name: admission_info_completeness
+description: Si el usuario pregunta por admisión, deben aparecer requisitos y proceso de inscripción
+conversations: 1
+when: admission_requirements is not None or enrollment_process is not None
+oracle: admission_requirements is not None and enrollment_process is not None
+yields: f"Información de admisión incompleta: requisitos={admission_requirements}, inscripción={enrollment_process}"
+```
+
+```yaml
+name: grados_and_cursos_consistency
+description: En conversaciones comparables (mismo índice de forward), los grados y cursos extraídos deben coincidir con lo solicitado
+conversations: 2
+when: conv[0].grados_available is not None and conv[1].grados_available is not None
+if: conv[0].grados_available == conv[1].grados_available
+then: conv[0].cursos_available == conv[1].cursos_available
+yields: f"Grados iguales pero cursos distintos: {conv[0].cursos_available} vs {conv[1].cursos_available}"
+```
+
+```yaml
+name: chatbot_responds_in_spanish
+description: El chatbot debe responder en español (el perfil está en Spanish)
+conversations: 1
+oracle: responds_in_same_language() is True
+yields: "El chatbot no responde en el mismo idioma que el usuario"
+```
+
+```yaml
+name: chatbot_stays_on_topic
+description: El chatbot solo habla de admisiones, grados, cursos, Welcome Day y servicios UAM
+conversations: 1
+oracle: only_talks_about('admisiones universitarias, grados, cursos, Welcome Day, servicios UAM, contacto de admisiones') is True
+yields: "El chatbot se sale del dominio de admisiones UAM"
+```
+
+```yaml
+name: chatbot_does_not_repeat
+description: El chatbot no repite respuestas idénticas en la misma conversación
+conversations: 1
+oracle: not repeated_answers(method='exact', threshold=1)
+yields: f"El chatbot repite: {repeated_answers(method='exact', threshold=1)}"
+```
+
+```yaml
+name: chatbot_fills_all_slots
+description: Todos los slots de salida definidos en el perfil deben quedar rellenos
+conversations: 1
+oracle: data_collected() == True
+yields: f"Slots sin rellenar: {missing_slots()}"
+```
+
+```yaml
+name: welcome_day_info_consistency
+description: Si se menciona Welcome Day, deben aparecer fecha, hora y ubicación
+conversations: 1
+when: welcome_day_link is not None
+oracle: welcome_day_date is not None and welcome_day_time is not None and event_location is not None
+yields: f"Welcome Day incompleto: fecha={welcome_day_date}, hora={welcome_day_time}, ubicación={event_location}"
+```
+
+### Cómo usarlas 💡
+
+- **Empieza por las globales** (`chatbot_responds_in_spanish`, `chatbot_stays_on_topic`, `chatbot_does_not_repeat`, `chatbot_fills_all_slots`): son baratas y detectan problemas de UX rápido.
+- **Luego las profile-bound** (`admission_links_are_urls`, `application_fee_is_positive`, `welcome_day_info_consistency`, `admission_info_completeness`): dependen de que el extractor rellene bien tus campos.
+- **`chatbot_fills_all_slots`** probablemente fallará al principio — es normal, porque tienes 16 slots y el bot no siempre los cubre todos. Úsala como termómetro, no como bloqueante.
+- **`grados_and_cursos_consistency`** es la más "metamórfica" y la más interesante: verifica que el bot no mezcle respuestas entre conversaciones comparables.
+
+### Antes de correrlas ⚠️
+
+1. Cambia `application_fee: type: money` → `type: currency` (o crea el tipo `money`).
+2. Verifica que `personalities/conversational-user` exista en tu proyecto.
+3. Considera bajar `steps: 30` a algo como `15` para las primeras pruebas — 30 turnos con `max_cost: 0.9` puede quedarse corto de presupuesto antes de terminar.
+
+¿Quieres que te ayude a adaptar alguna de estas reglas a un caso concreto, o a crear el tipo `money` que falta? 🚀
+$$$

@@ -1,0 +1,104 @@
+¡Hola! 😊 Great idea — an Erasmus profile is super useful for testing onboarding support. Let me walk you through a clean, ready-to-use profile that fits your project (`ada_uam`) and follows the Sensei profile rules.
+
+## What I'm giving you
+
+- **No input variables** (as you asked — keeps it simple and fast to run).
+- **Rich `chatbot.output`** so Sensei-check rules can verify the bot actually delivers proper support (Moodle access, ID-UAM, VPN, contacts, etc.).
+- **Spanish** language (matches your other profiles), with a friendly-but-lost Erasmus persona.
+
+## The profile
+
+Save this as `profiles/erasmus_nuevo_sin_configuracion.yaml`:
+
+```yaml
+test_name: "Erasmus recién llegado sin configuración de Moodle y Sigma"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la UAM y no sabe cómo
+    configurar sus accesos digitales (Moodle, Sigma, ID-UAM, VPN). Hablas
+    español con soltura pero desconoces por completo los procedimientos
+    internos de la universidad.
+  context:
+    - personality: personalities/curious-user
+    - "Acabas de recibir tu carta de admisión Erasmus y no tienes ni idea de por dónde empezar con las plataformas digitales."
+    - "No sabes qué es el ID-UAM ni el NIA, y no tienes todavía una contraseña configurada."
+    - "Necesitas acceder a Moodle para ver tus asignaturas y a Sigma para gestionar tu matrícula."
+    - "Trabajas desde el campus y también desde tu piso, así que te interesa saber si necesitas VPN."
+  goals:
+    - "Preguntar cómo obtener tu cuenta institucional ID-UAM siendo estudiante Erasmus."
+    - "Solicitar los pasos para establecer tu contraseña por primera vez."
+    - "Preguntar cómo acceder a Moodle y qué entornos existen (Grado, Postgrado)."
+    - "Consultar cómo entrar a Sigma para gestionar tu matrícula."
+    - "Preguntar si necesitas VPN para acceder a los recursos desde fuera del campus y cómo instalarla."
+    - "Pedir los datos de contacto del CAU por si te surge algún problema."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - id_uam_obtainment:
+        type: string
+        description: "Proceso para obtener la cuenta ID-UAM como estudiante Erasmus"
+    - first_password_steps:
+        type: string
+        description: "Pasos para establecer la contraseña por primera vez"
+    - moodle_access_requirements:
+        type: string
+        description: "Requisitos para acceder a Moodle"
+    - moodle_environments:
+        type: string
+        description: "Entornos de Moodle disponibles (Grado, Postgrado)"
+    - sigma_access_info:
+        type: string
+        description: "Información sobre cómo acceder a Sigma"
+    - vpn_requirement:
+        type: string
+        description: "Indicación sobre si se necesita VPN y para qué"
+    - vpn_installation_steps:
+        type: string
+        description: "Pasos para instalar y configurar el cliente VPN GlobalProtect"
+    - cau_contact_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - cau_contact_phone:
+        type: string
+        description: "Teléfono de contacto del CAU"
+    - cau_service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+    - support_confirmation:
+        type: string
+        description: "Confirmación de que el bot ha ofrecido soporte o derivado a un canal adecuado"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 25
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+## Why this design works 👀
+
+- **`chatbot.output` is your contract with Sensei-check.** Each field (e.g. `moodle_access_requirements`, `vpn_installation_steps`) can be referenced in rules as `conv[i].<field_name>`. So you can write checks like *"if the user asked about VPN, then `vpn_installation_steps` must not be None"*.
+- **`support_confirmation`** is a nice catch-all: it lets you verify the bot didn't just dump a link but actually acknowledged and guided the user.
+- **No variables** → `conversation.number: 3` is a plain integer (no `combinations` needed, since there are no `forward`/`pairwise` functions).
+- **`single questions`** keeps each turn focused, which makes extraction cleaner and cheaper.
+
+## A couple of things to double-check on your side ✅
+
+1. **`personalities/curious-user`** — I reused a personality that already appears in your other profiles (`asistencia_técnica_y_cuentas.yaml`). If it exists in your `personalities/` folder, you're good. If not, just remove that line or swap for one you have.
+2. **Sigma** — I included it because you mentioned it, but none of your existing profiles reference Sigma in their outputs. If the bot doesn't actually cover Sigma, the `sigma_access_info` field will just come back empty — which is itself a useful signal for your rules! 😄
+3. **`money` type** — I avoided it here (your `usuarios_nuevos_y_admisiones.yaml` uses it, so it exists in your `types/`), but if you want to add a fee field later, it's available.
+
+Want me to also draft a **Sensei-check rule** that validates this profile (e.g., "if the user asked about VPN, `vpn_installation_steps` must be present")? Just say the word and I'll put one together 🚀

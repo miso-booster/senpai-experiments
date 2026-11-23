@@ -1,0 +1,79 @@
+conversation ID: agentic_architecture__p24__bikeshop__profile__8b72e6b4
+$$$
+Here's your profile, built following `sensei-chat-guide.md` (sections 3–7) and matching the conventions of your existing bike profiles 🚲:
+
+```yaml
+test_name: "bike_shop_general_info_customer"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer visiting a bike shop's virtual assistant to get
+    general information about the shop and its standard services. You ask clear,
+    direct questions about opening and closing times, the price of a new bike
+    tire, the price of a standard bike tune-up, the price of a new bike seat,
+    and general advice on how to properly take care of a bike (basic maintenance
+    and good practices). You behave like a regular customer: polite, concise,
+    and straightforward.
+  context:
+    - "You are a casual cyclist who owns a bike and wants practical, everyday information."
+    - "You ask one clear question at a time and phrase your questions directly."
+    - "You only care about basic pricing, shop hours, and general bike care."
+    - "You do NOT ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or any topic outside basic pricing, shop hours, and general bike care."
+    - "If the assistant offers unrelated services or unsolicited suggestions, you simply ignore them and continue with your own questions."
+  goals:
+    - "Ask about the bike shop's opening and closing times."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices rather than advanced repairs."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_hours:
+        type: string
+        description: "The bike shop's opening and closing times as stated by the chatbot."
+    - tire_price:
+        type: currency
+        description: "The price quoted for a new bike tire."
+    - tune_up_price:
+        type: currency
+        description: "The price quoted for a standard bike tune-up."
+    - seat_price:
+        type: currency
+        description: "The price quoted for a new bike seat."
+    - bike_care_advice:
+        type: string
+        description: "General advice on basic bike maintenance and good practices (not advanced repairs)."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 30
+  interaction_style:
+    - single questions
+```
+
+### What it does and why 🔧
+
+- **`user.role` + `context`** encode the customer persona and the hard scope limits (no appointments, models, advanced repairs, warranties, delivery, etc.), so the simulator stays on-topic.
+- **`user.goals`** are the five plain-string goals you listed — no variables needed, since each request is fixed. `single questions` keeps the user asking one clear question at a time, matching "phrase questions clearly and directly."
+- **`chatbot.output`** is the contract for later Sensei-check rules (per §2.1.1 of `sensei-chat-guide.md`). I used `currency` for the three prices and `string` for hours and advice, so you can later write rules like `conv[0].tire_price > 0` or check that `opening_hours` is present.
+- **`conversation`** mirrors your existing `bike_information_seeker.yaml` style: `all_answered` with a safety `limit`, a run cost cap, and 3 conversations.
+
+### Notes & next steps 💡
+
+- The `currency` type is a **custom type** — make sure `types/currency.yml` exists in your project (the guide's §4.2 shows the exact schema). If it doesn't, tell me and I can help you add it.
+- Want me to also create **Sensei-check rules** for this profile (e.g., "all four prices are stated and positive", "no unrelated services mentioned")? Just say the word and I'll load the rules docs and build them against these `chatbot.output` fields.
+$$$

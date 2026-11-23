@@ -1,0 +1,28 @@
+¡Genial! 😊 El perfil `préstamos_y_recursos_de_la_biblioteca.yaml` ya expone el campo `library_hours` (tipo `string`, "Horarios de atención de la biblioteca"), así que podemos apoyarnos en él para la comprobación.
+
+Como `library_hours` es texto libre, la opción más robusta es usar el helper `semantic_content`, que hace una verificación semántica con LLM sobre el valor extraído. Aquí tienes la regla:
+
+```yaml
+name: library_hours_9_to_20
+description: >
+  Comprueba que el horario de atención de la biblioteca extraído en el perfil
+  "Préstamos y Recursos de la Biblioteca" (campo chatbot.output: library_hours)
+  corresponde a un horario de 9:00 a 20:00.
+conversations: 1
+active: true
+when: library_hours is not None
+oracle: semantic_content(library_hours, "horario de atención de 9:00 a 20:00 (de 9 de la mañana a 8 de la tarde)")
+yields: |
+  f"El horario de la biblioteca no es de 9 a 20, se obtuvo: {library_hours}"
+```
+
+### Cómo se relaciona con el perfil y la documentación 📚
+- **Perfil objetivo:** `préstamos_y_recursos_de_la_biblioteca.yaml` → campo `library_hours` de `chatbot.output` (según `sensei-chat-guide.md`, §2.1.1, `chatbot.output` es el contrato que las reglas leen).
+- **Estructura de la regla:** sigue el formato de `sensei-check-doc.md` (§4) y `rules-examples.md` (regla de una sola conversación con `when` + `oracle` + `yields`).
+- **Helper usado:** `semantic_content(value, desc)` (documentado en `sensei-check-doc.md` §6.4), ideal para comparar texto libre como un horario.
+
+### Notas importantes ⚠️
+- `semantic_content` es un helper **respaldado por LLM**, así que puede haber pequeñas variaciones; si quieres un chequeo más estricto podríamos combinar con `extract_float` para verificar que aparezcan los números 9 y 20, pero eso es más frágil con formatos como "9:00-20:00" o "de 9 a 8 de la tarde".
+- Si el bot responde el horario en un formato muy distinto (p. ej. "8:00 a 19:00"), la regla lo marcará como fallo, que es justo lo que buscas.
+
+¿Quieres que la guarde tal cual, o prefieres una variante más estricta combinando `semantic_content` con comprobaciones numéricas? 🚀

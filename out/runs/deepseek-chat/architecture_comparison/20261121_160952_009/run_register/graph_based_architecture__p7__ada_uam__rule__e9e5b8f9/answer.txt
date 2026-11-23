@@ -1,0 +1,47 @@
+# Rule: CAU contact info is complete and correct 📇
+
+Here's a rule that checks the chatbot gave **all three** CAU contact fields and that they match the expected values. I'll use `semantic_content` (LLM-backed) so it tolerates small formatting variations like `+34 91 497 4029` vs `91 497 4029`, or `cau@uam.es` vs `CAU@uam.es`.
+
+```yaml
+name: cau_contact_info_correct
+description: >
+  The chatbot must provide the correct CAU contact details:
+  email cau@uam.es, phone 91 497 4029, and the physical address at
+  the Higher Polytechnic School (C/ Francisco Tomás y Valiente nº 11,
+  Building B, first floor, office TI-107).
+conversations: 1
+oracle: >
+  data_collected() is True
+  and semantic_content(contact_email, 'cau@uam.es') is True
+  and semantic_content(contact_phone, '91 497 4029') is True
+  and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107') is True
+on-error: >
+  f"CAU info mismatch — email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+## Why this works 🔍
+
+- **`data_collected()`** → guarantees none of the three slots is `None` (i.e. the bot actually gave *all* the info, not just some).
+- **`semantic_content(field, expected)`** → checks each field against the expected value *semantically*, so minor formatting differences (spacing, `+34` prefix, capitalization, "Edificio B" vs "Building B") won't cause false failures.
+- **`on-error`** → prints the actual values so you can see *which* field was wrong when it fails.
+
+## A couple of things to double-check ⚠️
+
+1. **Field names** — I used `contact_email`, `contact_phone`, `physical_address` exactly as in your `chatbot.output`. If you rename any of them in the profile, update the rule too.
+2. **Language of the address** — your expected address is in English, but the profile descriptions are in Spanish. If the bot answers in Spanish (e.g. "Escuela Politécnica Superior, Edificio B, planta primera, despacho TI-107"), `semantic_content` should still match since it's semantic — but if you notice flaky results, you can relax the expected string to just the key bits, e.g. `'C/ Francisco Tomás y Valiente nº 11, Building B, office TI-107'`.
+
+## If you want a stricter, exact-match version 🎯
+
+Swap `semantic_content` for direct comparisons (only if the bot always formats identically):
+
+```yaml
+name: contact_info_correct
+description: The chatbot provides the correct contact email, phone, and address
+conversations: 1
+oracle: >
+  contact_email == 'cau@uam.es'
+  and '91 497 4029' in contact_phone
+  and 'TI-107' in physical_address
+```
+
+Want me to also add a **global rule** (e.g. `is_unique('contact_email')` across conversations) or split this into three separate single-field rules for clearer failure reporting? Just say the word 😊

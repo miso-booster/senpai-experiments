@@ -1,0 +1,94 @@
+conversation ID: graph_based_architecture__p24__bikeshop__profile__ca359ba7
+$$$
+Hey there! 😊 Happy to help you build this profile — it's a nice, focused one. Let me walk you through it and give you a ready-to-use YAML.
+
+## What this profile does
+
+You're describing a **general-information customer** who asks about:
+1. 🕐 Opening and closing times
+2. 💰 Price of a new tire
+3. 🔧 Price of a standard tune-up
+4. 🪑 Price of a new seat
+5. 🧼 General bike-care advice
+
+And they must **stay in scope** — no appointments, models, warranties, etc.
+
+## The profile YAML
+
+Here's a complete profile you can drop into `profiles/`:
+
+```yaml
+test_name: "general_info_and_basic_services_customer"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal, polite customer visiting a bike shop's virtual assistant.
+    You want clear, direct answers about the shop's opening hours, the prices of
+    a new tire, a standard tune-up, and a new seat, plus some general advice on
+    how to take care of a bike. Ask your questions clearly and directly, like a
+    regular customer would. Do NOT ask about appointments, specific bike models,
+    custom or advanced repairs, warranties, delivery services, or anything outside
+    of basic pricing, shop hours, and general bike care.
+  context:
+    - "You are a regular customer, friendly and straightforward."
+    - "You only care about basic shop info, standard prices, and everyday bike care."
+    - "You keep your questions short, clear, and directly worded."
+  goals:
+    - "Ask about the bike shop's opening and closing times."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: "The shop's opening and closing times as stated by the chatbot."
+    - tire_price:
+        type: money
+        description: "The price of a new bike tire provided by the chatbot."
+    - tune_up_price:
+        type: money
+        description: "The price of a standard bike tune-up provided by the chatbot."
+    - seat_price:
+        type: money
+        description: "The price of a new bike seat provided by the chatbot."
+    - bike_care_advice:
+        type: string
+        description: "General bike-care advice given by the chatbot, focusing on basic maintenance and good practices."
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      export: true
+      limit: 9
+  interaction_style:
+    - default
+```
+
+## A few notes on the choices 👀
+
+- **`interaction_style: default`** — keeps the user natural and clear, exactly matching your "normal customer, clear and direct" requirement. No spelling mistakes or language switching here.
+- **`goal_style: all_answered`** with `export: true` — this makes Sensei keep going until every goal is covered, and exports a CSV showing which outputs were satisfied. Handy for checking coverage! The `limit: 9` is a safety cap.
+- **`chatbot.output`** — I used `money` for the three prices (matches your existing profiles like `qa.yml` and `bike_service_and_repair_inquirer.yaml`) and `string` for hours and care advice. These field names are stable and rule-friendly, so you can later write Sensei-check rules like `conv[0].tire_price > 0`.
+- **`temperature: 0.4`** — low-ish, so the user stays on-script and doesn't wander into out-of-scope topics.
+- **Scope guardrails** — I baked the "don't ask about X" list into both `role` and `context` so the simulator respects your boundaries.
+
+## Quick tip 💡
+
+If you want to be extra strict about scope, you could add a Sensei-check rule using the global helper `only_talks_about` to verify the chatbot never drifts into unrelated services. Want me to sketch that rule for you? Just say the word! 🙌
+
+Anything you'd like to tweak — number of conversations, adding a personality, or adjusting the output fields?
+$$$

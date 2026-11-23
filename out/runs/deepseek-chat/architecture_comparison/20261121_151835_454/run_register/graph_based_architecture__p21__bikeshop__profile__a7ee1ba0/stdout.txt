@@ -1,0 +1,84 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__a7ee1ba0
+$$$
+Hey there! 😊 Happy to help you build a profile for that bike-setup scenario — sounds like a fun one to test! Let me walk you through a solid profile you can drop into your `profiles/` folder.
+
+## 🚲 Profile: `bike_setup_customization.yaml`
+
+```yaml
+test_name: "bike_setup_customization"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike and wants to bring it to the
+    shop to have it set up and tailored to your liking. You want to change the seat
+    and the handlebar grips to match your preferences.
+  context:
+    - "You just bought a new bike and it still needs to be adjusted for comfort."
+    - "You have a specific preference for a more comfortable seat and a different grip style."
+    - "You are friendly but want clear answers about pricing and availability."
+  goals:
+    - "Ask if the shop can set up and adjust a newly bought bike."
+    - "Ask if they can replace the seat with a {{seat_type}} seat."
+    - "Ask about the price of the new seat."
+    - "Ask if they can change the handlebar grips to {{grip_type}} grips."
+    - "Ask about the price and availability of the grips."
+    - "Ask if you can schedule an appointment to have the bike set up."
+    - seat_type:
+        function: random()
+        type: string
+        data: [comfortable gel, ergonomic, sporty, wide padded]
+    - grip_type:
+        function: random()
+        type: string
+        data: [ergonomic, rubber, lock-on, soft foam]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - setup_service_offered:
+        type: string
+        description: "Confirmation that the shop offers bike setup/adjustment services."
+    - seat_price:
+        type: money
+        description: "The price of the new seat as stated by the chatbot."
+    - grip_price:
+        type: money
+        description: "The price of the new handlebar grips as stated by the chatbot."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the scheduled setup appointment, including date and time."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+## 🔍 A few things worth noting
+
+- **`money` type** — I used it for `seat_price` and `grip_price` because your other profiles (like `qa.yml` and `bike_service_and_repair_inquirer.yaml`) already use `money`. Just make sure a `types/money.yml` exists in your project — if it doesn't, swap to `currency` or `float` instead. 👍
+- **`single question` interaction style** — matches the pattern of most of your existing profiles and keeps the conversation focused on one goal at a time, which is great for testing setup/customization flows.
+- **`all_answered` with `limit: 20`** — gives the simulator room to cover all six goals without running away on cost.
+- **Variables** — `seat_type` and `grip_type` use `random()` so each conversation picks a different combo, which is nice for variety without exploding the case count.
+
+## 💡 Optional tweaks
+
+- Want to test **appointment scheduling** more deeply? You could add a `{{ap_date}}` and `{{hour}}` variable like in your `appointment.yml` profile.
+- If you'd like to stress-test the bot's **error handling**, add `make spelling mistakes` to `interaction_style` — a nice touch since your bot's fallback is already set up for that.
+
+Want me to adapt this to include a specific appointment date/time, or tweak the goals to match a particular flow you're testing? Just say the word! 🙌
+$$$

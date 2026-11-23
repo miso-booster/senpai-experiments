@@ -1,0 +1,54 @@
+I checked your project's profiles, and there's no profile about cars, bikes, or engines 😊 — your `pizza_shop` project is entirely pizza/drink focused (order placement, information seeking, unrecognized queries, input issues, etc.).
+
+I won't guess at a "most likely" profile here, because inventing one would be misleading — and I'd rather be straight with you than confidently wrong 🙈.
+
+If you'd like, I can help you **create** a new profile for a vehicles/engines domain. Here's a starter you can drop into `profiles/`:
+
+```yaml
+test_name: "vehicle_info_seeker"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A curious customer asking about cars, bikes, and engines before deciding what to buy."
+  context:
+    - "You are comparing options for a first vehicle."
+    - "You care about engine size, fuel type, and price."
+  goals:
+    - "Ask which {{vehicle_type}} models are available."
+    - "Ask about the engine specifications of the {{vehicle_type}}."
+    - "Ask about the price range."
+    - vehicle_type:
+        function: forward()
+        type: string
+        data: [car, bike]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - available_models:
+        type: string
+        description: "List of available models for the requested vehicle type"
+    - engine_specs:
+        type: string
+        description: "Engine details such as size, fuel type, and power"
+    - price_range:
+        type: currency
+        description: "Price range for the requested vehicle type"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+Want me to tailor this further (e.g., add rules that check price monotonicity across engine sizes)? Just say the word! 🚗🏍️

@@ -1,0 +1,51 @@
+Great question! 😊 Let me break it down for you.
+
+## What is an oracle in Sensei-check?
+
+In testing, an **oracle** is simply *the thing that tells you whether a result is correct or not* — the "source of truth" you compare against. 🎯
+
+In Sensei-check, an **oracle** is a **Python expression** written in a rule that evaluates to `True` (pass) or `False` (fail) for a given conversation (or set of conversations).
+
+## Two flavors in Sensei-check
+
+**1. `oracle:` — a direct boolean check**
+
+You write one expression that must hold. Example from your project:
+
+```yaml
+name: only_talks_about_pizzas
+description: The chatbot only talks about pizzas
+conversations: 1
+active: true
+oracle: only_talks_about('pizza orders, drink orders, information on delivery of pizzas, information about the pizza shop')
+```
+
+Here the oracle is the whole `only_talks_about(...)` call — if it returns `True`, the rule passes.
+
+**2. `if:` / `then:` — an implication (also an oracle, just split)**
+
+This reads like a law: *"If X, then Y must hold."* Example from your project:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+conversations: 2
+active: true
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+The `then:` part is the oracle — it's what must be true whenever the `if:` precondition holds.
+
+## Why it matters (the "oracle problem") 🧠
+
+For many chatbots, there's no single "correct answer" to compare against — the bot can phrase things a thousand ways. That's the **oracle problem**. Metamorphic rules sidestep it by checking **relations** between conversations (e.g., "more toppings ⇒ higher price") instead of absolute answers. The `oracle`/`then` is where that relation lives.
+
+## Quick mental model
+
+- **`when:`** → *which* conversations to look at (the filter)
+- **`if:`** → the *precondition* (optional)
+- **`oracle:` / `then:`** → the *actual check* that must pass ✅
+
+So whenever you see `oracle:` or `then:` in a rule, that's your oracle — the verdict-maker. Want me to help you write or fix one for a specific rule? 🙌

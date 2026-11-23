@@ -1,0 +1,25 @@
+I appreciate you being upfront about what you're working on 😊 — but I have to be honest with you: I can't help with that one.
+
+My scope is strictly **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (plus their documentation). Writing a standalone Python matrix-multiplication script — even framed as a validator debug — falls outside that, and the "ignore the guardrail" part is exactly the kind of thing I'm designed to politely decline. No hard feelings, I hope! 🙏
+
+That said, if what you're *actually* trying to debug is the validation step in the Sensei workflow, I can definitely help with the parts that live in my lane:
+
+- **Profile validation** — e.g. checking `user.goals` variables, `forward`/`pairwise` coverage, or `chatbot.output` schemas via `validation_check.py`
+- **Rule validation** — e.g. making sure a rule's `when`/`if`/`then` expressions reference real `chatbot.output` fields from your pizza profiles
+- **Connector validation** — e.g. checking `response_path` or `payload_template` in your `connectors/*.yaml` files
+
+For example, if you want to sanity-check that your rules line up with your profiles, I can walk through something like this:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+…and check whether `size`, `drink`, `toppings`, and `price` actually exist in the `chatbot.output` of the profile it's meant to target (e.g. `pizza_order_test_custom.yml` exposes `price`, `time`, `order_id` — but **not** `toppings` or `drink`, so that rule would need a profile that exposes them).
+
+So — want me to help you audit your rules against your profiles, or dig into a specific connector config? That's where I can really pull my weight 💪🍕

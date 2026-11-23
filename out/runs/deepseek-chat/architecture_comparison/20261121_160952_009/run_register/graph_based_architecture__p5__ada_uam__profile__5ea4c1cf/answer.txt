@@ -1,0 +1,78 @@
+¡Hola! 😊 ¡Claro que sí! Te ayudo a crear un perfil para probar el chatbot de la UAM enfocado en el CAU. Antes de escribir el YAML, déjame darte un par de notas útiles 👇
+
+## 🔍 Lo que ya tienes en tu proyecto
+
+Revisando tus perfiles existentes, veo que **ya hay uno muy parecido**: `consultante_de_servicios_y_asistencia_del_cau.yaml`. Ese perfil ya extrae `contact_email`, `contact_phone`, `physical_address` y `service_hours`. Podrías reutilizarlo o crear uno nuevo más enfocado (como el que me pides). Te propongo un perfil limpio y específico para tu caso.
+
+## 📝 Perfil propuesto
+
+```yaml
+test_name: "Soporte CAU - Datos de contacto y horarios"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario que necesita contactar con el Centro de Atención a Usuarios (CAU)
+    de la UAM y quiere reunir todos los datos de contacto y horarios de atención.
+  context:
+    - personality: personalities/formal-user
+    - "Tienes una incidencia con tu cuenta ID-UAM y prefieres contactar directamente con el CAU."
+    - "Quieres saber si puedes acudir en persona, llamar por teléfono o escribir un correo."
+    - "Te interesa conocer el horario de atención para no desplazarte en vano."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico del CAU."
+    - "Preguntar por la ubicación física (dirección) de la oficina del CAU."
+    - "Consultar el horario de apertura y atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - cau_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - cau_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - cau_address:
+        type: string
+        description: "Dirección física de la oficina del CAU"
+    - cau_hours:
+        type: string
+        description: "Horario de apertura y atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.3
+  interaction_style:
+    - single questions
+```
+
+## 💡 Por qué está montado así
+
+- **`user.goals`**: cada goal pide un dato concreto (teléfono, email, dirección, horario). Al usar `single questions`, el simulador hará una pregunta por turno, lo que encaja perfecto con este caso. 🎯
+- **`chatbot.output`**: define los cuatro campos que quieres extraer al final. Nombres claros y estables (`cau_phone`, `cau_email`, `cau_address`, `cau_hours`) para que puedas usarlos luego en reglas de Sensei-check como `conv[0].cau_phone`. 🔗
+- **`fallback`**: copiado del fallback real de tus otros perfiles del CAU, para evitar bucles infinitos si el bot no entiende. 🙌
+- **`conversation.number: 3`** y **`max_cost`**: tres conversaciones es suficiente para un smoke test, y el coste queda acotado. 💸
+- **`personality`**: reutiliza `personalities/formal-user`, que ya usas en `soporte_técnico_y_gestión_de_contraseñas.yaml`, así mantienes coherencia.
+
+## ⚠️ Un par de avisos
+
+- Si prefieres un tono más informal, cambia la personalidad por `personalities/curious-user` o elimínala.
+- Si quieres validar el perfil antes de lanzarlo, puedes usar:
+
+```bash
+python validation_check.py --profile <ruta>/profiles/soporte_cau_contacto.yaml --output <ruta_salida> --verbose
+```
+
+¿Quieres que te lo adapte para que también pregunte por el **catálogo de servicios** o el **enlace a preguntas frecuentes**? 😊 ¡Dime y lo ajustamos!

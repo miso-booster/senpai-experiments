@@ -1,0 +1,146 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__ba8b1b78
+$$$
+Perfect, I've got the connector docs (`custom-connector-guide.md` and `connector-examples.md`). Your request is basically the same 1MillionBot API as the "Ada UAM" example, just with different IDs and the SAIC Málaga site 🎯.
+
+## 1) YAML connector
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+**Mapping notes (per `custom-connector-guide.md`):**
+- `base_url` + `send_message.path` → `https://api.1millionbot.com/api/public/messages` ✅
+- `Authorization` header carries the API key from your request (no `Bearer` prefix, matching the raw header you sent).
+- `{user_msg}` is the placeholder the connector replaces with each user message.
+- `response_path: "response.0.text"` navigates `response` → index `0` → `text`, which is exactly where the reply lives in your sample response (`{"response":[{"text":"<p>¡Buenos días!..."}]}`).
+- I kept `Origin`/`Referer`/`User-Agent` since the API is called cross-site from the widget; harmless and closer to the real browser call.
+
+## 2) Python script to send multiple requests
+
+This uses the documented `CustomChatbot` API (`execute_with_input`) and falls back to a plain `requests` loop if you prefer to see the raw HTTP flow.
+
+```python
+"""
+Send multiple messages to the SAIC Malaga chatbot through the YAML connector.
+
+Usage:
+    python send_multiple.py
+    python send_multiple.py "hola" "quiero pedir cita" "gracias"
+"""
+
+import sys
+import time
+
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+CONNECTOR_PATH = "connectors/saic-malaga.yml"
+
+DEFAULT_MESSAGES = [
+    "hola",
+    "quiero pedir cita previa",
+    "¿qué documentación necesito?",
+    "gracias",
+]
+
+
+def send_messages(messages, delay=1.0):
+    """Send each message through the connector and print the bot reply."""
+    bot = CustomChatbot(CONNECTOR_PATH)
+
+    results = []
+    for i, msg in enumerate(messages, start=1):
+        print(f"\n[{i}/{len(messages)}] 👤 User: {msg}")
+        try:
+            success, response = bot.execute_with_input(msg)
+        except Exception as exc:  # network / parsing errors
+            print(f"    ❌ Error: {exc}")
+            results.append({"message": msg, "success": False, "response": None})
+            continue
+
+        if success:
+            print(f"    🤖 Bot : {response}")
+        else:
+            print(f"    ⚠️  Failed: {response}")
+
+        results.append({"message": msg, "success": success, "response": response})
+
+        if i < len(messages):
+            time.sleep(delay)  # be polite to the API
+
+    return results
+
+
+def main():
+    messages = sys.argv[1:] or DEFAULT_MESSAGES
+    results = send_messages(messages)
+
+    ok = sum(1 for r in results if r["success"])
+    print(f"\n✅ Done: {ok}/{len(results)} successful")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Variant: raw `requests` (no SDK), same payload as the connector
+
+```python
+import time
+import requests
+
+URL = "https://api.1millionbot.com/api/public/messages"
+HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": "64e5d1af081211d24e2cfecd",
+    "Origin": "https://saic.malaga.eu",
+    "Referer": "https://saic.malaga.eu/",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0",
+}
+BASE_PAYLOAD = {
+    "conversation": "6977595c744ccf01954b8797",
+    "sender_type": "User",
+    "sender": "6977595c3e4824018e496b0c",
+    "bot": "64e5d1af081211d24e2cfec8",
+    "language": "es",
+    "url": "https://saic.malaga.eu/",
+}
+
+MESSAGES = ["hola", "quiero pedir cita previa", "¿qué documentación necesito?", "gracias"]
+
+for msg in MESSAGES:
+    payload = {**BASE_PAYLOAD, "message": {"text": msg}}
+    r = requests.post(URL, headers=HEADERS, json=payload, timeout=30)
+    r.raise_for_status()
+    data = r.json()
+    reply = data.get("response", [{}])[0].get("text", "<no text>")
+    print(f"👤 {msg}\n🤖 {reply}\n")
+    time.sleep(1)
+```
+
+## 3) Heads-up ⚠️
+
+- The `conversation` and `sender` IDs are fixed in the YAML, so every run reuses the same conversation thread. If you want a fresh thread per test, you'd need to generate new IDs (the API likely creates them on first call) — the YAML format doesn't support dynamic values, so that would require a code-level connector.
+- Replies come back as HTML (`<p>…<br>…</p>`). If your rules check plain text, strip tags before validation.
+
+Want me to also write a SENSEI profile + rule pair that uses this connector (e.g., checking the bot always answers in Spanish and stays on-topic about SAIC Málaga)? 😊
+$$$

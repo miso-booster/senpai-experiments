@@ -1,0 +1,43 @@
+conversation ID: one_node_architecture__p38__pizza_shop__rule__ed4e3306
+$$$
+Hey there! 😊 Nice one — checking that the chatbot actually hands over an `order_id` is a super useful sanity rule. Let me walk you through it.
+
+## The idea
+
+Your profiles expose `order_id` in `chatbot.output` (I can see it in `pizza_and_drink_order_placement.yaml`, `pizza_order_test_custom.yml`, and `pizzaorder_ivan_test.yml`). So the rule just needs to verify that this field was actually extracted — i.e., it's not `None`/empty after the conversation.
+
+## The rule
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide an order ID at the end of the conversation
+conversations: 1
+active: true
+oracle: order_id is not None and order_id != ''
+yields: f"The chatbot did not provide an order ID (got: {order_id})"
+```
+
+## Why this works
+
+- **`conversations: 1`** → it's a single-conversation oracle, so `order_id` is accessed directly (no `conv[i]` needed).
+- **`order_id is not None`** → the extractor leaves the slot as `None` when the bot never mentioned an ID, so this catches "missing" cleanly.
+- **`order_id != ''`** → guards against an empty-string extraction (some extractors return `''` instead of `None`).
+- **`yields`** → gives you a friendly failure message showing what was actually captured, which makes debugging way easier 👀.
+
+## A couple of things to keep in mind
+
+1. **Field name must match exactly.** Your profiles use `order_id` (lowercase, underscore) — good, that's what we're referencing. If a profile ever renames it (e.g., `booking_id`), this rule won't apply to it.
+2. **Not every profile has `order_id`.** `general_information_seeker.yaml`, `pizza_and_drinks_information_seeker.yaml`, and `unrecognized_query_handler.yaml` don't expose it — so this rule is **profile-bound** to the ordering profiles. If you run it across a mixed batch, consider adding a `when:` filter, or just keep it scoped to the ordering profiles.
+3. **If you want to be stricter** (e.g., require a non-trivial ID), you could add a length check:
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide a non-empty order ID
+conversations: 1
+active: true
+oracle: order_id is not None and len(str(order_id).strip()) > 0
+yields: f"The chatbot did not provide a valid order ID (got: {order_id})"
+```
+
+That second version is a bit more robust if you're worried about whitespace-only extractions. Want me to also draft a **global** version using `data_collected()` / `missing_slots()` that checks *all* slots at once? 🍕
+$$$

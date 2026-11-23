@@ -1,0 +1,161 @@
+# YAML Connector for SAIC Málaga 🚀
+
+Here's your connector, based on the request/response you shared. It follows the same pattern as your existing `ada-uam.yaml` (same API provider, different bot/conversation IDs) 👇
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Why these values? 🤔
+- **`response_path: "response.0.text"`** → the reply lives at `response[0].text` in the JSON (same shape as Ada UAM).
+- **`Authorization`** → taken straight from your request header.
+- **`{user_msg}`** → placeholder that gets replaced with each user message.
+- **`conversation`, `sender`, `bot`** → copied from your request body (these identify the session/bot on MillionBot's side).
+
+> 💡 **Heads-up:** the response `text` contains HTML (`<p>...</p>`, `<br>`). If you want clean text, you'll need to strip tags in your Python code (shown below).
+
+---
+
+# Python Script to Send Multiple Requests 🐍
+
+This script loads the YAML, sends several messages, and cleans the HTML from the replies. Save the YAML above as `saic-malaga.yml` next to the script.
+
+```python
+"""
+Send multiple messages to the SAIC Malaga chatbot connector.
+
+Usage:
+    python send_saic_malaga.py
+
+Requires:
+    pip install requests pyyaml
+"""
+
+import re
+import time
+import yaml
+import requests
+
+
+CONFIG_PATH = "saic-malaga.yml"
+
+
+def load_config(path: str) -> dict:
+    """Load the YAML connector configuration."""
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def strip_html(text: str) -> str:
+    """Remove HTML tags and collapse whitespace for a clean reply."""
+    if not text:
+        return ""
+    # Replace <br> variants with newlines first
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
+    # Remove all remaining tags
+    text = re.sub(r"<[^>]+>", "", text)
+    # Collapse extra whitespace
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
+def get_by_path(data, path: str):
+    """Navigate a nested dict/list using a dot-separated path (e.g. 'response.0.text')."""
+    current = data
+    for key in path.split("."):
+        if isinstance(current, list):
+            current = current[int(key)]
+        else:
+            current = current[key]
+    return current
+
+
+def send_message(config: dict, user_msg: str) -> str:
+    """Send a single message to the chatbot and return the cleaned reply."""
+    base_url = config["base_url"].rstrip("/")
+    send_cfg = config["send_message"]
+
+    url = base_url + send_cfg["path"]
+    method = send_cfg.get("method", "POST").upper()
+    headers = send_cfg.get("headers", {})
+
+    # Deep-copy the payload template and inject the user message
+    import copy
+    payload = copy.deepcopy(send_cfg["payload_template"])
+    payload_str = yaml.safe_dump(payload, allow_unicode=True)
+    payload_str = payload_str.replace("{user_msg}", user_msg)
+    payload = yaml.safe_load(payload_str)
+
+    response = requests.request(method, url, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+
+    data = response.json()
+    raw_reply = get_by_path(data, config["response_path"])
+    return strip_html(raw_reply)
+
+
+def main():
+    config = load_config(CONFIG_PATH)
+
+    messages = [
+        "hola",
+        "¿Cómo puedo pedir cita previa?",
+        "¿Cuál es el horario de atención?",
+        "Gracias, eso es todo",
+    ]
+
+    print(f"🤖 Chatbot: {config.get('name', 'Unknown')}\n" + "=" * 50)
+
+    for i, msg in enumerate(messages, start=1):
+        print(f"\n[{i}] 👤 User: {msg}")
+        try:
+            reply = send_message(config, msg)
+            print(f"[{i}] 🤖 Bot : {reply}")
+        except requests.HTTPError as e:
+            print(f"[{i}] ❌ HTTP error: {e}")
+        except (KeyError, IndexError, ValueError) as e:
+            print(f"[{i}] ❌ Could not parse response: {e}")
+
+        # Small pause between requests to be polite to the API
+        time.sleep(1)
+
+    print("\n" + "=" * 50 + "\n✅ Done!")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### What the script does 🧠
+1. **Loads** the YAML connector (`saic-malaga.yml`).
+2. **Injects** each user message into the `payload_template` by replacing `{user_msg}`.
+3. **Sends** the POST request with the configured headers.
+4. **Extracts** the reply using `response_path` (`response.0.text`).
+5. **Cleans** the HTML tags so you get readable text.
+6. **Loops** over a list of messages with a small delay between calls.
+
+### Quick tips ✨
+- If you want to keep the **same conversation session** across messages, leave `conversation` and `sender` fixed (as they are now). If you want a **fresh session per run**, generate new IDs and update the YAML.
+- To test a **single message** quickly, just edit the `messages` list.
+- If the API ever returns a different structure, adjust `response_path` accordingly (e.g. `response.0.message`).
+
+Want me to also show how to wire this into the `CustomChatbot` class from your connector guide, or add retry/error-handling logic? Just say the word 😊

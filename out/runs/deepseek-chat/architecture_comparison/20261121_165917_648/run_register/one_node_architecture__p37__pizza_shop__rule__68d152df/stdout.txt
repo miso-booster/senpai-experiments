@@ -1,0 +1,23 @@
+conversation ID: one_node_architecture__p37__pizza_shop__rule__68d152df
+$$$
+Ciao! 😊 Certo, ti preparo una regola Sensei-check che verifica se l'assistente conferma di aver aggiunto la bevanda richiesta dall'utente.
+
+Un paio di note prima del codice, così sai cosa stai guardando 👀:
+
+- Uso `utterance_index('assistant', ...)` per trovare il turno in cui l'assistente conferma la bevanda. La funzione è LLM-backed, quindi il pattern testuale va descritto in modo chiaro e naturale.
+- La regola è **profile-agnostic** (non dipende da `chatbot.output`), quindi va bene come regola globale applicabile alle conversazioni del tuo pizza shop.
+- Ho messo `conversations: 1` perché controlla una singola conversazione.
+
+```yaml
+name: assistant_confirms_drink_added
+description: The assistant confirms that the drink requested by the user has been added to the order
+conversations: 1
+active: true
+oracle: |
+  utterance_index('assistant', 'confirms that the requested drink has been added to the order') > 0
+yields: |
+  f"The assistant did not confirm that the drink was added to the order"
+```
+
+Se vuoi renderla più precisa (per esempio controllando *quale* bevanda è stata confermata), possiamo legarla a un campo di `chatbot.output` — tipo `drink_type` o `order_summary` — e confrontare il valore richiesto con quello confermato. Fammi sapere se preferisci quella versione più "profile-bound" e te la costruisco su misura 🍕🥤
+$$$

@@ -1,0 +1,82 @@
+conversation ID: agentic_architecture__p22__bikeshop__profile__9bee80db
+$$$
+Here's the profile, following the structure in `sensei-chat-guide.md` and matching the style of your existing bike profiles (same `fallback`, `gpt-4o-mini`, `money` type, `all_answered` goal style, `single questions` interaction) 🚲:
+
+```yaml
+test_name: bike_discomfort_fit_or_wear_advisor
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A cyclist experiencing discomfort while riding who is unsure whether the cause is an incorrect bike fit or worn components, and who wants advice on possible adjustments or shop services without explicitly asking to book an appointment.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You have been experiencing discomfort (sore knees, lower back pain, and numb hands) during and after rides on your current bike.
+  - You are not sure whether the bike is not fitted correctly to your body or whether some components (saddle, handlebars, pedals, cleats) are simply worn out.
+  - You ride regularly for commuting and weekend rides and want to keep riding comfortably.
+  - You want to understand your options and what the shop can do, but you are not ready to commit to a booking yet.
+  goals:
+  - Describe the discomfort you feel while riding and ask what could be causing it.
+  - Ask whether the discomfort is more likely due to a poor bike fit or to worn components.
+  - Ask what adjustments could be made to improve your riding comfort.
+  - Ask what services the shop offers related to bike fitting and component replacement.
+  - Ask how a professional bike fit works and what it involves.
+  - Ask how to tell if a component such as the saddle or cleats is worn and needs replacing.
+  - Ask for a rough idea of the cost of a bike fit and of replacing worn components.
+  - Ask for general advice on what you could try yourself before coming in.
+chatbot:
+  is_starter: false
+  fallback: I'm sorry it's a little loud in my shop, can you say that again?
+  output:
+  - discomfort_causes:
+      type: string
+      description: The chatbot's explanation of the possible causes of the rider's discomfort, distinguishing between bike fit issues and worn components.
+  - fit_vs_wear_assessment:
+      type: string
+      description: The chatbot's guidance on whether the discomfort is more likely due to an incorrect bike fit or to worn components, and how to tell the difference.
+  - suggested_adjustments:
+      type: string
+      description: The adjustments the chatbot suggests to improve riding comfort, such as saddle height, handlebar position, cleat alignment, or stem length.
+  - available_services:
+      type: string
+      description: The shop services the chatbot mentions related to bike fitting and component replacement or repair.
+  - bike_fit_details:
+      type: string
+      description: A description of what a professional bike fit involves, as explained by the chatbot.
+  - component_wear_indicators:
+      type: string
+      description: The chatbot's explanation of how to recognize worn components (e.g., saddle, cleats, chain) and when they need replacing.
+  - cost_estimate:
+      type: money
+      description: The approximate cost the chatbot provides for a bike fit and/or replacing worn components.
+  - self_help_advice:
+      type: string
+      description: General advice the chatbot gives on what the rider could try themselves before coming into the shop.
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 30
+  interaction_style:
+  - single questions
+```
+
+### What this profile does & why
+
+- **Simulated user** (`user.role` + `context`): a cyclist with discomfort who is genuinely unsure whether it's a **fit** problem or **worn components**, and who wants **advice/services info** — deliberately *not* asking to book an appointment (contrast with `bike_service_and_repair_inquirer.yaml` and `bike_repair_and_maintenance_scheduler.yaml`, which do book).
+- **Goals**: walk through the natural diagnostic conversation — describe symptoms → ask fit-vs-wear → ask about adjustments → ask about services → ask about fit process → ask about wear indicators → ask about cost → ask for self-help advice.
+- **`chatbot.output`** (the contract for future rules): I split the answers into distinct, rule-friendly fields (`discomfort_causes`, `fit_vs_wear_assessment`, `suggested_adjustments`, `available_services`, `bike_fit_details`, `component_wear_indicators`, `cost_estimate`, `self_help_advice`). This lets you later write profile-bound rules like "if the user asked about cost, `conv[i].cost_estimate` is not None" or "`suggested_adjustments` is non-empty".
+- **Conventions matched**: same `fallback` string, `gpt-4o-mini`, `money` type (as in your other bike profiles), `all_answered` with `limit: 30`, `single questions` interaction, `max_cost: 0.5`.
+
+### A couple of things to confirm 👀
+1. **`money` type** — your existing profiles use `type: money` for prices. I kept that for consistency, but note the docs list `currency` as the documented example type. If `money` is a custom type in your `types/` folder, we're good; otherwise we may want to switch `cost_estimate` to `currency` (or `float`). Want me to check/align this?
+2. **Personality** — I reused `personalities/skeptical-user` (used by `bike_service_and_repair_inquirer.yaml`). Happy to swap it for another persona or drop it.
+3. **Filename** — I'd suggest saving it as `profiles/bike_discomfort_fit_or_wear_advisor.yaml`. Want me to adjust the name?
+
+Want me to tweak any of the above, or shall I also draft a matching **rule** (e.g., "the bot must always address both fit and wear when asked")? 😊
+$$$

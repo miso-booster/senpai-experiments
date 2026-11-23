@@ -1,0 +1,131 @@
+conversation ID: agentic_architecture__p3__ada_uam__profile__64f0f6be
+$$$
+¡Hola! 😊 Claro que sí, te ayudo a arreglarlo. Revisé tu YAML contra la guía de perfiles (`sensei-chat-guide.md`) y encontré varios puntos a corregir. Te los resumo antes de darte la versión final:
+
+## 🔍 Problemas detectados
+
+1. **`user.goals` mal formado (el más grave):** Mezclaste las metas (strings) con las declaraciones de variables, pero la variable `identificador_id_uam` **no tiene su clave declarada**. Tienes:
+   - Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado.
+   - Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}.
+       type: string
+       data:
+       - '123456789'
+       ...
+   Aquí `type`/`data` quedaron colgando de la meta-string, y falta la clave `identificador_id_uam:` como mapping. Además `user_account` aparece declarada **dos veces** (una vez mal pegada y otra bien).
+
+2. **`{{user_account}}` se usa en una meta** ("cambiar la contraseña de {{user_account}}"), pero según la guía, las variables declaradas deben usarse en los prompts — eso está bien — pero el orden/estructura estaba roto.
+
+3. **`chatbot.output` con `type: string` para todo:** Funciona, pero para campos como `activation_code` o `identificador_id_uam` conviene revisar si quieres tipos más específicos. No es un error, solo una mejora opcional.
+
+4. **`conversation.goal_style.steps: 30`:** La guía indica que `steps` fijo es válido, pero si usas `random steps: M` debe ser `M ≤ 20`. Con `steps: 30` fijo no hay problema, pero es alto para 5 conversaciones. Lo dejo pero te lo señalo.
+
+5. **Falta `user.role`:** No es obligatorio, pero la guía lo recomienda para dar contexto al simulador. Es opcional.
+
+6. **`llm.model_prov` ausente:** Opcional (hay defaults), pero si usas `gpt-4o-mini` conviene añadir `model_prov: openai` para evitar ambigüedad.
+
+## ✅ Versión corregida
+
+```yaml
+test_name: Asistencia Técnica y Cuentas
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita resolver problemas técnicos de acceso a
+    plataformas virtuales y cuentas de usuario, y que quiere gestionar su
+    cuenta ID-UAM (creación, contraseña y recuperación).
+  context:
+    - Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad.
+    - Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias.
+    - Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento.
+  goals:
+    - Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU).
+    - Preguntar sobre los procedimientos para obtener una cuenta ID-UAM.
+    - Solicitar los pasos necesarios para establecer la contraseña por primera vez.
+    - Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado.
+    - Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}.
+    - identificador_id_uam:
+        function: random()
+        type: string
+        data:
+          - '123456789'
+          - '987654321'
+          - '112233445'
+          - '556677889'
+          - '998877665'
+    - user_account:
+        function: random()
+        type: string
+        data:
+          - usuario123
+          - maria.garcia
+          - juan_lopez_2023
+          - pedro.salas
+          - sara.martinez
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_info:
+        type: string
+        description: Detalles de contacto del CAU
+    - operational_hours:
+        type: string
+        description: Horarios operativos del CAU
+    - available_services_list:
+        type: string
+        description: Servicios disponibles para crear cuenta
+    - password_setup_link:
+        type: string
+        description: Enlace para establecer contraseña
+    - contact_information:
+        type: string
+        description: Opciones de asistencia para recuperación de ID-UAM
+    - recovery_steps:
+        type: string
+        description: Pasos para recuperar ID-UAM
+    - activation_code:
+        type: string
+        description: Código de activación para cambiar contraseña
+    - user_account:
+        type: string
+        description: Nombre de usuario para recuperación
+    - identificador_id_uam:
+        type: string
+        description: Identificador único de ID-UAM
+    - password_change_steps:
+        type: string
+        description: Pasos para cambiar la contraseña
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 30
+```
+
+## 📝 Qué cambié y por qué
+
+| Cambio | Motivo (según `sensei-chat-guide.md`) |
+|---|---|
+| Añadí la clave `identificador_id_uam:` como mapping con `function`/`type`/`data` | Las variables deben declararse como mapping propio, no colgando de un string (§4.1, §4.4) |
+| Eliminé la declaración duplicada de `user_account` | Solo debe declararse una vez, con nombre exacto (§9) |
+| Añadí `function: random()` a ambas variables | La guía recomienda declarar la función de selección (§4.4) |
+| Añadí `user.role` | Recomendado para dar contexto al simulador (§3) |
+| Añadí `model_prov: openai` | Evita ambigüedad de proveedor con `gpt-4o-mini` (§3, §11) |
+| Unifiqué el `fallback` en una sola línea | Los `\n` literales no se interpretan como saltos en YAML plano; mejor texto limpio |
+
+## ⚠️ Dos cosas a revisar
+
+1. **`goal_style.steps: 30`** — es válido como fijo, pero para 5 conversaciones es bastante alto (y si algún día lo cambias a `random steps`, el máximo es 20). ¿Quieres mantenerlo o bajarlo?
+2. **`chatbot.output`** — todos los campos son `string`. Si vas a escribir **reglas** que validen `activation_code` o `identificador_id_uam`, quizá quieras tipos más específicos. ¿Planeas crear reglas para este perfil?
+
+¿Quieres que ajuste alguno de esos dos puntos, o lo dejamos así? 🚀
+$$$

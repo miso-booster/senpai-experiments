@@ -1,0 +1,107 @@
+conversation ID: agentic_architecture__p20__bikeshop__profile__5e2889a5
+$$$
+Here's a profile for testing a bike shop's appointment handling around wheel changes 🚲. It's built around the `sensei-chat-guide.md` conventions (variables, `forward`/`pairwise`/`another` functions, `chatbot.output` schema, and conversation controls).
+
+```yaml
+test_name: "bike_shop_wheel_change_appointment"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer of a bike shop who wants to book an appointment to have
+    the wheels on your bike changed. You care about finding a day and time that
+    works for you, so you ask about availability and confirm the details.
+  context:
+    - "You commute by bike daily, so you want the wheel change done soon."
+    - "You are flexible but prefer mornings or late afternoons."
+    - "You want the shop to confirm the exact date and time of the appointment."
+  goals:
+    - "Ask to book an appointment to change the wheels of my bike."
+    - "Request an appointment on {{appointment_date}} at {{appointment_time}}."
+    - "If that slot is not available, ask for the closest alternative on {{alternative_date}}."
+    - "Confirm the final appointment date and time with the shop."
+    - appointment_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - next Monday
+          - next Saturday
+          - the 15th of this month
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data:
+          - "09:00"
+          - "11:30"
+          - "14:00"
+          - "17:30"
+    - alternative_date:
+        function: pairwise()
+        type: string
+        data:
+          - the day after tomorrow
+          - next Wednesday
+          - next Friday
+          - the 20th of this month
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmed_date:
+        type: date
+        description: "The date of the wheel-change appointment confirmed by the chatbot."
+    - confirmed_time:
+        type: time("hh:mm")
+        description: "The time of the wheel-change appointment confirmed by the chatbot."
+    - service_requested:
+        type: string
+        description: "The service the user asked for, e.g. wheel change."
+    - appointment_confirmed:
+        type: string
+        description: "The chatbot's confirmation message for the appointment, including date and time."
+    - alternative_offered:
+        type: string
+        description: "Any alternative date or time the chatbot offered if the requested slot was unavailable."
+
+conversation:
+  number: combinations(1, pairwise)
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - single questions
+        - long phrases
+```
+
+### What this profile does 🎯
+
+- **Simulated user**: a bike-shop customer who wants to **change their wheels** and book an appointment.
+- **Date/time variables** (the core of your test):
+  - `appointment_date` → `forward()` iterates deterministically through 4 different days.
+  - `appointment_time` → `pairwise()` covers all time slots efficiently.
+  - `alternative_date` → also `pairwise()`, so the fallback days are exercised alongside the time slots in the pairwise matrix.
+- **`conversation.number: combinations(1, pairwise)`** → runs the full pairwise matrix across the two `pairwise()` variables, so you systematically test different day/time combinations.
+- **`chatbot.output`** extracts `confirmed_date`, `confirmed_time`, `service_requested`, `appointment_confirmed`, and `alternative_offered` — these are the fields you'll later reference in rules as `conv[i].<field>`.
+- **`interaction_style`**: `change your mind` is especially useful here (the docs note it's great for appointment dates), plus a random mix of typos/single questions/long phrases.
+
+### A couple of notes 💡
+
+- I used `time("hh:mm")` and `date` types for the confirmed fields so they're cleanly parseable — handy if you later write a rule like "the confirmed time matches one of the offered slots."
+- I set `is_starter: false` (user speaks first). If your bike-shop bot greets first, flip it to `true`.
+
+Want me to also **create a rule** that validates the confirmed date/time against what the user requested? If so, tell me and I'll load the rules docs and align it with these `chatbot.output` fields. 😊
+$$$

@@ -1,0 +1,38 @@
+conversation ID: one_node_architecture__p26__bikeshop__rule__042fc9b3
+$$$
+Hey there! 👋 Happy to help you fix this one — there are a few things in the rule that won't work as written. Let me walk you through them, then give you the corrected version 😊
+
+## What's off
+
+1. **`conversations: 2` but you only use `conv[0]`.** This is a single-conversation check (a plain oracle), so it should be `conversations: 1`. With `2`, Sensei-check expects a relation between two conversations, and `conv[1]` is never referenced.
+
+2. **`then:` is a plain sentence, not an expression.** `then` must be a Python expression that evaluates to `True`/`False`. `"The tune-up price is $50."` is just a string — it's always truthy, so the rule would never fail. That's the biggest problem.
+
+3. **`when: conv[0].tune_up_price == 50` is a filter, not a check.** `when` selects *which* conversations the rule applies to. By putting the equality there, you're only running the rule on conversations that already have price 50 — so it can never catch a wrong price. The actual assertion belongs in `oracle` (or `then`).
+
+4. **Comparing a `money` field to a raw number.** Your profiles (`bike_repair_and_maintenance_scheduler`, `bike_service_and_repair_inquirer`) declare `tune_up_price` as `type: money`. To compare safely, parse it with `extract_float(...)`.
+
+5. **`if:` is unnecessary here.** Since you just want "the price equals 50", a single `oracle` is cleaner than an `if`/`then` implication.
+
+## Corrected rule
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price equals $50 (profile bike_repair_and_maintenance_scheduler / bike_service_and_repair_inquirer).
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+yields: f"Expected tune-up price of $50, got {tune_up_price}"
+```
+
+## What I changed
+
+- **`conversations: 2` → `1`** — it's a single-conversation oracle.
+- **Moved the equality from `when` into `oracle`** — so it actually asserts the price instead of filtering on it.
+- **Replaced the `if`/`then` string with a real boolean `oracle`** — `extract_float(tune_up_price) == 50`.
+- **Wrapped the field in `extract_float(...)`** — because `tune_up_price` is a `money` type, not a bare number.
+- **Added a `yields` message** — so failures show the actual price you got, which makes debugging way friendlier.
+
+One small heads-up 👀: `extract_float` grabs the first number in the string, so if the bot ever says something like "$50 including a $10 discount", it'll pick up `50` — fine here, but worth keeping in mind if your bot's phrasing gets fancy.
+
+Want me to also add a companion rule that checks the *currency* (e.g. `currency(tune_up_price) == 'USD'`)? Just say the word! 🚲✨
+$$$

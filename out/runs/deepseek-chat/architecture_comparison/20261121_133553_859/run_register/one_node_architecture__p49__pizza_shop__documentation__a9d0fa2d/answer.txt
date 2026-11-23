@@ -1,0 +1,62 @@
+Great question! 😊 The `pairwise()` function is one of the handiest tools in Sensei profiles — it lets you cover **every pair of values at least once** across your variables, without exploding into a full Cartesian product.
+
+## The core idea
+
+Imagine you have two variables:
+
+- `pizza_size`: `[small, medium, large]`
+- `drink`: `[coke, sprite, fanta]`
+
+A **full grid** (all combinations) would be **3 × 3 = 9** conversations. That's fine here, but it grows fast — add a third variable with 4 values and you're at 36, then 144, and so on. 😅
+
+`pairwise()` instead generates a **minimal set of combinations** where **every pair of values appears at least once**. For the example above, that's typically just **3 conversations** instead of 9 — and you still catch most 2-way interaction bugs.
+
+## How to use it in a profile
+
+You assign `pairwise()` as the `function` for **two or more** variables:
+
+```yaml
+user:
+  goals:
+    - "Order a {{pizza_size}} pizza with a {{drink}}"
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - drink:
+        function: pairwise()
+        type: string
+        data: [coke, sprite, fanta]
+```
+
+Then, in `conversation.number`, you tell Sensei to use the pairwise matrix:
+
+```yaml
+conversation:
+  number: combinations
+```
+
+or a fraction of it:
+
+```yaml
+conversation:
+  number: combinations(0.6, pairwise)
+```
+
+## Key rules to remember ⚠️
+
+- **You need at least 2 variables** assigned to `pairwise()` for it to make sense — otherwise there are no pairs to cover.
+- `pairwise()` is meant for **categorical coverage**, not for nesting dependencies. If one variable's values depend on another (e.g., `seats` depends on `car_class`), use **nested `forward()`** instead.
+- You can **mix** `pairwise()` with other functions in the same profile — just make sure the ones you want paired are the ones using `pairwise()`.
+
+## Quick comparison
+
+| Function | Coverage | Use when |
+|---|---|---|
+| `forward()` | Full grid (nested) | You want **every** combination |
+| `pairwise()` | Every **pair** at least once | You want **efficient** coverage of 2-way interactions |
+| `random()` | Random picks | You want variety, not coverage |
+
+So in short: **`pairwise()` = smart, compact coverage** — perfect when you want to test interactions between options without running hundreds of conversations. 🚀
+
+Want me to sketch a full example profile using `pairwise()` for your pizza shop? Just say the word! 🍕

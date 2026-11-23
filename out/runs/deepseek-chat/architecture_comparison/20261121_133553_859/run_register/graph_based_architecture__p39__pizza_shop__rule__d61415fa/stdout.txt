@@ -1,0 +1,24 @@
+conversation ID: graph_based_architecture__p39__pizza_shop__rule__d61415fa
+$$$
+Hey there! 😊 Happy to help you build that metamorphic rule — nice and clear request!
+
+Here's a rule that checks: **when two orders are otherwise identical (same size, same toppings) but one adds a drink, the price should be exactly 2 dollars higher.**
+
+```yaml
+name: adding_drink_costs_two_dollars
+description: Adding a drink to an otherwise identical order costs exactly 2 dollars extra
+conversations: 2
+when: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+if:   conv[0].drink == 'none' and conv[1].drink != 'none'
+then: extract_float(conv[1].price) - extract_float(conv[0].price) == 2
+```
+
+A few things worth flagging so it works smoothly in your project 👀:
+
+- **`drink` field** — this rule assumes your profile's `chatbot.output` exposes a `drink` slot, and that "no drink" is represented as `'none'` (or whatever sentinel your profile uses). If your profile uses something like `null`, `''`, or `'no drink'`, just swap that in the `if:` line.
+- **`price` field** — it also relies on a `price` output that `extract_float` can parse (e.g. `"18.50 EUR"`). Make sure that slot exists in the profile.
+- **`toppings`** — I compared `len(...)` so the toppings *count* is held equal (ceteris paribus), but if your toppings are order-sensitive and you want stricter equality, you could use `conv[0].toppings == conv[1].toppings` instead.
+- **Direction matters** — the `if:` line pins `conv[0]` as the no-drink order and `conv[1]` as the drink order, so the subtraction is always positive. That keeps the check meaningful rather than accidentally passing on a reversed pair.
+
+If your profile represents "no drink" differently, or if the 2-dollar delta should be a `>=`/`<=` tolerance instead of exact equality (floating point can be sneaky 😅), just tell me and I'll tweak it for you!
+$$$

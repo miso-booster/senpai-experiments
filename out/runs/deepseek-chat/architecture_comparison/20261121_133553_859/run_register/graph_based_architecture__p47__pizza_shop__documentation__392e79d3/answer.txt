@@ -1,0 +1,50 @@
+Hey there! 😊 Great question — metamorphic rules are one of the coolest (and most powerful) parts of Sensei-check, so let me break it down for you in a friendly way.
+
+## What a metamorphic rule is 🧠
+
+In Sensei-check, a **metamorphic rule** is a rule that checks a **relationship between two or more conversations** — instead of checking one conversation's answer against a fixed "correct" value.
+
+That's the key idea: instead of asking *"Is this answer right?"* (which is hard for chatbots, because there's often no single correct answer), you ask *"If I change the input in this way, does the output change in the way it should?"*
+
+This is exactly what solves the **oracle problem** — the classic headache of "how do I know the right answer when there isn't one obvious answer?" 🎯
+
+## A quick analogy 🍕
+
+Think of it like this: you don't need to know the *exact* price of every pizza. You just need to know that **if you add more toppings to the same size pizza, it should cost more**. That's a *relation* — and that's what a metamorphic rule captures.
+
+## How it looks in practice
+
+A metamorphic rule typically has:
+
+- **`conversations: 2`** (or more) — it needs multiple conversations to compare
+- **`when:`** — a filter that picks *comparable* conversations (e.g., same size and drink)
+- **`if:` / `then:`** — the relation to verify (or a single `oracle:` expression)
+
+Here's a real one from your project — `more_toppings_cost_more.yaml`:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Read it like a law: *"If two orders have the same size and drink, and one has more toppings, then it must cost more."* 🍕💰
+
+## The three flavors of rules in Sensei-check
+
+1. **Single-conversation oracles** — classic checks on one conversation (e.g., "small pizzas cost at least $10").
+2. **Metamorphic rules** — compare **pairs/tuples** of conversations (this is the star of the show ✨).
+3. **Global rules** — check something across **all** conversations (e.g., `is_unique('order_id')`).
+
+## Why they're so useful 💡
+
+- They work even when there's **no single correct answer**.
+- They catch **regressions** in behavior (e.g., price logic breaking).
+- They're great for **LLM-based bots**, where answers vary but *relations* should hold.
+
+One important note: the fields you compare (like `toppings`, `price`, `size`) come from your **profile's `chatbot.output`** — so the rule and the profile need to agree on field names. In your project, `more_toppings_cost_more` relies on fields exposed by profiles like `pizza_and_drink_order_placement` (which has `total_cost`) — so it's worth double-checking that the field names line up! 👀
+
+Want me to help you write a new metamorphic rule, or check whether an existing one matches your profile's `chatbot.output`? I'm happy to dig in! 😊

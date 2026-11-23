@@ -1,0 +1,55 @@
+Hey there! 👋 Happy to help you check this rule 😊
+
+Short answer: **nope, this rule won't do what you want** — it needs a few fixes. Let me walk you through what's off and then give you the corrected version.
+
+---
+
+## 🔍 What's wrong with the current rule
+
+**1. `conversations: 2` is unnecessary**
+You're only checking a single value (`conv[0].tune_up_price`). There's no comparison between two conversations here, so this should be `conversations: 1`. Using `2` would force Sensei-check to pair up conversations for no reason.
+
+**2. The `then:` clause is not a boolean expression**
+`then:` must evaluate to `True`/`False` — it's a *relation*, not a sentence. Right now it's just a string `"The tune-up price is $50."`, which will always be truthy and never actually check anything. 🚫
+
+**3. The `if:`/`then:` structure is backwards for this goal**
+You want to *assert* that the price equals 50. That's a plain oracle, not an implication. Using `if`/`then` here adds a condition (`is not None`) that isn't really the point — and if the price *is* `None`, the rule silently passes instead of failing. That's a false negative. 😬
+
+**4. `when: conv[0].tune_up_price == 50` is circular**
+You're filtering conversations to only those where the price is already 50, then checking that the price is 50. That's a tautology — it will always pass (or be "not applicable") and never catch a wrong price. The `when:` should filter on something *else* (or be omitted), not on the value you're testing.
+
+**5. `== 50` assumes a numeric field**
+If `tune_up_price` comes from `chatbot.output` as a `currency` type (e.g. `"$50.00"` or `"50 USD"`), a direct `== 50` comparison will fail. Use `extract_float(...)` to be safe. 💡
+
+---
+
+## ✅ Corrected rule
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price equals $50.
+conversations: 1
+oracle: extract_float(conv[0].tune_up_price) == 50
+```
+
+That's it — clean and to the point. 🎯
+
+---
+
+## 📝 Summary of changes
+
+| Change | Why |
+|---|---|
+| `conversations: 2` → `1` | Only one conversation is being inspected. |
+| Removed `when:` | It was circular (filtering on the very value being tested). |
+| Removed `if:`/`then:` | Replaced with a single `oracle:` — this is a plain assertion, not a metamorphic implication. |
+| `then:` string → boolean expression | `then:` must evaluate to `True`/`False`. |
+| `== 50` → `extract_float(...) == 50` | Handles currency-formatted strings like `"$50.00"`. |
+
+---
+
+## ⚠️ One thing to double-check
+
+Make sure your SENSEI Chat profile actually exposes `tune_up_price` in its `chatbot.output` — otherwise the rule has nothing to read. If the field is named differently (e.g. `price`, `service_price`), update the rule to match. 🔧
+
+Want me to also write a **metamorphic version** (e.g. "tune-up price stays the same regardless of car model")? Just say the word! 🚗✨

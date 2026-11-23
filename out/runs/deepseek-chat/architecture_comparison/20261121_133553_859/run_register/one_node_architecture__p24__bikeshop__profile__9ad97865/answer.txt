@@ -1,0 +1,69 @@
+Here's a profile tailored to your bike shop assistant test 🚲 — it keeps the user focused on hours, pricing, and basic bike care, with clean single-question phrasing and outputs that map directly to each request.
+
+```yaml
+test_name: "bike_shop_general_info_and_pricing"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal, polite customer visiting a bike shop's virtual assistant.
+    You want straightforward general information about the shop and its standard
+    services. Ask clear, direct questions and keep the conversation focused on
+    shop hours, basic prices, and general bike care.
+  context:
+    - "You are a regular cyclist who wants quick, practical answers before visiting the shop."
+    - "You prefer clear and direct questions, one topic at a time."
+    - "You are only interested in basic pricing, opening hours, and general bike care advice."
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or anything outside basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: "The shop's opening and closing times as stated by the chatbot."
+    - tire_price:
+        type: money
+        description: "The price of a new bike tire provided by the chatbot."
+    - tune_up_price:
+        type: money
+        description: "The price of a standard bike tune-up provided by the chatbot."
+    - seat_price:
+        type: money
+        description: "The price of a new bike seat provided by the chatbot."
+    - bike_care_advice:
+        type: string
+        description: "The general bike care and basic maintenance advice given by the chatbot."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 12
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+A couple of quick notes so it behaves the way you expect 👇
+
+- **`single questions`** keeps the user asking one thing at a time — that's what makes it easy to check each answer for accuracy and relevance.
+- **`chatbot.output`** fields (`opening_and_closing`, `tire_price`, `tune_up_price`, `seat_price`, `bike_care_advice`) are the contract you can later reference in Sensei-check rules as `conv[i].tire_price`, etc. — handy if you want to add price or completeness checks later.
+- **`all_answered` with `limit: 12`** gives the conversation enough room to cover all five goals without running away.
+
+Want me to also draft a couple of Sensei-check rules (e.g., "all prices are stated" or "no unrelated services mentioned") to pair with this profile? 😊

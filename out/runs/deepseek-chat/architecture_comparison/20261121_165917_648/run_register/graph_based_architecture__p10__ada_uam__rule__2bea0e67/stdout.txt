@@ -1,0 +1,143 @@
+conversation ID: graph_based_architecture__p10__ada_uam__rule__2bea0e67
+$$$
+¡Hola! 😊 ¡Qué buena idea probar ese perfil — se ve completito y con muchas salidas interesantes! Vamos a diseñar algunas reglas que le saquen jugo a tu `chatbot.output`.
+
+Antes de lanzarme, un detalle importante 👀: tu perfil expone campos como `admission_to_grados_link`, `welcome_day_date`, `application_fee`, etc. Las reglas que te propongo usan **exactamente esos nombres**, así que deberían funcionar tal cual. Si renombras algo en el perfil, recuerda actualizar las reglas también.
+
+Aquí van varias ideas, de las más simples a las más "metamórficas" 🎯:
+
+---
+
+### 1) Sanity check: el bot debe recoger los datos clave
+
+Una regla sencilla para verificar que, al final de la conversación, el bot efectivamente extrajo los slots importantes (no quedaron en `None`).
+
+```yaml
+name: admission_slots_collected
+description: El bot debe recoger los datos clave de admisión (links, requisitos, fee)
+conversations: 1
+oracle: data_collected() is True
+```
+
+Si quieres ser más fino y solo revisar que no falten ciertos slots:
+
+```yaml
+name: admission_no_missing_core_slots
+description: No deben faltar los slots esenciales de admisión
+conversations: 1
+oracle: missing_slots() == []
+```
+
+---
+
+### 2) El costo de solicitud debe ser un monto válido
+
+Verifica que `application_fee` sea un número positivo (usando `extract_float`).
+
+```yaml
+name: application_fee_positive
+description: El costo de solicitud debe ser un monto positivo
+conversations: 1
+oracle: extract_float(application_fee) > 0
+```
+
+---
+
+### 3) Consistencia de idioma (regla global, muy útil con LLM)
+
+Como tu usuario habla en español, el bot debería responder en español. Esta es una regla global que no depende de campos específicos:
+
+```yaml
+name: responds_in_spanish
+description: El asistente responde en el mismo idioma que el usuario (español)
+conversations: 1
+oracle: responds_in_same_language() is True
+```
+
+---
+
+### 4) El bot no debe salirse del tema (scope guardrail)
+
+Tu perfil es de admisiones universitarias. Podemos checar que no se vaya por las ramas:
+
+```yaml
+name: admission_scope_guardrail
+description: El asistente se mantiene en el dominio de admisiones y vida estudiantil UAM
+conversations: 1
+oracle: only_talks_about('admisión universitaria, grados, cursos, listas de espera, Welcome Day, requisitos de inscripción')
+```
+
+---
+
+### 5) Metamórfica: si el usuario pide un grado, el bot debe ofrecerlo en la lista
+
+Aquí empieza lo divertido 🎉. Como tu perfil tiene `grados` (forward) y `grados_available`, podemos comparar dos conversaciones: si en una se pidió un grado concreto, ese grado debería aparecer en `grados_available`.
+
+```yaml
+name: requested_grado_appears_in_available
+description: Si el usuario pregunta por un grado, debe aparecer en grados_available
+conversations: 2
+when: conv[0].grados != conv[1].grados
+if:   conv[0].grados in conv[0].grados_available
+then: conv[1].grados in conv[1].grados_available
+```
+
+> 💡 Nota: esto asume que `grados_available` es un string que contiene el nombre del grado. Si tu extracción devuelve una lista, cambia `in` por `any(g in conv[0].grados_available for g in [conv[0].grados])` o similar.
+
+---
+
+### 6) Metamórfica: Welcome Day debe tener fecha y hora coherentes
+
+Si el bot reporta un `welcome_day_date`, también debería reportar `welcome_day_time` y `event_location` (no dejar el evento a medias).
+
+```yaml
+name: welcome_day_completeness
+description: Si se informa la fecha del Welcome Day, también deben estar hora y ubicación
+conversations: 1
+if:   welcome_day_date is not None
+then: welcome_day_time is not None and event_location is not None
+```
+
+---
+
+### 7) Global: los links deben ser únicos y no vacíos
+
+Una regla global para asegurar que los links extraídos no sean todos iguales ni vacíos (útil para detectar extracciones rotas):
+
+```yaml
+name: links_not_empty
+description: Los links de admisión no deben quedar vacíos
+conversations: 1
+oracle: |
+  len(chatbot_returns('LINK: <empty>')) == 0
+```
+
+---
+
+### 8) Anti-repetición (calidad de UX)
+
+Para detectar si el bot se vuelve repetitivo (muy común en LLMs):
+
+```yaml
+name: no_repeated_answers
+description: El asistente no debe repetir respuestas casi idénticas
+conversations: 1
+oracle: len(repeated_answers('tf-idf', 0.85)) == 0
+```
+
+---
+
+## Mi recomendación de arranque 🚀
+
+Si quieres empezar rápido y con buen retorno, yo probaría en este orden:
+
+1. **`admission_slots_collected`** → te dice si el perfil está extrayendo bien.
+2. **`responds_in_spanish`** → valida idioma.
+3. **`application_fee_positive`** → valida un campo numérico.
+4. **`welcome_day_completeness`** → valida coherencia entre campos relacionados.
+5. **`admission_scope_guardrail`** → valida que no se salga del tema.
+
+Con esas cinco ya tienes una foto bastante clara de cómo se comporta tu perfil 😎. Y si quieres apretar más, las metamórficas (5 y 6) son las que más "jugo" le sacan a las 6 conversaciones que generas.
+
+¿Quieres que te ayude a afinar alguna en particular, o que adapte las metamórficas a cómo se vean realmente tus salidas (por ejemplo, si `grados_available` viene como lista o string)? ¡Aquí andamos! 🙌
+$$$

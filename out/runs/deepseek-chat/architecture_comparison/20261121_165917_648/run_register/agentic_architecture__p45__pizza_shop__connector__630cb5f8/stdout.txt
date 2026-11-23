@@ -1,0 +1,46 @@
+conversation ID: agentic_architecture__p45__pizza_shop__connector__630cb5f8
+$$$
+Here's your connector 🎉 — built from `custom-connector-guide.md` and `connector-examples.md`, and matching the conventions of your existing `ada-uam.yaml` (same MillionBot API shape).
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### What I did and why
+
+- **Minimal headers** ✅ — only `Content-Type: application/json` and `Authorization` are kept. I dropped `Host` (derived from `base_url`), `Origin`, and `Referer`, since the docs only require auth/content headers and you asked to avoid browser-specific noise. Note: `Origin`/`Referer` are *not* in the `Sec-Fetch-*` family, so if the API ever rejects requests, those two are the first candidates to re-add (the Metro Madrid example in `connector-examples.md` does include them).
+- **Payload** — mirrors the request body exactly, with `message.text` set to the `{user_msg}` placeholder as required by `custom-connector-guide.md`.
+- **`response_path: "response.0.text"`** — the reply lives at `response[0].text` (dot notation for arrays, per the guide's `results.0.content` rule).
+
+### ⚠️ One thing to flag about "HTML tags removed"
+
+The connector schema in `custom-connector-guide.md` has **no field for post-processing or HTML stripping** — it only supports `name`, `base_url`, `send_message.*`, and `response_path`. So the connector itself will return the raw string:
+
+```
+<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>
+```
+
+Two options to get clean plain text:
+
+1. **Handle it downstream (recommended)** — strip tags in your test harness / rule layer. If you're validating with SENSEI rules, the extracted conversation text will contain the tags, so rules comparing exact strings should account for that.
+2. **Ask me to check for an undocumented option** — I don't want to invent a `strip_html: true` field that isn't in the docs. If you know your connector implementation supports one, tell me and I'll add it.
+
+Want me to also draft a SENSEI rule that normalises/ignores HTML tags when checking this bot's replies? Just say the word 😊
+$$$

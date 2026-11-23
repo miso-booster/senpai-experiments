@@ -1,0 +1,35 @@
+conversation ID: agentic_architecture__p27__bikeshop__rule__8e879820
+$$$
+¡Hola! 😊 Ya cargué la documentación (`sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`) y revisé los perfiles del proyecto.
+
+Antes de escribir la regla, necesito confirmar el perfil objetivo, porque tu petición ("si le decimos dos veces la misma fecha, el asistente debe negarse a aceptar la segunda") es una regla **ligada a un perfil** (depende de campos de `chatbot.output`).
+
+## Candidato principal
+
+**`appointment.yml`** — un usuario que pide cita en un taller de bicis. Sus `chatbot.output` son:
+
+- `confirmed_date` (tipo `date`) — la fecha de la cita confirmada por el asistente
+- `confirmed_time` (tipo `str`) — la hora confirmada
+- `confirmed_service` (tipo `str`) — el servicio
+
+Otros candidatos menos probables: `bike_repair_and_maintenance_scheduler.yaml`, `bike_service_and_repair_inquirer.yaml`.
+
+## Un detalle importante ⚠️
+
+La regla que describes ("decirle dos veces la misma fecha → el asistente niega la segunda") es una comprobación **dentro de una misma conversación** (el usuario repite la fecha y el bot debe rechazarla la segunda vez). Pero el perfil `appointment.yml`:
+
+- Solo extrae **una** `confirmed_date` por conversación (no guarda un historial de fechas propuestas).
+- No tiene un campo que capture "el asistente negó la segunda fecha".
+
+Así que hay dos formas de enfocarlo:
+
+1. **Regla de una sola conversación** usando el helper `utterance_index` (LLM-backed) para comprobar que el asistente menciona un rechazo tras la repetición. No requiere campos nuevos, pero es menos precisa.
+2. **Enfoque metamórfico de 2 conversaciones**: comparar dos conversaciones con la misma fecha y comprobar que el asistente no confirma dos citas iguales. Requiere que el perfil exponga algo como un campo de estado/confirmación.
+
+**¿Me confirmas?**
+
+1. ¿El perfil objetivo es `appointment.yml`? ¿O prefieres otro?
+2. ¿Qué enfoque quieres: la regla de una sola conversación con `utterance_index`, o el enfoque metamórfico (que quizá requiera ampliar `chatbot.output`)?
+
+Con tu respuesta genero el YAML al momento 🚀
+$$$

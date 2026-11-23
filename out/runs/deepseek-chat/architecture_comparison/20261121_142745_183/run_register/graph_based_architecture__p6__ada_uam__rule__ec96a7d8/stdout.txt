@@ -1,0 +1,37 @@
+conversation ID: graph_based_architecture__p6__ada_uam__rule__ec96a7d8
+$$$
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el chatbot haya recogido los tres datos de contacto del CAU: email, teléfono y dirección física.
+
+Como tu perfil expone esos tres campos en `chatbot.output`, la forma más limpia y directa es usar el helper `data_collected()` — que justamente comprueba que **todos** los outputs extraídos sean no nulos. Pero como quieres asegurarte específicamente de esos tres campos (y no de cualquier otro que pudiera añadirse al perfil en el futuro), te propongo una versión explícita que los revisa uno por uno. Así queda más claro y autoexplicativo 👇
+
+```yaml
+name: cau_contact_info_complete
+description: The chatbot must collect all CAU contact details (email, phone, physical address)
+conversations: 1
+oracle: conv[0].contact_email is not None and conv[0].contact_phone is not None and conv[0].physical_address is not None
+on-error: "Missing CAU contact info — email: {conv[0].contact_email}, phone: {conv[0].contact_phone}, address: {conv[0].physical_address}"
+```
+
+### ¿Qué hace esta regla? 🔍
+
+- **`conversations: 1`** → es un oráculo de una sola conversación (no necesitamos comparar pares).
+- **`oracle`** → comprueba que los tres campos del `chatbot.output` no sean `None`. Si cualquiera falta, la regla falla.
+- **`on-error`** → te muestra exactamente qué campo quedó vacío, lo cual es súper útil para depurar 💡.
+
+### Alternativa más corta (si prefieres el helper genérico)
+
+Si en algún momento añades más campos al `chatbot.output` y quieres que **todos** se validen de golpe, puedes usar:
+
+```yaml
+name: cau_contact_info_complete
+description: All CAU contact details must be collected (email, phone, physical address)
+conversations: 1
+oracle: data_collected() is True
+```
+
+### Un detalle importante ⚠️
+
+Ten en cuenta que `data_collected()` valida **todos** los slots del perfil, no solo estos tres. Si tu perfil de `ada_uam` expone otros campos (por ejemplo, nombre del CAU, horario, etc.), la versión con `data_collected()` también exigirá que esos estén completos. Por eso, para tu caso concreto, **la primera versión explícita es la más segura** y refleja exactamente tu intención 🎯.
+
+¿Quieres que te ayude también a añadir un mensaje de error más descriptivo, o a combinarla con alguna regla de estilo (por ejemplo, que el bot confirme los datos al usuario)? ¡Aquí estoy! 🙌
+$$$

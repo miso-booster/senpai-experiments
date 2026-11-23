@@ -1,0 +1,86 @@
+conversation ID: one_node_architecture__p2__ada_uam__profile__7ff96862
+$$$
+¡Claro que sí! 😊 Un perfil de estudiante Erasmus recién llegado es súper útil para probar que el bot da un soporte claro y completo. Te propongo un perfil con **pocas variables de entrada** (solo un par para dar variedad) pero con **outputs bien definidos** en `chatbot.output`, así luego puedes escribir reglas de Sensei-check sobre ellos (por ejemplo, que se mencione el requisito de cuenta institucional, los pasos de contraseña, o el contacto del CAU).
+
+Aquí tienes el perfil listo para pegar en `profiles/erasmus_nuevo_sin_configuracion.yaml`:
+
+```yaml
+test_name: "Erasmus recién llegado sin configuración de plataformas"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la UAM y no sabe cómo
+    configurar ni acceder a las plataformas virtuales (Moodle, Sigma, ID-UAM).
+    Hablas español con algunas dudas y pides ayuda paso a paso porque es tu
+    primera vez usando estos sistemas.
+  context:
+    - personality: personalities/curious-user
+    - "Acabas de matricularte y aún no tienes claro qué cuenta necesitas para cada plataforma."
+    - "No sabes qué es el ID-UAM ni el NIA, y necesitas que te lo expliquen."
+    - "Quieres poder entrar a Moodle para ver tus asignaturas y a Sigma para gestionar tu matrícula."
+    - "Prefieres instrucciones sencillas y ordenadas, porque es tu primera vez."
+  goals:
+    - "Preguntar qué cuenta o credenciales necesito para acceder a Moodle y a Sigma como estudiante Erasmus."
+    - "Solicitar los pasos para establecer mi contraseña por primera vez usando mi {{identificador}}."
+    - "Pedir que me expliquen qué es el ID-UAM y para qué sirve."
+    - "Consultar cómo puedo contactar al CAU si me quedo bloqueado en el proceso."
+    - "Preguntar si necesito algo especial por ser estudiante internacional/Erasmus."
+    - identificador:
+        function: forward()
+        type: string
+        data: [NIA, ID-UAM, correo institucional]
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - institutional_account_requirement:
+        type: string
+        description: "Indicación de si se necesita cuenta institucional (ID-UAM) para acceder a Moodle/Sigma"
+    - id_uam_explanation:
+        type: string
+        description: "Explicación de qué es el ID-UAM y para qué sirve"
+    - password_setup_steps:
+        type: string
+        description: "Pasos para establecer la contraseña por primera vez"
+    - activation_code_info:
+        type: string
+        description: "Información sobre cómo obtener el código de activación"
+    - moodle_access_info:
+        type: string
+        description: "Cómo acceder a Moodle y qué entornos existen"
+    - sigma_access_info:
+        type: string
+        description: "Cómo acceder a Sigma para la gestión de matrícula"
+    - cau_contact_info:
+        type: string
+        description: "Datos de contacto del CAU (correo, teléfono, horario)"
+    - international_student_notes:
+        type: string
+        description: "Indicaciones específicas para estudiantes internacionales/Erasmus, si las hay"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 25
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que le saques todo el partido 👀:
+
+- **Variables mínimas**: solo `identificador` con `forward()` para variar entre NIA / ID-UAM / correo institucional. Si quieres aún menos variedad, cámbialo a `random()`.
+- **Outputs pensados para reglas**: campos como `institutional_account_requirement`, `password_setup_steps` o `cau_contact_info` son perfectos para reglas tipo `data_collected() == True` o `semantic_content(...)`.
+- **Personalidad**: he puesto `curious-user`; si no tienes ese archivo en `personalities/`, cámbialo por uno existente o quita esa línea.
+
+¿Quieres que te prepare también una **regla de Sensei-check** que valide que este perfil recibe soporte completo (por ejemplo, que todos los slots se rellenen y que se mencione el contacto del CAU)? ¡Te la dejo lista en un momento! 🚀
+$$$

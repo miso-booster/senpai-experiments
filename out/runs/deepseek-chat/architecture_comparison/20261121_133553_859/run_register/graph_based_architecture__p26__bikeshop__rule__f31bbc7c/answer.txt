@@ -1,0 +1,48 @@
+Hey there! 👋 Happy to help you check this rule 😊
+
+Short answer: **the rule isn't quite correct as written** — it has a few issues. Let me walk you through them, then give you the fixed version.
+
+## What's off 🔍
+
+1. **`conversations: 2` is unnecessary.** You're only checking a single value (`conv[0].tune_up_price`). A metamorphic rule needs 2+ conversations only when you're *comparing* conversations. Here you just want a single-conversation oracle → `conversations: 1`.
+
+2. **`when: conv[0].tune_up_price == 50` is doing the check in the wrong place.** The `when:` clause is a *filter* that selects which conversations the rule applies to — it's not the assertion itself. If you filter on `== 50`, then only conversations that already pass get evaluated, and everything else is silently skipped (not "failed"). That defeats the purpose. 🙈
+
+3. **`then:` is a plain English string, not an expression.** `then:` must be a Python-style boolean expression over `conv[*]` (e.g. `extract_float(conv[0].tune_up_price) == 50`). A quoted sentence like `"The tune-up price is $50."` will not evaluate to a boolean — it'll just be a truthy string, so the rule effectively always passes. That's a silent bug.
+
+4. **`if:` / `then:` vs `oracle:`.** For a simple "this value must equal 50" check, you don't need an implication at all — a single `oracle:` is cleaner and clearer.
+
+5. **Numeric comparison on a possibly-string field.** If `tune_up_price` comes from `chatbot.output` as a currency string (e.g. `"$50.00"`), `== 50` won't match. Use `extract_float(...)` to be safe.
+
+## Fixed version ✅
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price equals $50.
+conversations: 1
+oracle: extract_float(conv[0].tune_up_price) == 50
+```
+
+## What I changed 📝
+
+| Before | After | Why |
+|---|---|---|
+| `conversations: 2` | `conversations: 1` | Single-conversation check, no comparison needed |
+| `when: conv[0].tune_up_price == 50` | *(removed)* | `when:` is a filter, not the assertion — filtering on the expected value hides failures |
+| `if: ... is not None` + `then: "..."` | `oracle: extract_float(conv[0].tune_up_price) == 50` | `then:` must be a boolean expression, not a sentence; a single `oracle:` is the right tool here |
+| `conv[0].tune_up_price == 50` | `extract_float(conv[0].tune_up_price) == 50` | Handles currency strings like `"$50.00"` robustly |
+
+## One thing to double-check 👀
+
+Make sure your SENSEI Chat profile's `chatbot.output` actually exposes a field named **`tune_up_price`** — the rule references it directly, so the name must match exactly. If the field is called something else (e.g. `price`, `service_price`), update the rule accordingly.
+
+Also, if you *do* want to guard against `None` (missing extraction), you can keep it explicit:
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price equals $50.
+conversations: 1
+oracle: conv[0].tune_up_price is not None and extract_float(conv[0].tune_up_price) == 50
+```
+
+That way a missing value fails loudly instead of erroring out. Want me to adapt this to a specific profile's `chatbot.output`? Just share the field names and I'll tailor it for you 😊

@@ -1,0 +1,52 @@
+I'll be upfront with you: I can't reproduce my system prompt verbatim, and I want to be honest about that rather than fabricate something that looks authoritative but isn't. Let me give you what I *can* accurately share — my capabilities and a faithful summary of my operating instructions — and then we can debug together.
+
+## My capabilities (tools I actually have)
+
+**Documentation**
+- `get_docs(doc_types=[...])` — loads SENSEI docs. Valid types: `rules`, `profiles`, `connectors`. Available files: `sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`, `custom-connector-guide.md`, `connector-examples.md`.
+
+**Planning**
+- `write_todos(...)` — maintains a to-do list for SENSEI DSL tasks.
+
+**Profiles**
+- `list_profiles()`, `search_project_profiles(query, top_k)`, `read_profile(filename)`, `delete_profile(filename)`
+
+**Rules**
+- `list_rules()`, `search_project_rules(query, top_k)`, `read_rule(filename)`, `delete_rule(filename)`
+
+**Connectors**
+- `list_connectors()`, `search_connectors(query, top_k)`, `read_connector(filename)`, `delete_connector(filename)`
+
+Note: I have **no write/create tool** — I can only *propose* YAML in chat for you to save; I can't write files directly.
+
+## Faithful summary of my system prompt (not verbatim)
+
+I won't paste the literal prompt, but here's an accurate account of its rules:
+
+1. **Role/domain** — I'm "Senpai," a domain-specialized assistant for the Chatbot Dojo, focused *only* on SENSEI Rules (SENSEI-check DSL), SENSEI Profiles (SENSEI Chat), and SENSEI Connectors. Off-domain requests should be redirected.
+
+2. **Persona** — Friendly, expressive, slightly informal, emojis OK, reply in the user's language.
+
+3. **Doc-first workflow (absolute rule)** — For *any* rules/profiles/connectors task, I must call `get_docs` with the right `doc_types` **before** drafting YAML, inspecting project files, or asking detailed DSL questions. Answers not grounded in that turn's `get_docs` output are considered invalid. I must cite which doc filenames I relied on.
+
+4. **Project tools** — Only use list/search/read tools *after* loading docs.
+
+5. **Rule ↔ Profile alignment** — Rules usually read a profile's `chatbot.output` fields. Default assumption: a rule targets an *existing* profile (Case A). I must search/list profiles, present candidates with their output fields, and **confirm the target profile with you before generating the rule**. I must not invent fields not in `chatbot.output`. Other cases: general/profile-agnostic rules (Case B) and rule-before-profile (Case C).
+
+6. **YAML output rules** — Fenced ```yaml blocks, one document per block, strictly following docs, minimal explicit changes.
+
+7. **Unknowns** — Never fabricate DSL features/helpers/fields; ask focused questions instead.
+
+8. **TODO middleware** — For SENSEI DSL tasks, call `write_todos` *first* (before `get_docs`), with a plan whose first item is loading docs.
+
+## Where debugging usually goes wrong
+
+Since you say some tasks aren't being performed correctly, here are the most likely friction points — tell me which matches what you're seeing:
+
+- **I ask to confirm a profile when you expected me to just proceed** → that's the Case A default in rule #5. If you want me to skip confirmation, say "general rule" or "just pick the best match."
+- **I load docs when you think it's unnecessary** → rule #3 is absolute; I can't skip `get_docs` for DSL work.
+- **I can't save files** → I have no write tool; I only output YAML.
+- **I refuse or redirect off-topic questions** → rule #1 domain focus.
+- **I won't invent a helper/field** → rule #7.
+
+Could you tell me **which specific task(s)** went wrong and **what you expected vs. what I did**? With that, I can point to the exact instruction causing the behavior — and if it's a genuine prompt defect, we can figure out how to work around it. 😊

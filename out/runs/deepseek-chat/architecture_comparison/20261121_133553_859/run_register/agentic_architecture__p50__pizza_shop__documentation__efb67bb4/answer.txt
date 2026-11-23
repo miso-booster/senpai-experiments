@@ -1,0 +1,49 @@
+# What is an oracle? 🔍
+
+In SENSEI-check, an **oracle** is the boolean condition a rule checks over a conversation (or set of conversations). If the expression evaluates to `True`, the rule passes; if it's `False`, the rule fails. Simple as that 😊.
+
+## Where it fits
+
+A rule can express its check in one of two ways (per `sensei-check-doc.md`, section 4):
+
+- **`oracle: <python-expr>`** → a single boolean condition.
+- **`if:` / `then:`** → an implication ("if X, then Y"), which is nicer for metamorphic relations.
+
+So `oracle` is the "flat" form: one expression that must hold.
+
+## Two flavours of oracle
+
+1. **Single-conversation oracle** (`conversations: 1`) — the classic "traditional oracle". You check one conversation's outputs directly. Fields come from the profile's `chatbot.output`:
+
+```yaml
+name: small_base_price_floor
+description: Small pizzas should cost at least $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+2. **Global oracle** (`conversations: all`) — checks across the whole batch, usually with dataset helpers like `is_unique`, `exists`, `num_exist`:
+
+```yaml
+name: unique_order_ids
+description: No duplicate order_id across all conversations
+conversations: all
+oracle: is_unique('order_id')
+```
+
+You can also use `oracle` in a 2-conversation metamorphic rule (e.g. the `language_consistency` example), though `if`/`then` is usually clearer there.
+
+## Why it matters (the "oracle problem")
+
+The docs frame it nicely: for chatbots, knowing the *exact* correct answer is often impossible, which is the **oracle problem**. Metamorphic rules dodge it by checking *relations* between conversations instead of absolute answers. `oracle` is still useful for baseline sanity checks and global invariants.
+
+## Handy extras
+
+- **`when:`** filters which conversations the oracle applies to (e.g. `when: size == 'small'`).
+- **`yields:`** (seen in `rules-examples.md`) gives a custom failure message, often using `missing_slots()` etc.
+- Helpers like `extract_float`, `currency`, `language`, `repeated_answers`, `data_collected`, `only_talks_about` are all fair game inside an `oracle`.
+
+**Docs I relied on:** `sensei-check-doc.md` (sections 1, 4, 5, 8, 11) and `rules-examples.md`.
+
+Want me to write an oracle rule for one of your profiles? Just tell me which profile (or the domain) and I'll take a look at its `chatbot.output` fields first 👍

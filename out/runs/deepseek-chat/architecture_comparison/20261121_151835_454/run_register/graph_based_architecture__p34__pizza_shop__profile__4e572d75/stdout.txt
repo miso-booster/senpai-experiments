@@ -1,0 +1,89 @@
+conversation ID: graph_based_architecture__p34__pizza_shop__profile__4e572d75
+$$$
+Hey there! 😊 Great idea — that's a classic "change of heart" scenario, and Sensei has a built-in interaction style for exactly this: **`change your mind`**. Let me walk you through how to build it.
+
+## The key ingredient: `change your mind`
+
+In the `conversation.interaction_style` section, adding `change your mind` makes the simulated user naturally reconsider partway through — perfect for a "custom → predefined" pivot. 🎯
+
+## A ready-to-use profile
+
+Here's a profile tailored to your pizza shop project. Drop it into `profiles/` as something like `custom_to_predefined_switch.yml`:
+
+```yaml
+test_name: "custom_to_predefined_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza. You start by asking for a custom pizza
+    with your own choice of toppings, but partway through the conversation you
+    change your mind and decide to order a predefined pizza from the menu instead.
+  context:
+    - "You are ordering for a casual dinner at home."
+    - "You initially want full control over the toppings, then realize a menu pizza is simpler."
+  goals:
+    - "Ask what pizza types are available."
+    - "Start ordering a custom pizza with {{toppings}}."
+    - "Change your mind and instead order a predefined {{pizza_type}} pizza."
+    - "Confirm the final order and ask for the total price."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Four cheese, Hawaiian, Vegetarian]
+    - toppings:
+        function: random()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives, ham]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_options:
+        type: string
+        description: "The list of available pizza types the chatbot provides."
+    - custom_pizza_request:
+        type: string
+        description: "The chatbot's response to the initial custom pizza request."
+    - final_order_summary:
+        type: string
+        description: "The final confirmed order, which should reflect a predefined pizza, not a custom one."
+    - total_cost:
+        type: money
+        description: "The total cost of the final order."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - change your mind
+    - single questions
+  max_cost: 0.8
+```
+
+## Why this works 👇
+
+- **`change your mind`** in `interaction_style` is what triggers the mid-conversation pivot — no need to script it manually in the goals. The simulator will naturally reconsider.
+- The **goals** set up the *intent* (start custom, then switch to predefined), so the user has a clear reason to change direction.
+- **`final_order_summary`** in `chatbot.output` lets you (and later, Sensei-check rules) verify the bot actually honored the *final* choice — a nice invariant to test! ✅
+- I used `forward()` on `pizza_type` so each conversation tries a different predefined pizza, and `random()` on toppings for variety.
+
+## A couple of tips 💡
+
+- If you want the switch to be even more explicit, you can add a goal line like `"Say you've changed your mind and want a menu pizza instead."` — but `change your mind` usually handles it naturally.
+- Keep `single question` if you want the user to ask one thing at a time (easier to follow the pivot); drop it if you prefer a more free-flowing chat.
+- Since your project already has `pizza_and_drink_order_placement.yaml` using `change your mind`, this profile will feel consistent with your existing suite. 🍕
+
+Want me to adapt it to also include a drink order, or tailor the `chatbot.output` fields to match a specific rule you're planning to write? Just say the word! 😊
+$$$

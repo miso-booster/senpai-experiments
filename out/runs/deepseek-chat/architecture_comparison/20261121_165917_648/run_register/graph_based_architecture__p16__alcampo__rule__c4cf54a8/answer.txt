@@ -1,0 +1,63 @@
+Hey there! 😊 Happy to help you draft that rule. Quick heads-up before we dive in: since there's **no profile yet**, this is a **rule-first design** — meaning the rule assumes a future profile will expose certain `chatbot.output` fields. I'll name them clearly and document them so you (or whoever builds the profile) know exactly what's required. 👇
+
+---
+
+## 🧠 The rule
+
+```yaml
+name: lactose_free_availability
+description: >
+  Rule-first design. Assumes a future profile exposing chatbot.output fields:
+  product_name (string), lactose_free (bool), available (bool),
+  alternatives (list[string]). Checks that when a user asks about a
+  lactose-free product, the assistant either confirms availability or
+  offers at least one alternative — never leaves the user empty-handed.
+conversations: 1
+if:   conv[0].lactose_free is True
+then: conv[0].available is True or len(conv[0].alternatives) > 0
+on-error: "Lactose-free product '{conv[0].product_name}' was unavailable and no alternative was offered."
+```
+
+---
+
+## 🔍 What this rule assumes (the future profile contract)
+
+For this rule to work, the profile's `chatbot.output` must expose:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `product_name` | `string` | The product the user asked about |
+| `lactose_free` | `bool` | Whether the requested product is lactose-free |
+| `available` | `bool` | Whether it's in stock / available |
+| `alternatives` | `list[string]` | Suggested alternatives if unavailable |
+
+⚠️ If any of these are missing or renamed in the profile, the rule will break — so keep the names in sync. That's the classic **profile-bound** contract from the docs (section 3.2, pattern 3: *rule-first design*).
+
+---
+
+## 💡 A couple of variations you might like
+
+**Stricter version** — always require an alternative when unavailable, even if it *is* lactose-free:
+
+```yaml
+name: lactose_free_always_has_fallback
+description: If a lactose-free product is unavailable, an alternative must be offered.
+conversations: 1
+if:   conv[0].lactose_free is True and conv[0].available is False
+then: len(conv[0].alternatives) > 0
+```
+
+**Metamorphic version** — comparing a lactose-free vs. regular product of the same name:
+
+```yaml
+name: lactose_free_not_worse_than_regular
+description: A lactose-free variant should be at least as available as the regular one.
+conversations: 2
+when: conv[0].product_name == conv[1].product_name
+if:   conv[0].lactose_free is True and conv[1].lactose_free is False
+then: conv[0].available is True or len(conv[0].alternatives) > 0
+```
+
+---
+
+Want me to adapt this to a **specific profile** once you create it, or tweak the field names to match your domain (e.g., `is_lactose_free`, `in_stock`, `suggested_products`)? Just say the word and I'll reshape it for you! 🙌

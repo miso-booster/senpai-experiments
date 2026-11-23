@@ -1,0 +1,74 @@
+conversation ID: one_node_architecture__p3_basic__pizza_shop__profile__222886c9
+$$$
+Hey there! 😊 I'd love to help, but I have to be upfront: I'm Senpai, and I only work with **Sensei profiles, rules, and connectors** — I can't actually place pizza orders for you (that's the chatbot's job, not mine! 🍕).
+
+That said, if you're testing a pizza-ordering bot, I can absolutely help you **build a Sensei profile** that simulates a user like you — someone who wants a large BBQ pizza and a soda — so you can run it against your bot. Here's a ready-to-use profile based on your request:
+
+```yaml
+test_name: "large_bbq_pizza_and_soda_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer placing a pizza and drink order for pickup.
+    You want a large BBQ pizza and a soda.
+  context:
+    - "You are ordering for yourself and want to keep it simple."
+    - "You prefer to pick up the order rather than have it delivered."
+  goals:
+    - "Order a {{pizza_size}} {{pizza_type}} pizza."
+    - "Order {{number_of_drinks}} {{drink_type}}."
+    - pizza_size:
+        function: default()
+        type: string
+        data: [large]
+    - pizza_type:
+        function: default()
+        type: string
+        data: [BBQ Chicken]
+    - number_of_drinks:
+        function: default()
+        type: int
+        data: [1]
+    - drink_type:
+        function: default()
+        type: string
+        data: [soda]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - order_summary:
+        type: string
+        description: "A summary of the pizza and drink order, including type, size, and drink."
+    - total_cost:
+        type: currency
+        description: "The total cost of the order, including pizza and drinks."
+    - order_id:
+        type: string
+        description: "A unique identifier for the order."
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+A couple of quick notes so it fits your project nicely 👇
+
+- Your existing `pizza_and_drink_order_placement.yaml` profile already covers pizza + drink ordering with `forward()` variables. If you just want a **single fixed scenario** (large BBQ + soda), the profile above is the simplest path.
+- If you'd rather **reuse** your existing profile, you could just run it and filter for the BBQ/large case — but a dedicated profile like this one is cleaner for a one-off test.
+- The `chatbot.output` fields (`order_summary`, `total_cost`, `order_id`) are what your **rules** will read as `conv[i].<field>`. Make sure they match the actual bot you're testing — adjust names if your bot exposes different ones.
+
+Want me to also write a **Sensei rule** that checks something specific about this order (e.g., "the total cost must be greater than zero" or "the order summary must mention BBQ")? Just say the word and I'll whip one up! 🚀
+$$$

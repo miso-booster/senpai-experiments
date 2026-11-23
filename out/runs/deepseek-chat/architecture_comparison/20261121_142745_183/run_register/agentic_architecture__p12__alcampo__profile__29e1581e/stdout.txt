@@ -1,0 +1,106 @@
+conversation ID: agentic_architecture__p12__alcampo__profile__29e1581e
+$$$
+Here's a profile that simulates a user asking the chatbot to add items to their shopping cart. I based it on `sensei-chat-guide.md` and matched the conventions of your existing Alcampo profiles (Spanish fallback, `money` type, `single questions` style).
+
+```yaml
+test_name: "Shopping Cart Item Addition"
+
+llm:
+  temperature: 0.9
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer shopping online who wants to add several products to your
+    shopping cart. You ask the chatbot to add specific items, specify quantities,
+    and confirm what is currently in your cart.
+  context:
+    - "You are doing your weekly grocery shopping and want to fill your cart before checkout."
+    - "You care about getting the right quantity of each product."
+    - "You like to confirm the cart contents and total before finishing."
+  goals:
+    - "Ask the chatbot to add {{quantity}} {{unit}} of {{product}} to your shopping cart."
+    - "Ask the chatbot to add another item: {{second_product}}."
+    - "Ask the chatbot to show you what is currently in your cart."
+    - "Ask for the current cart total."
+    - "Ask the chatbot to remove one item from the cart if you change your mind."
+    - product:
+        function: random()
+        type: string
+        data:
+          - milk
+          - eggs
+          - bread
+          - apples
+          - rice
+          - olive oil
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 6
+          step: 1
+    - unit:
+        function: random()
+        type: string
+        data: [units, packs, bottles, kilograms]
+    - second_product:
+        function: random()
+        type: string
+        data:
+          - cheese
+          - tomatoes
+          - pasta
+          - coffee
+          - yogurt
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - added_items:
+        type: list[string]
+        description: "Items the chatbot confirmed were added to the cart"
+    - item_quantities:
+        type: list[string]
+        description: "Quantities associated with each added item"
+    - cart_contents:
+        type: list[string]
+        description: "Full list of items currently in the shopping cart"
+    - cart_total:
+        type: money
+        description: "Current total price of the shopping cart"
+    - removed_item:
+        type: string
+        description: "Item the chatbot removed from the cart, if any"
+    - confirmation_message:
+        type: string
+        description: "Chatbot's confirmation that the item was added"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+### What this profile does & how it maps to the docs
+
+- **`user.goals` + variables** (`sensei-chat-guide.md` §4): The goals ask the bot to add items, show the cart, give a total, and remove an item. Variables like `{{product}}`, `{{quantity}}`, `{{unit}}`, and `{{second_product}}` are declared with matching names and filled via `random()` (and a `min/max/step` range for `quantity`).
+- **`chatbot.output`** (§6): This is the contract for future rules. Fields like `added_items`, `cart_contents`, `cart_total`, and `removed_item` can later be referenced in rules as `conv[i].cart_total`, etc. I used `list[string]` and `money` (matching your existing profiles' `money` type) so rules can check cart contents and totals.
+- **`conversation`** (§5): `single questions` interaction style fits a step-by-step cart-building flow, with a `max_cost` cap and `steps: 20` to keep runs bounded.
+- **Conventions matched**: Spanish fallback message and `gpt-4o-mini` model mirror your existing Alcampo profiles.
+
+### A couple of things to confirm 🛒
+1. **`money` type** — your existing profiles use `type: money` for prices. I assumed that custom type exists in your `types/` folder. If it doesn't, tell me and I'll switch `cart_total` to `currency` or `float`.
+2. **Language** — I set the user to English (like most of your profiles) with a Spanish bot fallback. Want the user to speak Spanish instead?
+3. **Filename** — I'd suggest saving it as `profiles/shopping_cart_item_addition.yaml`. Want me to adjust the name or any goals?
+
+Let me know and I can tweak it before you save it!
+$$$

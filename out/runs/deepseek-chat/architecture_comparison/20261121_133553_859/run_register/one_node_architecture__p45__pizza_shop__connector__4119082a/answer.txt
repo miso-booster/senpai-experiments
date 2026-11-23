@@ -1,0 +1,32 @@
+Here's a connector that matches your request/response, keeping only the essential headers and pointing `response_path` at the plain-text field inside the response array 👇
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of quick notes so you know what's going on 😊:
+
+- **Headers:** I kept `Content-Type`, `Authorization`, `Origin`, and `Referer` — all of them appear in your capture and are meaningful for this API. I dropped nothing browser-specific here since your request didn't include `Sec-Fetch-*` headers, so we're already minimal. ✅
+- **`response_path: "response.0.text"`** navigates to `response[0]["text"]`, which is the field holding the bot's reply. That's the same pattern used in the existing `ada-uam.yaml` connector, so it's consistent with your setup.
+- **About HTML tags:** the connector itself returns whatever text the API gives back — in this case the reply contains `<p>` and `<br>` tags. The `response_path` can only *select* a field, it can't strip HTML. If you need the tags removed, that has to happen in the consuming code (e.g., a small post-processing step that strips HTML from the returned string). If you'd like, I can sketch that tiny helper for you — just say the word! 🙌
+
+Want me to also add a `name` tweak, or adjust the `language`/`url` fields if you plan to reuse this for other bots?

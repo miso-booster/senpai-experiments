@@ -1,0 +1,159 @@
+# YAML Connector for SAIC Málaga 🚀
+
+Hey there! 😊 Let's build this connector together — it's a **MillionBot-style** API (same family as your existing `Ada UAM` connector), so the structure will feel familiar.
+
+## 📄 The YAML Connector
+
+Save this as `saic-malaga.yml` in your connectors folder:
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 🔍 Quick breakdown of the key fields
+
+| Field | Value | Why |
+|-------|-------|-----|
+| `base_url` | `https://api.1millionbot.com` | The host from your request |
+| `send_message.path` | `/api/public/messages` | The endpoint |
+| `Authorization` | `64e5d1af081211d24e2cfecd` | Your API key |
+| `response_path` | `response.0.text` | Navigates to `response[0].text` in the JSON reply |
+
+> 💡 **Heads-up:** The bot returns HTML (`<p>...</p>`). The connector will return that raw string — you may want to strip tags later if you're displaying it in a plain-text UI.
+
+---
+
+## 🐍 Complete Python Script
+
+Here's a self-contained script that loads the YAML and sends **multiple requests** in a loop. It uses `requests` + `PyYAML` (install with `pip install requests pyyaml` if needed).
+
+```python
+"""
+send_multiple.py
+----------------
+Loads the SAIC Málaga YAML connector and sends multiple messages,
+printing each bot reply.
+"""
+
+import time
+import yaml
+import requests
+
+
+# ----------------------------------------------------------------------
+# 1. Load the YAML connector
+# ----------------------------------------------------------------------
+def load_connector(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+# ----------------------------------------------------------------------
+# 2. Send a single message using the connector config
+# ----------------------------------------------------------------------
+def send_message(connector: dict, user_msg: str) -> str:
+    url = connector["base_url"].rstrip("/") + connector["send_message"]["path"]
+    method = connector["send_message"].get("method", "POST").upper()
+    headers = connector["send_message"].get("headers", {})
+
+    # Deep-copy the payload template and inject the user message
+    import copy
+    payload = copy.deepcopy(connector["send_message"]["payload_template"])
+    payload["message"]["text"] = user_msg  # {user_msg} placeholder
+
+    response = requests.request(method, url, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+
+    # Walk the response_path (e.g. "response.0.text")
+    node = data
+    for part in connector["response_path"].split("."):
+        node = node[int(part)] if part.isdigit() else node[part]
+    return node
+
+
+# ----------------------------------------------------------------------
+# 3. Main: send several messages
+# ----------------------------------------------------------------------
+def main():
+    connector = load_connector("saic-malaga.yml")
+
+    messages = [
+        "hola",
+        "¿Cómo puedo pedir cita previa?",
+        "¿Dónde está la oficina del SAIC?",
+        "gracias, adiós",
+    ]
+
+    for i, msg in enumerate(messages, start=1):
+        print(f"\n[{i}/{len(messages)}] 👤 User: {msg}")
+        try:
+            reply = send_message(connector, msg)
+            print(f"🤖 Bot : {reply}")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+        time.sleep(1)  # be polite to the API 😉
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### 🧠 What's happening under the hood
+
+1. **`load_connector`** reads the YAML into a Python dict.
+2. **`send_message`** builds the URL, headers, and payload — then walks the `response_path` (`response.0.text`) to extract the bot's reply.
+3. **`main`** loops through a list of messages, printing each exchange with a small delay between calls.
+
+### 🎯 Expected output (roughly)
+
+```yaml
+name: "Ada UAM"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "60a3bee2e3987316fed3218f"
+  payload_template:
+    conversation: "682ce1ce271ce860cffde0fd"
+    sender_type: "User"
+    sender: "682ce1cefe831160cee700ed"
+    bot: "60a3be81f9a6b98f7659a6f9"
+    language: "es"
+    url: "https://www.uam.es/uam/tecnologias-informacion/servicios-ti/acceso-remoto-red"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+---
+
+## 💡 A couple of friendly tips
+
+- **Reuse the session:** If you plan to send many messages, consider using `requests.Session()` so the `conversation` context stays warm and connection reuse kicks in.
+- **Strip HTML:** If you want clean text, add `import re; re.sub(r"<[^>]+>", "", reply)` after extracting the reply.
+- **Dynamic conversation ID:** The `conversation` field is hardcoded in the YAML. If the API expects a fresh one per session, you'd need to generate it in Python before sending — let me know if you want that variant! 🙌
+
+Want me to adapt this into the `CustomChatbot` class style from your docs, or add HTML stripping / session reuse? Just say the word 😊

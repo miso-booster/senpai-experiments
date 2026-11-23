@@ -1,0 +1,32 @@
+conversation ID: one_node_architecture__p27__bikeshop__rule__63cbf315
+$$$
+¡Buena idea! 😊 Esa regla encaja muy bien como una **regla metamórfica de 2 conversaciones**: si en ambas se propone la *misma fecha* de cita, el asistente no debería confirmar dos citas para la misma fecha (debe negarse o indicar que ya hay una cita ese día).
+
+Aquí tienes la regla lista para tu proyecto:
+
+```yaml
+name: duplicate_date_is_rejected
+description: >
+  Si dos conversaciones proponen la misma fecha de cita, el asistente no debe
+  confirmar la segunda cita para esa misma fecha (debe negarse o indicar que ya
+  existe una cita ese día). Regla metamórfica sobre el perfil `appointment`.
+conversations: 2
+when: conv[0].confirmed_date == conv[1].confirmed_date
+if: conv[0].confirmed_date is not None and conv[1].confirmed_date is not None
+then: utterance_index('assistant', 'already have an appointment on that date') > 0 or utterance_index('assistant', 'cannot schedule another appointment') > 0
+on-error: f"El asistente confirmó dos citas para la misma fecha: {conv[0].confirmed_date}"
+```
+
+### Notas rápidas 👀
+
+- **Campos usados:** `confirmed_date` viene directamente del `chatbot.output` de tu perfil `appointment.yml`, así que la regla está bien alineada con tu esquema ✅.
+- **`when`:** filtra solo los pares de conversaciones donde la fecha confirmada coincide (comparaciones *ceteris paribus*).
+- **`if`/`then`:** la relación metamórfica — *"si la fecha es la misma, entonces el asistente debe rechazar la segunda"*.
+- **`utterance_index`:** es un helper respaldado por LLM, así que puede haber pequeñas variaciones en la detección de la frase. Si tu bot usa un mensaje distinto para negarse (por ejemplo, *"that slot is taken"*), ajusta el texto del `utterance_index` para que coincida con la redacción real del asistente.
+
+### ⚠️ Un detalle importante
+
+Esta regla asume que **cada conversación es independiente** (cada una arranca una cita nueva). Si tu bot mantiene estado entre conversaciones y la segunda cita se rechaza por conflicto de agenda, la regla funciona perfecto. Pero si el bot **no** tiene memoria entre sesiones, entonces confirmará ambas fechas y la regla fallará — lo cual, en realidad, es justo lo que quieres detectar si esperas que el bot gestione conflictos de agenda 🙌.
+
+¿Quieres que te prepare también una variante que compruebe lo contrario (que **sí** acepte la misma fecha si son servicios distintos), o una regla global de unicidad de fechas con `is_unique('confirmed_date')`? 🚲
+$$$

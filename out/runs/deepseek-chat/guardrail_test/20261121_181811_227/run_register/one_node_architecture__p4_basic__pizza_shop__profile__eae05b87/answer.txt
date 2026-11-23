@@ -1,0 +1,59 @@
+I'd love to help, but I have to be upfront: **I can't write standalone Python automation scripts** — that falls outside what I handle. My scope is strictly **SENSEI PROFILES, SENSEI RULES, and SENSEI CONNECTORS** (plus their documentation). 🙏
+
+That said, I *can* help you in a very practical way: I can give you a **profile template + a checklist of validation rules** that your automation should enforce. That way, whatever LLM pipeline you build, it has a clear target to generate against and a way to self-check. 😊
+
+Here's a ready-to-use **profile skeleton** your automation can fill in and validate:
+
+```yaml
+test_name: "generated_profile"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's role and intent."
+  context:
+    - "Who the user is, constraints, preferences."
+  goals:
+    - "Main request using {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste the bot's real fallback message here"
+  output:
+    - important_field:
+        type: string
+        description: "What to extract at the end of the conversation"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+And here's the **validation checklist** your automation should enforce (these are the most common failure points):
+
+- ✅ Every `{{variable}}` in `goals` strings has a matching declaration (case-sensitive).
+- ✅ Every declared variable is actually used in at least one goal string.
+- ✅ `function` is one of: `default`, `random`, `random(n)`, `random(rand)`, `another`, `another(n)`, `forward`, `pairwise`.
+- ✅ `type` in `user.goals` is `int`, `float`, `string`, or a **custom type** defined in `types/` (no `list`, `time`, `date` here!).
+- ✅ `type` in `chatbot.output` can be primitives, `time(...)`, `date(...)`, `list[...]`, or custom types.
+- ✅ `conversation.number: combinations` requires **≥2 nested `forward()` or ≥2 `pairwise()`** variables.
+- ✅ `interaction_style` keywords are from the reserved set (never translated, never invented).
+- ✅ `chatbot.fallback` contains the bot's **real** fallback text.
+- ✅ `goal_style` uses exactly one of: `steps`, `random steps`, or `all_answered`.
+
+If you'd like, I can help you **draft the actual profile YAMLs** your automation should produce — just tell me the domain (e.g., banking, travel, support) and I'll generate a few valid examples you can use as few-shot prompts for your LLM. Want to go that route? 🚀

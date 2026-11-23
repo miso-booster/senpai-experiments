@@ -1,0 +1,58 @@
+I'd love to help, but I have to be upfront: writing a full Python automation script (LLM-driven profile generator) falls outside my scope — I'm here specifically for **Sensei Profiles, Rules, and Connectors** and their documentation 😊.
+
+That said, I *can* give you something genuinely useful: a **profile template + authoring checklist** you can feed to an LLM (or use yourself) to generate valid Sensei profiles. That's squarely in my lane.
+
+Here's a ready-to-use, valid profile skeleton that any LLM can fill in — it follows the Sensei profile schema exactly:
+
+```yaml
+test_name: "generated_profile_example"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's role and intent in one or two sentences."
+  context:
+    - "Who the user is, constraints, preferences, availability, etc."
+  goals:
+    - "Main request using {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste your bot's real fallback message here"
+  output:
+    - important_field:
+        type: string
+        description: "What to extract at the end of the conversation"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+And here's a **prompt you can hand to an LLM** to generate valid profiles (this is the part that stays in my lane — the *profile content*, not the automation code):
+
+> "Generate a Sensei profile YAML with these constraints: `test_name` must be a snake_case string; `user.goals` must contain at least one plain goal string and one variable declaration whose `{{name}}` matches exactly; `chatbot.output` fields must use valid types (`int`, `float`, `string`, `time(...)`, `date(...)`, `list[...]`, or a custom type from `types/`); `conversation.number` must be an int or `combinations(...)`; `interaction_style` must only use reserved keywords (`long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, or `random: [...]`)."
+
+**Key validation rules to bake into your generator** (so the LLM doesn't produce invalid profiles):
+- Every `{{variable}}` in a goal string **must** be declared in `goals` with the exact same name (case-sensitive).
+- `random(n)` requires `n ≤ len(data)`.
+- `combinations` requires **at least two** nested `forward()` or `pairwise()` variables.
+- `list`, `time`, `date` types are valid in `chatbot.output` but **not** in `user.goals`.
+- Custom types must exist in `types/` and match the file name.
+
+If you'd like, I can help you **design the profile schema/validation rules** that your automation should enforce, or **review generated profiles** for correctness — just paste them here and I'll check them against the docs 🍕✨

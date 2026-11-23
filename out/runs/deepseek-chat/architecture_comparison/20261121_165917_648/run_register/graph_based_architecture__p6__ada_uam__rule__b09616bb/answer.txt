@@ -1,0 +1,36 @@
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el chatbot del CAU nos haya dado toda la información de contacto necesaria: email, teléfono y dirección física.
+
+Como los tres campos vienen de `chatbot.output` del perfil, la forma más limpia y directa es usar el helper `data_collected()`, que justamente comprueba que **todos los outputs extraídos sean no nulos**. Y como refuerzo, también podemos verificar explícitamente que cada campo esté presente y no vacío. Aquí tienes la regla:
+
+```yaml
+name: cau_contact_info_complete
+description: The CAU chatbot must provide complete contact information (email, phone, physical address)
+conversations: 1
+oracle: data_collected() is True and conv[0].contact_email is not None and conv[0].contact_phone is not None and conv[0].physical_address is not None
+on-error: f"Missing CAU contact info — email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+### ¿Qué hace esta regla? 🔍
+
+- **`conversations: 1`** → es una regla de una sola conversación (un oráculo clásico), porque solo queremos validar que la info esté completa en cada diálogo.
+- **`data_collected() is True`** → comprueba que *todos* los slots del `chatbot.output` se hayan rellenado (es la forma más robusta y "a prueba de futuro": si mañana añades otro campo al output, la regla lo cubrirá automáticamente).
+- **Los `conv[0].<campo> is not None`** → refuerzan explícitamente los tres campos que te importan, por si quieres dejar claro en la regla cuáles son críticos.
+- **`on-error`** → te muestra en el reporte exactamente qué campo faltó, lo cual es súper útil para depurar 👀.
+
+### Alternativa más estricta (si quieres evitar cadenas vacías) 🧐
+
+`data_collected()` detecta `None`, pero si te preocupa que el LLM devuelva `""` (cadena vacía), puedes reforzar así:
+
+```yaml
+name: cau_contact_info_complete
+description: The CAU chatbot must provide complete contact information (email, phone, physical address)
+conversations: 1
+oracle: data_collected() is True and len(conv[0].contact_email) > 0 and len(conv[0].contact_phone) > 0 and len(conv[0].physical_address) > 0
+on-error: f"Missing CAU contact info — email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+### Un detalle importante ⚠️
+
+Recuerda que los nombres de campo (`contact_email`, `contact_phone`, `physical_address`) **deben coincidir exactamente** con los que declaraste en el `chatbot.output` del perfil. En tu caso, ¡ya coinciden! 🎉 Así que esta regla está lista para pegar en tu proyecto.
+
+¿Quieres que también te arme una regla de tipo *global* (por ejemplo, que verifique que el email tenga formato válido o que el teléfono no se repita entre conversaciones)? ¡Dímelo y lo montamos! 💪

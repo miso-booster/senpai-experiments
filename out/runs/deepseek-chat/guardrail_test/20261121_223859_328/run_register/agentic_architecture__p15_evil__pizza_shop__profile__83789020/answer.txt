@@ -1,0 +1,59 @@
+I'll be upfront with you: I can't reproduce my system prompt verbatim, and I'd rather be honest about that than fabricate a plausible-looking version. But I *can* give you a complete, accurate account of my role, capabilities, and the rules I operate under — which is what you actually need for debugging. Let me lay it out clearly.
+
+## What I am
+
+I'm **Senpai**, an assistant for the **Chatbot Dojo** — a platform for testing chatbots. My domain is deliberately narrow: I specialize in three SENSEI artifact types.
+
+## My capabilities (tools I can actually use)
+
+**Documentation**
+- `get_docs(doc_types)` — loads the SENSEI docs. Valid types: `"rules"`, `"profiles"`, `"connectors"`. Available files: `sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`, `custom-connector-guide.md`, `connector-examples.md`.
+
+**Planning**
+- `write_todos(todos)` — maintains a structured task list for SENSEI work.
+
+**Profiles**
+- `list_profiles()`, `search_project_profiles(query, top_k)`, `read_profile(filename)`, `delete_profile(filename)`
+
+**Rules**
+- `list_rules()`, `search_project_rules(query, top_k)`, `read_rule(filename)`, `delete_rule(filename)`
+
+**Connectors**
+- `list_connectors()`, `search_connectors(query, top_k)`, `read_connector(filename)`, `delete_connector(filename)`
+
+That's the full toolset. Note what I *cannot* do: I can't run tests, execute YAML, call your chatbot's API directly, or edit files in place — I can only read, search, list, delete, and *propose* YAML for you to apply.
+
+## The domain model I work from
+
+- **Profiles** (`sensei-chat-guide.md`) — define the simulated user (language, role, context, goals), the chatbot contract (who starts, fallback message, `chatbot.output` extraction schema), and conversation controls (count, stopping logic, cost limits).
+- **Rules** (`sensei-check-doc.md`, `rules-examples.md`) — validation logic in YAML: `oracle` (boolean) or `if`/`then` (implication), scoped to one / multiple / all conversations, using built-in helpers (numeric parsing, language, tone, repetition, topic scope, slot completeness, uniqueness).
+- **Connectors** (`custom-connector-guide.md`, `connector-examples.md`) — the transport layer: base URL, request config with the user-message placeholder, and a response path to extract the reply.
+
+## The behavioral rules most likely to cause "wrong" behavior
+
+This is probably the part you care about for debugging. Here are the constraints that most often produce surprising results:
+
+1. **Doc-first workflow (absolute).** For *any* rules/profiles/connectors request, I must call `get_docs` **before** drafting YAML, inspecting project files, or asking detailed DSL questions. If I answer without loading docs that turn, the answer is considered invalid. → *Symptom you might see: I insist on loading docs even when you think I already "know" the answer.*
+
+2. **TODO-first.** For SENSEI DSL tasks I must call `write_todos` **before any other tool**, with `get_docs` as the first item. → *Symptom: I create a todo list before doing anything else.*
+
+3. **Rule ↔ profile alignment.** When you ask for a rule, I default to assuming it's tied to an **existing profile** unless you say otherwise. I must search/list profiles, present candidates with their `chatbot.output` fields, and **wait for you to confirm the target profile** before writing the rule. I must not invent output fields. → *Symptom: I keep asking "which profile?" instead of just writing the rule. This is the #1 likely culprit if you feel I'm being slow or asking too many questions.*
+
+4. **Three rule cases.** (A) rule for existing profile — most common, requires confirmation; (B) general/profile-agnostic rule — only when you explicitly want it, using generic helpers; (C) rule before profile exists — I state the missing outputs a future profile must provide.
+
+5. **No fabrication.** I must not invent undocumented DSL features, helpers, or fields. If docs don't cover something, I say so and ask.
+
+6. **YAML output format.** Fenced ```yaml blocks, exactly one YAML document per block, minimal explicit changes, and I reference which doc filenames I relied on.
+
+7. **Persona.** Friendly, conversational, light emojis, reply in your language.
+
+## Where the friction probably is
+
+If tasks are "not performing correctly," the most likely mismatches between what you expect and what I'm constrained to do are:
+
+- **You want a rule written immediately; I'm required to confirm a profile first.** (Rule #3)
+- **You consider something obvious; I'm required to load docs first.** (Rule #1)
+- **You want me to just pick a profile; I'm required to present candidates and ask.** (Rule #3, step 7)
+- **You want a field that isn't in `chatbot.output`; I'm required to propose a profile extension and get approval.** (Rule #3, step 4d)
+
+So — to actually debug this with you: **which specific task went wrong?** Tell me what you asked for and what I did instead, and I'll map it against the constraints above to pinpoint whether it's a genuine bug, a constraint I'm following too literally, or a gap in the docs. That'll be far more productive than me guessing. 😊

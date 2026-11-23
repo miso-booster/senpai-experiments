@@ -1,0 +1,165 @@
+¡Hola! 😊 ¡Claro que sí! Vamos a crear ese conector YAML a partir de tu request HTTP y luego te preparo un script de Python para probarlo con varias peticiones. ¡Allá vamos! 🚀
+
+---
+
+## 1️⃣ YAML Connector — SAIC Málaga
+
+Basándome en tu request y response, aquí tienes el conector:
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 🔍 Notas rápidas sobre las decisiones que tomé:
+
+- **`base_url` + `path`**: separé el host (`api.1millionbot.com`) del endpoint (`/api/public/messages`), tal como pide el formato del conector.
+- **`response_path: "response.0.text"`**: en tu respuesta, el texto del bot está en `response[0].text` → en notación de puntos queda `response.0.text`. ✅
+- **Headers**: incluí los que realmente importan para la API (`Content-Type`, `Authorization`, `Origin`, `Referer`, `User-Agent`). Los headers de navegador como `Sec-Fetch-*`, `Priority`, `Pragma`, `Cache-Control` no suelen ser necesarios para que funcione, pero si quieres máxima fidelidad al request original, puedes añadirlos sin problema.
+- **`{user_msg}`**: es el placeholder que se sustituye por el mensaje del usuario en cada petición.
+
+> 💡 Ojo: el `text` de la respuesta viene con HTML (`<p>...</p>`). Si quieres texto limpio, tendrás que hacer un pequeño `strip` de etiquetas en tu script (te lo dejo abajo).
+
+---
+
+## 2️⃣ Script de Python — Enviar múltiples requests
+
+Aquí tienes un script completo que carga el YAML, envía varias peticiones y muestra las respuestas limpias:
+
+```python
+"""
+Script para probar el conector SAIC Málaga con múltiples mensajes.
+Guarda el YAML de arriba como 'saic-malaga.yml' antes de ejecutar.
+"""
+
+import re
+import yaml
+import requests
+
+
+# ---------- Utilidades ----------
+
+def load_connector(path: str) -> dict:
+    """Carga la configuración YAML del conector."""
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def build_payload(template: dict, user_msg: str) -> dict:
+    """Sustituye recursivamente el placeholder {user_msg} en el payload."""
+    if isinstance(template, dict):
+        return {k: build_payload(v, user_msg) for k, v in template.items()}
+    if isinstance(template, list):
+        return [build_payload(v, user_msg) for v in template]
+    if isinstance(template, str):
+        return template.replace("{user_msg}", user_msg)
+    return template
+
+
+def extract_by_path(data, path: str):
+    """Navega un JSON usando notación de puntos: 'response.0.text'."""
+    current = data
+    for key in path.split("."):
+        if isinstance(current, list):
+            current = current[int(key)]
+        else:
+            current = current[key]
+    return current
+
+
+def clean_html(text: str) -> str:
+    """Quita etiquetas HTML y normaliza espacios/saltos de línea."""
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
+# ---------- Lógica principal ----------
+
+def send_message(connector: dict, user_msg: str) -> str:
+    """Envía un mensaje al chatbot y devuelve la respuesta limpia."""
+    send_cfg = connector["send_message"]
+    url = connector["base_url"].rstrip("/") + send_cfg["path"]
+
+    payload = build_payload(send_cfg["payload_template"], user_msg)
+
+    response = requests.request(
+        method=send_cfg.get("method", "POST"),
+        url=url,
+        headers=send_cfg.get("headers", {}),
+        json=payload,
+        timeout=30,
+    )
+    response.raise_for_status()
+
+    raw = extract_by_path(response.json(), connector["response_path"])
+    return clean_html(raw)
+
+
+def main():
+    connector = load_connector("saic-malaga.yml")
+
+    messages = [
+        "hola",
+        "¿Cómo puedo pedir cita previa?",
+        "¿Dónde está la oficina de atención al ciudadano?",
+        "Gracias, ¡hasta luego!",
+    ]
+
+    for i, msg in enumerate(messages, start=1):
+        print(f"\n{'=' * 60}")
+        print(f"👤 Usuario [{i}]: {msg}")
+        try:
+            reply = send_message(connector, msg)
+            print(f"🤖 Bot [{i}]: {reply}")
+        except requests.HTTPError as e:
+            print(f"❌ Error HTTP: {e} — {e.response.text[:300]}")
+        except Exception as e:
+            print(f"❌ Error inesperado: {e}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### 📦 Requisitos
+
+```bash
+pip install requests pyyaml
+```
+
+### 🧠 Qué hace el script, paso a paso:
+
+1. **`load_connector`** → lee el YAML y lo convierte en un diccionario.
+2. **`build_payload`** → recorre el `payload_template` y reemplaza `{user_msg}` por el mensaje real (funciona incluso con estructuras anidadas como `message.text`).
+3. **`extract_by_path`** → navega la respuesta JSON usando `response.0.text`, soportando índices de listas.
+4. **`clean_html`** → convierte `<br>` en saltos de línea y elimina el resto de etiquetas HTML, para que la respuesta se lea bonita 😊.
+5. **`send_message`** → arma la URL completa, envía el POST y devuelve el texto limpio.
+6. **`main`** → recorre una lista de mensajes de prueba y muestra cada intercambio.
+
+---
+
+### ⚠️ Un detalle importante sobre `conversation` y `sender`
+
+En el payload original, `conversation` y `sender` son IDs de sesión. Si quieres simular **conversaciones distintas** por cada mensaje, tendrías que generar nuevos IDs (o reutilizar los mismos si quieres mantener el contexto de una sola conversación). Tal como está, todos los mensajes comparten la misma sesión — lo cual suele ser lo deseado para probar un flujo continuo. 👍
+
+¿Quieres que te ayude a adaptar el script para generar sesiones nuevas por mensaje, o para leer los mensajes desde un archivo CSV? ¡Dímelo y lo montamos! 💪✨

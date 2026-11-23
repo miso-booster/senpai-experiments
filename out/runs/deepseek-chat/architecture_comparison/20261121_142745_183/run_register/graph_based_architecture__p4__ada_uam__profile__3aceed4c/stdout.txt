@@ -1,0 +1,77 @@
+conversation ID: graph_based_architecture__p4__ada_uam__profile__3aceed4c
+$$$
+¡Claro que sí! 😊 Me encanta la idea, y de hecho ya tienes perfiles muy parecidos en tu proyecto (por ejemplo *Consultante de servicios y asistencia del CAU* y *Asistencia Técnica y Cuentas*), así que podemos inspirarnos en ellos para crear uno nuevo enfocado justo en lo que pides: obtener **teléfono, email, dirección física y horarios** del CAU.
+
+Te dejo un perfil listo para copiar en `profiles/` y luego te explico las decisiones clave 👇
+
+```yaml
+test_name: "Soporte y contacto del CAU"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario que necesita ponerse en contacto con el Centro de Atención a Usuarios (CAU)
+    de la UAM y quiere reunir todos los datos de contacto y horarios para resolver sus dudas.
+  context:
+    - personality: personalities/formal-user
+    - "Tienes varias dudas sobre servicios de la universidad y prefieres contactar al CAU por distintos canales."
+    - "Quieres asegurarte de tener el teléfono, el correo, la dirección física y el horario de atención antes de escribir o acudir."
+  goals:
+    - "Solicitar el número de teléfono de contacto del CAU."
+    - "Pedir el correo electrónico del Centro de Atención a Usuarios."
+    - "Preguntar por la dirección física donde se ubica el CAU."
+    - "Consultar el horario de atención del CAU."
+    - "Confirmar cuál es el mejor canal (correo o teléfono) para resolver una duda concreta."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+    - preferred_contact_method:
+        type: string
+        description: "Canal recomendado para contactar (correo o teléfono)"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+### Por qué está montado así 🧐
+
+- **`chatbot.output`** es el contrato con las reglas de Sensei-check. Los cuatro campos que te interesan (`contact_phone`, `contact_email`, `physical_address`, `service_hours`) están declarados como `string`, así que luego podrás escribir reglas tipo `conv[0].contact_phone is not None`. 👌
+- **`goals`** están redactados como peticiones naturales, una por dato, para que el simulador vaya pidiendo cada cosa por separado.
+- **`interaction_style: single questions`** encaja perfecto aquí: el usuario hace una pregunta por turno, lo que facilita que el bot dé cada dato por separado y la extracción sea limpia.
+- **`goal_style.steps: 20`** da margen suficiente para cubrir los cinco objetivos sin alargar demasiado la conversación.
+- **`fallback`** usa el mensaje real del CAU que ya aparece en tus otros perfiles, para evitar bucles raros.
+
+### Un par de ideas para afinarlo ✨
+
+1. Si quieres **forzar variabilidad**, puedes añadir un `interaction_style` con `random: [long phrases, make spelling mistakes]` para probar cómo responde el bot con mensajes más largos o con erratas.
+2. Si más adelante quieres **reglas** sobre estos campos, recuerda que los nombres deben coincidir exactamente con los de `chatbot.output` (por ejemplo `conv[i].service_hours`).
+3. Si prefieres que el usuario **pida todo de golpe**, cambia `single questions` por `all questions` — pero ojo, la extracción de cada campo puede volverse menos fiable si el bot responde todo mezclado.
+
+¿Quieres que te lo adapte para incluir también el **catálogo de servicios** o el **enlace de preguntas frecuentes** como campos extra? O si prefieres, te ayudo a redactar las **reglas de Sensei-check** que validen que esos cuatro datos aparecen siempre. ¡Dime por dónde tiramos! 🙌
+$$$

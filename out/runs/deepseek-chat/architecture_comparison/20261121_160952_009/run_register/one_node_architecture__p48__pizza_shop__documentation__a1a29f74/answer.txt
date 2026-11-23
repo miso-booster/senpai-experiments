@@ -1,0 +1,58 @@
+Great question! 😊 Let me walk you through which parts of a Sensei profile are optional versus required.
+
+## The short answer
+
+In a profile, **almost everything except the core `user` definition is optional**. The truly essential bits are:
+
+- `test_name`
+- `user.role`
+- `user.goals` (with any variables they reference)
+
+Everything else — `llm`, `chatbot`, `conversation`, and even parts of `user` like `language` and `context` — can be omitted and Sensei will apply sensible defaults.
+
+## Field-by-field breakdown
+
+**`llm` — optional**
+If you omit it, defaults are applied (model, temperature) and the format defaults to `text`. You only need it when you want to override the model/temperature or switch to `speech` mode.
+
+**`chatbot` — optional (but usually you want it)**
+- `is_starter` — optional (defaults to `false`).
+- `fallback` — optional, though strongly recommended so the simulator doesn't loop forever.
+- `output` — optional. If you skip it, nothing gets extracted — which also means **profile-bound rules that reference `conv[i].<field>` won't work**. So omit it only if you're running global rules or just exploring.
+
+**`conversation` — optional**
+- `number` — optional (defaults apply).
+- `goal_style` — optional.
+- `interaction_style` — optional.
+- `max_cost` — optional (but nice for cost safety 💸).
+
+**`user` — mostly required, but not every subfield**
+- `role` — **required** (this is the heart of the profile).
+- `goals` — **required** (and every `{{variable}}` must be declared).
+- `language` — optional (defaults to English).
+- `context` — optional (personality references and freeform constraints are nice-to-have, not mandatory).
+
+## A minimal valid profile
+
+Here's the leanest shape that still runs:
+
+```yaml
+test_name: "minimal_profile"
+
+user:
+  role: "A customer ordering a pizza."
+  goals:
+    - "Order a {{size}} pizza"
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+```
+
+That's it — no `llm`, no `chatbot`, no `conversation`. Sensei fills in the rest. 🎉
+
+## One friendly heads-up ⚠️
+
+Even though `chatbot.output` is technically optional, if you plan to write **profile-bound rules** (like your `more_toppings_cost_more` rule that reads `conv[0].price`), you *do* need those fields declared in `chatbot.output`. Otherwise the rule has nothing to read from. So "optional" here means "optional for the profile to run," not "optional for every use case."
+
+Want me to check one of your existing profiles (e.g. `pizza_order_test_custom.yml`) and point out which fields you could safely trim? Just say the word! 😄

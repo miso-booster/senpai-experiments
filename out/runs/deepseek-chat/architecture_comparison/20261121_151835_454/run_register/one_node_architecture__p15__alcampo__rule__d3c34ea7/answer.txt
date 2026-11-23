@@ -1,0 +1,50 @@
+Hey there! 😊 Happy to help you get this rule working — but I need to flag a couple of things before we dive in, because right now this rule won't run as-is. Let me walk you through it 👀
+
+## What's blocking it
+
+**1. It's missing the `then:` clause.** You have `if:` but no `then:`. A metamorphic rule needs both — the `if` states the precondition, the `then` states what must hold. Right now Sensei-check has nothing to assert. 🚧
+
+**2. `user_request` isn't a field in your profile.** Your `customer_service_assistance.yaml` profile exposes these `chatbot.output` fields:
+- `contact_options`
+- `customer_service_number`
+- `hours_of_operation`
+- `online_form_instructions`
+- `required_fields`
+- `message_details`
+
+There's no `user_request` slot, so `conv[0].user_request` will fail. Rules can only reference fields that actually exist in `chatbot.output`. 🧩
+
+**3. `conversations: 2` + `when` on `user_request` is a bit of a mismatch.** Since you don't have a `user_request` field, the cleaner approach here is a **single-conversation** rule that checks the outputs are populated — that's really what "ensure the chatbot provides correct contact info" means. 👍
+
+## A working version
+
+Here's a rule that actually runs against your profile — it checks that both contact fields got filled in for the same conversation:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and a customer service number for customer service inquiries.
+conversations: 1
+active: true
+oracle: conv[0].contact_options is not None and conv[0].customer_service_number is not None
+yields: f"Missing contact info — contact_options={conv[0].contact_options}, customer_service_number={conv[0].customer_service_number}"
+```
+
+## If you *really* want a 2-conversation metamorphic version
+
+You'd need to compare two conversations where the relevant fields are populated. Since there's no `user_request` slot, a sensible metamorphic relation is: **if both conversations produced a customer service number, they should be consistent** (same number, since it's a fixed business fact):
+
+```yaml
+name: customer_service_number_consistency
+description: The customer service number is consistent across conversations that provide it.
+conversations: 2
+active: true
+when: conv[0].customer_service_number is not None and conv[1].customer_service_number is not None
+then: conv[0].customer_service_number == conv[1].customer_service_number
+yields: f"Inconsistent customer service numbers: {conv[0].customer_service_number} vs {conv[1].customer_service_number}"
+```
+
+## Quick tip 💡
+
+If you genuinely want to filter by *what the user asked*, you'd first need to add a field like `user_request` to the profile's `chatbot.output` so the extractor populates it — then rules can reference it. Right now the profile doesn't expose that, so we work with what's there.
+
+Want me to also add a rule checking `hours_of_operation` or the online form fields? Just say the word! 🙌

@@ -1,0 +1,232 @@
+¡Hola! 😊 ¡Qué buena idea! Un perfil enfocado en **recomendaciones de recetas y planificación de menús** es súper útil para probar a fondo esa parte del chatbot de Alcampo. Déjame ayudarte a montarlo.
+
+Antes de escribir el YAML, te comento un par de cosas importantes que he visto en tu proyecto:
+
+## ⚠️ Un detalle importante primero
+
+He notado que tu perfil **`customer_service_assistance.yaml`** tiene un **error de sintaxis YAML** que impedirá que Sensei lo cargue. El problema está en que faltan los dos puntos (`:`) después de `user` y `goals`:
+
+```yaml
+test_name: Customer Service Assistance
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: User seeking help with customer service inquiries, account issues, or order modifications.
+  context:
+  - You recently encountered some issues with your Alcampo account and need assistance to resolve them.
+  - With multiple inquiries regarding payment and service hours, you want to ensure you reach the right customer service channels for help.
+  - Additionally, you are looking for guidance on how to properly fill out the online contact form to ensure your concerns are addressed effectively.
+  goals:
+  - Ask the chatbot how to find contact options for customer service regarding payment issues.
+  - Request the customer service contact number for general inquiries at Alcampo.
+  - Inquire about the hours of operation for customer service related to the Club Alcampo card.
+  - Ask for instructions on how to fill out Alcampo's online contact form, specifying required fields.
+  - Request specific details to include in a message when contacting customer service via the online form.
+chatbot:
+  is_starter: false
+  fallback: Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios.
+  output:
+  - contact_options:
+      type: string
+      description: Methods to reach customer service for payment issues
+  - customer_service_number:
+      type: string
+      description: Contact number for general inquiries at Alcampo
+  - hours_of_operation:
+      type: string
+      description: Operating hours for customer service related to Club Alcampo card
+  - online_form_instructions:
+      type: string
+      description: Instructions for completing Alcampo's online contact form
+  - required_fields:
+      type: string
+      description: Mandatory fields in the online contact form
+  - message_details:
+      type: string
+      description: Specific details to include in contact message
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 22
+  interaction_style:
+  - single questions
+```
+
+Debería ser:
+
+```yaml
+test_name: Customer Service Assistance
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: User seeking help with customer service inquiries, account issues, or order modifications.
+  context:
+  - You recently encountered some issues with your Alcampo account and need assistance to resolve them.
+  - With multiple inquiries regarding payment and service hours, you want to ensure you reach the right customer service channels for help.
+  - Additionally, you are looking for guidance on how to properly fill out the online contact form to ensure your concerns are addressed effectively.
+  goals:
+  - Ask the chatbot how to find contact options for customer service regarding payment issues.
+  - Request the customer service contact number for general inquiries at Alcampo.
+  - Inquire about the hours of operation for customer service related to the Club Alcampo card.
+  - Ask for instructions on how to fill out Alcampo's online contact form, specifying required fields.
+  - Request specific details to include in a message when contacting customer service via the online form.
+chatbot:
+  is_starter: false
+  fallback: Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios.
+  output:
+  - contact_options:
+      type: string
+      description: Methods to reach customer service for payment issues
+  - customer_service_number:
+      type: string
+      description: Contact number for general inquiries at Alcampo
+  - hours_of_operation:
+      type: string
+      description: Operating hours for customer service related to Club Alcampo card
+  - online_form_instructions:
+      type: string
+      description: Instructions for completing Alcampo's online contact form
+  - required_fields:
+      type: string
+      description: Mandatory fields in the online contact form
+  - message_details:
+      type: string
+      description: Specific details to include in contact message
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 22
+  interaction_style:
+  - single questions
+```
+
+¡Échale un ojo cuando puedas! 🙌
+
+---
+
+## 🍳 Perfil nuevo: recomendaciones de recetas y planificación de menús
+
+Aquí tienes un perfil completo y listo para usar. Lo he diseñado para que ejercite la búsqueda de recetas, la planificación semanal, la lista de la compra y la sostenibilidad (que encaja con la sección *La Cocina de Alcampo*):
+
+```yaml
+test_name: "Recipe Recommendations and Menu Planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a home cook planning meals for the week and looking for recipe
+    inspiration from Alcampo. You want recipes that match your available
+    ingredients, dietary preferences, and the season, and you want help
+    turning those recipes into a shopping list.
+  context:
+    - personality: personalities/conversational-user
+    - "You cook for a family of four and prefer quick, healthy weeknight meals."
+    - "You try to buy seasonal and local produce whenever possible."
+    - "You have one vegetarian in the household, so some meals must be meat-free."
+  goals:
+    - "Ask the chatbot to recommend recipes for a {{meal_type}} using {{main_ingredient}}."
+    - "Request recipes filtered by {{season}} and the {{product_category}} category."
+    - "Ask how to add the ingredients of a chosen recipe to your shopping list."
+    - "Inquire about vegetarian alternatives for {{dish}}."
+    - "Ask for a weekly menu plan for {{number_of_days}} days that includes seasonal produce."
+    - meal_type:
+        function: forward()
+        type: string
+        data: [breakfast, lunch, dinner]
+    - main_ingredient:
+        function: pairwise()
+        type: string
+        data: [chicken, salmon, chickpeas, spinach, pasta]
+    - season:
+        function: random()
+        type: string
+        data: [spring, summer, autumn, winter]
+    - product_category:
+        function: pairwise()
+        type: string
+        data: [vegetables, fish, meat, dairy, bakery]
+    - dish:
+        function: random()
+        type: string
+        data: [lasagna, paella, burgers, tacos]
+    - number_of_days:
+        function: random()
+        type: int
+        data:
+          min: 3
+          max: 7
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - recommended_recipes:
+        type: list[string]
+        description: "Names of the recipes recommended by the chatbot"
+    - recipe_ingredients:
+        type: list[string]
+        description: "Ingredients listed for the recommended recipe"
+    - shopping_list_instructions:
+        type: string
+        description: "Steps to add recipe ingredients to the shopping list"
+    - vegetarian_alternatives:
+        type: list[string]
+        description: "Vegetarian substitutes suggested for a dish"
+    - weekly_menu_plan:
+        type: string
+        description: "The proposed menu plan across the requested days"
+    - seasonal_produce_used:
+        type: list[string]
+        description: "Seasonal produce included in the recommendations"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 25
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+      - single questions
+```
+
+---
+
+## 🔍 Por qué está montado así
+
+- **`forward()` en `meal_type`** → recorre desayuno, comida y cena de forma determinista, para asegurarte de cubrir los tres.
+- **`pairwise()` en `main_ingredient` y `product_category`** → cubre todas las parejas ingrediente/categoría al menos una vez sin explotar el número de conversaciones. Por eso `conversation.number: combinations(0.6, pairwise)` funciona (necesitas **al menos dos** funciones `pairwise` declaradas ✅).
+- **`random()` en `season`, `dish` y `number_of_days`** → añade variedad natural entre conversaciones.
+- **`chatbot.output`** → define campos que luego puedes usar en **Sensei-check rules** como `conv[i].recommended_recipes` o `conv[i].weekly_menu_plan`. Por ejemplo, podrías escribir una regla que compruebe que `weekly_menu_plan` no está vacío cuando se pide un menú semanal. 🎯
+- **`interaction_style` con `random`** → el simulador elegirá al azar entre frases largas, faltas de ortografía y preguntas sueltas, lo que da conversaciones más realistas.
+
+---
+
+## 💡 Consejos rápidos
+
+1. **Guarda el archivo** como `profiles/recipe_recommendations_and_menu_planning.yaml`.
+2. **Valida antes de lanzar** para asegurarte de que no hay errores de formato:
+   ```bash
+   python validation_check.py --profile .../profiles/recipe_recommendations_and_menu_planning.yaml --output .../output --combined-matrix --verbose
+   ```
+3. Si quieres que las reglas de Sensei-check lean estos campos, recuerda que los nombres en `chatbot.output` deben ser **estables y descriptivos** (ya lo son 😉).
+
+¿Quieres que te ayude a **escribir una regla de Sensei-check** que valide, por ejemplo, que el menú semanal cubre todos los días pedidos? ¡Dímelo y lo montamos! 🚀

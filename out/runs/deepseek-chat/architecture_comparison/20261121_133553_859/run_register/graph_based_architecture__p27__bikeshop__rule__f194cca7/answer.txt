@@ -1,0 +1,97 @@
+¡Buena idea! 😊 Vamos a crear una regla de tipo **metamórfica** (2 conversaciones) que compruebe que, si en dos conversaciones distintas le damos la **misma fecha** al asistente, en la segunda debe **rechazarla** (porque ya está ocupada/reservada).
+
+Antes de escribirla, un par de aclaraciones importantes para que la regla funcione de verdad en tu proyecto 👇
+
+## Lo que necesito que exista en tu perfil
+
+Esta regla es **profile-bound**: depende de que tu SENSEI Chat profile exponga en `chatbot.output` un campo con la fecha elegida. Por ejemplo:
+
+```yaml
+# profiles/appointment_booking.yaml (ejemplo)
+test_name: "appointment_booking"
+
+user:
+  language: English
+  role: >
+    You are a customer trying to book an appointment.
+    Ask for available dates and confirm a date with the assistant.
+  context:
+    - "You prefer a date within the next two weeks."
+  goals:
+    - "Book an appointment on {{date}}"
+    - date:
+        function: random()
+        type: string
+        data:
+          - any(3 dates within the next 30 days)
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - date:
+        type: string          # p.ej. "2025-06-15"
+        description: Fecha de la cita acordada (o intentada)
+    - accepted:
+        type: boolean         # true si el asistente aceptó la fecha
+        description: Indica si la fecha fue aceptada
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+> ⚠️ Si tu perfil usa otros nombres (por ejemplo `appointment_date`, `booking_date`, `confirmed`…), **adapta los campos** en la regla. La estructura se mantiene, solo cambian los nombres.
+
+## La regla
+
+```yaml
+name: same_date_rejected_second_time
+description: >
+  Si dos conversaciones proponen la misma fecha, el asistente no puede
+  aceptar la segunda (la fecha ya está ocupada). Regla metamórfica sobre
+  el perfil de reservas (campos `date` y `accepted` de chatbot.output).
+conversations: 2
+when: conv[0].date == conv[1].date
+if:   conv[0].accepted is True
+then: conv[1].accepted is False
+on-error: >
+  La fecha {conv[0].date} fue aceptada en la conversación 0 pero también
+  aceptada en la conversación 1 (debería rechazarse la segunda vez).
+```
+
+## Cómo leerla 🧠
+
+- **`when`**: selecciona parejas de conversaciones donde la **fecha propuesta es la misma** (`conv[0].date == conv[1].date`). Esto es el *ceteris paribus*: comparamos casos comparables.
+- **`if`**: si en la primera conversación la fecha **fue aceptada**…
+- **`then`**: …entonces en la segunda **no puede volver a aceptarse** (`accepted is False`).
+- **`on-error`**: mensaje claro con la fecha implicada para depurar rápido.
+
+## Variante si tu perfil no tiene un booleano `accepted`
+
+Si en lugar de un booleano expones, por ejemplo, un texto de respuesta o un `status`, puedes usar los helpers. Por ejemplo, si el asistente marca el rechazo con una frase tipo *"not available"*:
+
+```yaml
+name: same_date_rejected_second_time
+description: La segunda vez que se propone la misma fecha, el asistente debe rechazarla.
+conversations: 2
+when: conv[0].date == conv[1].date
+if:   utterance_index('assistant', 'confirmed') > 0
+then: utterance_index('assistant', 'not available') > 0
+```
+
+> 💡 `utterance_index` es un helper **LLM-backed**, así que puede haber pequeña variabilidad. Si puedes, mejor apoyarte en un campo booleano del `chatbot.output` (más determinista).
+
+## Checklist rápido antes de usarla ✅
+
+1. ¿Tu perfil expone la **fecha** en `chatbot.output`? (campo `date` o equivalente)
+2. ¿Expone también si fue **aceptada/rechazada**? (campo `accepted`/`status`)
+3. ¿Los nombres en `when`/`if`/`then` coinciden **exactamente** con los del perfil?
+4. ¿El generador de perfiles produce casos donde la **misma fecha** aparece en dos conversaciones? (si no, la regla quedará *not applicable* y no comprobará nada)
+
+¿Quieres que te ayude a adaptar los nombres de campo a tu perfil real, o a montar la variante con `status` en vez de `accepted`? Dime cómo se llaman tus campos y lo dejamos afinado 😄

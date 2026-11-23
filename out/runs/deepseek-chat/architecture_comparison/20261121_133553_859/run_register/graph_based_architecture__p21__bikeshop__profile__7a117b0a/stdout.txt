@@ -1,0 +1,90 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__7a117b0a
+$$$
+Hey there! 😊 Happy to help you build that profile — a customer bringing in a freshly bought bike to get it set up with a new seat and handlebar grips is a nice, focused scenario. Let me walk you through a ready-to-use profile and explain the key choices.
+
+## A profile you can drop into `profiles/`
+
+```yaml
+test_name: "new_bike_setup_seat_and_grips"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike and wants the shop to set it up
+    to your liking. You want to replace the seat and the handlebar grips with ones that
+    suit you better, and you'd like the shop to do the fitting for you.
+  context:
+    - "You just bought the bike a few days ago and haven't ridden it much yet."
+    - "The stock seat is uncomfortable and the grips feel too thin for your hands."
+    - "You're not very technical, so you rely on the shop's advice for sizing and options."
+    - "You'd like to get this done soon so you can start riding comfortably."
+  goals:
+    - "Explain that you just bought a new bike and want it set up for your comfort."
+    - "Ask if the shop can replace the {{seat_type}} seat with something more comfortable."
+    - "Ask about the price of the new seat."
+    - "Ask if they can swap the handlebar grips for {{grip_type}} ones."
+    - "Ask about the price of the grips and whether installation is included."
+    - "Ask when the work could be done."
+    - seat_type:
+        function: random()
+        type: string
+        data: [gel, ergonomic, wide comfort, memory foam]
+    - grip_type:
+        function: random()
+        type: string
+        data: [ergonomic, lock-on, rubber, silicone]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_replacement_confirmation:
+        type: string
+        description: "Confirmation that the shop can replace the seat. Look for phrases like 'Yes, we can replace the seat' or similar."
+    - seat_price:
+        type: money
+        description: "The price of the new seat as stated by the chatbot."
+    - grip_replacement_confirmation:
+        type: string
+        description: "Confirmation that the shop can swap the handlebar grips."
+    - grip_price:
+        type: money
+        description: "The price of the handlebar grips, including installation if mentioned."
+    - setup_timing:
+        type: string
+        description: "When the setup work could be done (e.g., 'same day', 'tomorrow', 'within a week')."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+## Why it's built this way 👀
+
+- **`chatbot.output` is your contract for rules.** Fields like `seat_price` and `grip_price` use the `money` type (already used in your other bikeshop profiles, e.g. `qa.yml` and `bike_service_and_repair_inquirer.yaml`), so any profile-bound rules can later read `conv[i].seat_price` and compare it to something.
+- **`single question` interaction style** keeps the user asking one thing at a time — great for checking that the bot answers each request cleanly, just like your other bikeshop profiles.
+- **`all_answered` with `limit: 20`** makes the conversation run until every goal is satisfied (or the safety cap hits), which is ideal for a "does the bot cover everything?" test.
+- **Variables (`seat_type`, `grip_type`)** add variety across runs without exploding the number of conversations — `random()` picks one option per conversation.
+- **`chatbot.fallback`** uses the same real fallback text as your other bikeshop profiles, so the simulator doesn't loop forever if the bot gets confused.
+
+## A couple of things to double-check ✅
+
+1. **`money` type** — I'm assuming it's defined in your project's `types/` folder, since several existing profiles use it. If it isn't there, swap it for `float` or `currency`.
+2. **`model_prov: openai`** — your other bikeshop profiles omit this and rely on defaults. If your setup needs it, keep it; otherwise you can drop it to match the rest.
+3. **Goal wording** — if you want the user to *actually* push for installation being included, add a goal like `"Ask whether installation is included in the price."` and a matching output field.
+
+Want me to tweak it — say, add a `change your mind` interaction style (the user switches seat preference mid-conversation), or add an appointment-booking goal at the end? Just say the word and I'll adjust it! 🚲✨
+$$$

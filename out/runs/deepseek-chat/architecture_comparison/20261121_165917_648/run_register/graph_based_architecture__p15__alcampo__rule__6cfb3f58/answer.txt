@@ -1,0 +1,83 @@
+Hey there! 😊 Happy to help you get this rule working — but before I do, there are a few things I need to flag, because as written this rule **won't run** in Sensei-check. Let me walk you through them 👀
+
+---
+
+## 🔍 What's off with the current rule
+
+### 1. Typo in the header
+```yaml
+name: conversation_lengths
+description: The number of turns of the user and the chatbot equal the conversation length
+conversations: 1
+active: false
+oracle: conversation_length() == conversation_length('assistant') + conversation_length('user')
+```
+That should be `description:`. Sensei-check expects the exact key name.
+
+### 2. Missing `then` (or `oracle`)
+Your rule has `when:` and `if:` — but **no `then:` and no `oracle:`**. Sensei-check needs one of these to know *what to assert*. Right now there's nothing to check, so the rule is incomplete.
+
+Also, a subtle point: `if:` is a **precondition** for a metamorphic relation — it must be paired with `then:`. If you only want a plain assertion, use `oracle:` instead.
+
+### 3. Fields must exist in `chatbot.output`
+This is the big one ⚠️. Your rule references:
+- `conv[0].user_request`
+- `conv[1].user_request`
+- `conv[0].contact_options`
+- `conv[1].customer_service_number`
+
+**All of these must be declared in the target profile's `chatbot.output`.** If the profile doesn't expose `contact_options` or `customer_service_number`, the rule will fail to evaluate. So step one is: check your profile and confirm those slots exist (or add them).
+
+### 4. The logic itself is a bit odd
+Your `if:` says *"if both fields are non-null"* — but that's not really a metamorphic relation, and it doesn't assert anything about *correctness* of the contact info. It just says "data was collected." That's more of a `data_collected()`-style check than a real oracle.
+
+---
+
+## ✅ A working version
+
+Here's a cleaned-up version that actually runs. I'll assume your profile exposes `user_request`, `contact_options`, and `customer_service_number`:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and a customer service number for customer service inquiries.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+oracle: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+```
+
+### Why this works
+- `description` is spelled correctly ✅
+- `when:` filters the two comparable conversations ✅
+- `oracle:` asserts the actual condition (both fields are populated) ✅
+- No dangling `if:` without a `then:` ✅
+
+---
+
+## 💡 If you want a *stronger* check
+
+If your goal is really "the contact info is **correct**," a plain non-null check is weak. You could use `semantic_content` to verify the content, e.g.:
+
+```yaml
+name: customer_service_contact_info
+description: Chatbot provides valid contact options and a customer service number.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+oracle: >
+  semantic_content(conv[0].contact_options, 'phone, email, or chat support options') and
+  semantic_content(conv[1].customer_service_number, 'a valid customer service phone number')
+```
+
+That actually checks the *meaning* of the answer, not just that a slot got filled 😊
+
+---
+
+## 🧭 Quick checklist before you run it
+
+1. ✅ Fix `descriptin` → `description`
+2. ✅ Add `oracle:` (or `if:` + `then:`)
+3. ✅ Confirm `user_request`, `contact_options`, `customer_service_number` exist in the profile's `chatbot.output`
+4. ✅ Make sure `conversations: 2` matches your `when:` filter (you need at least 2 matching conversations)
+
+---
+
+Want me to help you check whether your profile actually exposes those three fields? Just paste the profile's `chatbot.output` section and I'll verify it against the rule for you 🔎

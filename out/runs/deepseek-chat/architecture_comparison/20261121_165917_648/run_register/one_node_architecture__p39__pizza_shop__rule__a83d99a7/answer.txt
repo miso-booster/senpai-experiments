@@ -1,0 +1,23 @@
+Hey there! 😊 Happy to help with that metamorphic rule.
+
+Quick heads-up before the YAML: for this rule to work, your profile's `chatbot.output` needs to expose a `drink` field (and a `price`/`cost` field). I'll use `price` since that's what your existing `more_toppings_cost_more` rule already relies on — just rename it if your profile uses something else.
+
+Here's the rule — it compares two conversations with the same pizza configuration, where one has a drink and the other doesn't, and asserts the price difference is exactly $2:
+
+```yaml
+name: drink_costs_two_extra
+description: Adding a drink to the same pizza order costs exactly 2 dollars more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings
+if:   conv[0].drink is not None and conv[1].drink is None
+then: abs((extract_float(conv[0].price) - extract_float(conv[1].price)) - 2) < 0.01
+```
+
+A couple of notes 👀:
+
+- **`when`** keeps the pizza side identical (same size + toppings) so the only meaningful difference is the drink — that's the *ceteris paribus* magic of metamorphic testing.
+- **`if`/`then`** reads like a law: "If one order has a drink and the other doesn't, then the price gap should be $2."
+- The `abs(...) < 0.01` tolerance handles floating-point rounding on currency values.
+- If your `drink` field is a list (e.g. `list[string]`), swap the check to `len(conv[0].drink) > 0 and len(conv[1].drink) == 0`.
+
+Want me to also add a variant that checks the cost scales with the *number* of drinks? Just say the word! 🍕🥤

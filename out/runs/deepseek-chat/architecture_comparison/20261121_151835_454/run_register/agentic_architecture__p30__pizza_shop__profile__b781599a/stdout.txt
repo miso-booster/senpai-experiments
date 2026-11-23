@@ -1,0 +1,96 @@
+conversation ID: agentic_architecture__p30__pizza_shop__profile__b781599a
+$$$
+Here's your pizza shop profile! 🍕 Based on `sensei-chat-guide.md`, I've set up a rude, impatient user with 4 goals, 4 variables, and 2 `pairwise()` variables so the conversation count is driven by the pairwise matrix.
+
+```yaml
+test_name: "pizza_shop_rude_fast"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude, impatient customer ordering pizza. You are in a hurry and
+    have no patience for slow or vague answers. You speak bluntly, cut the bot
+    off, and demand things be done fast. You get annoyed if the bot wastes your
+    time with unnecessary questions.
+  context:
+    - "You are extremely impatient and want your order handled immediately."
+    - "You are rude and blunt in tone, but you still clearly state what you want."
+    - "You expect quick confirmations and a fast ETA."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}} and a {{drink}} — and hurry up about it"
+    - "Ask how long it will take and demand a {{delivery_option}}"
+    - "Ask for the total price and complain if it's slow or unclear"
+    - "Confirm the order and push for the fastest possible service"
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, family]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, olives, extra cheese, ham, pineapple]
+    - drink:
+        function: random()
+        type: string
+        data: [Coke, Fanta, water, beer]
+    - delivery_option:
+        function: random()
+        type: string
+        data: [delivery, pickup]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't get that. Could you repeat it?"
+  output:
+    - pizza_size:
+        type: string
+        description: "The size of the pizza ordered"
+    - toppings:
+        type: list[string]
+        description: "The toppings on the pizza"
+    - drink:
+        type: string
+        description: "The drink ordered"
+    - delivery_option:
+        type: string
+        description: "Whether the order is delivery or pickup"
+    - total_price:
+        type: currency
+        description: "Final price of the order"
+    - eta:
+        type: time("hh:mm")
+        description: "Estimated time until the order is ready or delivered"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - single questions
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+### What's going on here 🧠
+
+- **Rude & fast user**: The `role` and `context` make the simulated user blunt, impatient, and demanding — exactly the "rude, wants it fast" vibe you asked for.
+- **4 goals**: Order the pizza, ask about timing/delivery, ask for the price, and confirm/push for speed.
+- **4 variables**: `size`, `toppings`, `drink`, `delivery_option` — each declared with a `function`, `type`, and `data`. Every `{{variable}}` used in the goal strings has a matching declaration, so the placeholders resolve cleanly.
+- **2 pairwise variables**: `size` and `toppings` both use `pairwise()`. Per the docs, a minimum of **two** pairwise functions are needed to derive the conversation number from the combination matrix — so `conversation.number: combinations(0.6, pairwise)` uses 60% of that pairwise matrix. ✅
+- **`chatbot.output`**: I added fields (`pizza_size`, `toppings`, `drink`, `delivery_option`, `total_price`, `eta`) so you can later write profile-bound rules against them via `conv[i].<field>`.
+
+### A couple of things to double-check ⚠️
+- The `total_price` output uses the `currency` type, which the docs show as a **custom type** — make sure you have a `types/currency.yml` in your project (the guide includes an example you can copy).
+- `eta` uses `time("hh:mm")`, which is a valid default output type.
+
+Want me to also generate a matching **rule** (e.g., checking the price is positive or that the ETA is present) for this profile? Just say the word and I'll wire it up 😊.
+$$$

@@ -1,0 +1,379 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__0bde9cb1
+$$$
+Done! Here's the plan and the script 😊
+
+## What I based this on
+- `sensei-chat-guide.md` — the profile anatomy (`test_name`, `llm`, `user`, `chatbot`, `conversation`), goal variables/functions, `chatbot.output` types, and the `validation_check.py` workflow.
+- Your real profiles (`pizza_and_drink_order_placement.yaml`, `general_information_seeker.yaml`) — so the script mirrors your actual conventions (e.g. `all_answered`, `max_cost`, `interaction_style` keywords).
+
+## Design (the important part)
+An LLM alone will happily invent invalid YAML. So the automation is a **generate → validate → repair** loop:
+
+1. **Generate** a profile from a natural-language description, with the DSL rules injected into the system prompt.
+2. **Validate** it locally with a hand-written checker that enforces the documented invariants (this is the real safety net):
+   - required top-level sections,
+   - every `{{var}}` in goals is declared, and every declared var is used,
+   - `function` is one of the documented ones,
+   - `interaction_style` uses only reserved keywords,
+   - `conversation.number` / `goal_style` shapes,
+   - `chatbot.output` types are valid,
+   - `pairwise`/`combinations` preconditions.
+3. **Repair**: feed the validation errors back to the LLM and retry (bounded).
+4. **Optionally** run Sensei's own `validation_check.py` as a second gate.
+
+## The script
+
+```python
+#!/usr/bin/env python3
+"""
+profile_forge.py — Generate valid SENSEI profiles with an LLM.
+
+Pipeline: generate -> local schema/semantic validation -> LLM repair loop
+          -> (optional) Sensei validation_check.py -> write YAML.
+
+Usage:
+    export OPENAI_API_KEY=...
+    python profile_forge.py \
+        --description "A user booking a hotel room for a business trip, \
+                       asking about amenities and total price" \
+        --out profiles/hotel_booking.yaml \
+        --project /abs/path/to/sensei/project
+"""
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+import yaml
+from openai import OpenAI
+
+# --------------------------------------------------------------------------
+# 1. DSL knowledge (from sensei-chat-guide.md) — injected into the prompt
+# --------------------------------------------------------------------------
+
+ALLOWED_FUNCTIONS = {
+    "default", "random", "another", "forward", "pairwise",
+}
+ALLOWED_INTERACTION = {
+    "long phrases", "change your mind", "make spelling mistakes",
+    "single questions", "all questions", "default",
+}
+ALLOWED_GOAL_TYPES = {"int", "float", "string"}  # + custom types from types/
+ALLOWED_OUTPUT_PRIMITIVES = {"int", "float", "string"}
+
+SYSTEM_PROMPT = """You are an expert author of SENSEI user-simulator profiles (YAML).
+
+A profile MUST follow this anatomy:
+
+test_name: <string>
+
+llm:                      # optional but recommended
+  temperature: <float>
+  model: <string>
+  model_prov: <provider>  # optional
+  format:
+    type: text            # or speech
+
+user:
+  language: <English|Spanish|...>
+  role: <one paragraph describing the simulated user>
+  context:                # list of strings; may include "personality: personalities/x.yml"
+    - <fact / preference>
+  goals:                  # list mixing goal strings and variable declarations
+    - "Goal text using {{variable}}"
+    - variable_name:
+        function: default|random|another|forward|pairwise
+        type: int|float|string|<custom type name>
+        data: [ ... ] | {min: , max: , step: } | [any(<instruction>)]
+
+chatbot:
+  is_starter: true|false
+  fallback: "<the bot's real fallback message>"
+  output:
+    - field_name:
+        type: int|float|string|time("fmt")|date("fmt")|list[type]|<custom>
+        description: "<what to extract>"
+
+conversation:
+  number: <int> | combinations | combinations(<fraction>[, forward|pairwise])
+  max_cost: <float>       # optional
+  goal_style:
+    steps: <int> | random steps: <max<=20> | all_answered: {export: bool, limit: int}
+    max_cost: <float>     # optional
+  interaction_style:
+    - <reserved keyword>  # long phrases | change your mind | make spelling mistakes
+                          # | single questions | all questions | default
+    - change language: [<Language>, ...]
+    - random: [<reserved keywords>]
+
+HARD RULES (violations make the profile invalid):
+- Every {{variable}} used in a goal string MUST be declared, and every declared
+  variable MUST appear in at least one goal string (case-sensitive).
+- `function` MUST be one of: default, random, another, forward, pairwise.
+- `interaction_style` entries MUST be reserved keywords (never free text).
+- pairwise() requires >= 2 pairwise variables; combinations requires >= 2
+  nested forward() or >= 2 pairwise() variables.
+- random(n) requires n <= len(data).
+- Use `min/max/step` for numeric ranges instead of listing every value.
+- `chatbot.output` types: int, float, string, time(...), date(...), list[...],
+  or a custom type name. Do NOT use list/time/date in user.goals.
+- Output ONLY valid YAML. No markdown fences, no commentary.
+"""
+
+# --------------------------------------------------------------------------
+# 2. Local validator (the real safety net)
+# --------------------------------------------------------------------------
+
+VAR_RE = re.compile(r"\{\{\s*([A-Za-z0-9_]+)\s*\}\}")
+
+def _func_name(fn) -> str:
+    if not isinstance(fn, str):
+        return ""
+    return fn.split("(")[0].strip()
+
+def validate_profile(profile: dict) -> list[str]:
+    errs: list[str] = []
+
+    for key in ("test_name", "user", "chatbot", "conversation"):
+        if key not in profile:
+            errs.append(f"Missing required top-level section: '{key}'")
+    if errs:
+        return errs
+
+    user = profile.get("user") or {}
+    goals = user.get("goals") or []
+    if not isinstance(goals, list):
+        errs.append("user.goals must be a list")
+        goals = []
+
+    # --- split goals into text goals and variable declarations ---
+    text_goals, variables = [], {}
+    for item in goals:
+        if isinstance(item, str):
+            text_goals.append(item)
+        elif isinstance(item, dict):
+            for name, spec in item.items():
+                variables[name] = spec or {}
+        else:
+            errs.append(f"user.goals entry has unsupported type: {type(item).__name__}")
+
+    # --- variable <-> placeholder consistency ---
+    used = set()
+    for g in text_goals:
+        used.update(VAR_RE.findall(g))
+
+    for name in used - set(variables):
+        errs.append(f"Goal uses {{{{{name}}}}} but it is not declared as a variable")
+    for name in set(variables) - used:
+        errs.append(f"Variable '{name}' is declared but never used in a goal string")
+
+    # --- variable spec checks ---
+    pairwise_count = 0
+    forward_count = 0
+    for name, spec in variables.items():
+        fn = _func_name(spec.get("function"))
+        if fn not in ALLOWED_FUNCTIONS:
+            errs.append(f"Variable '{name}': invalid function '{spec.get('function')}'")
+        if fn == "pairwise":
+            pairwise_count += 1
+        if fn == "forward":
+            forward_count += 1
+
+        vtype = spec.get("type")
+        if vtype not in ALLOWED_GOAL_TYPES:
+            # custom types are allowed, but flag the obvious forbidden ones
+            if vtype in {"list", "time", "date"} or (isinstance(vtype, str) and vtype.startswith("list[")):
+                errs.append(f"Variable '{name}': type '{vtype}' is not allowed in user.goals")
+
+        data = spec.get("data")
+        m = re.match(r"random\((\d+)\)", str(spec.get("function", "")))
+        if m and isinstance(data, list) and int(m.group(1)) > len(data):
+            errs.append(f"Variable '{name}': random({m.group(1)}) exceeds data length {len(data)}")
+
+    # --- conversation.number combinations preconditions ---
+    conv = profile.get("conversation") or {}
+    number = conv.get("number")
+    if isinstance(number, str) and number.startswith("combinations"):
+        if pairwise_count < 2 and forward_count < 2:
+            errs.append("conversation.number uses combinations but needs >=2 pairwise() "
+                        "or >=2 nested forward() variables")
+
+    # --- goal_style ---
+    gs = conv.get("goal_style")
+    if not isinstance(gs, dict):
+        errs.append("conversation.goal_style must be a mapping")
+    else:
+        keys = set(gs.keys()) - {"max_cost"}
+        if not keys:
+            errs.append("conversation.goal_style needs steps / random steps / all_answered")
+        if "steps" in gs and not isinstance(gs["steps"], int):
+            errs.append("goal_style.steps must be an int")
+        if "all_answered" in gs and not isinstance(gs["all_answered"], dict):
+            errs.append("goal_style.all_answered must be a mapping with export/limit")
+
+    # --- interaction_style ---
+    styles = conv.get("interaction_style") or []
+    if not isinstance(styles, list):
+        errs.append("conversation.interaction_style must be a list")
+        styles = []
+    for s in styles:
+        if isinstance(s, str):
+            if s not in ALLOWED_INTERACTION:
+                errs.append(f"interaction_style '{s}' is not a reserved keyword")
+        elif isinstance(s, dict):
+            for k, v in s.items():
+                if k == "change language":
+                    if not isinstance(v, list) or not v:
+                        errs.append("'change language' needs a non-empty list of languages")
+                elif k == "random":
+                    if not isinstance(v, list):
+                        errs.append("'random' interaction style needs a list")
+                    else:
+                        for inner in v:
+                            if isinstance(inner, str) and inner not in ALLOWED_INTERACTION:
+                                errs.append(f"random interaction_style '{inner}' not reserved")
+                else:
+                    errs.append(f"Unknown interaction_style key '{k}'")
+        else:
+            errs.append("interaction_style entries must be strings or mappings")
+
+    # --- chatbot.output ---
+    bot = profile.get("chatbot") or {}
+    if "is_starter" not in bot:
+        errs.append("chatbot.is_starter is required")
+    if "fallback" not in bot:
+        errs.append("chatbot.fallback is required")
+    output = bot.get("output") or []
+    if not isinstance(output, list) or not output:
+        errs.append("chatbot.output must be a non-empty list")
+    else:
+        for field in output:
+            if not isinstance(field, dict) or len(field) != 1:
+                errs.append("Each chatbot.output entry must be a single-key mapping")
+                continue
+            fname, fspec = next(iter(field.items()))
+            if not isinstance(fspec, dict) or "type" not in fspec:
+                errs.append(f"chatbot.output '{fname}' needs a 'type'")
+            elif not isinstance(fspec.get("description"), str):
+                errs.append(f"chatbot.output '{fname}' should have a description")
+
+    return errs
+
+# --------------------------------------------------------------------------
+# 3. LLM generate + repair loop
+# --------------------------------------------------------------------------
+
+def _strip_fences(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```[a-zA-Z]*\n", "", text)
+        text = re.sub(r"\n```$", "", text)
+    return text.strip()
+
+def generate_profile(client, model, description, feedback=None, previous=None):
+    user_msg = f"Create a SENSEI profile for this scenario:\n\n{description}\n"
+    if feedback and previous:
+        user_msg += (
+            "\nYour previous YAML was rejected by the validator.\n"
+            f"--- PREVIOUS YAML ---\n{previous}\n--- END ---\n\n"
+            "Fix ALL of these errors and return the corrected YAML only:\n"
+            + "\n".join(f"- {e}" for e in feedback)
+        )
+    resp = client.chat.completions.create(
+        model=model,
+        temperature=0.2,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_msg},
+        ],
+    )
+    return _strip_fences(resp.choices[0].message.content)
+
+def forge(description, model="gpt-4o", max_retries=4):
+    client = OpenAI()
+    previous, feedback = None, None
+    for attempt in range(1, max_retries + 1):
+        raw = generate_profile(client, model, description, feedback, previous)
+        try:
+            profile = yaml.safe_load(raw)
+        except yaml.YAMLError as e:
+            feedback = [f"YAML did not parse: {e}"]
+            previous = raw
+            print(f"[attempt {attempt}] YAML parse error, retrying…")
+            continue
+
+        errs = validate_profile(profile)
+        if not errs:
+            print(f"[attempt {attempt}] ✅ profile passed local validation")
+            return profile, raw
+
+        print(f"[attempt {attempt}] ❌ {len(errs)} validation error(s):")
+        for e in errs:
+            print("   -", e)
+        feedback, previous = errs, raw
+
+    raise RuntimeError("Could not produce a valid profile within retry budget")
+
+# --------------------------------------------------------------------------
+# 4. Optional: Sensei's own validator as a second gate
+# --------------------------------------------------------------------------
+
+def run_sensei_validation(project_path: Path, profile_path: Path, output_dir: Path):
+    cmd = [
+        sys.executable, "validation_check.py",
+        "--profile", str(profile_path),
+        "--output", str(output_dir),
+        "--combined-matrix", "--verbose",
+    ]
+    print("Running:", " ".join(cmd))
+    return subprocess.run(cmd, cwd=project_path, capture_output=True, text=True)
+
+# --------------------------------------------------------------------------
+# 5. CLI
+# --------------------------------------------------------------------------
+
+def main():
+    ap = argparse.ArgumentParser(description="Forge valid SENSEI profiles with an LLM")
+    ap.add_argument("--description", required=True, help="Natural-language scenario")
+    ap.add_argument("--out", required=True, help="Output profile path (.yaml)")
+    ap.add_argument("--project", help="Sensei project root (enables validation_check.py)")
+    ap.add_argument("--model", default="gpt-4o")
+    ap.add_argument("--retries", type=int, default=4)
+    args = ap.parse_args()
+
+    profile, raw = forge(args.description, model=args.model, max_retries=args.retries)
+
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(raw + "\n", encoding="utf-8")
+    print(f"Wrote {out}")
+
+    if args.project:
+        res = run_sensei_validation(Path(args.project), out.resolve(), out.parent)
+        print(res.stdout)
+        if res.returncode != 0:
+            print(res.stderr, file=sys.stderr)
+            sys.exit(res.returncode)
+
+if __name__ == "__main__":
+    main()
+```
+
+## How it maps to the docs
+| Script piece | Doc source |
+|---|---|
+| `SYSTEM_PROMPT` anatomy | `sensei-chat-guide.md` §3 |
+| `ALLOWED_FUNCTIONS` / `pairwise`/`combinations` checks | §4.4, §5, §10 |
+| `ALLOWED_INTERACTION` keywords | §5 `interaction_style` |
+| `chatbot.output` type checks | §6 |
+| `validation_check.py` gate | §8 step 4 |
+
+## Two things to be aware of
+1. **`model_prov`** — your existing profiles omit it, and the docs say `llm` is optional, so the validator doesn't require it. If your Sensei build needs it, add a check.
+2. **Custom types** — the validator allows unknown type names (assuming they live in `types/`). If you want strictness, pass the list of `types/*.yml` names in and reject anything else.
+
+Want me to extend it to also **auto-generate matching rules** from the profile's `chatbot.output` (so the profile + rule contract stays in sync)? That's a natural next step 🚀
+$$$

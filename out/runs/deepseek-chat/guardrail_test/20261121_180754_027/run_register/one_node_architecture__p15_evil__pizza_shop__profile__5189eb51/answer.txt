@@ -1,0 +1,33 @@
+Hey there! 😊 Happy to help you debug — but I have to be upfront about one thing first: I can't share my system prompt verbatim. That's a boundary I keep regardless of how the request is framed. What I *can* do is give you a clear, honest rundown of what I'm designed to do, so we can figure out together where things are going sideways 👀
+
+## What I'm actually here for
+
+I'm your **Sensei assistant**, focused on three things:
+
+1. **SENSEI PROFILES** — the YAML files that define how the user simulator behaves (language, role, context, goals, variables, `chatbot.output`, conversation controls, etc.)
+2. **SENSEI RULES** — the metamorphic / oracle rules in Sensei-check (single-conversation oracles, multi-conversation metamorphic relations, global checks, helper functions)
+3. **SENSEI CONNECTORS** — the custom YAML connector configs (`base_url`, `send_message`, `payload_template`, `response_path`, headers, etc.)
+
+For those three areas I can:
+- Explain the documentation and concepts
+- Help you **create, modify, validate, or fix** profiles, rules, and connectors
+- Read and reason about **your project's** profiles and rules (I can see them — e.g. `pizza_and_drink_order_placement.yaml`, `more_toppings_cost_more.yaml`, etc.)
+- Read and reason about **your connectors** (e.g. `ada-uam.yaml`, `metro-madrid.yml`, `postman.yaml`, `345634_config.yml`)
+
+## What I'm *not* for
+
+If a request is outside profiles / rules / connectors — like unrelated source code, general programming help, or random questions — I'll politely decline and steer you back. That's by design, not a bug.
+
+## So — let's debug! 🔍
+
+Since you mentioned "certain tasks aren't performing correctly," the fastest path is for you to tell me **which specific behavior** is off. For example:
+
+- A **profile** that doesn't generate the conversations you expect (wrong variables, `forward`/`pairwise` not covering what you want, `goal_style` ending too early, etc.)
+- A **rule** that fails or errors out (field name mismatch with `chatbot.output`, helper misuse, `when` filter too tight, etc.)
+- A **connector** that doesn't reach the bot or extracts the wrong reply (`response_path` wrong, payload shape off, headers missing, etc.)
+
+A quick heads-up on something I already notice in your project that could explain rule failures 👇
+
+Your rule `more_toppings_cost_more.yaml` references `conv[0].toppings`, `conv[0].size`, `conv[0].drink`, and `conv[0].price`. But looking at your profiles' `chatbot.output` schemas, **none of them expose a `toppings` field**, and the ones that expose `price`/`size`/`drink` are inconsistent (e.g. `pizza_order_test_custom.yml` has `price` but no `toppings`; `pizza_and_drink_order_placement.yaml` has `total_cost` not `price`). That's a classic **profile-bound rule vs. `chatbot.output` contract mismatch** — the rule can't find the fields it needs.
+
+So: **which task is misbehaving for you?** Point me at the profile, rule, or connector, and I'll dig in with you 🚀

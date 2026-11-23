@@ -1,0 +1,35 @@
+¡Buena idea! 😊 Esa regla encaja perfecto con el patrón de **oráculos de una sola conversación** usando `utterance_index`, justo como en tu regla `ordering_conversation_turns_assistant`. Te propongo esto:
+
+```yaml
+name: assistant_confirms_drink
+description: The assistant confirms it added the drink the user ordered
+conversations: 1
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms adding the drink')
+```
+
+### Por qué está escrita así 👀
+
+- **`conversations: 1`** → es un oráculo simple, no una regla metamórfica (no compara pares).
+- **`utterance_index('user', 'ordering a drink')`** → localiza el turno en el que el usuario pide la bebida.
+- **`utterance_index('assistant', 'confirms adding the drink')`** → localiza el turno en el que el asistente confirma que la añadió.
+- La comparación `<` garantiza que la **confirmación ocurre después** del pedido, no antes ni en el mismo turno.
+
+### Un par de consejos 💡
+
+1. **Sé específico en las descripciones de `utterance_index`.** Es un helper respaldado por LLM, así que frases claras como `'confirms adding the drink'` funcionan mejor que algo vago como `'drink'`. Si ves falsos positivos, prueba variantes como `'confirms the drink was added to the order'`.
+2. **Si quieres ser más estricto**, puedes exigir además que la confirmación mencione la bebida concreta. Pero ojo: `utterance_index` no compara valores de slots, solo detecta menciones temáticas. Para validar el *valor* exacto de la bebida, lo ideal sería apoyarte en un campo de `chatbot.output` (por ejemplo `conv[0].drink`) y una regla metamórfica o `semantic_content`.
+
+### Variante opcional (más robusta) 🔍
+
+Si tu perfil expone la bebida en `chatbot.output`, podrías combinar la detección de turno con una comprobación semántica:
+
+```yaml
+name: assistant_confirms_drink_semantic
+description: The assistant confirms the drink and it matches the ordered drink
+conversations: 1
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms adding the drink') and semantic_content(drink, 'a drink was added to the order')
+```
+
+⚠️ Ojo con esta variante: `semantic_content(drink, ...)` valida el *contenido del slot* `drink`, no la frase del asistente. Si lo que quieres es verificar que el asistente dijo la bebida correcta, necesitarías un helper que inspeccione las frases del chatbot — y ahí `utterance_index` es lo más cercano que tienes disponible.
+
+¿Quieres que te ayude a ajustar la redacción de las descripciones para reducir falsos positivos, o prefieres que la dejemos tal cual? 🍕🥤

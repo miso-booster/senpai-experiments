@@ -1,0 +1,53 @@
+conversation ID: graph_based_architecture__p38__pizza_shop__rule__88c9ad9e
+$$$
+Great question! 😊 Let's build that rule together — and I'll keep it grounded in your actual project setup.
+
+## The idea 💡
+
+You want to verify that the chatbot **actually provides an order ID** in the conversation. Since `order_id` is one of your `chatbot.output` fields, the cleanest way is a **single-conversation oracle** that checks the field is present and not empty.
+
+## The rule 🧾
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must provide a non-empty order_id in the conversation
+conversations: 1
+oracle: conv[0].order_id is not None and len(str(conv[0].order_id).strip()) > 0
+```
+
+## Why this works 🔍
+
+- **`conversations: 1`** → it's a simple oracle over a single conversation, no metamorphic pairing needed.
+- **`conv[0].order_id`** → references the `order_id` slot from your profile's `chatbot.output` (exactly the name you mentioned).
+- **`is not None`** → catches the case where the extractor found nothing.
+- **`len(str(...).strip()) > 0`** → guards against empty strings or whitespace-only values, which would otherwise "pass" a naive check.
+
+## A couple of things to double-check ✅
+
+1. **Make sure `order_id` exists in the profile's `chatbot.output`** — if the slot isn't declared there, the rule can't see it. If you're not sure, I can help you inspect the profile.
+2. **If you want to be stricter** (e.g., require a specific format like `ORD-12345`), you could add a regex-style check — but Sensei-check's helpers don't include regex directly, so you'd typically lean on `semantic_content` or a substring check instead. For example:
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must provide a non-empty order_id in the conversation
+conversations: 1
+oracle: conv[0].order_id is not None and len(str(conv[0].order_id).strip()) > 0
+```
+
+(That's the same rule — just noting that format validation would be a separate, stricter rule.)
+
+## Bonus: a global uniqueness companion 🎯
+
+If you also want to make sure **no two conversations share the same order ID**, you can pair it with a global rule (this mirrors the `is_unique` example from the docs):
+
+```yaml
+name: unique_order_ids
+description: Every conversation has a unique order_id
+conversations: all
+oracle: is_unique('order_id')
+```
+
+That combo gives you both **presence** and **uniqueness** coverage for `order_id` — a nice little safety net 🕸️.
+
+Want me to also draft a stricter version (e.g., checking the ID appears in the chatbot's actual phrases, not just the extracted output)? Just say the word! 🙌
+$$$

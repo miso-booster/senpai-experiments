@@ -1,0 +1,51 @@
+¡Buena pregunta! 😊 Encontré el problema. Te explico qué falla y te dejo la regla corregida.
+
+## Por qué no te funciona
+
+Según `sensei-check-doc.md` (secciones 3.1 y 4), hay varios detalles que rompen tu regla:
+
+1. **`conversations:` está vacío.** El campo es obligatorio y debe ser un número (`1`, `2`, …) o `all`. Sin él, la regla no sabe cuántas conversaciones evaluar → no se ejecuta correctamente.
+2. **`membership_benefits` no es una variable válida tal cual.** En reglas de una sola conversación, los campos de `chatbot.output` se acceden como listas (`membership_benefits[0]`) o mediante helpers. Comparar el nombre "pelado" contra `''` no es la forma documentada.
+3. **`!= ''` no es una comprobación robusta.** Si el slot no se rellenó, el valor puede ser `None`, no `''`. La forma recomendada en los docs es usar el helper `data_collected()` / `missing_slots()`, o comparar con `is not None`.
+
+## Perfil objetivo
+
+La regla encaja con **`general_shopper_and_member_support.yaml`**, que expone en `chatbot.output` el campo `membership_benefits` (tipo `string`, "Benefits of Club de Socios membership"). ✅
+
+## Regla corregida
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits (profile general_shopper_and_member_support)
+conversations: 1
+active: true
+oracle: |
+  membership_benefits is not None and membership_benefits[0] != ''
+yields: |
+  f"Chatbot did not provide membership benefits information: {membership_benefits}"
+```
+
+### Qué cambié y por qué
+
+- **`conversations: 1`** → ahora la regla sabe que evalúa una conversación (obligatorio según los docs).
+- **`active: true`** → la activa explícitamente (opcional, pero recomendado).
+- **`membership_benefits is not None and membership_benefits[0] != ''`** → comprueba que el slot se rellenó de verdad, cubriendo tanto el caso `None` como la cadena vacía. El acceso `[0]` sigue el patrón de los ejemplos de `rules-examples.md` (p. ej. `size[0] == 'small'`).
+- **`yields`** → mensaje de error útil con el valor extraído, como en los ejemplos de `rules-examples.md`.
+
+### Alternativa más estricta (opcional)
+
+Si quieres verificar que **todos** los slots del perfil se rellenaron (no solo `membership_benefits`), puedes usar el helper documentado en `rules-examples.md`:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot informs about membership benefits and all slots are filled
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: |
+  f"Missing slots: {missing_slots()}"
+```
+
+⚠️ Ojo: esta versión es más exigente porque requiere que **todos** los campos de `chatbot.output` estén completos, no solo `membership_benefits`.
+
+¿Quieres que guarde la primera versión (enfocada solo en `membership_benefits`) o prefieres la variante estricta con `data_collected()`? Y confírmame si el perfil objetivo es efectivamente `general_shopper_and_member_support.yaml` 👍

@@ -1,0 +1,107 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__531233c7
+$$$
+Hey there! 😊 Happy to help you build that profile — a customer bringing in a brand-new bike to get it set up just the way he likes it. Nice, concrete scenario! 🚲
+
+Let me walk you through it step by step.
+
+## 1) What this profile needs to capture
+
+Your simulated user should:
+- Mention he **just got a new bike** and wants it **set up/tailored** to his liking.
+- Ask about **changing the seat** (and maybe its price/options).
+- Ask about **changing the handlebar grips** (and maybe their price/options).
+- Ideally **schedule an appointment** for the setup.
+
+And in `chatbot.output`, you'll want fields that let you (and later Sensei-check rules) verify the bot actually handled these requests — e.g. seat price, grips price, appointment confirmation.
+
+## 2) A ready-to-use profile
+
+Drop this into `profiles/bike_setup_customization.yml`:
+
+```yaml
+test_name: "bike_setup_customization"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike and wants the shop to
+    set it up and tailor it to your liking, specifically by changing the seat
+    and the handlebar grips.
+  context:
+    - "You just bought a new bike and want it adjusted to feel comfortable for you."
+    - "You are not very technical, so you rely on the shop's advice."
+    - "You'd like to get this done soon, ideally by booking an appointment."
+  goals:
+    - "Tell the shop you just got a new bike and want it set up for your liking."
+    - "Ask about changing the seat to a {{seat_type}} one."
+    - "Ask how much a new seat costs."
+    - "Ask about replacing the handlebar grips with {{grip_type}} grips."
+    - "Ask how much new handlebar grips cost."
+    - "Ask to schedule an appointment for the setup for {{ap_date}} at {{hour}}."
+    - seat_type:
+        function: random()
+        type: string
+        data: [comfortable, gel, ergonomic, wider]
+    - grip_type:
+        function: random()
+        type: string
+        data: [ergonomic, rubber, lock-on, soft]
+    - ap_date:
+        function: forward()
+        type: string
+        data: [tomorrow, "next Saturday"]
+    - hour:
+        function: another()
+        type: string
+        data: ["10:00", "14:00", "16:30"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_price:
+        type: money
+        description: "The price of a new seat as stated by the chatbot."
+    - grip_price:
+        type: money
+        description: "The price of new handlebar grips as stated by the chatbot."
+    - setup_service_confirmation:
+        type: string
+        description: "Confirmation that the shop offers bike setup/customization services."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the scheduled setup appointment, including date and time."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+## 3) A few notes on the choices 👀
+
+- **`money` type** — I used it for prices because your project already uses `money` in `qa.yml` and `appointment.yml`-style profiles, so it's consistent with your existing setup. ✅
+- **`single question`** interaction style — matches most of your other bikeshop profiles and keeps the conversation clean and easy to verify.
+- **`all_answered` goal style** — the conversation ends once all goals are covered (with a safety `limit`), which fits a "gather info + book" flow nicely.
+- **Variables** — `seat_type`, `grip_type`, `ap_date`, and `hour` are declared with matching `{{...}}` names in the goals (case-sensitive!). I used `forward()`/`another()`/`random()` to give you some variety across runs.
+
+## 4) Want to tweak it?
+
+A couple of easy adjustments depending on your testing goals:
+- If you want to **stress-test the bot's fallback**, add `make spelling mistakes` or `long phrases` to `interaction_style`.
+- If you want to check the bot **handles rescheduling**, add a goal like "Ask to move the appointment to another day."
+- If you'd rather the user **not** book an appointment, just drop the appointment goal and its output field.
+
+Want me to adapt it to match a specific existing profile's style (e.g. the `rude-user` or `skeptical-user` personality), or add a rule-friendly output field for a Sensei-check rule? Just say the word! 😊
+$$$

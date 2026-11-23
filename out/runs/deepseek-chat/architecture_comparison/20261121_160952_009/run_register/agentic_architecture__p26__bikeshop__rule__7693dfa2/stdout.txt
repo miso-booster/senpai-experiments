@@ -1,0 +1,45 @@
+conversation ID: agentic_architecture__p26__bikeshop__rule__7693dfa2
+$$$
+I checked your rule against the docs (`sensei-check-doc.md`, `rules-examples.md`) and against the project profiles. Here's what I found 😊
+
+## What's wrong with the current rule
+
+1. **`when:` is used as the assertion.** In the DSL, `when:` is only a *filter* that selects comparable conversations — it's not the check itself. The actual assertion must live in `oracle:` (or in `then:` when using `if`/`then`). As written, `when: conv[0].tune_up_price == 50` would just filter conversations and then have nothing to validate.
+2. **`then:` is a plain string, not a boolean expression.** `then: "The tune-up price is $50."` is a message, not a condition — it can never evaluate to true/false.
+3. **`if:` is redundant / misplaced.** `if: conv[0].tune_up_price is not None` guards against missing data, but with `conversations: 2` the rule would be a metamorphic rule comparing two conversations, which makes no sense for an absolute price check. A fixed price is a **single-conversation oracle**.
+4. **Raw comparison on a `money` field.** In both relevant profiles, `tune_up_price` is typed `money` (e.g. `"50 USD"` or `"$50"`), so `== 50` would fail. The docs recommend `extract_float(...)` for numeric comparisons (and `currency(...)` if you want to pin the currency).
+5. **`conversations: 2`** — should be `1` for this check.
+
+## Fixed rule
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price is $50 (profile-bound, uses tune_up_price from chatbot.output).
+conversations: 1
+active: true
+when: conv[0].tune_up_price is not None
+oracle: extract_float(conv[0].tune_up_price) == 50 and currency(conv[0].tune_up_price) == 'USD'
+yields: f"Expected tune-up price of $50, got {conv[0].tune_up_price}"
+```
+
+## What I changed and why
+
+| Change | Reason |
+|---|---|
+| `conversations: 2` → `1` | It's an absolute-value check, not a metamorphic comparison between two conversations. |
+| Moved the assertion from `when:` → `oracle:` | `when:` only filters conversations; `oracle:` is where the boolean check goes. |
+| Removed `if:`/`then:` | `if`/`then` is for implications across conversations; the `is not None` guard is better expressed in `when:`. |
+| `conv[0].tune_up_price == 50` → `extract_float(conv[0].tune_up_price) == 50` | `tune_up_price` is a `money` field (e.g. `"50 USD"`), so a raw `== 50` would never match. |
+| Added `currency(...) == 'USD'` | Optional but recommended by the docs so `50 EUR` doesn't pass. Drop it if you don't care about currency. |
+| Added `active: true` and `yields:` | `active` makes the rule explicit; `yields` gives a helpful failure message (docs use `yields:` for this). |
+
+## Profile alignment note
+
+I found two profiles exposing `tune_up_price`:
+- `bike_service_and_repair_inquirer.yaml` → `tune_up_price` (type `money`)
+- `bike_repair_and_maintenance_scheduler.yaml` → `tune_up_price` (type `money`)
+
+The rule works for both since the field name matches. If you want it tied to just one, tell me which and I'll mention it in the `description` (the docs recommend documenting the target profile there).
+
+One heads-up ⚠️: if the chatbot's tune-up price isn't actually $50, this rule will fail by design — that's the point of the check. Want me to also add a `currency`-free variant, or save this rule to the project?
+$$$

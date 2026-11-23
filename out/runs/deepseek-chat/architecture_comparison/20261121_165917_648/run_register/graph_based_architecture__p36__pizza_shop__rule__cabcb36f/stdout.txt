@@ -1,0 +1,38 @@
+conversation ID: graph_based_architecture__p36__pizza_shop__rule__cabcb36f
+$$$
+Hey there! 👋 Happy to help — this one's a classic "missing piece" situation, and the fix is tiny 😊
+
+## What's wrong
+
+Your rule has a `then:` but **no `if:`**. In Sensei-check, `if`/`then` is an *implication*: "**if** this precondition holds, **then** this relation must hold." Without the `if`, the `then` has no trigger — so the rule can't evaluate the metamorphic relation properly. The `when:` only *selects* comparable conversations; it doesn't state the input change you're testing.
+
+In other words: `when` says *"these two conversations are comparable"*, but `if` says *"and here's the input difference"*. You're missing that second part 🧩
+
+## The fix
+
+Add the `if:` line that captures the actual metamorphic change (more toppings):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+## Why this works
+
+- **`when`** → keeps the confounders equal (same size, same drink) so the comparison is fair 🍕
+- **`if`** → states the one thing that changes: conv[0] has *more toppings* than conv[1]
+- **`then`** → asserts the expected consequence: conv[0] must cost *more*
+
+That's the metamorphic mindset: hold everything else steady, vary one dimension, assert the relation. Your project already has this exact pattern working in `more_toppings_cost_more.yaml` — so you're basically restoring the `if:` that got dropped 👍
+
+## One small heads-up 👀
+
+This rule depends on `toppings` and `price` being real fields in your profile's `chatbot.output`. If those names ever change (e.g., `total_price`), remember to update the rule too — otherwise it'll fail for a different reason.
+
+Want me to double-check any of your other rules while we're here? 😊
+$$$

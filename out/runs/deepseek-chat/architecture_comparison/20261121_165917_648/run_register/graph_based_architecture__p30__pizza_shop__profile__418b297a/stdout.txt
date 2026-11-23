@@ -1,0 +1,103 @@
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__418b297a
+$$$
+Hey there! 😊 Happy to help you build that profile — a rude, impatient pizza customer sounds like a fun stress test for your bot! 🍕⚡
+
+Let me walk you through it, then give you the full YAML.
+
+## What I'm setting up
+
+- **Role/context**: a rude, in-a-hurry customer.
+- **4 goals** with **4 variables**.
+- **2 variables use `pairwise()`** → so `conversation.number: combinations(...)` can be derived from the pairwise matrix (remember: you need **at least 2 pairwise functions** for that to work ✅).
+- The other 2 variables use `forward()` / `random()` for variety.
+
+## The profile
+
+```yaml
+test_name: "rude_impatient_pizza_order"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude, impatient customer ordering pizza. You are in a hurry and
+    you make that very clear. You speak bluntly, complain about waiting, and
+    push the chatbot to move fast. You still want your order placed correctly.
+  context:
+    - "You are on your lunch break and only have a few minutes."
+    - "You get annoyed if the bot asks too many questions or is slow."
+    - "You still expect the order details to be right."
+  goals:
+    - "Demand a {{pizza_type}} pizza in a {{pizza_size}} size, and tell them to hurry up."
+    - "Add {{toppings}} on top and complain that this is taking too long."
+    - "Order {{number_of_drinks}} {{drink_type}} and snap at them to be quick about it."
+    - "Ask how long it will take and how much it costs, making clear you're in a rush."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Vegetarian, Four cheese]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - toppings:
+        function: forward()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - drink_type:
+        function: random()
+        type: string
+        data: [Coke, Sprite, Fanta, Water, Iced Tea]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - order_summary:
+        type: string
+        description: "Summary of the pizza and drink order, including type, size, toppings, and drinks."
+    - total_cost:
+        type: money
+        description: "Total cost of the order, including currency symbol."
+    - estimated_time:
+        type: time
+        description: "Estimated time until the order is ready."
+    - order_id:
+        type: string
+        description: "Unique order identifier."
+
+conversation:
+  number: combinations(1, pairwise)   # derived from the two pairwise variables
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change your mind
+```
+
+## A few notes so it runs smoothly 👀
+
+- **`combinations(1, pairwise)`** works because you have **two `pairwise()` variables** (`pizza_type` and `pizza_size`). If you'd rather use a fraction of the matrix, swap in e.g. `combinations(0.6, pairwise)`.
+- **Variable names must match exactly** the `{{...}}` in your goal strings — I kept them consistent (`pizza_type`, `pizza_size`, `toppings`, `number_of_drinks`, `drink_type`).
+- I used `money` and `time` in `chatbot.output` — those are fine there (they're output-only types). Just don't use them inside `user.goals`. 👍
+- The rude/impatient vibe lives in the `role` + `context` + the goal wording, so the simulator will naturally push and complain. 😤
+- If your bot has a real fallback message, paste it into `chatbot.fallback` to avoid loops.
+
+Want me to tweak the tone (more/less aggressive), swap in a `personalities/` file for the rude persona, or adjust the conversation count? Just say the word! 🙌
+$$$

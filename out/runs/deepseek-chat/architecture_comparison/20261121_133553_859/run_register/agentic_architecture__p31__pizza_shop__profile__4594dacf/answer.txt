@@ -1,0 +1,73 @@
+Here's the cleaned-up profile. The main structural problem was that `is_starter`, `fallback`, and `output` were nested under `user` instead of a top-level `chatbot:` section, and `conversation.number` was missing.
+
+```yaml
+test_name: general_information_seeker
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+    - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+    - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+    - Ask what types of questions the chatbot can answer.
+    - Ask what the daily opening hours are.
+    - Ask about the estimated order time, without specifying the number of pizzas.
+    - Ask what drink options are available and their prices.
+    - Ask about the pricing for a custom pizza.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - available_information:
+        type: string
+        description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+    - opening_hours:
+        type: string
+        description: The daily opening hours of the pizza shop, as stated by the chatbot.
+    - estimated_order_time:
+        type: string
+        description: The chatbot's explanation of the estimated order time, including factors that influence it.
+    - drink_options_and_prices:
+        type: string
+        description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+    - custom_pizza_pricing:
+        type: string
+        description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+
+conversation:
+  number: 1
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+## What changed and why 🔧
+
+1. **Moved `is_starter` / `fallback` / `output` under a top-level `chatbot:` section.** In the schema these belong to `chatbot`, not `user`. This was the biggest structural issue.
+
+2. **Cleaned the `fallback` string.** It had a stray backtick and a leaked LangChain error message (`...OUTPUT_PARSING_FAILURE`). It now contains just the real fallback sentence.
+
+3. **`custom_pizza_pricing` type `str` → `string`.** `str` isn't a valid output type; the accepted primitives are `int`, `float`, `string`, plus `time(...)`, `date(...)`, and `list[...]`.
+
+4. **`interaction_style: single question` → `single questions`.** Interaction styles are reserved keywords, and the correct one is plural.
+
+5. **Added `conversation.number: 1`.** This field is required in the `conversation` section; since there are no `forward`/`pairwise` variables here, a fixed integer is the right choice.
+
+6. **`export: 1` → `export: true`.** `export` is a boolean flag, so `true` is the clearer, schema-aligned value.
+
+## Notes ⚠️
+
+- **`model_prov` is omitted** — that's fine, since `llm` is optional and defaults apply. Add it only if your setup needs an explicit provider key.
+- If you'd like more than one conversation per run, bump `conversation.number` to the count you want (e.g., `number: 5`).

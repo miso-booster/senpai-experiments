@@ -1,0 +1,30 @@
+conversation ID: graph_based_architecture__p37__pizza_shop__rule__00b15f88
+$$$
+¡Buena idea! 😊 Esa regla encaja perfecto con el estilo de las que ya tienes en tu proyecto (`ordering_conversation_turns_assistant` usa justo el mismo patrón con `utterance_index`).
+
+Te propongo esto:
+
+```yaml
+name: assistant_confirms_drink
+description: The assistant confirms that the drink requested by the user was added to the order
+conversations: 1
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms the drink was added to the order')
+```
+
+### Por qué está escrita así 🧠
+
+- **`conversations: 1`** → es un oráculo de una sola conversación (no comparas pares), igual que `ordering_conversation_turns_assistant`.
+- **`utterance_index('user', 'ordering a drink')`** → localiza el turno en el que el usuario pide la bebida.
+- **`utterance_index('assistant', 'confirms the drink was added to the order')`** → localiza el turno en el que el asistente confirma que la añadió.
+- La comparación `<` asegura que la **confirmación ocurre después** del pedido (no antes, lo cual sería raro).
+
+### Un par de consejos 💡
+
+1. **`utterance_index` es LLM-backed**, así que la descripción en lenguaje natural importa. Si quieres ser más estricto, puedes afinar el texto, por ejemplo:
+   - `'confirms the drink has been added'`
+   - `'acknowledges the drink selection'`
+2. Si en tu perfil de SENSEI Chat la bebida se expone en `chatbot.output` (por ejemplo un campo `drink`), también podrías reforzar la regla combinándola con `data_collected()` o `missing_slots() == []` para asegurar que la bebida quedó registrada. Pero ojo: eso ya sería una regla distinta (más de "slot filling" que de confirmación conversacional).
+3. Si quieres que la regla **solo aplique cuando el usuario pidió bebida**, podrías añadir un `when:` — aunque con `utterance_index` devolviendo `-1` (o `0`) cuando no encuentra el patrón, conviene revisar cómo quieres tratar esos casos.
+
+¿Quieres que te la deje también en una variante que verifique la confirmación **contra el campo `drink` del `chatbot.output`**? Así cubrirías tanto la parte conversacional como la de datos extraídos 🙌
+$$$

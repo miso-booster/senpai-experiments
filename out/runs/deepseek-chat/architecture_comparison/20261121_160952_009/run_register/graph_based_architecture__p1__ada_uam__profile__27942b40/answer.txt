@@ -1,0 +1,112 @@
+¡Hola! 😊 ¡Claro que sí! Te ayudo a crear un perfil de Sensei para simular a un usuario que intenta configurar **eduroam** en su dispositivo y no lo consigue. Antes de escribir el YAML, déjame comentarte un par de cosas para que quede bien alineado con la documentación 👇
+
+## Puntos clave a tener en cuenta
+
+1. **Variables en `user.goals`**: cada `{{variable}}` debe declararse con el mismo nombre exacto (case-sensitive). Usaremos variables para los **métodos de configuración** que el usuario podría intentar (app de configuración, manual, perfil de configuración, etc.).
+2. **`chatbot.output`**: aquí definimos qué queremos extraer al final (pasos, credenciales, errores, contacto de soporte…). Estos campos luego pueden leerse en reglas como `conv[i].<field_name>`.
+3. **`interaction_style`**: como el usuario está frustrado, un toque de `make spelling mistakes` o `long phrases` puede darle realismo. Pero ojo: los estilos son **palabras reservadas** en inglés, no se traducen.
+4. **`conversation.number`**: si usas `forward()` en varias variables, puedes usar `combinations` para cubrir la matriz. Si no, un número fijo es más seguro.
+
+## Perfil propuesto
+
+```yaml
+test_name: "Configuración de eduroam en el dispositivo"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante de la UAM que intenta configurar la red eduroam en su
+    dispositivo pero no lo consigue. Estás algo frustrado porque necesitas
+    conectarte para acceder a los recursos de la universidad.
+  context:
+    - personality: personalities/impatient-user
+    - "Ya has intentado varias veces y siempre falla en algún paso."
+    - "No estás seguro de si el problema es tu contraseña, el certificado o el método de configuración."
+    - "Necesitas instrucciones claras y, si nada funciona, saber cómo contactar al CAU."
+  goals:
+    - "Pedir ayuda para configurar eduroam en mi {{dispositivo}} usando el método {{metodo_configuracion}}."
+    - "Preguntar qué credenciales debo usar para eduroam (usuario y contraseña)."
+    - "Consultar si necesito instalar algún certificado o perfil de configuración."
+    - "Preguntar qué hacer si la conexión falla con el error {{tipo_error}}."
+    - "Solicitar el contacto del CAU por si no consigo conectarme."
+    - dispositivo:
+        function: forward()
+        type: string
+        data: [portátil Windows, MacBook, Android, iPhone, iPad]
+    - metodo_configuracion:
+        function: forward(dispositivo)
+        type: string
+        data:
+          - aplicación de configuración automática (eduroam CAT)
+          - configuración manual de la red
+          - perfil de configuración descargable
+          - conexión mediante VPN como alternativa
+    - tipo_error:
+        function: random()
+        type: string
+        data:
+          - "autenticación fallida"
+          - "certificado no válido"
+          - "no se puede conectar a la red"
+          - "contraseña incorrecta"
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - eduroam_setup_steps:
+        type: string
+        description: "Pasos indicados para configurar eduroam"
+    - required_credentials:
+        type: string
+        description: "Credenciales necesarias (usuario y contraseña)"
+    - certificate_required:
+        type: string
+        description: "Indicación sobre si se necesita certificado o perfil"
+    - troubleshooting_advice:
+        type: string
+        description: "Consejos para resolver el error de conexión"
+    - cau_contact:
+        type: string
+        description: "Información de contacto del CAU"
+
+conversation:
+  number: combinations(0.6, forward)
+  goal_style:
+    steps: 20
+    max_cost: 0.3
+  interaction_style:
+    - single questions
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+## Por qué está montado así 🧠
+
+- **`forward()` en `dispositivo`** → recorre todos los dispositivos de forma determinista.
+- **`pairwise()` en `metodo_configuracion`** → cubre cada par de métodos al menos una vez sin explotar el número de conversaciones. Como hay **dos funciones** (una `forward` y una `pairwise`), `combinations(0.6, pairwise)` tiene sentido para generar la matriz.
+- **`random()` en `tipo_error`** → cada conversación prueba un error distinto, aportando variedad.
+- **`chatbot.output`** está pensado para que luego puedas escribir reglas del estilo:
+  ```yaml
+name: certificate_required_check
+description: Checks that when a certificate is required, the rule condition holds
+conversations: 1
+if: conv[0].certificate_required is not None
+then: conv[0].certificate_required is not None
+```
+  con nombres estables y descriptivos.
+
+## Un par de avisos ⚠️
+
+- Si tu proyecto **no tiene** `personalities/impatient-user`, quita esa línea o crea el archivo en `personalities/`. Si no existe, el perfil puede fallar al cargar.
+- Recuerda que `pairwise()` necesita **al menos 2 variables** asignadas a pairwise para funcionar; aquí solo hay una (`metodo_configuracion`), así que si quieres usar `combinations(..., pairwise)` de forma estricta, te recomiendo añadir otra variable con `pairwise()` (por ejemplo, separar `certificado` como variable propia) o cambiar `number` a un entero fijo como `number: 5`.
+
+¿Quieres que te lo ajuste para que tenga **dos variables pairwise** y así aprovechar bien `combinations`? ¿O prefieres que lo deje con `number` fijo para simplificar? 😊

@@ -1,0 +1,47 @@
+conversation ID: one_node_architecture__p47__pizza_shop__documentation__4014a487
+$$$
+Great question! 😊 Let me break it down in a friendly way.
+
+## What is a metamorphic rule in Sensei?
+
+A **metamorphic rule** is a rule that checks a **relationship between two or more conversations** — instead of checking one conversation against a fixed expected answer.
+
+Think of it like this 🍕: you don't need to know the *exact* price of every pizza. You just need to know that **if you add more toppings, the price should go up**. That relationship is the "metamorphic" part — you're testing how outputs *change* when inputs change, rather than testing absolute values.
+
+This is super useful because for chatbots, there's often no single "correct" answer (the *oracle problem*). Metamorphic rules sidestep that by checking **invariants** and **monotonic relations**.
+
+## The key idea
+
+- **Single-conversation rule** → "This answer must equal X."
+- **Metamorphic rule** → "If conversation A has more toppings than B (same size/drink), then A's price must be higher than B's."
+
+## A quick example from your project
+
+Here's your `more_toppings_cost_more.yaml` rule — a perfect metamorphic example:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Let me walk through the pieces 👇
+
+- **`conversations: 2`** → this rule needs a *pair* of conversations to compare.
+- **`when:`** → the *filter* that makes the two conversations comparable (same size, same drink — the "ceteris paribus" conditions).
+- **`if:` / `then:`** → the metamorphic relation itself: *if* one has more toppings, *then* it must cost more.
+
+## Why it's powerful 💡
+
+- You don't need to hardcode expected prices.
+- It catches **regressions** — e.g., if a bot suddenly charges less for more toppings, the rule fails.
+- It works great with the **`conv[i].field`** outputs your profiles expose in `chatbot.output`.
+
+One important note: for a metamorphic rule to work, the fields it references (`toppings`, `price`, `size`, `drink`) must actually exist in the target profile's `chatbot.output`. Otherwise the rule has nothing to read! 🔍
+
+Want me to help you write a new metamorphic rule, or adapt one of these to a different profile in your project? 🚀
+$$$

@@ -1,0 +1,61 @@
+# Creating a rule to verify CAU contact info 🎯
+
+Great idea! You want to check that the chatbot correctly reports the CAU's **email**, **phone**, and **physical address** — and since these are exact, factual values, this is a perfect case for a **single-conversation oracle** using the `semantic_content` helper (LLM-backed, tolerant to formatting variations like `91 497 4029` vs `914974029`).
+
+Here's the rule, adapted to your actual `chatbot.output` fields (`contact_email`, `contact_phone`, `physical_address`):
+
+```yaml
+name: cau_contact_info_correct
+description: The chatbot reports the correct CAU email, phone and physical address
+conversations: 1
+oracle: semantic_content(contact_email, 'cau@uam.es') and semantic_content(contact_phone, '91 497 4029') and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+on-error: f"CAU info mismatch — email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+## Why this shape? 🤔
+
+- **`conversations: 1`** — this is a plain oracle over a single conversation, not a metamorphic relation. You're checking absolute correctness, not a relation between two dialogs.
+- **`semantic_content(field, expected)`** — the right tool here. It's an LLM-backed check that tolerates small wording/formatting differences (e.g. `91 497 4029` vs `914974029`, or "C/ Francisco Tomás y Valiente" vs "Calle Francisco Tomás y Valiente"). A strict `==` would be brittle and produce false failures.
+- **`on-error`** — prints the actual extracted values so you can see *which* field went wrong when it fails. Super handy for debugging 👀.
+
+## A couple of things to double-check ✅
+
+1. **Field names** — I used exactly the ones from your `chatbot.output`: `contact_email`, `contact_phone`, `physical_address`. If the profile renames them, update the rule to match.
+2. **`semantic_content` is LLM-backed** — expect minor variability. If you want a *stricter* check for the email specifically (it's a fixed string), you could tighten it:
+
+```yaml
+name: cau_contact_info_correct
+description: The chatbot reports the correct CAU email, phone and physical address
+conversations: 1
+oracle: contact_email == 'cau@uam.es' and semantic_content(contact_phone, '91 497 4029') and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+on-error: f"CAU info mismatch — email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+Here the email is compared exactly (it's a canonical string), while phone and address stay semantic to absorb formatting noise.
+
+## Optional: split into three rules 🔍
+
+If you'd rather get **granular pass/fail per field** (easier to spot *which* piece is wrong), split it:
+
+```yaml
+name: cau_email_correct
+description: CAU email is correct
+conversations: 1
+oracle: contact_email == 'cau@uam.es'
+```
+
+```yaml
+name: cau_phone_correct
+description: CAU phone is correct
+conversations: 1
+oracle: semantic_content(contact_phone, '91 497 4029')
+```
+
+```yaml
+name: cau_address_correct
+description: CAU physical address is correct
+conversations: 1
+oracle: semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+That way a single wrong field won't mask the others. Want me to help wire this into your `conversation_lengths.yaml` project structure, or adjust the expected strings? 😊

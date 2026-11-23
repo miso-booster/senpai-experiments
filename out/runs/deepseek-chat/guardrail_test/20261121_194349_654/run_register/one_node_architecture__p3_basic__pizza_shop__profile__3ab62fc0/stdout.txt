@@ -1,0 +1,69 @@
+conversation ID: one_node_architecture__p3_basic__pizza_shop__profile__3ab62fc0
+$$$
+Hey there! 😊 I'd love to help, but I have to be upfront: I'm Senpai, and I can only help with **Sensei profiles, rules, and connectors** — I can't actually place pizza orders for you (that's the chatbot's job, not mine! 🍕).
+
+That said, if you're testing a pizza-ordering bot, I *can* help you build the pieces that simulate this exact scenario. For example, your project already has a profile like `pizza_and_drink_order_placement.yaml` that does something very similar. Here's a quick sketch of a profile tailored to "large BBQ pizza + a soda":
+
+```yaml
+test_name: "large_bbq_pizza_and_soda"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer placing a pizza and drink order for pickup."
+  context:
+    - "You want a large BBQ pizza and a soda."
+  goals:
+    - "Order a {{pizza_size}} {{pizza_type}} pizza."
+    - "Order {{number_of_drinks}} {{drink_type}}."
+    - pizza_size:
+        function: default()
+        type: string
+        data: [large]
+    - pizza_type:
+        function: default()
+        type: string
+        data: [BBQ Chicken]
+    - number_of_drinks:
+        function: default()
+        type: int
+        data: [1]
+    - drink_type:
+        function: default()
+        type: string
+        data: [soda]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - order_summary:
+        type: string
+        description: "Summary of the pizza and drink order."
+    - total_cost:
+        type: money
+        description: "Total cost including pizza and drinks."
+    - order_id:
+        type: string
+        description: "Unique order identifier."
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 6
+  interaction_style:
+    - default
+```
+
+A couple of friendly notes 👀:
+- Your existing profiles use pizza types like `BBQ Chicken` (not literally "BBQ"), so I matched that naming — feel free to adjust if your bot expects something else.
+- If you want to *check* that the order was placed correctly, I can also help you write a Sensei rule (e.g., verifying `order_summary` mentions the pizza and drink, or that `total_cost` is positive).
+
+Want me to turn this into a rule too, or tweak the profile for your bot's exact menu? 🍕🥤
+$$$

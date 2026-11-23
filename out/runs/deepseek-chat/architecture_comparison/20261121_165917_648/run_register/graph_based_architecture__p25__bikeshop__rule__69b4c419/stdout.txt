@@ -1,0 +1,89 @@
+conversation ID: graph_based_architecture__p25__bikeshop__rule__69b4c419
+$$$
+# Hey there! 👋 Let's build that rule together!
+
+Great — you've got a nice, focused profile here. Let me walk you through what I see and then give you a rule that fits it. 😊
+
+## 🔍 First, a quick look at your `chatbot.output`
+
+Your profile exposes these fields:
+
+| Field | Type | What it holds |
+|---|---|---|
+| `opening_and_closing` | `str` | Opening & closing time |
+| `tire` | `money` | Price of a new tire |
+| `tune_up` | `money` | Price of a tune-up |
+| `seat_price` | `str` | Price of a new seat |
+| `care_bike` | `str` | Bike care actions |
+
+⚠️ **Small heads-up:** `seat_price` is typed as `str` while `tire` and `tune_up` are `money`. That's fine — but if you want to compare it numerically, `extract_float()` will still work on it. Just keep it in mind. 👍
+
+## 🎯 What you're asking for
+
+You want to check that the bot reports:
+- **Opening & closing time** → between **10 and 20** (I'm reading this as the *hour range*, e.g. opens at 10, closes at 20 — but see the note below 👇)
+- **Tune-up** → **50**
+- **Seat** → **20**
+- **Tire** → **20**
+
+## 🤔 One clarification I need
+
+"Opening and closing should be 10 to 20" is a bit ambiguous. It could mean:
+
+1. **The shop opens at 10:00 and closes at 20:00** (i.e., 10am–8pm), or
+2. **The opening/closing values should fall within the numeric range 10–20** (e.g., extracted numbers between 10 and 20).
+
+I'll write the rule for **interpretation 1** (opens at 10, closes at 20) since that's the most natural reading for a bike shop — but I'll flag how to switch to interpretation 2 at the end. 🛠️
+
+## ✅ The rule
+
+Since this is a **single-conversation oracle** (you're checking fixed expected values, not comparing pairs), `conversations: 1` is the right choice.
+
+```yaml
+name: bike_shop_prices_and_hours
+description: >
+  Checks that the bike shop bot reports opening at 10 and closing at 20,
+  a tune-up price of 50, a seat price of 20, and a tire price of 20.
+conversations: 1
+oracle: >
+  extract_float(conv[0].opening_and_closing) == 10
+  and 20 in [extract_float(x) for x in conv[0].opening_and_closing.split()]
+  and extract_float(conv[0].tune_up) == 50
+  and extract_float(conv[0].seat_price) == 20
+  and extract_float(conv[0].tire) == 20
+on-error: >
+  Expected hours 10–20, tune-up 50, seat 20, tire 20 — got
+  opening_and_closing={conv[0].opening_and_closing},
+  tune_up={conv[0].tune_up}, seat_price={conv[0].seat_price}, tire={conv[0].tire}
+```
+
+## 🧠 Why it's written this way
+
+- **`extract_float(...)`** pulls the first number out of a string — perfect for `money` and `str` fields like `"$50.00"` or `"20"`. 💰
+- **`conv[0].<field>`** matches your exact `chatbot.output` names (`opening_and_closing`, `tune_up`, `seat_price`, `tire`). No invented fields! ✅
+- **`on-error`** gives you a friendly, readable failure message so debugging is a breeze. 🐛
+- **`conversations: 1`** because we're asserting absolute expected values, not a metamorphic relation.
+
+## 🔄 If you meant interpretation 2 (range 10–20)
+
+Swap the opening/closing part for something like:
+
+```yaml
+name: opening_and_prices_check
+description: Opening hours are between 10 and 20, and tune-up, seat, and tire prices match expected values
+conversations: 1
+oracle: >
+  all(10 <= extract_float(x) <= 20 for x in conv[0].opening_and_closing.split())
+  and extract_float(conv[0].tune_up) == 50
+  and extract_float(conv[0].seat_price) == 20
+  and extract_float(conv[0].tire) == 20
+```
+
+## 💡 A couple of friendly tips
+
+- If the bot sometimes returns prices like `"$20.00"` vs `"20"`, `extract_float` handles both — nice and forgiving. 🙌
+- If you later want to **also** check that `care_bike` is non-empty (so the bot actually answers the care question), you could add: `and conv[0].care_bike is not None`.
+- Consider making `seat_price` a `money` type in the profile for consistency — purely cosmetic, but it keeps things tidy. ✨
+
+Want me to also draft a **metamorphic version** (e.g., comparing two conversations where only one price differs), or tweak this for the range interpretation? Just say the word! 😄
+$$$

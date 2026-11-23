@@ -1,0 +1,43 @@
+Here's the connector for the Alcampo bot, built from your captured request/response and following `custom-connector-guide.md` + `connector-examples.md` (same style as the Metro Madrid example, since it's also a widget-style POST with session/user IDs) 😊
+
+```yaml
+name: "Alcampo"
+base_url: "https://alcampo.botslovers.com"
+send_message:
+  path: "/bot/web"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Origin: "https://alcampo.botslovers.com"
+    Referer: "https://alcampo.botslovers.com/Admin/Widget?mobile=0&user=0&lang=es"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    data:
+      id_user: "377611"
+      idweb_user: "ea38fe92-ad92-4610-9d62-ef7fecb1679b"
+      session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+      message:
+        message:
+          message:
+            text: "{user_msg}"
+        iduser: "377611"
+        session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+        channel: "web"
+      widget_form: "TRUE"
+      contexto_extra: []
+      lang: "es"
+    accion: "response_bot"
+response_path: "messages.0.0.message.text"
+```
+
+### How it maps 🔍
+- **`base_url` + `path`** → `https://alcampo.botslovers.com/bot/web` (the `POST //bot/web` from your capture).
+- **`headers`** → only the ones that matter for the API (`Content-Type`, `Origin`, `Referer`, `User-Agent`). Browser-only headers like `Accept-Encoding`, `Sec-Fetch-*`, `Priority`, `TE`, `Pragma` are dropped — they're noise for a scripted client.
+- **`payload_template`** → mirrors your JSON exactly, with `{user_msg}` injected at `data.message.message.message.text` (the deep nesting is intentional — it matches the real request).
+- **`response_path`** → `messages.0.0.message.text` walks `messages[0][0]["message"]["text"]`, which yields the bot reply: *"¡Hola! Soy Iker, el asistente virtual 🤖 de Alcampo..."*.
+
+### Heads-up ⚠️
+- The `session` and `idweb_user` values are hardcoded from your capture. If the bot requires a fresh session per conversation, you may need to generate/rotate them — the docs don't cover dynamic session handling, so I kept them static like the Metro Madrid example does.
+- If you'd rather extract the reply from `data.response_gpt.answer` (same text, cleaner path), just swap `response_path` to `data.response_gpt.answer`.
+
+Want me to save this as a file (e.g. `alcampo.yml`) or tweak the session handling?

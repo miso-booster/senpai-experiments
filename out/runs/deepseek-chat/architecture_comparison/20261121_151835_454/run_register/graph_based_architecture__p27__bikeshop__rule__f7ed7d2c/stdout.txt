@@ -1,0 +1,93 @@
+conversation ID: graph_based_architecture__p27__bikeshop__rule__f7ed7d2c
+$$$
+¡Buena idea! 😊 Vamos a crear una regla que verifique que, si el usuario intenta dar **la misma fecha dos veces**, el asistente rechace la segunda. Te explico cómo encajarla en Sensei-check.
+
+## 🧠 Idea de la regla
+
+Esto es una **regla metamórfica de 2 conversaciones**: comparamos dos diálogos donde el usuario proporciona una fecha, y en el segundo intenta darla **otra vez** (la misma). La relación esperada es que el asistente **no acepte** la segunda fecha.
+
+## ⚠️ Antes de escribirla: dependencia del perfil
+
+Para que funcione necesitas que tu **SENSEI Chat profile** exponga en `chatbot.output` un campo con la fecha aceptada, por ejemplo:
+
+```yaml
+# profiles/appointment_booking.yaml
+test_name: "appointment_booking"
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente que quiere reservar una cita y necesita acordar una fecha.
+  context:
+    - "Prefieres una cita lo antes posible."
+  goals:
+    - "Reservar una cita para el {{date}}"
+    - date:
+        function: random()
+        type: string
+        data:
+          - any(3 fechas dentro de los próximos 30 días en formato YYYY-MM-DD)
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, ¿puedes reformular tu mensaje?"
+  output:
+    - date:
+        type: string
+        description: Fecha aceptada para la cita (YYYY-MM-DD)
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+Si tu perfil usa otro nombre (`appointment_date`, `booking_date`, etc.), **adapta el campo** en la regla. Si no existe ese campo, la regla no podrá evaluarse hasta que lo añadas. 👍
+
+## 📝 La regla
+
+```yaml
+name: duplicate_date_rejected
+description: >
+  Si el usuario intenta dar dos veces la misma fecha, el asistente debe
+  rechazar la segunda (no debe aceptarla como nueva cita).
+conversations: 2
+when: conv[0].date == conv[1].date
+if:   utterance_index('assistant', 'already') > 0 or utterance_index('assistant', 'same date') > 0
+then: conv[1].date == conv[0].date
+on-error: "El asistente aceptó una fecha duplicada: {conv[0].date} vs {conv[1].date}"
+```
+
+## 🔍 Qué hace cada parte
+
+- **`conversations: 2`** → comparamos dos diálogos.
+- **`when: conv[0].date == conv[1].date`** → solo evaluamos pares donde la fecha es la misma (cohorte comparable).
+- **`if:`** → detecta que el asistente **menciona** que la fecha ya estaba (rechazo explícito). Usa `utterance_index`, que es un helper LLM-backed, así que admite cierta variabilidad.
+- **`then:`** → confirma que la fecha aceptada sigue siendo la misma (no se duplicó ni se creó una nueva).
+- **`on-error:`** → mensaje claro cuando falla.
+
+## 💡 Alternativa más estricta (si tu perfil lo permite)
+
+Si tu perfil expone un campo tipo `booking_count` o `appointments` (lista), puedes comprobar directamente que **no se añadió una segunda cita**:
+
+```yaml
+name: duplicate_date_not_added
+description: Una fecha repetida no debe generar una segunda cita.
+conversations: 2
+when: conv[0].date == conv[1].date
+if:   len(conv[1].appointments) > len(conv[0].appointments)
+then: utterance_index('assistant', 'already booked') > 0
+```
+
+## ✅ Recomendaciones
+
+1. **Ajusta los textos** de `utterance_index` (`'already'`, `'same date'`, `'already booked'`) al vocabulario real de tu asistente. Si responde en español, usa `'ya'`, `'ya reservada'`, `'misma fecha'`, etc.
+2. **Verifica el nombre del campo** en `chatbot.output` antes de usar la regla.
+3. Si tu asistente no expone la fecha aceptada, primero **añádela al perfil** y luego vuelve a esta regla.
+
+¿Quieres que la adapte a un dominio concreto (reservas, hotel, cita médica…) o que la traduzca a otro idioma? 😊
+$$$

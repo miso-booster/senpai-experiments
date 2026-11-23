@@ -1,0 +1,73 @@
+¡Claro que sí! 🍕 Aquí tienes un perfil listo para probar el chatbot de la pizzería. El `chatbot.output` extrae justo lo que pediste: tipo de pizza, bebida, ID del pedido y precio final en dólares.
+
+```yaml
+test_name: "pizza_order_basic_check"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza and a drink from a pizza shop for pickup.
+    Be friendly and clear about what you want.
+  context:
+    - "You want a single pizza and one drink."
+    - "You care about the final price and the order confirmation."
+  goals:
+    - "Order a {{pizza_type}} pizza in {{size}} size."
+    - "Order a {{drink}} to go with it."
+    - "Ask for the total price and the order ID."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Vegetarian, Four cheese]
+    - size:
+        function: forward(pizza_type)
+        type: string
+        data: [small, medium, large]
+    - drink:
+        function: another()
+        type: string
+        data: [Coke, Sprite, Water, Fanta, Iced Tea]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the customer ordered (e.g. Margarita, Pepperoni)."
+    - drink:
+        type: string
+        description: "The drink the customer ordered (e.g. Coke, Sprite, Water)."
+    - order_id:
+        type: string
+        description: "The unique order identifier provided by the chatbot. Look for phrases like 'order number' or 'order ID'."
+    - final_price:
+        type: currency
+        description: "The final total price of the order in USD, including pizza and drink. Look for currency symbols like '$'."
+
+conversation:
+  number: combinations(0.5, forward)
+  goal_style:
+    steps: 6
+    max_cost: 0.2
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - single questions
+      - long phrases
+```
+
+Un par de notas rápidas para que le saques todo el jugo 😊:
+
+- **`final_price` usa `type: currency`**, así que en tus reglas podrás hacer cosas como `extract_float(conv[0].final_price)` o `currency(conv[0].final_price) == 'USD'`.
+- Los nombres de los campos (`pizza_type`, `drink`, `order_id`, `final_price`) son los que luego referenciarás en Sensei-check como `conv[i].pizza_type`, etc. Mantenlos estables si escribes reglas encima.
+- Usé `combinations(0.5, forward)` porque hay dos funciones `forward` anidadas (`pizza_type` → `size`). Si prefieres un número fijo de conversaciones, cambia `number` por un entero.
+
+¿Quieres que te prepare también una regla de Sensei-check que valide, por ejemplo, que el precio sea mayor que cero o que el `order_id` sea único entre conversaciones? 🚀

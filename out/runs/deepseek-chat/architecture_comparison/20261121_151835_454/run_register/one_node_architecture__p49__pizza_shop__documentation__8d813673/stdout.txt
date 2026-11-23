@@ -1,0 +1,58 @@
+conversation ID: one_node_architecture__p49__pizza_shop__documentation__8d813673
+$$$
+Great question! 😊 The `pairwise()` function is one of Sensei's smartest tools for keeping your test suite lean while still catching most bugs. Let me break it down.
+
+## The idea in one line
+
+Instead of testing **every possible combination** of your variables (which explodes fast), `pairwise()` guarantees that **every pair of values across any two variables appears together at least once**. 🎯
+
+## A quick analogy
+
+Imagine you're testing pizza orders with:
+- **Size**: small, medium, large
+- **Drink**: coke, sprite, fanta
+
+A full Cartesian product would be **3 × 3 = 9** conversations. With `pairwise()`, you'd cover all size–drink pairs in just **3** conversations — every size gets paired with every drink at least once, without redundancy.
+
+## How it works in a profile
+
+You assign `pairwise()` to **two or more variables** in `user.goals`. Sensei then generates a minimal set of combinations covering all value pairs.
+
+```yaml
+user:
+  goals:
+    - "Order a {{size}} pizza with a {{drink}}"
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - drink:
+        function: pairwise()
+        type: string
+        data: [coke, sprite, fanta]
+```
+
+## Key rules to remember ⚠️
+
+- **Minimum 2 variables** must use `pairwise()` — otherwise it can't build pairs.
+- You can combine it with `conversation.number: combinations(...)` to control how many of the generated cases actually run:
+
+```yaml
+conversation:
+  number: combinations(0.5, pairwise)   # run 50% of the pairwise matrix
+```
+
+- It plays nicely with other functions — you can mix `pairwise()` with `forward()` or `random()` on different variables.
+
+## When to reach for it
+
+✅ You have **many variables** with several values each and want broad coverage without a huge test matrix.
+✅ You care about **2-way interactions** (which catch the vast majority of real defects).
+❌ You need **full exhaustive coverage** of every combination — then use nested `forward()` instead.
+
+## A note about your project
+
+Looking at your `pizza_order_test_custom.yml`, you already use `pairwise()` on `size` and `toppings` — nice! Just keep in mind that `conversation.number: 2` there means only 2 conversations will actually run, so you're sampling from the pairwise matrix rather than covering all of it. If you want fuller coverage, bump that number up. 👀
+
+Want me to sketch a version of that profile with a larger pairwise run, or show how to combine `pairwise()` with `combinations()`? 🍕
+$$$

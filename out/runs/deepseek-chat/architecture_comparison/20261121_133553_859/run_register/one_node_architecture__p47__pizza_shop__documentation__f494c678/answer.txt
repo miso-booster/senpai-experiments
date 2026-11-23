@@ -1,0 +1,48 @@
+Hey there! 😊 Great question — metamorphic rules are one of the coolest (and most powerful) parts of Sensei-check. Let me break it down for you.
+
+## The short version
+
+A **metamorphic rule** is a rule that checks a **relationship between two or more conversations** — instead of checking a single conversation against a fixed expected answer.
+
+Think of it like this: instead of asking *"Is the price exactly $18.50?"*, you ask *"If I add more toppings, does the price go up?"* 🍕
+
+## Why it matters
+
+The classic testing problem is the **oracle problem**: for a chatbot, it's often hard to say what the *exact* correct answer is. Metamorphic testing sidesteps that by checking **relations** that must hold when you change inputs in a controlled way — no absolute oracle needed.
+
+## How it looks in practice
+
+A metamorphic rule typically:
+
+1. **Selects comparable conversations** with `when:` (e.g., same size and drink — the *ceteris paribus* condition).
+2. **Varies one dimension** and asserts how the output should change — usually with `if:` / `then:`.
+
+Here's a classic example from your own project (`more_toppings_cost_more.yaml`):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Read it like a law: *"If two orders share size and drink, and one has more toppings, then it must cost more."* ✨
+
+## Key ingredients
+
+- **`conversations: N`** — how many conversations the rule compares (N ≥ 2 for metamorphic; `all` for global checks).
+- **`conv[i].field`** — accesses outputs extracted from your profiles' `chatbot.output` (e.g., `price`, `toppings`).
+- **`when:`** — filters to keep comparisons fair (control the confounders!).
+- **`if:` / `then:`** — the relation itself (or a single `oracle:` expression).
+
+## Common flavors
+
+- **Monotonicity** — more toppings ⇒ higher price 📈
+- **Invariance** — same config ⇒ same price ⚖️
+- **Global checks** — e.g., `is_unique('order_id')` across all conversations
+
+One thing to keep in mind: the fields you reference (`toppings`, `price`, etc.) must actually exist in the target profile's `chatbot.output` — otherwise the rule has nothing to read. 👍
+
+Want me to help you write a new metamorphic rule, or adapt one of your existing ones? Just say the word! 😄

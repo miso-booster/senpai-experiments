@@ -1,0 +1,26 @@
+conversation ID: agentic_architecture__p27__bikeshop__rule__68ac2dd8
+$$$
+¡Perfecto! Ya tengo los docs cargados (`sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`) y he revisado los perfiles del proyecto 😊.
+
+He encontrado un perfil que encaja muy bien con tu idea:
+
+**`appointment.yml`** — un usuario que pide cita en un taller de bicis.
+Sus campos de `chatbot.output` son:
+- `confirmed_date` (tipo `date`) → la fecha confirmada por el asistente
+- `confirmed_time` (tipo `str`) → la hora confirmada
+- `confirmed_service` (tipo `str`) → el servicio del appointment
+
+Antes de escribir la regla, necesito aclarar un par de cosas, porque tu petición ("si le decimos dos veces la misma fecha, nos niega poder aceptar la segunda") se puede interpretar de dos formas:
+
+1. **Dentro de una misma conversación**: el usuario propone una fecha, el asistente la acepta, y luego el usuario vuelve a proponer *la misma fecha* → el asistente debería rechazarla (porque ya está ocupada/reservada). Esto sería una regla de **1 conversación** que mira el flujo del diálogo (usando `utterance_index` para detectar el rechazo).
+
+2. **Entre dos conversaciones (metamórfica)**: dos conversaciones con la misma fecha → el asistente no puede confirmar la misma fecha en ambas (solo una puede "ganar"). Esto sería una regla de **2 conversaciones** comparando `conv[0].confirmed_date` y `conv[1].confirmed_date`.
+
+Un detalle importante: el perfil actual **no tiene un campo de output que capture "el asistente rechazó la fecha"**, así que la opción 1 dependería de detectar el rechazo en el texto del diálogo (helper `utterance_index`), mientras que la opción 2 se apoya limpiamente en `confirmed_date`.
+
+¿Cuál de las dos quieres? Y confírmame también:
+
+- ¿La regla va dirigida al perfil **`appointment.yml`** (el que encontré), o a otro perfil?
+
+Con eso te genero el YAML al momento 🚀.
+$$$

@@ -1,0 +1,61 @@
+conversation ID: graph_based_architecture__p7__ada_uam__rule__5091c1ab
+$$$
+# Rule for CAU contact info ✅
+
+Great idea! Let's build a rule that verifies the chatbot gives the **correct** CAU contact details — email, phone, and address — using the `semantic_content` helper (perfect for this, since the bot may phrase things slightly differently).
+
+Here's the rule, adapted to your actual `chatbot.output` fields (`contact_email`, `contact_phone`, `physical_address`):
+
+```yaml
+name: cau_contact_info_correct
+description: The chatbot must provide the correct CAU email, phone, and physical address
+conversations: 1
+oracle: >
+  semantic_content(contact_email, 'cau@uam.es') and
+  semantic_content(contact_phone, '91 497 4029') and
+  semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+on-error: f"CAU contact info mismatch — email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+## Why this works 🧠
+
+- **`semantic_content(value, desc)`** is an LLM-backed helper that checks whether the extracted output *semantically matches* the expected description. This is ideal here because:
+  - The phone might come back as `914974029` or `+34 91 497 4029` — still correct.
+  - The address might be reordered or abbreviated — still correct.
+- **`conversations: 1`** — this is a single-conversation oracle (no metamorphic pairing needed), since we're checking absolute correctness against known ground truth.
+- **`on-error`** gives you a helpful message showing exactly which field went wrong, so debugging is a breeze 🔍.
+
+## A couple of things to double-check 👀
+
+1. **Field names** — I used exactly the ones from your `chatbot.output`: `contact_email`, `contact_phone`, `physical_address`. If you rename any of them in the profile, update the rule too.
+2. **Single vs. multiple conversations** — if you want to verify this across *every* conversation in a batch (not just one), you could switch to a global-style check. But since `semantic_content` works per-conversation, keeping `conversations: 1` is the cleanest approach here.
+
+## Optional: split into three separate rules
+
+If you'd rather isolate failures (e.g., "email is right but phone is wrong"), you can split it into three tiny rules:
+
+```yaml
+name: cau_email_correct
+description: CAU email must be cau@uam.es
+conversations: 1
+oracle: semantic_content(contact_email, 'cau@uam.es')
+```
+
+```yaml
+name: cau_phone_correct
+description: CAU phone must be 91 497 4029
+conversations: 1
+oracle: semantic_content(contact_phone, '91 497 4029')
+```
+
+```yaml
+name: cau_address_correct
+description: CAU physical address must match the Higher Polytechnic School office
+conversations: 1
+oracle: semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+This gives you **finer-grained reporting** — you'll know exactly which piece of info the bot got wrong 😊.
+
+Want me to also add a rule that checks the bot *mentions* the CAU when asked (e.g., via `utterance_index`), or adapt this to a metamorphic pattern? Just say the word! 🚀
+$$$

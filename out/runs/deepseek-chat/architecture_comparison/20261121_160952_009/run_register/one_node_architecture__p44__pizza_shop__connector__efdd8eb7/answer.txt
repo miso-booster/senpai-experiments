@@ -1,0 +1,32 @@
+¡Claro que sí! 😊 Es un caso muy parecido al de Ada UAM, así que la adaptación es directa. Solo hay que cambiar los identificadores del bot (`conversation`, `sender`, `bot`), el `Authorization`, el `language` (se queda en `es`) y la `url` de referencia. La estructura del payload y el `response_path` (`response.0.text`) son idénticos, así que no hay que tocar nada más.
+
+Aquí tienes el connector adaptado para el chatbot del Ayuntamiento de Morón de la Frontera:
+
+```yaml
+name: "Ayuntamiento de Morón de la Frontera"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+  payload_template:
+    conversation: "67ea76f4e213b2dcbc146e2b"
+    sender_type: "User"
+    sender: "67ea76f40643a3dd27e59411"
+    bot: "65ca19e7dbbb4e26cbeadf24"
+    language: "es"
+    url: "https://www.morondelafrontera.es/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Un par de cositas a tener en cuenta 👀:
+
+- **`conversation` y `sender`** son identificadores de sesión. En el ejemplo de Ada UAM vienen fijos, y aquí también los he dejado fijos tal como aparecen en tu petición. Si el bot espera una sesión nueva por cada conversación, quizá convenga generarlos dinámicamente — pero para pruebas estáticas funciona igual que el de Ada.
+- **`response_path: "response.0.text"`** encaja perfecto con la respuesta que me pasaste (`response[0].text`). ✅
+- El texto devuelto viene con etiquetas HTML (`<p>...</p>`). Si eso te molesta al validar o comparar, avísame y te ayudo a limpiarlo o a ajustar las reglas para que lo toleren.
+
+¿Quieres que te lo deje también listo para probarlo rápido con `CustomChatbot`, o lo guardamos directamente en `connectors/`? 🚀

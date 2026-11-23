@@ -1,0 +1,46 @@
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el campo `library_hours` del perfil realmente contenga el horario de 9 a 20.
+
+Como el perfil expone `library_hours` como un `string` libre, lo más robusto es usar el helper `semantic_content`, que hace una comprobación semántica (LLM-backed) del contenido. Así evitamos depender de un formato exacto como "9:00-20:00" vs "de 9 a 20 h" vs "9am–8pm".
+
+Aquí tienes la regla lista para pegar 👇
+
+```yaml
+name: library_hours_9_to_20
+description: El horario de atención de la biblioteca debe ser de 9 a 20 (perfil Préstamos y Recursos de la Biblioteca)
+conversations: 1
+oracle: semantic_content(library_hours, 'La biblioteca atiende de 9:00 a 20:00')
+```
+
+### ¿Por qué así? 🤔
+
+- **`conversations: 1`** → es un oráculo de una sola conversación, no una relación metamórfica.
+- **`library_hours`** → es exactamente el nombre del slot que expone tu `chatbot.output`. Si lo renombras en el perfil, debes actualizar la regla.
+- **`semantic_content(valor, descripción)`** → compara el contenido extraído con la descripción esperada usando el LLM, tolerando variaciones de redacción ("de 9 a 20", "9:00–20:00", "9am a 8pm", etc.).
+
+### Alternativa más estricta (si el formato es fijo) 🔍
+
+Si en tu proyecto el horario siempre viene en un formato numérico predecible, puedes hacer una comprobación más determinista combinando `extract_float`:
+
+```yaml
+name: library_hours_9_to_20_strict
+description: El horario de la biblioteca debe abrir a las 9 y cerrar a las 20
+conversations: 1
+oracle: extract_float(library_hours) == 9 and 20 in [extract_float(x) for x in library_hours.split('-')]
+```
+
+⚠️ Ojo: esta versión es frágil porque depende de que aparezcan los números en un orden/formato concreto. Por eso te recomiendo la versión con `semantic_content` como principal, y esta solo si controlas el formato de salida.
+
+### Consejo extra 💡
+
+Si quieres que la regla **falle de forma clara** cuando el bot no dé el horario, puedes añadir un mensaje de error:
+
+```yaml
+name: library_hours_9_to_20
+description: El horario de atención de la biblioteca debe ser de 9 a 20
+conversations: 1
+oracle: semantic_content(library_hours, 'La biblioteca atiende de 9:00 a 20:00')
+on-error: |
+  f"Horario inesperado: {conv[0].library_hours}"
+```
+
+¿Quieres que te ayude también a crear reglas para los otros slots del perfil (préstamo de laptops, VPN, identificación)? 🚀

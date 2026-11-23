@@ -1,0 +1,99 @@
+conversation ID: graph_based_architecture__p4_basic__pizza_shop__profile__7907f294
+$$$
+I'd love to help, but I have to be upfront with you: writing Python automation scripts (or any source code) falls outside what I can do here 😊. My focus is strictly on **SENSEI RULES**, **SENSEI PROFILES**, and **SENSEI CONNECTORS** — their documentation, concepts, file paths, and helping you create/fix/list them.
+
+That said, I *can* help you in a very practical way: I can walk you through **what a valid profile must contain**, so whatever automation you build (or have someone build) produces correct output. Here's a checklist you can use as the "spec" for your generator 👇
+
+---
+
+## ✅ What a valid Sensei profile must satisfy
+
+### 1. Top-level structure
+```yaml
+test_name: "my_first_sensei_profile"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe what the simulated user wants and how they behave."
+  context:
+    - "Who the user is, constraints, preferences, availability, etc."
+  goals:
+    - "Main request with a {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste your bot’s real fallback here"
+  output:
+    - important_field:
+        type: string
+        description: "What you want to extract/validate"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### 2. `user.goals` rules
+- Every `{{variable}}` used in a goal string **must be declared** in the same `goals` list (case-sensitive match).
+- Declared variables **must be used** in at least one goal string.
+- Variable `type` must be `int`, `float`, `string`, or a **custom type** defined in `types/`.
+- ❌ Do **not** use `list`, `time`, or `date` in `user.goals` — those are only valid in `chatbot.output`.
+
+### 3. `chatbot.output` rules
+- Each field has a `type` and `description`.
+- Allowed types: `int`, `float`, `string`, `time(...)`, `date(...)`, `list[<type>]`, or a custom type.
+- Field names should be **stable and descriptive** — rules will reference them as `conv[i].<field_name>`.
+
+### 4. `conversation` rules
+- `number`: an int, `combinations`, `combinations(p)`, or `combinations(p, function)`.
+  - ⚠️ `combinations` requires **at least two nested `forward()`** or **two `pairwise()`** variables.
+- `goal_style`: exactly one of `steps: N`, `random steps: M` (M ≤ 20), or `all_answered:` (with optional `export`, `limit`).
+- `interaction_style`: only use the **reserved keywords** — `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, or `random: [...]`. Never translate them.
+
+### 5. Function sanity checks
+- `random(n)` → `n ≤ len(data)`.
+- `another(n)` → same constraint.
+- `pairwise()` → needs **≥ 2** variables assigned to it.
+- `forward(x)` → `x` must be another declared variable.
+
+---
+
+## 🔍 How to validate your generated profiles
+
+Once your automation writes a profile, run:
+
+```bash
+python validation_check.py \
+  --profile /abs/path/to/project/profiles/<your_profile>.yml \
+  --output  /abs/path/to/output \
+  --combined-matrix \
+  --verbose
+```
+
+This returns a JSON with any format errors plus CSVs of the value-combination matrices — perfect for catching bad `forward`/`pairwise` setups before a real run 🎯.
+
+---
+
+If you'd like, I can:
+- 📋 Review a **draft profile** you paste here and point out what's invalid.
+- 🧩 Explain a specific section (e.g., how `pairwise()` interacts with `conversation.number`).
+- 📁 Help you **list or locate** existing profiles in your project.
+
+Which of those would be most useful? 😊
+$$$

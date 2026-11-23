@@ -1,0 +1,70 @@
+Here's a profile that captures a rider in discomfort, unsure whether it's fit or worn components, and looking for advice rather than booking 📝
+
+```yaml
+test_name: "bike_discomfort_advice_seeker"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who has been experiencing discomfort while riding your bike.
+    You are not sure whether the bike is not fitted correctly or whether some
+    components are simply worn out. You want advice on possible adjustments or
+    services the shop offers, but you do NOT explicitly ask to book an appointment.
+  context:
+    - "You ride regularly and the discomfort has been building up over the last few weeks."
+    - "You suspect it could be your saddle height, handlebar position, or worn parts like the saddle or grips."
+    - "You are looking for guidance and options, not a firm booking yet."
+    - "You are friendly but a bit unsure about the technical side of bike fitting."
+  goals:
+    - "Explain that you feel discomfort when riding and you are not sure if it is a fit issue or worn components."
+    - "Ask whether the shop can help with bike fitting or adjustments."
+    - "Ask what services the shop offers related to comfort, fitting, or replacing worn parts."
+    - "Ask for advice on what you could check or adjust yourself before coming in."
+    - "Ask about the cost of a {{service}} if it turns out you need one."
+    - service:
+        function: random()
+        type: string
+        data: [bike fitting, tune-up, saddle replacement, handlebar adjustment]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fitting_service_availability:
+        type: string
+        description: "The chatbot's response about whether the shop offers bike fitting or adjustment services. Look for phrases like 'Yes, we offer bike fitting' or a similar confirmation."
+    - recommended_services:
+        type: string
+        description: "The services the chatbot recommends for comfort, fitting, or worn components (e.g., bike fitting, tune-up, component replacement)."
+    - self_check_advice:
+        type: string
+        description: "Any advice the chatbot gives about what the user can check or adjust themselves (e.g., saddle height, tire pressure, chain lubrication)."
+    - service_price:
+        type: money
+        description: "The price the chatbot provides for the requested {{service}}, if mentioned."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single question
+  max_cost: 0.5
+```
+
+A couple of notes so it fits your project nicely 👇
+
+- The `chatbot.output` fields (`fitting_service_availability`, `recommended_services`, `self_check_advice`, `service_price`) are the contract for any future Sensei-check rules — if you later write a rule, reference them as `conv[i].fitting_service_availability`, etc.
+- The goals deliberately avoid "book an appointment" phrasing, matching your requirement that the user only seeks advice.
+- `service_price` uses `money` to stay consistent with your other bike-shop profiles (e.g., `tire_price`, `tune_up_price`).
+
+Want me to also draft a matching Sensei-check rule (e.g., "if fitting is offered, a price or next step is mentioned")? 😊

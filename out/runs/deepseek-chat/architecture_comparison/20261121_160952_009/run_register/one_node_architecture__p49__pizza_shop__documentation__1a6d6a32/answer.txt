@@ -1,0 +1,56 @@
+Great question! 😊 The `pairwise()` function is one of Sensei's smartest tools for keeping your test suite **small but thorough**. Let me break it down.
+
+## What it does
+
+`pairwise()` generates combinations that guarantee **every pair of values across two or more variables is covered at least once** — without testing the full Cartesian product (which explodes fast).
+
+Think of it like this: instead of testing *every* possible combination, you test just enough combinations so that any two variables are seen together in all their value pairs. 🎯
+
+## A quick example
+
+Say you have two variables:
+
+```yaml
+- pizza_size:
+    function: pairwise()
+    type: string
+    data: [small, medium, large]
+- drink:
+    function: pairwise()
+    type: string
+    data: [coke, sprite, water]
+```
+
+A **full Cartesian product** would be 3 × 3 = **9 conversations**. With `pairwise()`, you only need **3** — and every size still appears with every drink at least once:
+
+| size   | drink  |
+|--------|--------|
+| small  | coke   |
+| medium | sprite |
+| large  | water  |
+
+The savings get dramatic with more variables. With 4 variables of 3 values each, full coverage = 81 cases, but pairwise needs only ~9. 🚀
+
+## Key rules to remember
+
+- ✅ You need **at least 2 variables** using `pairwise()` for it to make sense.
+- ✅ It works great with `conversation.number: combinations(...)` to size your run automatically.
+- ⚠️ It covers **pairs**, not triples — so if a bug only appears when *three* specific values align, pairwise might miss it. For that, use nested `forward()`.
+
+## How it fits with `conversation.number`
+
+```yaml
+conversation:
+  number: combinations(0.5, pairwise)
+```
+
+This tells Sensei: *"Use the pairwise combination matrix, and run 50% of those cases."* Handy for smoke tests! 🔥
+
+## When to prefer it over `forward()`
+
+- Use **`pairwise()`** when you want broad coverage cheaply (most 2-way defects caught).
+- Use **nested `forward()`** when you intentionally want the full grid (e.g., `forward(drink)` depending on another variable).
+
+In your own project, I can see `pizza_order_test_custom.yml` already uses `pairwise()` on `size` and `toppings` — nice choice for keeping those 2 conversations lean while still covering the size × topping pairs! 👀
+
+Want me to sketch a pairwise example tailored to one of your profiles? Just say the word! 🙌

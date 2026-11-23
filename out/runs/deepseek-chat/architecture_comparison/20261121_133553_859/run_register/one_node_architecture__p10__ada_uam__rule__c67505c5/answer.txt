@@ -1,0 +1,131 @@
+¡Buena pregunta! 😊 Tu perfil `Usuarios Nuevos y Admisiones` es rico en `chatbot.output`, así que hay mucho que puedes verificar. Te propongo un set de reglas que combinan **checks globales** (fáciles, sin depender del esquema) y **checks ligados a los campos del perfil** (más específicos). Así pruebas tanto el comportamiento conversacional como la calidad de la extracción.
+
+Un detalle importante antes de empezar: tu perfil usa `application_fee` con `type: money`, pero `money` **no es un tipo por defecto** en `chatbot.output` (los válidos son `int`, `float`, `string`, `time(...)`, `date(...)`, `list[...]` o un tipo custom definido en `types/`). Si no tienes un `types/money.yml`, te recomiendo cambiarlo a `currency` (custom) o a `float`. Te dejo una regla que asume `float` para que no falle la validación. 👇
+
+---
+
+### 1) Global: el bot responde en el mismo idioma que el usuario
+
+```yaml
+name: responds_in_same_language
+description: El chatbot responde en español, igual que el usuario simulado
+conversations: 1
+active: true
+oracle: responds_in_same_language() is True
+yields: f"El chatbot no responde en el mismo idioma que el usuario"
+```
+
+---
+
+### 2) Global: el bot no se sale del dominio de admisiones/UAM
+
+```yaml
+name: only_talks_about_admissions
+description: El chatbot solo habla de admisiones, grados, cursos y Welcome Day de la UAM
+conversations: 1
+active: true
+oracle: only_talks_about('proceso de admisión, grados y cursos de la UAM, lista de espera, Welcome Day, información para futuros estudiantes') is True
+```
+
+---
+
+### 3) Global: el bot no repite respuestas
+
+```yaml
+name: chatbot_does_not_repeat
+description: El chatbot no repite respuestas a lo largo de la conversación
+conversations: 1
+active: true
+oracle: not repeated_answers(method='tf-idf', threshold=0.75)
+yields: f"El chatbot repite: {repeated_answers(method='tf-idf', threshold=0.75)}"
+```
+
+---
+
+### 4) Ligada al perfil: se recogen los slots clave
+
+```yaml
+name: admissions_slots_collected
+description: Se extraen los campos clave del perfil Usuarios Nuevos y Admisiones
+conversations: 1
+active: true
+oracle: data_collected() is True
+yields: f"Slots sin rellenar: {missing_slots()}"
+```
+
+> Ojo: con `goal_style.steps: 30` y `single questions`, es posible que no se cubran *todos* los 16 outputs en cada conversación. Si esta regla falla mucho, es señal de que quizá convenga subir `steps` o revisar qué campos son realmente obligatorios. Puedes usar `missing_slots()` en el `yields` para diagnosticar cuáles faltan.
+
+---
+
+### 5) Ligada al perfil: la cuota de solicitud es positiva
+
+```yaml
+name: application_fee_positive
+description: La cuota de solicitud de admisión debe ser un valor positivo
+conversations: 1
+active: true
+when: application_fee is not None
+oracle: extract_float(application_fee) > 0
+yields: f"Cuota de solicitud inválida: {application_fee}"
+```
+
+> Esta regla asume que `application_fee` es numérico (por eso te sugerí cambiarlo a `float` o `currency`). Si lo dejas como `money` sin tipo custom, la extracción fallará y `application_fee` será `None`, con lo que la regla se marcará como *not applicable*.
+
+---
+
+### 6) Ligada al perfil: los enlaces no vienen vacíos
+
+```yaml
+name: admission_links_not_empty
+description: Los enlaces de admisión, Welcome Day y futuros estudiantes no deben estar vacíos
+conversations: 1
+active: true
+when: admission_to_grados_link is not None or welcome_day_link is not None
+oracle: |
+  (admission_to_grados_link is None or len(admission_to_grados_link) > 0) and
+  (welcome_day_link is None or len(welcome_day_link) > 0) and
+  (future_students_link is None or len(future_students_link) > 0)
+yields: f"Algún enlace quedó vacío: admisión={admission_to_grados_link}, welcome={welcome_day_link}, futuros={future_students_link}"
+```
+
+---
+
+### 7) Ligada al perfil: coherencia entre grados pedidos y grados ofrecidos
+
+```yaml
+name: grados_consistency
+description: Si el usuario pidió un grado concreto, debe aparecer en los grados ofrecidos
+conversations: 1
+active: true
+when: grados_available is not None
+oracle: |
+  all(g.lower() in grados_available.lower() for g in grados) if isinstance(grados, list) else grados.lower() in grados_available.lower()
+yields: f"El grado solicitado {grados} no aparece en los grados ofrecidos: {grados_available}"
+```
+
+> Esta es un poco más "opinable": depende de si el bot realmente debe listar el grado exacto que pidió el usuario. Si tu bot responde con un enlace genérico en lugar de listar grados, quizá prefieras desactivarla (`active: false`) o reformularla como "el bot menciona el grado en algún turno" usando `utterance_index`.
+
+---
+
+### 8) Global: unicidad de la cuota entre conversaciones (opcional)
+
+```yaml
+name: unique_application_fees
+description: Las cuotas de solicitud no deberían variar entre conversaciones comparables
+conversations: all
+active: false
+oracle: is_unique('application_fee')
+```
+
+> La dejo `active: false` porque es más un experimento: si el bot devuelve la misma cuota siempre, `is_unique` fallará (¡y eso sería lo esperado!). Úsala solo si quieres detectar variabilidad inesperada.
+
+---
+
+### 💡 Consejos rápidos
+
+- **Empieza por las globales (1–3)**: son las más robustas y te dan señal inmediata sobre el comportamiento conversacional.
+- **Luego las ligadas al perfil (4–7)**: te dicen si la extracción y la cobertura de slots están funcionando.
+- **Revisa `application_fee`**: si no tienes `types/money.yml`, cámbialo a `float` o `currency` para que la regla 5 sea fiable.
+- **Ajusta `steps` si la regla 4 falla mucho**: con 16 outputs y 30 pasos puede que no se cubran todos en cada conversación.
+
+¿Quieres que te ayude a adaptar alguna de estas reglas a un campo concreto, o a crear el `types/money.yml` para que `application_fee` funcione bien? 🚀

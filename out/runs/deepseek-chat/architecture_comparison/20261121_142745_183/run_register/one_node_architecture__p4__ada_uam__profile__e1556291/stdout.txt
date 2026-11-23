@@ -1,0 +1,70 @@
+conversation ID: one_node_architecture__p4__ada_uam__profile__e1556291
+$$$
+¡Claro que sí! 😊 Te preparo un perfil enfocado en un usuario que contacta al CAU para obtener sus datos de contacto (teléfono, email, dirección física y horarios). Lo dejo alineado con el estilo de tus otros perfiles del proyecto `ada_uam` y con campos de `chatbot.output` que luego podrás usar en reglas de Sensei-check.
+
+```yaml
+test_name: "Soporte y contacto del CAU"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita ponerse en contacto con el Centro de Atención
+    a Usuarios (CAU) de la UAM para resolver una duda sobre el acceso a los
+    servicios digitales. Quieres obtener los datos de contacto del CAU
+    (teléfono, correo electrónico, dirección física) y conocer sus horarios
+    de atención para saber cuándo y cómo contactarles.
+  context:
+    - personality: personalities/formal-user
+    - "Tienes una incidencia con tu cuenta ID-UAM y prefieres contactar con el CAU por el canal más adecuado."
+    - "Quieres asegurarte de contactarles en un horario en el que estén disponibles."
+    - "Valoras la información clara y completa: teléfono, email, dirección y horarios."
+  goals:
+    - "Solicitar el número de teléfono de contacto del Centro de Atención a Usuarios (CAU)."
+    - "Pedir el correo electrónico del CAU para escribirles directamente."
+    - "Consultar la dirección física donde se encuentra el CAU."
+    - "Preguntar cuáles son los horarios de atención del CAU."
+    - "Confirmar cuál es el canal de contacto más recomendado para tu caso."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono de contacto del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física del CAU"
+    - service_hours:
+        type: string
+        description: "Horarios de atención del CAU"
+    - recommended_contact_channel:
+        type: string
+        description: "Canal de contacto recomendado (teléfono, email, presencial...)"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👀:
+
+- **Campos de salida reutilizables**: usé nombres como `contact_phone`, `contact_email`, `physical_address` y `service_hours`, que ya aparecen en otros perfiles tuyos (por ejemplo `consultante_de_servicios_y_asistencia_del_cau.yaml`). Así puedes escribir reglas de Sensei-check que funcionen sobre varios perfiles sin renombrar nada.
+- **Regla sugerida**: si quieres validar que el bot siempre devuelve estos datos, podrías añadir una regla como `data_collected() == True` o comprobar `missing_slots() == []` para asegurarte de que no falta ninguno de los cuatro campos clave.
+
+¿Quieres que te prepare también una regla de Sensei-check para verificar que el bot rellena correctamente esos cuatro datos de contacto? 😊
+$$$

@@ -1,0 +1,63 @@
+Hey there! 😊 Happy to help you fill in that `chatbot` section — it's the part that tells Sensei what to extract at the end of each conversation (and what your rules can later read as `conv[i].<field>`).
+
+For an *information seeker* profile, you want outputs that mirror each of your goals: pizza types, the Margarita price, drinks + prices, opening hours, and delivery availability. Here's a complete, ready-to-paste version:
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_types:
+        type: string
+        description: "A list of the pizza types offered by the shop. Look for phrases like 'We offer [pizza types]' or a list of available pizzas."
+    - margarita_price:
+        type: currency
+        description: "The price of a Margarita pizza, including currency if present. If multiple sizes are mentioned, extract the price for all sizes mentioned. Look for phrases like 'Margarita pizza costs [price]' or '[price] for a Margarita'."
+    - drinks_and_prices:
+        type: string
+        description: "A list of available drinks and their corresponding prices. Look for phrases like 'We have [drink] for [price]' or a list of available drinks and prices."
+    - operating_hours:
+        type: string
+        description: "The shop's operating hours, including opening and closing times. Look for phrases like 'Our hours are [hours]' or 'We are open from [opening time] to [closing time]'."
+    - delivery_availability:
+        type: string
+        description: "Indication of whether the shop delivers or not. Look for phrases like 'We deliver' or 'We do not offer delivery'."
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single question
+```
+
+A few friendly notes 👀:
+
+- **`is_starter: false`** — the user speaks first here (they're the one asking questions), so the bot shouldn't open the conversation.
+- **`fallback`** — I reused the fallback text from your other pizza profiles so the simulator doesn't loop forever if the bot misbehaves. Swap it if your bot's real fallback differs.
+- **`margarita_price` uses `type: currency`** — that way rules can do things like `extract_float(conv[0].margarita_price) > 0` or `currency(conv[0].margarita_price) == 'USD'`. If you'd rather keep it as plain text, just switch it to `string`.
+- **Field names are rule-friendly** — if you later write a rule about, say, opening hours, you can reference `conv[0].operating_hours` directly. Keep these names stable to avoid breaking rules. 😊
+
+Want me to also sketch a quick Sensei-check rule that validates one of these outputs (e.g., that the Margarita price is actually returned)? Just say the word!

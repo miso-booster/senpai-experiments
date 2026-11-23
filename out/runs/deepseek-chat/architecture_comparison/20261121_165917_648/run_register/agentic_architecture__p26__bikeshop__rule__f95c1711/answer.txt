@@ -1,0 +1,44 @@
+Hey! I checked it against the rules docs (`sensei-check-doc.md` and `rules-examples.md`) and your project profiles — and nope, the rule as written won't work. Here's the breakdown 👇
+
+## What's wrong
+
+1. **`when:` is used as the assertion.** In the DSL, `when:` is a *conversation filter* (it selects which conversations the rule applies to), not the check itself. Your actual check must live in `oracle:` (or in `then:` of an `if`/`then` pair).
+2. **`if:` / `then:` are misused.** `then:` must be a **Python expression** that evaluates to a boolean — you put a plain string (`"The tune-up price is $50."`), which is not a check. Also, `if:`/`then:` is meant for implications (precondition → expected relation), not for a single absolute assertion.
+3. **`conversations: 2` is unnecessary.** This is a single-conversation check, so it should be `conversations: 1`. With `2` you'd be forcing a metamorphic pairing that doesn't exist here.
+4. **`conv[0].tune_up_price == 50` is fragile.** `tune_up_price` is typed `money` in your profiles, so the extracted value is a string like `"$50"` or `"50 USD"`. Comparing it directly to the int `50` will fail. The docs recommend parsing with `extract_float(...)` (and optionally checking `currency(...)`).
+5. **Missing `active:` flag** — optional, but good practice to be explicit.
+
+## Fixed version
+
+I found two profiles that expose `tune_up_price`:
+- `bike_repair_and_maintenance_scheduler.yaml` → outputs: `tune_up_offered`, `tune_up_price`, `tune_up_description`, `tune_up_duration`, `appointment_confirmation`
+- `bike_service_and_repair_inquirer.yaml` → outputs: `available_services`, `tire_price`, `tune_up_details`, `tune_up_price`, `maintenance_advice`, `lubrication_steps`, `appointment_details`
+
+Both have `tune_up_price`, so this rule works for either:
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price is $50 (profile-bound to bike tune-up profiles exposing tune_up_price).
+active: true
+conversations: 1
+oracle: extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'
+yields: f"Expected a $50 tune-up price, got {tune_up_price}"
+```
+
+## What I changed and why
+
+| Before | After | Reason |
+|---|---|---|
+| `when: conv[0].tune_up_price == 50` | removed | `when:` is a filter, not the assertion |
+| `if: conv[0].tune_up_price is not None` | removed | not needed for a single absolute check; `if`/`then` is for implications |
+| `then: "The tune-up price is $50."` | `oracle: extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'` | `then` must be a boolean expression; `oracle` is the right place for a single-conversation assertion |
+| `conversations: 2` | `conversations: 1` | single-conversation check |
+| — | `active: true` | explicit activation |
+| — | `yields:` | helpful failure message (per `rules-examples.md`) |
+
+## Two things to confirm 🙋
+
+1. **Which profile is this rule for?** I'd suggest `bike_repair_and_maintenance_scheduler.yaml` since it's the one that explicitly asks for the tune-up price. If you want it to apply to both, that's fine too — the field name is identical.
+2. **Currency check** — I added `currency(tune_up_price) == 'USD'` to make sure it's actually dollars. If your bot might quote in another currency, tell me and I'll drop that part.
+
+Want me to save this as a rule file (e.g. `check_tune_up_price.yaml`)? Just say the word 😊

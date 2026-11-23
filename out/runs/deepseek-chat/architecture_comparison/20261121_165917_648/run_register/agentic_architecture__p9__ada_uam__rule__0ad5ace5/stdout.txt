@@ -1,0 +1,31 @@
+conversation ID: agentic_architecture__p9__ada_uam__rule__0ad5ace5
+$$$
+Aquí tienes la regla 🎉. Es una regla **de una sola conversación (oráculo)** que comprueba que el horario extraído (`library_hours`) corresponde a 9–20.
+
+```yaml
+name: library_hours_9_to_20
+description: >
+  Comprueba que el horario de atención de la biblioteca extraído en el perfil
+  "Préstamos y Recursos de la Biblioteca" (campo chatbot.output: library_hours)
+  sea de 9:00 a 20:00.
+conversations: 1
+active: true
+when: conv[0].library_hours is not None
+oracle: |
+  semantic_content(conv[0].library_hours, "horario de atención de 9:00 a 20:00")
+yields: |
+  f"Horario de biblioteca incorrecto: se esperaba 9:00-20:00 y se obtuvo '{conv[0].library_hours}'"
+```
+
+### Cómo funciona y por qué está así
+- **`conversations: 1`** → es un oráculo simple sobre una conversación (según `sensei-check-doc.md`, §4 y §11).
+- **`when: conv[0].library_hours is not None`** → solo evalúa cuando el extractor ha rellenado el campo `library_hours` (evita falsos negativos si la conversación no llegó a preguntar el horario).
+- **`semantic_content(...)`** → helper LLM que verifica que el texto del horario coincide semánticamente con "9:00 a 20:00". Es más robusto que comparar strings exactos, porque el bot puede responder "de 9 a 20", "9:00–20:00 h", "de 9 de la mañana a 8 de la tarde", etc. (ver tabla de helpers en `sensei-check-doc.md`, §6.4).
+- **`yields`** → mensaje de error que muestra el valor obtenido cuando falla.
+
+### Relación con el perfil
+- El campo `library_hours` **existe** en `chatbot.output` del perfil `préstamos_y_recursos_de_la_biblioteca.yaml` (tipo `string`), así que la regla está correctamente alineada con el contrato del perfil (ver `sensei-chat-guide.md`, §2.1.1).
+
+### ⚠️ Nota importante sobre el tipo de campo
+`library_hours` está declarado como `string`. Eso está bien para `semantic_content`, pero si en el futuro quieres hacer comparaciones **numéricas** (p. ej. `extract_float(...)` para validar horas exactas), te recomendaría cambiar el tipo a algo más estructurado. ¿Quieres que te proponga también una variante más estricta basada en `extract_float` (por ejemplo, comprobando que aparezcan los números 9 y 20)? Dímelo y la preparo 😊.
+$$$

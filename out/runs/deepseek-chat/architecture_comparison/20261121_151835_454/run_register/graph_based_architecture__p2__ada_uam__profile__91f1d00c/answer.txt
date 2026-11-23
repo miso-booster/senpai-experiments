@@ -1,0 +1,103 @@
+¡Hola! 😊 Great idea — an Erasmus profile is a really useful case, since incoming students often struggle with the very first setup steps. Let me walk you through a profile that fits your project and your needs.
+
+## What I'm aiming for
+
+- **Few input variables** → I'll keep `user.goals` mostly as plain strings, with just one small variable (`{{service}}`) so the simulated user can rotate through the platforms they need help with (Moodle, Sigma, etc.).
+- **Rich `chatbot.output`** → this is where the real value is: fields that let you *check* whether the bot actually gave proper support (setup steps, links, contact info, etc.). These become `conv[i].<field_name>` for your Sensei-check rules later.
+
+## The profile
+
+Save this as `profiles/erasmus_setup_support.yaml` in your project:
+
+```yaml
+test_name: "Erasmus recién llegado - configuración de servicios"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la UAM y no sabe cómo
+    configurar ni acceder a los servicios digitales básicos (Moodle, Sigma,
+    correo institucional, VPN). Pides ayuda paso a paso, con un tono amable
+    pero algo perdido, porque es tu primera vez usando estos sistemas.
+  context:
+    - personality: personalities/curious-user
+    - "Acabas de recibir tu ID-UAM pero no sabes muy bien para qué sirve ni cómo activarlo."
+    - "No tienes claro qué es Sigma ni si lo necesitas para gestionar tu matrícula."
+    - "Quieres poder acceder a Moodle cuanto antes para no perderte el material de clase."
+    - "No dominas del todo el español, así que agradeces explicaciones claras y sencillas."
+  goals:
+    - "Preguntar cómo puedo activar mi cuenta ID-UAM por primera vez, ya que soy nuevo."
+    - "Pedir los pasos para establecer mi contraseña inicial usando mi NIA."
+    - "Solicitar ayuda para acceder a {{service}} y saber qué necesito para entrar."
+    - "Preguntar si necesito una cuenta institucional para usar Moodle y qué entornos existen."
+    - "Pedir información sobre cómo instalar y configurar la VPN para trabajar desde fuera del campus."
+    - "Solicitar los datos de contacto del CAU por si me surge algún problema más adelante."
+    - service:
+        function: forward()
+        type: string
+        data: [Moodle, Sigma, el correo institucional, la VPN]
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - account_activation_steps:
+        type: string
+        description: "Pasos para activar la cuenta ID-UAM por primera vez"
+    - password_setup_steps:
+        type: string
+        description: "Pasos para establecer la contraseña inicial con el NIA"
+    - service_access_requirements:
+        type: string
+        description: "Requisitos para acceder al servicio solicitado (Moodle, Sigma, correo, VPN)"
+    - institutional_account_needed:
+        type: string
+        description: "Confirmación sobre si se necesita cuenta institucional para Moodle"
+    - moodle_environments:
+        type: string
+        description: "Entornos de Moodle disponibles (Grado, Postgrado, etc.)"
+    - vpn_setup_info:
+        type: string
+        description: "Enlaces o pasos para instalar y configurar la VPN"
+    - support_contact_info:
+        type: string
+        description: "Datos de contacto del CAU (correo, teléfono, ubicación)"
+    - support_hours:
+        type: string
+        description: "Horario de atención del CAU"
+    - services_catalog_link:
+        type: string
+        description: "Enlace al catálogo de servicios"
+    - faq_link:
+        type: string
+        description: "Enlace a preguntas frecuentes"
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 25
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+## Why it's built this way 👀
+
+- **Only one variable** (`service`) with `forward()` → deterministic rotation through Moodle, Sigma, correo and VPN, so you cover each platform without a combinatorial explosion. `conversation.number: 4` matches the four values nicely.
+- **`chatbot.output` is the star** ✨ — each field maps to something you'd genuinely want to verify: did the bot give activation steps? did it confirm the institutional account requirement? did it hand over CAU contact info? These are exactly the kind of fields your Sensei-check rules can read as `conv[i].account_activation_steps`, etc.
+- **`single questions`** keeps the simulated user focused on one goal per turn — good for a "lost newbie" who asks things one at a time.
+- **`fallback`** uses the real CAU fallback text from your other profiles, so the simulator doesn't loop forever if the bot goes off-script.
+
+## A couple of things to double-check on your side ✅
+
+- The `personality: personalities/curious-user` reference — make sure that file exists in your `personalities/` folder (I saw it used in `asistencia_técnica_y_cuentas.yaml`, so it likely does). If not, just drop that line.
+- If you later want to *test* the support quality with rules, the output fields above are ready to be referenced directly. For example, a rule could check that `conv[i].support_contact_info` is not empty whenever the user asked for contact details.
+
+Want me to also draft a **Sensei-check rule** that validates these outputs (e.g., "if the user asked about VPN, then `vpn_setup_info` must be populated")? Just say the word and I'll put one together 😊

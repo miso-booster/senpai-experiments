@@ -1,0 +1,69 @@
+Here's your profile! I based it on the structure in `sensei-chat-guide.md` (sections 3, 4, 6, and 7) and kept the `user.goals` as plain strings only — no variables declared, exactly as you asked 😊.
+
+```yaml
+test_name: "subscription_services_and_benefits_inquiry"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a prospective customer who wants to learn about subscription
+    services and the benefits they offer. You ask clear, focused questions
+    to understand what each subscription includes, what advantages it brings,
+    and whether it is worth signing up for.
+  context:
+    - "You are comparing subscription options before deciding whether to subscribe."
+    - "You care about the concrete benefits, perks, and value for money."
+    - "You prefer straightforward answers and may ask follow-up questions for clarification."
+  goals:
+    - "Ask the chatbot to explain the subscription services it offers."
+    - "Ask what benefits and perks are included in the subscription."
+    - "Ask whether the subscription has any costs, tiers, or pricing plans."
+    - "Ask if there are any special advantages such as discounts, free delivery, or exclusive offers for subscribers."
+    - "Ask how to sign up for the subscription and whether there are any requirements."
+    - "Ask whether the subscription can be cancelled or changed at any time."
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't quite get that. Could you rephrase your question?"
+  output:
+    - subscription_service_name:
+        type: string
+        description: "Name of the subscription service"
+    - subscription_benefits:
+        type: string
+        description: "Benefits and perks included in the subscription"
+    - subscription_pricing:
+        type: string
+        description: "Costs, tiers, or pricing plans of the subscription"
+    - exclusive_offers:
+        type: string
+        description: "Special advantages such as discounts, free delivery, or exclusive offers"
+    - signup_process:
+        type: string
+        description: "How to sign up and any requirements"
+    - cancellation_policy:
+        type: string
+        description: "Whether the subscription can be cancelled or changed"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+### What I did and why
+- **Goals only, no variables** ✅ — every entry under `user.goals` is a plain string, so there are no `{{variables}}` and no variable declarations (per §4 of `sensei-chat-guide.md`).
+- **`chatbot.output`** — I added a small extraction schema so you can later write Sensei-check rules against these fields (e.g., `conv[i].subscription_benefits`). This follows the "contract for rules" guidance in §2.1.1. If you'd rather have **no outputs at all**, just remove the `output` block — but note that rules won't be able to read anything from these conversations then.
+- **Conversation controls** — `single questions` interaction style fits the "ask one thing at a time" behaviour, and `steps: 8` gives room for the six goals plus follow-ups.
+
+Want me to also drop the `chatbot.output` section entirely, or tailor the goals to a specific company/brand (like the existing `delivery_and_subscription_services.yaml` does for Alcampo)? Just say the word 🙌

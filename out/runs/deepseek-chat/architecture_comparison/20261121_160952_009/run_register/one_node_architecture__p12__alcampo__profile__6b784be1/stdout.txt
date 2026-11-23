@@ -1,0 +1,79 @@
+conversation ID: one_node_architecture__p12__alcampo__profile__6b784be1
+$$$
+Hey there! 😊 Happy to help you build a new profile for the Alcampo project.
+
+Quick heads-up before the YAML: I noticed your `customer_service_assistance.yaml` profile has a **YAML syntax error** — the `user` and `goals` keys are missing their colons (`user` should be `user:`, and `goals` should be `goals:`). That's why it shows up as a parse error in your project. Worth fixing when you get a chance! 🛠️
+
+Now, here's a fresh profile focused on **adding items to the shopping cart**. It follows your project's conventions (English, `single questions`, `gpt-4o-mini`, cost caps) and exposes `chatbot.output` fields that a rule could later check (e.g., cart item count, cart total):
+
+```yaml
+test_name: Shopping Cart Item Addition
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer shopping online at Alcampo and want to build up your
+    shopping cart by asking the chatbot to add specific products. You care about
+    confirming that items were added correctly and understanding the running total.
+  context:
+    - You are preparing a weekly grocery shop and want to add several everyday items to your cart.
+    - You prefer to add items one at a time and confirm each addition before moving on.
+    - You want to know the quantity and price of each item as it is added to the cart.
+  goals:
+    - "Ask the chatbot to add {{product_name}} to your shopping cart."
+    - "Ask how many units of {{product_name}} are now in your cart."
+    - "Request the current total price of your shopping cart."
+    - "Ask the chatbot to add another item, {{second_product}}, to the cart."
+    - "Confirm the updated number of items in your cart after adding {{second_product}}."
+    - product_name:
+        function: forward()
+        type: string
+        data: [milk, eggs, whole wheat bread, olive oil, orange juice]
+    - second_product:
+        function: forward(product_name)
+        type: string
+        data: [bananas, tomatoes, chicken breast, pasta, yogurt]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - added_product_name:
+        type: string
+        description: Name of the product added to the shopping cart
+    - added_product_quantity:
+        type: int
+        description: Number of units of the product added to the cart
+    - cart_item_count:
+        type: int
+        description: Total number of items currently in the shopping cart
+    - cart_total_price:
+        type: money
+        description: Current total price of the shopping cart
+    - addition_confirmation:
+        type: string
+        description: Confirmation message that the item was added to the cart
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 24
+  interaction_style:
+    - single questions
+```
+
+A couple of notes so it fits nicely with your project 👇
+
+- **`forward()` nesting**: `second_product` depends on `product_name`, so you get a nice deterministic grid of combinations. If you'd rather cover pairs more efficiently, swap `second_product` to `pairwise()` and set `conversation.number: combinations(0.6, pairwise)`.
+- **`chatbot.output` as a contract**: the fields `cart_item_count` and `cart_total_price` are there on purpose — they're the kind of thing a Sensei-check rule could later inspect (e.g., "adding an item never decreases the cart count"). If you want, I can draft a matching rule for you! 🎯
+- **`money` type**: I used `money` to match the style already present in your other profiles (e.g., `delivery_fee`). If your project expects `currency` instead, just rename it consistently.
+
+Want me to also write a companion Sensei-check rule (like a monotonicity check on `cart_item_count`) to go with this profile? Just say the word 😄
+$$$

@@ -1,0 +1,32 @@
+Hey there! 😊 Happy to help with that.
+
+Since you want a **profile-agnostic global rule**, the cleanest approach is to use the `only_talks_about` / `utterance_index` style helpers — but for "did the bot actually mention promotions," the most reliable generic check is `utterance_index('assistant', 'current promotions')`, which is LLM-backed and doesn't depend on any `chatbot.output` field.
+
+Here's a rule that checks the assistant actually addresses current promotions somewhere in the conversation:
+
+```yaml
+name: chatbot_provides_current_promotions
+description: The chatbot provides information about current promotions during the conversation
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'current promotions or ongoing offers') > 0
+yields: |
+  f"The chatbot did not provide information about current promotions"
+```
+
+A couple of quick notes so it behaves the way you expect 👀:
+
+- **`utterance_index` is LLM-backed**, so it looks for the *concept* of current promotions/offers rather than an exact string — that's why it works without any profile schema.
+- If you want a stricter, more literal check (e.g., the bot must literally say "promotion" or "discount"), you can swap in `chatbot_returns`:
+
+```yaml
+name: chatbot_mentions_promotions_keyword
+description: The chatbot mentions promotions or discounts at least once
+conversations: 1
+active: true
+oracle: len(chatbot_returns('promotion')) > 0 or len(chatbot_returns('discount')) > 0
+yields: |
+  f"The chatbot never mentioned promotions or discounts"
+```
+
+Want me to also make a **metamorphic version** (e.g., "if the user asks about promotions, the bot must respond with promotion info")? Just say the word and I'll draft it 💪

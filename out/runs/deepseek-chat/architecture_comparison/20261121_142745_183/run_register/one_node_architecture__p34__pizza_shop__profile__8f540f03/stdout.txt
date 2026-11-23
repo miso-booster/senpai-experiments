@@ -1,0 +1,80 @@
+conversation ID: one_node_architecture__p34__pizza_shop__profile__8f540f03
+$$$
+Here's a profile that captures that "change of heart" scenario 🍕 — the user starts customizing a pizza, then pivots to a predefined one. I've used the `change your mind` interaction style plus explicit goals that walk through the switch, and I've aligned `chatbot.output` fields with what your existing rules expect (`price`, `order_id`, etc.).
+
+```yaml
+test_name: "custom_to_predefined_pizza_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza. You initially want to build a custom pizza
+    with your own toppings, but partway through the conversation you change your mind
+    and decide to order a predefined pizza instead.
+  context:
+    - "You are ordering for a casual dinner at home."
+    - "You start enthusiastic about a custom pizza but get indecisive about toppings."
+    - "You eventually settle on a predefined pizza from the menu."
+  goals:
+    - "Ask what pizza options are available."
+    - "Start ordering a custom {{custom_size}} pizza with {{custom_toppings}}."
+    - "Change your mind and say you'd rather have a predefined {{predefined_type}} pizza instead."
+    - "Confirm the {{predefined_type}} pizza in {{predefined_size}} size."
+    - "Ask how much it will cost and when it will be ready."
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - custom_toppings:
+        function: pairwise()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives]
+    - predefined_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Vegetarian, Hawaiian]
+    - predefined_size:
+        function: forward(predefined_type)
+        type: string
+        data: [small, medium, large]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - price:
+        type: currency
+        description: "The final price of the pizza order."
+    - order_id:
+        type: string
+        description: "The order identifier."
+    - estimated_ready_time:
+        type: time("hh:mm")
+        description: "Estimated time the pizza will be ready."
+    - final_pizza_type:
+        type: string
+        description: "The pizza type the customer ultimately ordered (should be the predefined one)."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - change your mind
+    - single question
+```
+
+A couple of notes so it plays nicely with your project 👀:
+
+- **`change your mind`** is a reserved interaction style — it nudges the simulator to genuinely pivot, which pairs well with the explicit "change your mind" goal.
+- **`final_pizza_type`** in `chatbot.output` is handy if you later want a rule asserting the bot honored the *predefined* choice (e.g., `conv[0].final_pizza_type == conv[0].predefined_type`). Right now your rules reference `price`, `size`, `toppings`, `drink` — so if you want `more_toppings_cost_more` to apply here, note this profile doesn't expose `toppings`/`drink`/`size` in the same shape. Want me to add those fields so it's rule-compatible with your existing metamorphic rules? 😊
+$$$

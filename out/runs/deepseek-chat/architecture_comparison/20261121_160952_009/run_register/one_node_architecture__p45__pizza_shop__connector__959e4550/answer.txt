@@ -1,0 +1,29 @@
+Here's a connector for the SAIC Málaga bot, using only the essential headers and pointing `response_path` at the plain-text field (the `text` value inside the first response element) 👇
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of quick notes so nothing surprises you later 👀:
+
+- **Headers:** I kept `Content-Type`, `Authorization`, `Origin`, and `Referer` since they're part of the API contract here, and dropped all the browser-specific `Sec-Fetch-*` noise as you asked. If the API turns out to work without `Origin`/`Referer`, you can safely remove them to keep it even leaner.
+- **HTML tags:** the raw `response.0.text` still contains `<p>` / `<br>` tags (e.g. `"<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>"`). The YAML connector's `response_path` extracts the field as-is — it doesn't strip HTML on its own. So if you need the tags removed, that cleanup has to happen in the consuming code (e.g. a quick regex/`BeautifulSoup` pass) rather than in this config file. Want me to sketch that small post-processing snippet for you? 😊

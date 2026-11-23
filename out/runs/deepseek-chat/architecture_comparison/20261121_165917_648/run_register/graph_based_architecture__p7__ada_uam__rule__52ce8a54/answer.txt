@@ -1,0 +1,34 @@
+# Rule for CAU contact info ✅
+
+Great idea! Since you want to verify that the chatbot returns **all three** CAU contact fields correctly, this is a perfect fit for a **single-conversation oracle** using the `semantic_content` helper (LLM-backed, tolerant to phrasing variations) plus `data_collected()` to make sure nothing is missing.
+
+Here's a ready-to-paste rule:
+
+```yaml
+name: cau_contact_info_correct
+description: The chatbot must provide the correct CAU location, email and phone number
+conversations: 1
+oracle: data_collected() is True and semantic_content(contact_email, 'cau@uam.es') and semantic_content(contact_phone, '91 497 4029') and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+## Why this works 🔍
+
+- **`data_collected() is True`** → guarantees that `contact_email`, `contact_phone`, and `physical_address` were all actually extracted (none are `None`). This catches the case where the bot forgets one of them.
+- **`semantic_content(field, expected)`** → checks that each extracted value *means* the expected value, without being brittle about exact formatting (e.g. `91 497 4029` vs `914974029`, or "Higher Polytechnic School" vs "Escuela Politécnica Superior"). This is much safer than `==` for free-text fields.
+- **`conversations: 1`** → a single conversation is enough here, since we're checking absolute correctness (a classic oracle), not a relation between conversations.
+
+## A couple of tips 💡
+
+1. **Field names must match your profile's `chatbot.output`** — I used `contact_email`, `contact_phone`, and `physical_address` exactly as you listed them. If you rename them later, update the rule too.
+2. **If you want stricter matching**, you can swap `semantic_content` for direct comparisons on the email/phone (those are more deterministic), and keep `semantic_content` only for the address:
+
+```yaml
+name: cau_contact_info_correct_strict
+description: CAU email and phone must match exactly; address checked semantically
+conversations: 1
+oracle: data_collected() is True and contact_email == 'cau@uam.es' and extract_float(contact_phone) == 914974029 and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+The `extract_float(contact_phone) == 914974029` trick normalizes spacing in the phone number so `91 497 4029` and `914974029` both pass 👌
+
+Want me to also add a **metamorphic variant** (e.g. asking about the CAU in different ways and checking the answer stays consistent)? Just say the word! 😊

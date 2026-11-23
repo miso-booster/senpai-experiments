@@ -1,0 +1,53 @@
+¡Buena idea! 😊 Una regla así encaja perfecto como **regla metamórfica de 2 conversaciones**: comparamos dos diálogos donde el usuario da la misma fecha dos veces, y verificamos que el asistente rechaza la segunda.
+
+Antes de escribirla, un detalle importante: para que la regla funcione, el perfil de SENSEI Chat debe exponer en `chatbot.output` los campos que vamos a usar (por ejemplo `date` y `date_accepted`). Te dejo el ejemplo asumiendo esos nombres — ajústalos a los reales de tu perfil 🙌
+
+```yaml
+name: duplicate_date_rejected
+description: >
+  Si el usuario proporciona la misma fecha dos veces, el asistente debe
+  rechazar la segunda (no aceptar duplicados). Regla ligada al perfil que
+  expone los campos `date` y `date_accepted` en chatbot.output.
+conversations: 2
+when: conv[0].date == conv[1].date
+if:   conv[0].date_accepted is True
+then: conv[1].date_accepted is False
+on-error: >
+  El asistente aceptó la fecha duplicada: conv[0].date={conv[0].date},
+  conv[1].date={conv[1].date}, aceptada en la segunda={conv[1].date_accepted}
+```
+
+### Cómo leerla 👀
+
+- **`conversations: 2`** → comparamos dos diálogos.
+- **`when: conv[0].date == conv[1].date`** → solo comparamos pares donde la fecha es la misma (ceteris paribus).
+- **`if: conv[0].date_accepted is True`** → en el primer diálogo la fecha sí se aceptó.
+- **`then: conv[1].date_accepted is False`** → en el segundo, con la misma fecha, debe rechazarse.
+- **`on-error`** → mensaje claro cuando falla, útil para depurar.
+
+### Variante si tu perfil no tiene un booleano `date_accepted`
+
+Si en lugar de un booleano tu perfil expone, por ejemplo, una lista de fechas aceptadas (`accepted_dates`), puedes comprobar que la fecha **no** aparece dos veces:
+
+```yaml
+name: duplicate_date_not_stored_twice
+description: La misma fecha no debe quedar registrada dos veces en accepted_dates
+conversations: 2
+when: conv[0].date == conv[1].date
+oracle: conv[1].accepted_dates.count(conv[1].date) <= 1
+```
+
+### Variante "todo en una sola conversación"
+
+Si tu perfil ya modela el doble intento dentro de un único diálogo (el usuario dice la fecha dos veces en la misma conversación), puedes usar un oráculo de 1 conversación con `utterance_index` para detectar el rechazo:
+
+```yaml
+name: duplicate_date_rejected_single
+description: El asistente rechaza la segunda mención de la misma fecha
+conversations: 1
+oracle: utterance_index('assistant', 'already provided') > 0
+```
+
+⚠️ Ojo: `utterance_index` es un helper respaldado por LLM, así que puede tener pequeña variabilidad — ajústalo al texto real que use tu bot para rechazar.
+
+¿Quieres que adapte la regla a los **nombres reales de los campos** de tu `chatbot.output`? Si me los pasas, la dejo lista para pegar 🚀

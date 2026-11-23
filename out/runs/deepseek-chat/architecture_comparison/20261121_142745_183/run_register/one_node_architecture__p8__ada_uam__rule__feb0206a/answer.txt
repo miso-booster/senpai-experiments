@@ -1,0 +1,57 @@
+¡Hola! 😊 Let's take a look at your rule together — there are a couple of things worth fixing so it actually does what you intend.
+
+## What's going on with the current rule
+
+Your rule has a **logical problem**: the `when` clause and the `oracle` are checking the *exact same thing*. That means:
+
+- If the CAU gave the **correct** info → `when` matches → `oracle` passes ✅
+- If the CAU gave **wrong** info → `when` doesn't match → the rule is **skipped** (not applicable), so it never fails ❌
+
+So the rule can never actually catch a wrong answer — it only ever runs on conversations that already have the right answer. That defeats the purpose of a check.
+
+Also, a few smaller issues:
+
+1. **`conv[0]` in a single-conversation rule.** With `conversations: 1`, you should reference fields directly (e.g. `contact_email`), not via `conv[0]`. The `conv[i]` indexing is for metamorphic rules (`conversations: 2` or more).
+2. **Field names must exist in `chatbot.output`.** Your `consultante_de_servicios_y_asistencia_del_cau.yaml` profile exposes `contact_email`, `contact_phone`, and `physical_address` — good, those match ✅. But double-check the *exact* strings the bot returns (accents, spacing, "nº" vs "n°") — a tiny mismatch will make the rule fail even when the bot is right.
+3. **`when` is optional here.** For a simple "the bot must return these values" check, you don't need a `when` at all — just an `oracle`.
+
+## Fixed version
+
+```yaml
+name: check_cau_information
+description: The CAU must provide the correct contact email, phone, and physical address.
+conversations: 1
+oracle: |
+  contact_email == 'cau@uam.es'
+  and contact_phone == '91 497 4029'
+  and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+yields: |
+  f"Wrong CAU contact info: email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+## Why this version works
+
+- **No `when`** → the rule applies to *every* conversation, so a wrong answer will actually be caught and reported. 🎯
+- **Direct field access** (`contact_email`, not `conv[0].contact_email`) → correct for `conversations: 1`.
+- **`yields`** → when it fails, you'll see exactly which field was wrong, which makes debugging way easier than a bare boolean.
+- **`oracle`** → the actual assertion: all three values must match.
+
+## One friendly tip 💡
+
+Exact string matching is brittle — if the bot writes `"91 497 40 29"` or `"C/ Francisco Tomás y Valiente, 11"` (slightly different formatting), the rule fails even though the info is essentially correct. If you want to be a bit more forgiving, you could normalize first, e.g.:
+
+```yaml
+name: check_cau_information
+description: The CAU must provide the correct contact email, phone, and physical address.
+conversations: 1
+oracle: |
+  contact_email.strip().lower() == 'cau@uam.es'
+  and '914974029' in contact_phone.replace(' ', '')
+  and 'Francisco Tomás y Valiente' in physical_address
+yields: |
+  f"Wrong CAU contact info: email={contact_email}, phone={contact_phone}, address={physical_address}"
+```
+
+This version checks the *substance* (right email, right phone digits, right street) rather than the exact formatting — usually what you actually care about. 😊
+
+Want me to also write a metamorphic version (e.g. comparing two conversations to check the CAU is *consistent* across different phrasings)? Just say the word!

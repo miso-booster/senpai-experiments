@@ -1,0 +1,33 @@
+conversation ID: agentic_architecture__p9__ada_uam__rule__b43d096b
+$$$
+¡Perfecto! El perfil `préstamos_y_recursos_de_la_biblioteca.yaml` ya expone el campo `library_hours` (tipo `string`, "Horarios de atención de la biblioteca"), que es justo lo que necesitamos para verificar el horario. 🎯
+
+## Cómo lo he planteado
+
+Para comprobar un valor de texto libre como el horario, lo más robusto es usar el helper `semantic_content(valor, descripción)`, que hace una verificación semántica con LLM. Así no dependemos de un formato exacto tipo "9:00-20:00" y aceptamos variantes como "de 9 a 20", "9:00 a 20:00 h", etc.
+
+Aquí tienes la regla (un solo documento YAML):
+
+```yaml
+name: library_hours_9_to_20
+description: >
+  El horario de atención de la biblioteca debe ser de 9 a 20.
+  Regla ligada al perfil "Préstamos y Recursos de la Biblioteca"
+  (campo chatbot.output: library_hours).
+conversations: 1
+active: True
+when: conv[0].library_hours is not None
+oracle: semantic_content(conv[0].library_hours, "el horario de atención de la biblioteca es de 9:00 a 20:00")
+yields: >-
+  f"Horario de biblioteca incorrecto: {conv[0].library_hours} (se esperaba de 9 a 20)"
+```
+
+## Notas importantes ⚠️
+
+- **Campo usado:** `library_hours` — coincide exactamente con el `chatbot.output` del perfil. No he inventado ningún campo nuevo.
+- **`when`:** filtra conversaciones donde el horario sí se extrajo (evita falsos fallos si el bot no llegó a dar el horario). Si prefieres que también falle cuando *no* se extrae el horario, quita esa línea o cámbiala por `when: True`.
+- **`semantic_content` es LLM-backed**, así que puede haber pequeñas variaciones; es la opción más robusta para texto libre como este.
+- **Alternativa estricta:** si tu bot siempre responde con un formato fijo (p. ej. "9:00 - 20:00"), podríamos usar comparaciones de texto más rígidas, pero te recomiendo la versión semántica por flexibilidad.
+
+¿Quieres que la deje así, o prefieres que también falle cuando el horario no se haya extraído (es decir, sin el `when`)? 😊
+$$$

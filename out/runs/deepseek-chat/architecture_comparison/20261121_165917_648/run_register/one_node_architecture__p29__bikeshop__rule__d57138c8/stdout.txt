@@ -1,0 +1,43 @@
+conversation ID: one_node_architecture__p29__bikeshop__rule__d57138c8
+$$$
+Absolutely, happy to help! 😊 Let me look at your project context to make sure the rule lines up with your actual profile outputs.
+
+Your `appointment.yml` profile already exposes exactly the fields we need:
+
+- `confirmed_date` (type `date`)
+- `confirmed_time` (type `str`)
+- `confirmed_service` (type `str`)
+
+So a **profile-bound rule** that checks the chatbot confirms an appointment makes sense. Here's a clean version using `data_collected()` (all extracted outputs non-null) plus a fallback message that tells you which slots are missing:
+
+```yaml
+name: appointment_confirmation
+description: When the user schedules a bike service, the chatbot confirms date, time and service (profile appointment)
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: f"Missing appointment confirmation slots: {missing_slots()}"
+```
+
+If you'd rather check each field explicitly (more granular, and lets you assert the service matches what the user asked for), you can use `semantic_content` on the confirmed fields:
+
+```yaml
+name: appointment_confirmation_semantic
+description: Chatbot confirms the requested service, date and time for the appointment profile
+conversations: 1
+active: true
+oracle: |
+  semantic_content(confirmed_service, 'tune-up or repair') and
+  confirmed_date is not None and
+  confirmed_time is not None
+yields: f"Appointment not fully confirmed: date={confirmed_date}, time={confirmed_time}, service={confirmed_service}"
+```
+
+A couple of quick notes 👀:
+
+- The first rule is the safest — it just checks that all three `chatbot.output` slots got filled, which is exactly the "confirmation happened" signal.
+- The second one leans on the LLM-backed `semantic_content` helper, so expect a tiny bit of variability; keep the description loose (like `'tune-up or repair'`) rather than overly strict.
+- If you later rename `confirmed_service` in the profile, remember to update the rule too — that's the profile↔rule contract. 🔗
+
+Want me to also add a metamorphic variant (e.g., "same service requested across two conversations ⇒ same confirmed service")? Just say the word!
+$$$

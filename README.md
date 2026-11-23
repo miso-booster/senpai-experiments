@@ -13,9 +13,9 @@ The benchmarks used in the experiments are in [`configs/`](configs/). The comple
 | Research question | Benchmark | What is available | Primary artifacts |
 | --- | --- | --- | --- |
 | RQ1 | [51 autocontained prompts](configs/prompts.json) | Human ranking of three architectures using `gpt-4o-mini` | [rankings and metrics](out/RQ1/gpt-4o-mini/20260324_134818_560/) |
-| RQ2 | [51 autocontained prompts](configs/prompts.json) | Cost metrics of three architectures for `gemini-3-1-pro-preview`, `gpt-4-1-mini`, `gpt-4o-mini`, and `gpt-5-codex` | [per-model reports](out/RQ2_architecture_metrics/) and [model comparison](out/RQ2_architecture_metrics/model_comparison/) |
+| RQ2 | [51 autocontained prompts](configs/prompts.json) | Cost metrics of three architectures for `deepseek-chat`, `gemini-3-1-pro-preview`, `gpt-4-1-mini`, `gpt-4o-mini`, and `gpt-5-codex` | [per-model reports](out/RQ2_architecture_metrics/) and [model comparison](out/RQ2_architecture_metrics/model_comparison/) |
 | RQ3 | [15 context-project prompts](configs/rq3_prompts.json) | Trace consistency and human-reviewed clusters of responses | [tool/node consistency](out/RQ3_tool_consistency_and_node_usage_consistency/) and [clustering results](out/RQ3_clustering/) |
-| RQ4 | [15 out-of-scope prompts](configs/rq4_prompts.json) | Guardrail-test metrics of three architectures for `gemini-3-1-pro-preview`, `gpt-4-1-mini`, `gpt-4o-mini`, and `gpt-5-codex` | [combined report](out/RQ4_guardrail_metrics/) and [judge-corrected results](out/RQ4_guardrail_metrics_judged/) |
+| RQ4 | [15 out-of-scope prompts](configs/rq4_prompts.json) | Guardrail-test metrics of three architectures for `deepseek-chat`, `gemini-3-1-pro-preview`, `gpt-4-1-mini`, `gpt-4o-mini`, and `gpt-5-codex` | [combined report](out/RQ4_guardrail_metrics/) and [judge-corrected results](out/RQ4_guardrail_metrics_judged/) |
 
 ### Evaluated models
 
@@ -25,6 +25,9 @@ The benchmarks used in the experiments are in [`configs/`](configs/). The comple
 | `gpt-4.1-mini`           | gpt-4.1-mini-2025-04-14 | 23 April 2026 (RQ1), 5 May 2026 (RQ4)                  |
 | `gpt-5-codex`            | gpt-5-codex             | 27 April 2026 (RQ1), 4 May 2026 (RQ4)                  |
 | `gemini-3.1-pro-preview` | gemini-3.1-pro-preview  | 24 April 2026 (RQ1), 5 May 2026 (RQ4)                  |
+| `deepseek-chat`          | DeepSeek-V4.1-Flash-1017 (non-thinking mode) | 21/22 November 2026 (RQ1, RQ4)    |
+
+`deepseek-chat` was accessed through DeepSeek's OpenAI-compatible API (`https://api.deepseek.com`). This model name is served by `deepseek-flash`, i.e., [DeepSeek-V4.1-Flash-1017](https://api-docs.deepseek.com/quick_start/pricing), in non-thinking mode (`deepseek-flash` itself defaults to thinking mode). Its weights are openly released under the MIT licence on [Hugging Face](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017). See [Running with other models (DeepSeek)](#4-running-with-other-models-deepseek) for the setup.
 
 ### RQ1 - Result quality
 
@@ -82,7 +85,7 @@ RQ3 analyses both execution trace consistency and semantic clustering of the ass
 
 ### RQ4 - Guardrail effectiveness
 
-The RQ4 experiment entails 20 runs x 15 prompts x 3 architectures x 4 models. Its [combined workbook](out/RQ4_guardrail_metrics/RQ4_guardrail_metrics.xlsx), [architecture summary](out/RQ4_guardrail_metrics/rq4_architecture_summary.csv), and [prompt/architecture summary](out/RQ4_guardrail_metrics/rq4_prompt_arch_summary.csv) contain the detailed results.
+The RQ4 experiment entails 20 runs x 15 prompts x 3 architectures x 5 models. Its [combined workbook](out/RQ4_guardrail_metrics/RQ4_guardrail_metrics.xlsx), [architecture summary](out/RQ4_guardrail_metrics/rq4_architecture_summary.csv), and [prompt/architecture summary](out/RQ4_guardrail_metrics/rq4_prompt_arch_summary.csv) contain the detailed results.
 
 <p align="center">
   <img src="out/RQ4_guardrail_metrics_judged/RQ4_guardrail_blocked_counts.png" alt="Blocked responses by architecture and model" width="48%">
@@ -193,6 +196,27 @@ OPENAI_API_KEY=your_openai_key
 ```
 
 `OPENAI_API_KEY` is required for `app.rq3_clustering`.
+
+### 4. Running with other models (DeepSeek)
+
+The three Senpai-Assistant variants use `gpt-4o-mini` by default. They read the model to use from the following environment variables, which can be set in the `env` section of `configs/architectures.json`:
+
+- `SENPAI_MODEL` and `SENPAI_MODEL_PROVIDER`: model name and LangChain provider (default: `gpt-4o-mini` and `openai`)
+- `SENPAI_MODEL_BASE_URL` and `SENPAI_MODEL_API_KEY`: base URL and API key of an OpenAI-compatible endpoint
+- `SENPAI_MODEL_MAX_INPUT_TOKENS` (agentic variant only): context window passed to the summarization middleware for models unknown to LangChain (default: 1048576)
+- `SENPAI_STRUCTURED_OUTPUT_METHOD` (agentic variant only): method used to obtain structured outputs in the validation and scope-guardrail middleware
+
+[`configs/architectures.deepseek.json`](configs/architectures.deepseek.json) is the configuration used for the `deepseek-chat` runs. To use it, copy it to `configs/architectures.json`, adjust the paths, and add `SENPAI_MODEL_API_KEY=<your DeepSeek key>` to `configs/.env`. DeepSeek does not support the default JSON-schema structured outputs, so `SENPAI_STRUCTURED_OUTPUT_METHOD=function_calling` is required. Without it, the validation and guardrail middleware of the agentic variant fail silently and are skipped.
+
+On Windows, set `PYTHONUTF8=1` and `PYTHONIOENCODING=utf-8` when running the experiments, so that answers containing emoji are not truncated.
+
+The `deepseek-chat` guardrail answers were judged separately, reusing the same judge model:
+
+```bash
+python -m app.rq4.judge_fallbacks --model-label deepseek-chat --providers gemini --env-file configs/.env --out-dir out/RQ4_guardrail_judged_fallbacks_deepseek
+```
+
+Its outputs are in [`out/RQ4_guardrail_judged_fallbacks_deepseek/`](out/RQ4_guardrail_judged_fallbacks_deepseek/). The corrected workbooks were moved to `out/RQ4_guardrail_judged_fallbacks/corrected_runs/deepseek-chat/`, next to those of the other models, so that the judge-corrected report covers the five models.
 
 Main Execution
 --------------

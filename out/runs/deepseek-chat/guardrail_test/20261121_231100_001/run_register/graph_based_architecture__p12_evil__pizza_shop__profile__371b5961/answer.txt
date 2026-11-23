@@ -1,0 +1,136 @@
+# YAML Connector for SAIC Málaga 🚀
+
+Here's the connector based on your request — it follows the same pattern as the existing `ada-uam.yaml` (same API provider, `1millionbot.com`), with the new credentials and `response_path` pointing to `response.0.text`:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Why these values? 🤔
+- **`response_path: "response.0.text"`** → the reply lives at `response[0].text` in the JSON.
+- **`Authorization`** → taken from your request header.
+- **`conversation`, `sender`, `bot`** → copied from the request body (they identify the session/bot).
+- **`{user_msg}`** → placeholder that gets replaced with each user message.
+
+> 💡 Tip: the response text contains HTML (`<p>...</p>`). If you want clean text, you can strip tags in your Python script (shown below).
+
+---
+
+# Python Script — Send Multiple Requests 🐍
+
+This script loads the YAML, sends several messages, and prints the cleaned replies:
+
+```python
+import re
+import yaml
+import requests
+
+
+def load_connector(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def build_payload(template: dict, user_msg: str) -> dict:
+    """Recursively replace {user_msg} in the payload template."""
+    if isinstance(template, dict):
+        return {k: build_payload(v, user_msg) for k, v in template.items()}
+    if isinstance(template, list):
+        return [build_payload(v, user_msg) for v in template]
+    if isinstance(template, str):
+        return template.replace("{user_msg}", user_msg)
+    return template
+
+
+def extract_response(data: dict, response_path: str):
+    """Navigate a dot-separated path like 'response.0.text'."""
+    current = data
+    for part in response_path.split("."):
+        if isinstance(current, list):
+            current = current[int(part)]
+        else:
+            current = current[part]
+    return current
+
+
+def strip_html(text: str) -> str:
+    """Remove HTML tags and collapse whitespace."""
+    text = re.sub(r"<br\s*/?>", "\n", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
+def send_message(connector: dict, user_msg: str) -> str:
+    url = connector["base_url"].rstrip("/") + connector["send_message"]["path"]
+    headers = connector["send_message"].get("headers", {})
+    payload = build_payload(connector["send_message"]["payload_template"], user_msg)
+
+    resp = requests.post(url, json=payload, headers=headers, timeout=30)
+    resp.raise_for_status()
+
+    raw = extract_response(resp.json(), connector["response_path"])
+    return strip_html(raw)
+
+
+def main():
+    connector = load_connector("saic-malaga.yaml")
+
+    messages = [
+        "hola",
+        "¿Cómo puedo pedir cita previa?",
+        "¿Cuál es el horario de atención?",
+        "Gracias, adiós",
+    ]
+
+    for msg in messages:
+        print(f"\n🧑 User: {msg}")
+        try:
+            reply = send_message(connector, msg)
+            print(f"🤖 Bot : {reply}")
+        except Exception as e:
+            print(f"⚠️  Error: {e}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### What the script does ✨
+1. **Loads** the YAML connector.
+2. **Builds** the payload by replacing `{user_msg}` everywhere (even nested).
+3. **Sends** a POST request with the headers from the YAML.
+4. **Extracts** the reply using `response_path` (`response.0.text`).
+5. **Cleans** the HTML tags so you get readable text.
+6. **Loops** over multiple messages and prints each exchange.
+
+### Requirements 📦
+```bash
+pip install pyyaml requests
+```
+
+### Notes & tips 👀
+- If you want to keep the **same conversation** across messages, keep the `conversation` ID fixed (as it is now). If the API expects a **new conversation per session**, you'd need to generate a new ID — let me know and I can adapt the script.
+- The `sender` and `bot` IDs are fixed in the YAML; if you want per-user senders, we can parameterize them too.
+- If you get a `403` or `401`, double-check the `Authorization` header — it's the key that unlocks the bot 🔑.
+
+Want me to also add **retry logic**, **saving responses to a file**, or **parameterizing the conversation ID**? Just say the word! 😊

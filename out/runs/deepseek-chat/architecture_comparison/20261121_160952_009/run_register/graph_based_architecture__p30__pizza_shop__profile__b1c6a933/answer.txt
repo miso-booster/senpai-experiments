@@ -1,0 +1,99 @@
+Hey there! 😊 Happy to help you build that profile — a rude, impatient pizza customer is a fun one to simulate! Let me walk you through it.
+
+## Quick heads-up on the pairwise requirement ⚠️
+
+You asked for **2 variables with `pairwise()`** so the conversation number can come from the pairwise matrix. Just a small but important detail from the docs: **`pairwise()` needs at least 2 assigned variables to work**, and to define `conversation.number` from a combination matrix you need **a minimum of two pairwise functions declared**. So your setup is spot-on — 2 pairwise variables will do it. 👍
+
+## The profile
+
+Here's a complete, runnable profile. I've made the user rude and rushed, with 4 goals and 4 variables (2 using `pairwise()`):
+
+```yaml
+test_name: "rude_impatient_pizza_order"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude, impatient customer ordering pizza over the phone.
+    You are in a hurry and get annoyed easily. You speak bluntly, cut to the
+    chase, and expect fast answers. You do not say please or thank you, and
+    you push the bot to hurry up.
+  context:
+    - "You are ordering on your way home and have very little time."
+    - "You have no patience for small talk or long explanations."
+    - "If the bot is slow or asks too many questions, you get irritated."
+  goals:
+    - "Demand a {{pizza_type}} pizza, {{pizza_size}} size, and tell them to be quick about it."
+    - "Order {{number_of_drinks}} cans of {{drink_type}} — and make it fast."
+    - "Ask how long the order will take, and complain if it's too long."
+    - "Ask for the total price and the order ID."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Vegetarian, Four cheese]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Fanta, Water]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - order_summary:
+        type: string
+        description: "Summary of the pizza and drink order (type, size, quantity, drink)."
+    - total_price:
+        type: money
+        description: "Final price of the order, including currency symbol."
+    - estimated_time:
+        type: time
+        description: "Estimated time until the order is ready."
+    - order_id:
+        type: string
+        description: "The order identifier / order number."
+
+conversation:
+  number: combinations(1, pairwise)   # derived from the pairwise matrix (2 pairwise vars)
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+## Why this works ✅
+
+- **4 goals** → the four `- "..."` lines at the top of `goals`.
+- **4 variables** → `pizza_type`, `pizza_size`, `number_of_drinks`, `drink_type`.
+- **2 pairwise variables** → `pizza_type` and `pizza_size` both use `pairwise()`, which satisfies the minimum of two pairwise functions needed to compute `conversation.number` from the matrix. 🎯
+- **`combinations(1, pairwise)`** → uses the full pairwise matrix (you can swap `1` for a fraction like `0.6` to sample 60%).
+- **Rude & fast persona** → baked into `role` and `context`, plus `long phrases` and `single questions` interaction styles keep it terse and demanding.
+
+## A couple of friendly tips 💡
+
+- If you'd rather have the **full grid** instead of pairwise coverage, swap `pairwise()` for nested `forward()` — but then you'd lose the pairwise-matrix conversation number.
+- The `money` and `time` types in `chatbot.output` are great for later **Sensei-check rules** (e.g., `conv[0].total_price > 0`). Just make sure those types exist in your `types/` folder if they're custom. 👀
+
+Want me to tweak the rudeness level, add a personality file reference, or adjust the pairwise fraction? Just say the word! 🙌

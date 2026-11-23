@@ -1,0 +1,150 @@
+¡Hola! 😊 ¡Qué buena idea querer poner a prueba ese perfil! Se ve muy completo — tiene un montón de `chatbot.output` que puedes aprovechar para escribir reglas bien interesantes.
+
+Antes de lanzarte, un detalle importante: tu perfil **no tiene `is_starter: true`**, así que el usuario simulado arranca la conversación (perfecto para reglas de tipo "recopilación de datos" y "cobertura de slots").
+
+Aquí te propongo varias reglas, ordenadas de más simple a más ambiciosa 👇
+
+---
+
+### 1) Que el bot realmente recopile los datos clave (single-conversation)
+
+Esta es la más directa para "probar" el perfil: verifica que tras la conversación no queden slots vacíos.
+
+```yaml
+name: admission_data_collected
+description: Tras la conversación, el bot debe haber recopilado los datos de admisión clave
+conversations: 1
+oracle: data_collected() is True
+```
+
+Si quieres ser más específico y solo exigir que no falten ciertos campos:
+
+```yaml
+name: admission_no_missing_core_slots
+description: No deben quedar vacíos los slots esenciales de admisión
+conversations: 1
+oracle: missing_slots() == []
+```
+
+> 💡 Ojo: `missing_slots() == []` exige que **todos** los 16 outputs estén llenos, lo cual puede ser muy estricto. Si quieres algo más realista, usa `data_collected()` o revisa `missing_slots()` a mano primero.
+
+---
+
+### 2) Que los enlaces sean coherentes (single-conversation)
+
+Como tienes varios campos `*_link`, puedes verificar que efectivamente parezcan URLs:
+
+```yaml
+name: links_look_like_urls
+description: Los campos de enlaces deben contener URLs válidas
+conversations: 1
+oracle: "'http' in admission_to_grados_link and 'http' in waitlist_info_link and 'http' in future_students_link and 'http' in welcome_day_link"
+```
+
+---
+
+### 3) Que el bot responda en español (global, estilo)
+
+Muy útil para detectar regresiones de idioma:
+
+```yaml
+name: responds_in_spanish
+description: El bot debe responder en el mismo idioma que el usuario (español)
+conversations: 1
+oracle: responds_in_same_language() is True
+```
+
+---
+
+### 4) Que no se repita (global, estilo)
+
+Detecta respuestas duplicadas o casi idénticas:
+
+```yaml
+name: no_repeated_answers
+description: El bot no debe repetir respuestas casi idénticas
+conversations: 1
+oracle: len(repeated_answers('tf-idf', 0.85)) == 0
+```
+
+---
+
+### 5) Que se mantenga en el dominio (global, scope)
+
+```yaml
+name: stays_on_topic
+description: El bot no debe salirse del ámbito de admisiones y vida universitaria
+conversations: 1
+oracle: only_talks_about('admisión, grados, cursos, Welcome Day, listas de espera, información para futuros estudiantes') is True
+```
+
+---
+
+### 6) Metamórfica: coherencia de fechas/horas del Welcome Day (2 conversaciones)
+
+Aquí empieza lo divertido 🎉. Como tienes `welcome_day_date` y `welcome_day_time`, puedes comprobar que cuando el bot menciona el evento, la fecha y hora son consistentes entre conversaciones comparables:
+
+```yaml
+name: welcome_day_consistency
+description: La fecha y hora del Welcome Day deben ser consistentes entre conversaciones
+conversations: 2
+when: conv[0].welcome_day_date is not None and conv[1].welcome_day_date is not None
+if: conv[0].welcome_day_date == conv[1].welcome_day_date
+then: conv[0].welcome_day_time == conv[1].welcome_day_time
+```
+
+---
+
+### 7) Metamórfica: el grado solicitado debe aparecer en la lista de grados
+
+Esta es muy potente: si el usuario pidió info sobre un grado concreto, ese grado debería estar reflejado en `grados_available`:
+
+```yaml
+name: requested_grado_in_available_list
+description: El grado consultado debe aparecer en la lista de grados disponibles
+conversations: 1
+if: grados_available is not None
+then: semantic_content(grados_available, 'lista de grados ofrecidos por la universidad') is True
+```
+
+> 💡 `semantic_content` es LLM-backed, así que puede tener pequeña variabilidad. Si quieres algo más determinista, compara substrings.
+
+---
+
+### 8) Metamórfica: coherencia entre requisitos y proceso de inscripción
+
+```yaml
+name: admission_info_consistency
+description: Si hay requisitos de admisión, también debe haber proceso de inscripción
+conversations: 1
+if: admission_requirements is not None
+then: enrollment_process is not None
+```
+
+---
+
+## 🎯 Mi recomendación para empezar
+
+Si es tu primera vez probando este perfil, yo empezaría con estas tres, en este orden:
+
+1. **`admission_data_collected`** → ¿el bot recopila algo útil?
+2. **`responds_in_spanish`** → ¿responde en el idioma correcto?
+3. **`no_repeated_answers`** → ¿no se queda en bucle?
+
+Con eso ya tendrás una foto clara de cómo se comporta. Luego añades las metamórficas (6, 7, 8) para afinar.
+
+---
+
+⚠️ Un aviso importante: tu archivo `conversation_lengths.yaml` está con `active: false` y usa `conversation_length()` sin argumentos — recuerda que la firma correcta es `conversation_length(who='both')`. Si quieres reactivarla, sería algo así:
+
+```yaml
+name: conversation_lengths
+description: El número de turnos de usuario y chatbot suma la longitud total
+conversations: 1
+active: true
+oracle: conversation_length('both') == conversation_length('assistant') + conversation_length('user')
+```
+
+---
+
+¿Quieres que te ayude a adaptar alguna de estas reglas a un campo concreto de tu perfil, o prefieres que profundicemos en las metamórficas? ¡Dime por dónde tiramos! 🚀

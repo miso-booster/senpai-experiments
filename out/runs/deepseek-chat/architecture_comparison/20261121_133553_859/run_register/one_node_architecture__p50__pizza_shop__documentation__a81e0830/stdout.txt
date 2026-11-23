@@ -1,0 +1,50 @@
+conversation ID: one_node_architecture__p50__pizza_shop__documentation__a81e0830
+$$$
+Great question! 😊 Let me break down what an **oracle** means in Sensei-check.
+
+## The short version
+
+An **oracle** is the part of a rule that says *"this is what should be true."* It's the condition Sensei-check evaluates to decide whether a conversation (or a set of conversations) **passes** or **fails**.
+
+Think of it like a referee 🧑‍⚖️ — it doesn't generate answers, it just judges whether what happened matches what you expected.
+
+## Where it fits in a rule
+
+In a Sensei-check rule you have two ways to express the expected relation:
+
+**Option A — `oracle`** (a single boolean expression):
+
+```yaml
+name: unique_order_ids
+description: No duplicate order_id across all conversations
+conversations: all
+oracle: is_unique('order_id')
+```
+
+**Option B — `if` / `then`** (an implication, often clearer for metamorphic rules):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Both `oracle` and `then` are effectively the "oracle" — the assertion being checked. ✅
+
+## Why the name "oracle"?
+
+In software testing, the **oracle problem** is: *how do you know the correct output?* For chatbots this is hard because answers vary. Sensei-check sidesteps this with **metamorphic rules** — instead of checking an absolute answer, you check a *relation* between conversations (e.g., "more toppings ⇒ higher price"). The `oracle`/`then` expression encodes that relation.
+
+## A few things to keep in mind
+
+- The oracle is a **Python expression** evaluated over `conv[i].<field>` values (which come from your profile's `chatbot.output`) and/or helper functions like `extract_float`, `language`, `is_unique`, etc.
+- It must evaluate to **True** (pass) or **False** (fail).
+- You can add an optional `yields:` / `on-error:` message to explain failures in a friendly way.
+
+So in one line: **the oracle is the "should be true" condition your rule checks** — the heart of every Sensei-check rule 💡
+
+Want me to help you write or review an oracle for one of your pizza-shop rules? 🍕
+$$$

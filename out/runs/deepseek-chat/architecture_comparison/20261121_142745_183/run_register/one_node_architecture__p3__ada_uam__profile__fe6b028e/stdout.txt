@@ -1,0 +1,108 @@
+conversation ID: one_node_architecture__p3__ada_uam__profile__fe6b028e
+$$$
+¡Hola! 😊 Claro que sí, con gusto te ayudo a dejar ese perfil bien ordenadito. Le eché un ojo y encontré un par de detallitos que están rompiendo la estructura YAML:
+
+1. **La variable `identificador_id_uam` quedó "suelta"**: le faltaba su nombre de variable (`- identificador_id_uam:`) antes de `type` y `data`, así que quedó pegada al goal anterior. Por eso el YAML se ve raro ahí.
+2. **Faltaban las `function`** en ambas variables (`identificador_id_uam` y `user_account`). Sin `function`, Sensei no sabe cómo elegir los valores en cada conversación. Como tienes 5 valores y `number: 5`, lo más natural es `forward()`.
+3. **El `fallback` tenía `\n` literales** que en YAML plano pueden dar problemas; lo dejé más limpio con un bloque de texto.
+4. **Faltaba `model_prov`** en `llm` (opcional, pero recomendable para que no haya ambigüedad con el proveedor).
+5. **Faltaba `interaction_style`** en `conversation` (opcional, pero lo dejé con `single questions` como en tus otros perfiles del proyecto, para mantener consistencia).
+
+Aquí tienes la versión corregida 👇
+
+```yaml
+test_name: "Asistencia Técnica y Cuentas"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Usuario con problemas técnicos relacionados con plataformas virtuales y cuentas de usuario."
+  context:
+    - "Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad."
+    - "Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias."
+    - "Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento."
+  goals:
+    - "Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU)."
+    - "Preguntar sobre los procedimientos para obtener una cuenta ID-UAM."
+    - "Solicitar los pasos necesarios para establecer la contraseña por primera vez."
+    - "Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado."
+    - "Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}."
+    - identificador_id_uam:
+        function: forward()
+        type: string
+        data:
+          - '123456789'
+          - '987654321'
+          - '112233445'
+          - '556677889'
+          - '998877665'
+    - user_account:
+        function: forward()
+        type: string
+        data:
+          - usuario123
+          - maria.garcia
+          - juan_lopez_2023
+          - pedro.salas
+          - sara.martinez
+
+chatbot:
+  is_starter: false
+  fallback: |
+    ¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro
+    catálogo de servicios.
+    Respondo a preguntas dirigidas al
+    Centro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+    - contact_info:
+        type: string
+        description: "Detalles de contacto del CAU"
+    - operational_hours:
+        type: string
+        description: "Horarios operativos del CAU"
+    - available_services_list:
+        type: string
+        description: "Servicios disponibles para crear cuenta"
+    - password_setup_link:
+        type: string
+        description: "Enlace para establecer contraseña"
+    - contact_information:
+        type: string
+        description: "Opciones de asistencia para recuperación de ID-UAM"
+    - recovery_steps:
+        type: string
+        description: "Pasos para recuperar ID-UAM"
+    - activation_code:
+        type: string
+        description: "Código de activación para cambiar contraseña"
+    - user_account:
+        type: string
+        description: "Nombre de usuario para recuperación"
+    - identificador_id_uam:
+        type: string
+        description: "Identificador único de ID-UAM"
+    - password_change_steps:
+        type: string
+        description: "Pasos para cambiar la contraseña"
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 30
+  interaction_style:
+    - single questions
+```
+
+Un par de cositas a tener en cuenta 👀:
+
+- Con `forward()` en ambas variables y `number: 5`, cada conversación usará un par distinto (`123456789` + `usuario123`, `987654321` + `maria.garcia`, etc.). Si prefieres combinaciones cruzadas, podrías anidar `forward(identificador_id_uam)` en `user_account` y usar `number: combinations`.
+- Si quieres que el perfil también sirva para reglas tipo `data_collected()` o `missing_slots()`, los campos de `chatbot.output` ya están listos para eso. ✅
+
+¿Quieres que te ayude también a escribir alguna regla de Sensei-check que valide este perfil? Por ejemplo, una que compruebe que todos los slots se rellenan o que el bot responde en español. ¡Dime y lo armamos! 🚀
+$$$

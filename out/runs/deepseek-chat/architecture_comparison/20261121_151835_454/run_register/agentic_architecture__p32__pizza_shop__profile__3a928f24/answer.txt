@@ -1,0 +1,92 @@
+¡Listo! 🍕 Revisé la guía de perfiles (`sensei-chat-guide.md`) y también eché un vistazo a tus perfiles existentes para mantener el mismo estilo. Ojo: ya tienes varios perfiles de pizzería (`pizza_and_drink_order_placement.yaml`, `pizza_order_test_custom.yml`, etc.), así que te propongo uno nuevo enfocado en **extraer exactamente esos 4 campos** que pides.
+
+## Perfil propuesto: `pizza_order_outputs.yaml`
+
+```yaml
+test_name: "pizza_order_outputs"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer placing a pizza order for delivery or pickup.
+    You want to choose a pizza, add a drink, and get the final price in US dollars.
+  context:
+    - "You are ordering dinner for yourself tonight."
+    - "You care about the final price and want it clearly stated in USD."
+    - "You will ask for the order ID / confirmation number before finishing."
+  goals:
+    - "Ask which {{pizza_type}} pizzas are available."
+    - "Order one {{pizza_type}} pizza."
+    - "Add a {{drink}} to your order."
+    - "Ask for the final price in US dollars."
+    - "Ask for the order ID or confirmation number."
+    - pizza_type:
+        function: forward()
+        type: string
+        data:
+          - Margherita
+          - Pepperoni
+          - Four cheese
+          - Hawaiian
+          - Vegetarian
+    - drink:
+        function: forward()
+        type: string
+        data:
+          - Coca-Cola
+          - Fanta
+          - Water
+          - Iced Tea
+          - Orange Juice
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't get that. I can help you order a pizza and a drink."
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the customer ordered (e.g., Margherita, Pepperoni)."
+    - drink:
+        type: string
+        description: "The drink included in the order (e.g., Coca-Cola, Water)."
+    - order_id:
+        type: string
+        description: "The unique order identifier or confirmation number given by the chatbot."
+    - final_price:
+        type: currency
+        description: "The final total price of the order in US dollars (USD)."
+
+conversation:
+  number: 5
+  max_cost: 1.0
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - change your mind
+    - single questions
+```
+
+## Qué hace y por qué está así ✨
+
+- **`chatbot.output`** define el contrato que luego usarán tus reglas como `conv[i].pizza_type`, `conv[i].drink`, `conv[i].order_id` y `conv[i].final_price` (justo lo que pediste).
+- Usé `type: currency` para `final_price` en lugar de `string`, porque así las reglas pueden hacer cosas como `extract_float(conv[0].final_price) > 0` (recomendado en la guía, §2.1.2).
+- `pizza_type` y `drink` son variables con `forward()` para que cada conversación pruebe una combinación distinta de forma determinista.
+- `goal_style: all_answered` con `limit: 20` asegura que la conversación no termine hasta cubrir todos los objetivos (incluido pedir el ID y el precio).
+- `interaction_style` incluye `change your mind` (típico en pedidos) y `single questions` para variar el flujo.
+
+## Sobre las reglas 🔍
+
+Si luego quieres validar este perfil con SENSEI-check, los campos ya están listos para reglas como:
+- `conv[i].order_id is not None`
+- `extract_float(conv[i].final_price) > 0`
+- `conv[i].pizza_type` coincide con lo pedido en los goals.
+
+¿Quieres que te genere también una **regla** que valide este perfil (por ejemplo, que el precio final sea mayor que 0 y que el `order_id` exista)? Dime y la armamos 😊.

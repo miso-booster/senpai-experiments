@@ -1,0 +1,33 @@
+conversation ID: agentic_architecture__p35__pizza_shop__rule__f3582fc4
+$$$
+Great — I found several pizza profiles. Here's what I see, and I need you to confirm which one to target before I write the rule 👇
+
+## Candidate profiles & their `chatbot.output` fields
+
+| Profile file | Relevant output fields | Notes |
+|---|---|---|
+| **`pizza_order_test_custom.yml`** | `price` (currency), `time`, `order_id` | Has a `size` variable (small/medium/big/extra large) in goals, but **`size` is NOT in `chatbot.output`** |
+| **`user_sim_pizzaorder_predefined.yml`** | `price` (money), `time`, `order_id` | Has `size` variable in goals, but **`size` is NOT in `chatbot.output`** |
+| **`pizzaorder_ivan_test.yml`** | `selected_pizza_size`, `selected_pizza_type`, `drink_options_and_prices`, … | Has size in output, but **no `price` field** |
+| **`pizza_and_drink_order_placement.yaml`** | `total_cost` (money), `order_summary`, `order_id`, … | Has `pizza_size` variable in goals, but **no dedicated size field in output** |
+
+## ⚠️ Important catch
+
+Your rule needs to check *"the price of a **small** pizza is $10"*. That means the rule must be able to read **both** the pizza size **and** the price from the conversation's extracted outputs.
+
+But in the profiles above, the **size is only a goal variable** (chosen by the simulator), not a field in `chatbot.output`. In Sensei-check rules, `conv[i].<field>` reads from `chatbot.output` — so I can't reliably reference `size` unless it's exposed there.
+
+So there are two paths:
+
+**Option A — Target `pizza_order_test_custom.yml` (or `user_sim_pizzaorder_predefined.yml`)** and first **add a `size` field to its `chatbot.output`** (e.g. `size: {type: string, description: "Pizza size chosen"}`). Then the rule can filter on `conv[0].size == 'small'` and check `extract_float(conv[0].price) == 10`.
+
+**Option B — Write a rule-first version** that assumes a future/updated profile exposes both `size` and `price`, and I'll document exactly which fields the profile must provide.
+
+## My questions for you 🙋
+
+1. **Which profile** should this rule target? (I'd suggest `pizza_order_test_custom.yml` since it already has `price` as `currency`.)
+2. Are you OK with me **adding a `size` field to that profile's `chatbot.output`** so the rule can filter on small pizzas? (Otherwise the rule can't know the size.)
+3. Should the check be **exactly `== 10`** or **`>= 10`** (a floor)? The docs' example uses `>= 10` as a "base price floor", but you said "$10", so I want to confirm.
+
+Once you confirm, I'll generate the YAML (and the small profile tweak if you want it). 😊
+$$$

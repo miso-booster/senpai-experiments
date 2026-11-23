@@ -1,0 +1,56 @@
+# What is an oracle? 🔍
+
+In SENSEI-check, an **oracle** is the part of a rule that states the **condition to be checked** — the actual "test assertion" that must hold for the conversation(s) to pass. It's a Python-style boolean expression that evaluates to `True` (pass) or `False` (fail).
+
+*(Based on `sensei-check-doc.md` and `rules-examples.md`.)*
+
+## Where it fits in a rule
+
+A rule can express its check in **one of two ways**:
+
+**Option A — `oracle`** (a single boolean condition):
+```yaml
+name: unique_order_ids
+description: No duplicate order_id across all conversations
+conversations: all
+oracle: is_unique('order_id')
+```
+
+**Option B — `if` / `then`** (an implication, clearer for metamorphic relations):
+```yaml
+name: toppings_monotonicity
+description: More toppings costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+So `oracle` is essentially the "flat" version of the check, while `if`/`then` is the "conditional" version. You use one or the other, not both.
+
+## Key things to know about `oracle`
+
+- **It's a boolean expression** — it must evaluate to `True`/`False`. You can combine conditions with `and`, `not`, etc.
+- **It can reference conversation data** — for single-conversation rules you can use fields directly (e.g. `price`, `size`), and for multi-conversation rules you use the `conv` collection (`conv[0].price`, `conv[1].size`, …).
+- **It can call built-in helpers** — e.g. `extract_float(...)`, `currency(...)`, `language(...)`, `is_unique(...)`, `only_talks_about(...)`, `data_collected()`, `repeated_answers(...)`, etc.
+- **It's paired with `when`** — `when` filters *which* conversations the rule applies to; `oracle` then checks the condition on those.
+- **It's paired with `yields`** — an optional f-string that produces a helpful error message when the oracle fails.
+
+## Quick example with a message
+
+```yaml
+name: chatbot_fills_all_slots
+description: All conversation slots are filled
+conversations: 1
+active: True
+oracle: data_collected() == True
+yields: f"Missing slots: {missing_slots()}"
+```
+
+Here `oracle` is the check (`data_collected() == True`), and `yields` explains *why* it failed (listing the missing slots).
+
+## The "oracle problem" context
+
+The docs also mention the **oracle problem** — the difficulty of knowing the "correct" answer for a chatbot. Metamorphic rules sidestep this by checking *relations* between conversations (e.g. "more toppings ⇒ higher price") instead of absolute answers. In that framing, `oracle` is the classic single-conversation check, while `if`/`then` expresses the metamorphic relation.
+
+Want me to show you how to write an `oracle` for one of your actual profiles? Just tell me which profile (or I can look them up) 😊

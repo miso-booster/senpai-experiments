@@ -1,0 +1,41 @@
+conversation ID: agentic_architecture__p48__pizza_shop__documentation__5f105906
+$$$
+Hey! 😊 Good question — based on the profiles guide (`sensei-chat-guide.md`), here's the breakdown of what's **optional** vs what you really need.
+
+## ✅ Optional fields
+
+**`llm` block — entirely optional**
+- Per the FAQ: *"Do I have to define `llm`? No. If omitted, defaults are applied (e.g., model and temperature) and the format defaults to text."*
+- So `llm.temperature`, `llm.model`, `llm.model_prov`, and `llm.format` are all optional. You only add them when you need overrides or `speech` mode.
+- Within `llm.format`, `config` is only needed when `type: speech`.
+
+**`user.context` — optional**
+- `context` is a list of freeform constraints/facts, and the `personality:` entry is explicitly marked optional. You can omit the whole `context` section if the `role` already says enough.
+
+**`chatbot.output` — optional in principle**
+- It's not required to run a profile. But ⚠️ it *is* the contract for Sensei-check rules (`conv[i].<field_name>`), so if you plan to validate with profile-bound rules, you'll want it.
+
+**Conversation cost caps — optional**
+- `conversation.max_cost` (whole-run cap) and `goal_style.max_cost` (per-conversation cap) are both marked optional.
+
+**`goal_style` sub-fields — optional**
+- `all_answered.export` (default `false`) and `all_answered.limit` (defaults to 30 if omitted) are optional.
+
+**`interaction_style` — optional**
+- You can omit it; the default behaviour is `default` (natural conversation).
+
+**`test_name`** — practically optional for execution, though it's good practice to include it for identification.
+
+## 🔒 Effectively required (to have a runnable, meaningful profile)
+
+- `user.language`
+- `user.role`
+- `user.goals` (with any `{{variables}}` declared with matching names)
+- `chatbot.is_starter` and `chatbot.fallback` (the docs strongly advise putting the **real** bot fallback text to avoid endless loops)
+- `conversation.number` and a `goal_style` choice (`steps`, `random steps`, or `all_answered`)
+
+## TL;DR
+The most clearly optional top-level piece is **`llm`** (defaults kick in), plus **`user.context`**, **`interaction_style`**, and the **cost caps**. `chatbot.output` is optional to *run*, but essential if you want rules to validate anything.
+
+Want me to show a minimal profile with all the optional bits stripped out? 🚀
+$$$

@@ -1,0 +1,46 @@
+conversation ID: agentic_architecture__p49__pizza_shop__documentation__a78673af
+$$$
+I checked the rules docs (`sensei-check-doc.md` and `rules-examples.md`) and I have to be upfront with you: **there is no `pairwise` function documented in SENSEI-check** 😅.
+
+## What the docs actually say
+
+The docs don't expose a helper called `pairwise`. What they *do* describe is **metamorphic testing**, which is conceptually "pairwise" but implemented through the rule structure itself, not a function:
+
+- You set `conversations: 2` (or more) on the rule.
+- You use `when:` to filter which conversations are comparable.
+- You then compare them with `conv[0].field` vs `conv[1].field` in `oracle:` or `if`/`then`.
+
+So the "pairwise" behaviour is baked into how rules select and compare conversation tuples — there's no `pairwise(...)` callable.
+
+## The documented helpers (authoritative list)
+
+From `sensei-check-doc.md` §6.4, the available helpers are:
+
+**Conversation-level:** `extract_float`, `currency`, `language`, `length`, `tone`, `conversation_length`, `utterance_index`, `chatbot_returns`, `repeated_answers`, `only_talks_about`, `responds_in_same_language`, `semantic_content`, `data_collected`, `missing_slots`
+
+**Dataset/global:** `is_unique`, `exists`, `num_exist`
+
+None of these is `pairwise`.
+
+## What you probably want instead
+
+If you're trying to compare two conversations, the pattern is:
+
+```yaml
+name: example_pairwise_rule
+description: Compares two conversations on a shared field
+conversations: 2
+when: conv[0].size == conv[1].size
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+That's the documented way to do a pairwise comparison.
+
+---
+
+A couple of quick questions so I can help precisely:
+
+1. Did you see `pairwise` mentioned somewhere specific (a file, an error message, another doc)? If so, point me to it and I'll dig in.
+2. Or are you just looking for the right way to compare two conversations? If so, tell me the profile/fields involved and I'll draft the rule for you 😊
+$$$

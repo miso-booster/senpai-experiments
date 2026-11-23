@@ -1,0 +1,39 @@
+conversation ID: agentic_architecture__p19__alcampo__rule__d9c3b805
+$$$
+Here's a rule that checks whether the chatbot shared information about current promotions. Since it's **not tied to any profile**, it's a **profile-agnostic global rule** that relies only on generic helpers (`utterance_index`, `chatbot_returns`) — no `chatbot.output` fields needed. It verifies that the assistant actually mentions promotions somewhere in the conversation.
+
+```yaml
+name: chatbot_provides_promotions
+description: The chatbot provides information about current promotions
+conversations: 1
+active: True
+oracle: |
+  utterance_index('assistant', 'current promotions or special offers') > 0
+yields: |
+  f"The chatbot did not provide information about current promotions"
+```
+
+### How it works 🔍
+- **`conversations: 1`** → it's a single-conversation oracle (not metamorphic).
+- **`utterance_index('assistant', 'current promotions or special offers')`** → returns the turn index where the assistant talks about promotions. If it's `> 0`, the bot did mention them. This is an LLM-backed helper, so it tolerates phrasing variations (e.g. "discounts", "deals", "special offers").
+- **`yields`** → a helpful message shown when the rule fails.
+
+### A couple of notes ⚠️
+- `utterance_index` is **LLM-backed**, so expect minor variability — it's great for semantic checks like this, but not a strict keyword match.
+- If you'd rather do a **literal keyword** check instead, you could swap the oracle for something like:
+
+```yaml
+name: chatbot_provides_promotions_keywords
+description: The chatbot mentions promotions or discounts (keyword check)
+conversations: 1
+active: True
+oracle: |
+  len(chatbot_returns('promotion')) > 0 or len(chatbot_returns('discount')) > 0
+yields: |
+  f"The chatbot did not mention promotions or discounts"
+```
+
+But the `utterance_index` version is more robust for natural-language bots.
+
+Want me to tweak the promotion wording, make it a global `all`-conversations check, or add a stricter keyword variant? 😊
+$$$

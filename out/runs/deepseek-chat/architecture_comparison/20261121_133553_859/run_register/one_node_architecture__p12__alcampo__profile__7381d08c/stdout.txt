@@ -1,0 +1,78 @@
+conversation ID: one_node_architecture__p12__alcampo__profile__7381d08c
+$$$
+Hey there! 😊 Happy to help you build a new profile for the Alcampo project.
+
+Quick heads-up before the YAML: I noticed your `customer_service_assistance.yaml` profile has a **YAML syntax error** — the `user` and `goals` keys are missing their colons (`user` → `user:`, `goals` → `goals:`). That's why it shows up as a parse error in your project context. Worth fixing that one too! 🛠️
+
+Here's a fresh profile focused on adding items to the shopping cart. It follows the same structure as your other Alcampo profiles (English user, `single questions`, `gpt-4o-mini`, and a `chatbot.output` schema you can later reference from Sensei-check rules):
+
+```yaml
+test_name: Shopping Cart Item Addition
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer shopping online at Alcampo and want to build up your
+    shopping cart by asking the chatbot which items you can add. You are
+    practical and want clear guidance on how to add products to your cart.
+  context:
+    - "You are planning your weekly grocery shop and want to fill your cart efficiently."
+    - "You prefer to ask the chatbot directly which items are available to add."
+    - "You care about knowing the price and quantity of each item before adding it."
+  goals:
+    - "Ask the chatbot which items are available to add to your shopping cart."
+    - "Request to add {{product_name}} to your cart."
+    - "Ask how many units of {{product_name}} are currently in your cart."
+    - "Inquire about the price of {{product_name}} before confirming."
+    - "Ask the chatbot to confirm the total number of items in your cart."
+    - product_name:
+        function: forward()
+        type: string
+        data: [milk, eggs, olive oil, whole wheat bread, orange juice]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - available_items:
+        type: string
+        description: Items the chatbot offers that can be added to the cart
+    - added_item_name:
+        type: string
+        description: Name of the product the user added to the cart
+    - item_quantity_in_cart:
+        type: int
+        description: Number of units of the product currently in the cart
+    - item_price:
+        type: money
+        description: Price of the product being added
+    - cart_total_items:
+        type: int
+        description: Total number of items in the shopping cart
+    - cart_confirmation:
+        type: string
+        description: Confirmation message that the item was added to the cart
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 22
+  interaction_style:
+    - single questions
+```
+
+A few notes so it plays nicely with the rest of your project 👇
+
+- **`chatbot.output` is your rule contract.** Fields like `added_item_name`, `item_quantity_in_cart`, and `cart_total_items` can later be referenced in Sensei-check rules as `conv[i].added_item_name`, etc. For example, a nice metamorphic rule would be: *if the same product is added twice, `cart_total_items` should increase by the added quantity.*
+- **`forward()` on `product_name`** cycles deterministically through the list, so across your 3 conversations you'll get varied products — good for coverage.
+- **`money` type** — I used `money` to match the convention in your other Alcampo profiles (e.g., `delivery_fee`, `checkout_total`). If your project's custom types define it as `currency` instead, just swap the name to stay consistent. 👍
+
+Want me to also draft a matching Sensei-check rule (e.g., cart quantity monotonicity) to go with this profile? Just say the word! 🚀
+$$$

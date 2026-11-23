@@ -1,0 +1,47 @@
+conversation ID: graph_based_architecture__p51__pizza_shop__documentation__872a54b0
+$$$
+Hey there! 😊 Great question — connectors are basically the **bridge** between Sensei and whatever chatbot you want to test. They tell Sensei *how to talk* to your bot's API. Let me break it down for you 👇
+
+## 🔌 What connectors are used for
+
+A **connector** is a YAML file that describes how to send a message to a chatbot and how to read its reply back. Instead of writing code, you just describe the API in YAML, and Sensei handles the rest. That way you can point Sensei at *any* chatbot — a real production bot, a test endpoint, whatever — as long as you can describe its API.
+
+## 🧩 The fields a connector has
+
+Here's the full set from the Custom YAML Connector guide:
+
+| Field | What it does | Required? |
+|-------|--------------|-----------|
+| `name` | A friendly name for your chatbot | No |
+| `base_url` | The base URL of the chatbot API | ✅ Yes |
+| `send_message.path` | The endpoint path (appended to `base_url`) | ✅ Yes |
+| `send_message.method` | HTTP method (POST, GET, PUT, DELETE) | No (defaults to POST) |
+| `send_message.headers` | Custom headers (auth, content-type, etc.) | No |
+| `send_message.payload_template` | The JSON body, with `{user_msg}` as the placeholder for the user's message | ✅ Yes |
+| `response_path` | Dot-separated path to pull the bot's reply out of the JSON response | ✅ Yes |
+
+## 💡 A couple of quick notes
+
+- **`{user_msg}`** is the magic placeholder — wherever you put it in the payload, Sensei swaps in the actual user message. ✨
+- **`response_path`** uses dot notation to dig into the JSON. For example:
+  - `"message"` → `response["message"]`
+  - `"data.text"` → `response["data"]["text"]`
+  - `"results.0.content"` → `response["results"][0]["content"]`
+
+## 👀 A tiny example
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+That's it — a minimal, working connector! 🎉
+
+Want me to walk through one of *your* existing connectors (like **Ada UAM** or **Metro Madrid**) and explain how each field maps to the real API? Just say the word 😄
+$$$

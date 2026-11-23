@@ -1,0 +1,54 @@
+conversation ID: graph_based_architecture__p17__alcampo__rule__37b03c74
+$$$
+¡Hola! 😊 Claro, te ayudo a revisarla. Antes de modificarla, déjame explicarte **por qué no te está funcionando**, porque hay varios problemillas en esa regla 👀
+
+## 🔍 Por qué falla
+
+1. **`conversations:` está vacío.**
+   El campo `conversations` es obligatorio y debe ser un número (`1`, `2`, …) o `all`. Si lo dejas vacío, Sensei-check no sabe cuántas conversaciones necesita para evaluar la regla. 👉 Debe ser `conversations: 1` (o el número que corresponda).
+
+2. **`membership_benefits` no es un campo válido por sí solo.**
+   En una regla de **una sola conversación** (`conversations: 1`), no puedes referenciar un slot "suelto" como `membership_benefits`. Los campos viven dentro de la conversación, así que debes accederlos como `conv[0].membership_benefits` — **y solo si ese campo existe en el `chatbot.output` del perfil** que estás evaluando. Si el perfil no expone `membership_benefits`, la regla no funcionará hasta que lo agregues. ⚠️
+
+3. **Comparar contra `''` es frágil.**
+   Si el slot no se extrajo, normalmente queda como `None`, no como string vacío. Comparar `!= ''` puede dar falsos positivos. Es más robusto usar `is not None` o el helper `data_collected()`.
+
+## ✅ Versión corregida
+
+Aquí tienes la regla arreglada, asumiendo que tu perfil expone el campo `membership_benefits` en `chatbot.output`:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits.
+conversations: 1
+oracle: conv[0].membership_benefits is not None and conv[0].membership_benefits != ''
+```
+
+## 💡 Alternativa más robusta (recomendada)
+
+Si quieres verificar que **todos** los slots se llenaron correctamente, puedes apoyarte en el helper `data_collected()`:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits.
+conversations: 1
+oracle: data_collected() is True
+```
+
+O, si quieres comprobar el **contenido semántico** de la respuesta (no solo que exista), puedes usar `semantic_content`:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits.
+conversations: 1
+oracle: semantic_content(conv[0].membership_benefits, 'describes membership benefits such as discounts, points, or exclusive offers')
+```
+
+## 📌 Checklist rápido antes de guardarla
+
+- ✅ ¿El perfil que estás evaluando tiene `membership_benefits` en su `chatbot.output`? Si no, agrégalo primero.
+- ✅ ¿`conversations` tiene un valor válido (`1`, `2`, …, `all`)?
+- ✅ ¿Estás usando `conv[0].<campo>` para acceder a los slots?
+
+Si me pasas el YAML del perfil que estás usando, te confirmo si el nombre del campo coincide exactamente y te ajusto la regla al detalle 😊.
+$$$

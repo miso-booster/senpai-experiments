@@ -1,0 +1,54 @@
+conversation ID: agentic_architecture__p42__pizza_shop__connector__9f66ca99
+$$$
+¡Hola! 😊 Ya revisé tu connector y lo comparé con la guía (`custom-connector-guide.md` y `connector-examples.md`). El problema es que tu YAML apunta a una API distinta a la que realmente estás usando, y le faltan campos obligatorios del payload.
+
+## 🔍 Qué está mal
+
+| Campo | Tu YAML | API real | Problema |
+|---|---|---|---|
+| `base_url` | `https://api.bot.com` | `https://api.1millionbot.com` | ❌ Host incorrecto |
+| `send_message.path` | `/api/messages` | `/api/public/messages` | ❌ Ruta incorrecta |
+| `headers.Authorization` | *(falta)* | `64e5d1af081211d24e2cfecd` | ❌ Sin auth → 401/403 |
+| `payload_template` | solo `language` + `message.text` | requiere `conversation`, `sender_type`, `sender`, `bot`, `language`, `url`, `message.text` | ❌ Faltan campos obligatorios |
+| `response_path` | `request.text` | `response[0].text` | ❌ `request.text` es el eco de tu propio mensaje, no la respuesta del bot |
+
+Ese último punto es clave: en la respuesta, `request.text` devuelve **"hola"** (lo que tú enviaste), mientras que la respuesta real del bot está en `response[0].text` → `"<p>¡Buenos días!...`". Por eso "no funciona": o falla la petición, o te devuelve tu propio mensaje.
+
+## ✅ Connector corregido
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+## 📋 Cambios explicados
+
+- **`base_url`** → `https://api.1millionbot.com` (el `Host` de tu request).
+- **`path`** → `/api/public/messages` (la ruta real del `POST`).
+- **`headers.Authorization`** → añadido con tu token `64e5d1af081211d24e2cfecd` (tal como viene en tu request, sin `Bearer`). Este es el patrón que documenta la guía para MillionBot.
+- **`payload_template`** → completado con `conversation`, `sender_type`, `sender`, `bot`, `url` y `message.text` con el placeholder `{user_msg}`. Sin estos IDs el backend no sabe con qué bot/conversación hablar.
+- **`response_path`** → `response.0.text`, siguiendo la notación de índice de array que describe la guía (`results.0.content`). Así extraes el texto del bot y no el eco de tu mensaje.
+
+## ⚠️ Dos avisos importantes
+
+1. **`conversation` y `sender` son IDs de sesión.** En tu captura son valores concretos de una conversación ya iniciada. Si la API espera que los generes tú (o que los obtengas de un endpoint previo), reutilizar estos fijos puede hacer que todas las conversaciones del test compartan hilo. Si ves respuestas raras o acumulación de contexto, habría que revisar si el bot permite crear conversación nueva.
+2. **El texto devuelto incluye HTML** (`<p>...<br><br>...</p>`). El connector lo extraerá tal cual; si tus reglas comparan texto, tenlo en cuenta (o limpia el HTML en la validación).
+
+¿Quieres que lo guarde como un connector nuevo (p. ej. `saic-malaga.yml`) o que sobrescriba el `345634_config.yml`? Y si sabes si `conversation`/`sender` deben ser dinámicos, dímelo y lo ajustamos 👌
+$$$

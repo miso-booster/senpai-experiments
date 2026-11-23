@@ -1,0 +1,47 @@
+conversation ID: agentic_architecture__p16__alcampo__rule__954fb80b
+$$$
+Done! 🎉 Here's what I did and the rule I designed.
+
+## What I checked
+- Loaded the docs: `sensei-check-doc.md`, `rules-examples.md`, and `sensei-chat-guide.md`.
+- Looked at your profiles. There's **no dedicated lactose-free profile** yet, but there's a close one: `dietary_needs_and_special_products_inquiry.yaml`. It already exposes a `lactose_free_availability` field (plus `lactose_free_cheese_brands`), so I named my variables to line up with that profile's `chatbot.output` — that way the rule will work as soon as you point it at that profile (or a future lactose-free one).
+
+## The rule (rule-first design, per §3.2 of `sensei-check-doc.md`)
+
+```yaml
+name: lactose_free_availability_consistency
+description: >
+  Checks that lactose-free product availability is reported consistently.
+  If the chatbot confirms lactose-free products are available, it must also
+  name at least one lactose-free brand or product; if it says they are not
+  available, it must not list any lactose-free brand.
+conversations: 1
+active: true
+oracle: |
+  (
+    'available' in str(lactose_free_availability).lower()
+    and str(lactose_free_availability).lower().find('not available') == -1
+    and len(str(lactose_free_cheese_brands).strip()) > 0
+  ) or (
+    'not available' in str(lactose_free_availability).lower()
+    and str(lactose_free_cheese_brands).strip() in ('', 'None')
+  )
+yields: |
+  f"Lactose-free availability='{lactose_free_availability}' but brands='{lactose_free_cheese_brands}'"
+```
+
+## How it maps to a profile
+This rule assumes a profile whose `chatbot.output` provides these fields (they already exist in `dietary_needs_and_special_products_inquiry.yaml`):
+
+| Field | Type | Purpose |
+|---|---|---|
+| `lactose_free_availability` | `string` | Whether lactose-free products are available |
+| `lactose_free_cheese_brands` | `string` | Brands/products named for lactose-free items |
+
+## Notes & options
+- **Logic:** it's a single-conversation consistency check — "available ⇒ brands listed" and "not available ⇒ no brands listed". This avoids false positives from a bot that says "yes we have them" but never names anything.
+- **Want a metamorphic version?** If you'd rather compare two conversations (e.g., same request, different store/brand context), I can turn this into a 2-conversation `when`/`if`/`then` rule instead. Just say the word 😊.
+- **Want it stricter?** I can add a `semantic_content(...)` check to verify the brand text actually mentions "lactose-free", but that's LLM-backed and slightly variable.
+
+Would you like me to (a) keep this single-conversation version, (b) make a metamorphic variant, or (c) also draft a dedicated lactose-free profile so the rule has a perfect home?
+$$$

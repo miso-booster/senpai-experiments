@@ -1,0 +1,69 @@
+¡Hola! 😊 ¡Con gusto te ayudo a crear ese perfil! Antes de escribir el YAML, déjame darte un par de apuntes rápidos para que quede sólido y coherente con tu proyecto 👇
+
+**Lo que voy a tener en cuenta:**
+- Ya tienes un perfil muy parecido en tu proyecto: `consultante_de_servicios_y_asistencia_del_cau.yaml`. Este nuevo perfil se centra **solo** en los datos de contacto del CAU (teléfono, email, ubicación y horario), así que lo mantendré enfocado y sin solaparlo demasiado.
+- Los campos de `chatbot.output` los nombraré de forma **estable y descriptiva** (`contact_phone`, `contact_email`, `physical_location`, `service_hours`) para que puedas reutilizarlos en reglas de Sensei-check como `conv[i].contact_phone`, etc. 🔗
+- Usaré `single questions` como `interaction_style` (igual que el resto de tus perfiles) para que el usuario pregunte de una en una.
+- `goal_style.steps` lo dejo en un valor razonable (10) porque son solo 4 metas concretas — no hace falta estirar la conversación a 30 pasos.
+
+Aquí tienes el perfil listo para copiar en `profiles/` 📄:
+
+```yaml
+test_name: "Contacto y Horarios del CAU"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario que necesita obtener los datos de contacto y el horario de atención
+    del Centro de Atención a Usuarios (CAU) de la UAM para poder comunicarse
+    con ellos y resolver sus dudas.
+  context:
+    - personality: personalities/formal-user
+    - "Necesitas contactar al CAU pero no sabes por qué canal hacerlo ni en qué horario están disponibles."
+    - "Quieres tener a mano el teléfono, el correo, la ubicación física y el horario de atención antes de escribir o llamar."
+    - "Prefieres confirmar cada dato por separado para no confundirte."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico del CAU."
+    - "Preguntar por la ubicación física (dirección) de la oficina del CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_location:
+        type: string
+        description: "Dirección física de la oficina del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 10
+    max_cost: 0.3
+  interaction_style:
+    - single questions
+```
+
+**Un par de detalles que quizá quieras ajustar** 👀:
+- Si prefieres que el usuario sea más insistente o con otro tono, cambia `personality: personalities/formal-user` por otra de tus personalidades (por ejemplo `impatient-user` o `skeptical-user`).
+- Si quieres cubrir variantes de canal (llamar vs. escribir), podrías añadir una variable con `random()` en las metas — pero para este objetivo tan concreto no es necesario.
+- Recuerda que `contact_phone`, `contact_email`, etc. son los nombres que luego usarás en tus reglas de Sensei-check, así que mantenlos estables si escribes reglas sobre ellos. ✅
+
+¿Quieres que te ayude también a escribir una **regla de Sensei-check** que valide, por ejemplo, que el teléfono y el email no vengan vacíos? ¡Solo dímelo! 🚀

@@ -1,0 +1,47 @@
+Perfecto, ya tengo localizado el perfil `préstamos_y_recursos_de_la_biblioteca.yaml` y su campo `library_hours` (tipo `string`, "Horarios de atención de la biblioteca"). Con eso, la regla queda así:
+
+## Regla: horario de la biblioteca de 9 a 20
+
+```yaml
+name: library_hours_9_to_20
+description: >-
+  El horario de atención de la biblioteca debe ser de 9:00 a 20:00.
+  Regla ligada al perfil "Préstamos y Recursos de la Biblioteca"
+  (campo chatbot.output: library_hours).
+conversations: 1
+active: true
+when: library_hours is not None and library_hours[0] is not None
+oracle: |
+  semantic_content(library_hours[0], 'La biblioteca abre a las 9:00 y cierra a las 20:00')
+yields: |
+  f"Horario de biblioteca incorrecto: {library_hours[0]} (se esperaba 9:00–20:00)"
+```
+
+## Cómo funciona 🧠
+
+- **`conversations: 1`** → es un *oracle* de una sola conversación (no necesita pares comparables).
+- **`when`** → filtra conversaciones donde `library_hours` sí se extrajo (evita falsos negativos si el bot nunca dio el horario).
+- **`oracle`** → usa el helper `semantic_content(value, desc)` (documentado en `sensei-check-doc.md` §6.4), que hace una comprobación semántica con LLM. Es la opción más robusta porque el horario puede venir como `"9:00 - 20:00"`, `"de 9 a 20 h"`, `"9am–8pm"`, etc.
+- **`yields`** → mensaje de error mostrado cuando falla.
+
+## Nota sobre el campo `library_hours`
+
+En el perfil, `library_hours` es de tipo `string`, así que en la regla se accede como `library_hours[0]` (el valor extraído de la conversación). Si prefieres una comprobación **numérica estricta** en lugar de semántica, la alternativa sería:
+
+```yaml
+name: library_hours_9_to_20_numeric
+description: >-
+  Comprobación numérica estricta del horario de la biblioteca (9:00–20:00)
+  para el perfil "Préstamos y Recursos de la Biblioteca".
+conversations: 1
+active: false
+when: library_hours is not None and library_hours[0] is not None
+oracle: |
+  extract_float(library_hours[0]) == 9 and 20 in [int(x) for x in __import__('re').findall(r'\d+', library_hours[0])]
+yields: |
+  f"Horario de biblioteca incorrecto: {library_hours[0]} (se esperaba 9:00–20:00)"
+```
+
+…pero ojo ⚠️: `extract_float` solo devuelve el **primer** número, así que para validar el cierre a las 20 hay que parsear el string completo (y eso es más frágil). Por eso recomiendo la versión con `semantic_content`.
+
+¿Quieres que la deje con `semantic_content` (mi recomendación) o prefieres la versión numérica estricta? También puedo añadir una regla complementaria que verifique que el bot **menciona** el horario en la conversación (usando `utterance_index`). 🚀

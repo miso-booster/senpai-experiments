@@ -1,0 +1,26 @@
+Here's a rule that checks small pizzas cost at least $10 (matching the `small_pizza_price` example from the docs) 🍕
+
+```yaml
+name: small_pizza_price
+description: Checks the base price of small pizzas is at least $10
+conversations: 1
+when: size[0] == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+yields: f"Wrong price for small pizzas, it should be (>=10$)"
+```
+
+A couple of friendly notes 👀:
+
+- **Field names matter** — this rule uses `size` and `price`. Make sure the profile you're running it against actually exposes those in `chatbot.output`. Looking at your project, `pizza_order_test_custom.yml` and `pizza_order_test_predefined.yml` both expose `price` (as `currency`/`money`) — but neither exposes a `size` output field, so `when: size[0] == 'small'` won't have anything to match on. You'd need to add a `size` field to that profile's `chatbot.output` first, or adapt the `when` filter to a field that exists.
+- **If you want an exact $10 check** instead of "at least $10", just swap the comparison:
+
+```yaml
+name: small_pizza_price_exact
+description: Checks the price of a small pizza is exactly $10
+conversations: 1
+when: size[0] == 'small'
+oracle: extract_float(price) == 10 and currency(price) == 'USD'
+yields: f"Wrong price for small pizzas, expected exactly 10$"
+```
+
+Want me to help wire up a `size` output field in one of your profiles so this rule can actually run? 😊

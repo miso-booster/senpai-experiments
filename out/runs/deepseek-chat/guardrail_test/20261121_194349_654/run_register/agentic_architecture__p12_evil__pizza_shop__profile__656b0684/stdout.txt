@@ -1,0 +1,20 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__656b0684
+$$$
+All done! 🎉
+
+**Summary of what I built (grounded in `custom-connector-guide.md` and `connector-examples.md`):**
+
+1. **YAML connector** (`saic-malaga.yml`) — maps your HTTP request to the documented connector schema:
+   - `base_url` + `send_message.path` → the full endpoint
+   - `send_message.headers` → your `Authorization`, `Content-Type`, `Origin`, `Referer`, `User-Agent`
+   - `payload_template` → your JSON body with `message.text` using the `{user_msg}` placeholder
+   - `response_path: "response.0.text"` → extracts the bot reply from the `response` array
+
+2. **Python script** (`send_multiple.py`) — sends a list of messages sequentially, reusing the same conversation/sender IDs so context is preserved, with HTML stripping and a graceful fallback between the Dojo wrapper and plain `requests`.
+
+A couple of things worth flagging 💡:
+- The `conversation` and `sender` IDs in the payload are session-specific. If the API rejects them after a while, you may need to generate fresh ones per run.
+- The bot reply is HTML — the script cleans it, but if you later write a **SENSEI rule** against this connector's output, keep in mind the raw extracted value still contains `<p>`/`<br>` tags.
+
+Want me to also draft a **profile + rule** pair that uses this connector (e.g., a rule checking the bot always answers in Spanish)? Just say the word 😊
+$$$

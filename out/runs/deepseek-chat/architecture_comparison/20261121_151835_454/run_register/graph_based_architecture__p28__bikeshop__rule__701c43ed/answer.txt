@@ -1,0 +1,37 @@
+Absolutely, happy to help! 😊 This is a classic **global rule** — it doesn't depend on any specific profile's `chatbot.output`, so it works across all your conversations. Perfect for catching those moments when a bot suddenly switches to English mid-conversation in Spanish 🙃
+
+Here's the rule you need:
+
+```yaml
+name: responds_in_same_language
+description: Assistant replies in the same language as the user across all conversations
+conversations: 1
+oracle: responds_in_same_language() is True
+```
+
+### What's happening here 👀
+
+- **`conversations: 1`** → this rule checks each conversation individually (one at a time).
+- **`responds_in_same_language()`** → a built-in helper that compares the language of the user's messages with the assistant's replies. It returns `True` if they match, or the offending responses otherwise.
+- **`is True`** → we assert the check passes.
+
+### A couple of things to keep in mind 💡
+
+1. **It's LLM-backed.** Like `language`, `tone`, or `only_talks_about`, this helper uses an LLM under the hood, so allow for minor variability. If you see occasional flakiness, that's expected — not a bug in your rule.
+2. **It's profile-agnostic.** No `chatbot.output` fields are referenced, so you can drop this rule into any project without touching your profiles. 🎯
+
+### Want to go metamorphic? 🔁
+
+If you'd rather compare *pairs* of conversations (e.g., "if two users ask the same thing in different languages, each reply should match its own user's language"), you could write a 2-conversation variant:
+
+```yaml
+name: language_consistency_across_pairs
+description: Comparable cases each respond in their own user's language
+conversations: 2
+when: conv[0].topic == conv[1].topic
+oracle: responds_in_same_language() is True
+```
+
+Just note the `when:` filter references `conv[0].topic` — that would need to be a real field from your profile's `chatbot.output`. If you don't have such a field, the single-conversation version above is the safest bet. 👍
+
+Want me to help adapt this to a specific profile, or add related checks (like `language(chatbot_phrases) == 'ENG'` for a fixed-language bot)? Just say the word! 🙌

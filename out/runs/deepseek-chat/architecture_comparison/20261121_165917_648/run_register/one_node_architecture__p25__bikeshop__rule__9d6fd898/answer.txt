@@ -1,0 +1,30 @@
+Hey there! 😊 Happy to help you build that rule.
+
+Quick heads-up before the YAML: your profile exposes `opening_and_closing` as a `str` and `seat_price` as a `str`, so I'll parse numbers out of them with `extract_float`. Also, "opening and closing should be 10 to 20" is a bit ambiguous — I'm reading it as *the shop's hours should fall within a 10:00–20:00 window*, so I'll check that both the opening and closing times land in that range. If you meant something else (like "open 10 hours, close at 20:00"), just tell me and I'll tweak it 🙌
+
+Here's a single-conversation rule that checks all four prices plus the hours:
+
+```yaml
+name: qa_prices_and_hours
+description: >
+  For the qa profile (bike shop Q&A), checks that opening/closing times fall
+  within 10:00-20:00, a new tire costs 20, a tune-up costs 50, and a new seat
+  costs 20.
+conversations: 1
+oracle: |
+  extract_float(opening_and_closing) >= 10
+  and extract_float(opening_and_closing) <= 20
+  and extract_float(tire) == 20
+  and extract_float(tune_up) == 50
+  and extract_float(seat_price) == 20
+yields: |
+  f"Expected hours in 10-20, tire=20, tune_up=50, seat=20. Got opening_and_closing={opening_and_closing}, tire={tire}, tune_up={tune_up}, seat_price={seat_price}"
+```
+
+A couple of notes so it behaves the way you expect 👇
+
+- **`extract_float` grabs the first number** in the string. If `opening_and_closing` comes back as something like `"10:00 - 20:00"`, it'll only pick up `10`. If the bot returns a single combined string, you may want to split it or check the closing time separately — let me know the exact format the bot returns and I'll refine it.
+- **`money` type** (tire, tune_up) usually extracts cleanly, but `extract_float` keeps the comparison robust either way.
+- If you'd rather have **separate rules** (one per check) so failures are easier to pinpoint, I can split this into four small rules — just say the word! 🚲
+
+Want me to also add a global rule (e.g., `data_collected()`) to make sure all slots got filled?

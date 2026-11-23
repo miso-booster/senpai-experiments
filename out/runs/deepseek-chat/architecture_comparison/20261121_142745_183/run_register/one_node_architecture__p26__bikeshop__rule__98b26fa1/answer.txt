@@ -1,0 +1,39 @@
+Hey there! 👋 Happy to help you check this one — and yep, there are a few things to fix. Let me walk you through them 😊
+
+## What's off
+
+1. **`conversations: 2` is unnecessary.** You're checking a single value against a fixed number — that's a classic **single-conversation oracle**, not a metamorphic relation. It should be `conversations: 1`.
+
+2. **`when` is doing the oracle's job.** `when: conv[0].tune_up_price == 50` filters conversations *by the very thing you want to test*. That means only conversations where the price is already 50 get evaluated — so the rule can never fail. The `when` should be a *guard* (e.g., "only when a price was extracted"), not the assertion itself.
+
+3. **`if`/`then` is the wrong shape here.** `if`/`then` is for implications across conversations. For a simple equality check, use `oracle:`.
+
+4. **`then` is a plain sentence, not an expression.** `then` must be a Python expression that evaluates to `True`/`False` — a string like `"The tune-up price is $50."` is always truthy, so it would always pass. That sentence belongs in `yields` (the failure message), not in `then`.
+
+5. **Comparing a `money` field to a bare `50`.** Your profile declares `tune_up_price` as `type: money`, which typically comes back as something like `"$50.00"` or `"50 USD"`. Comparing that directly to the integer `50` won't work — you need `extract_float(...)`.
+
+6. **`conv[0]` vs bare field.** With `conversations: 1`, you can reference the field directly (`tune_up_price`) — no need for `conv[0]`.
+
+## Fixed version ✅
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price is equal to $50 (bike_repair_and_maintenance_scheduler profile).
+conversations: 1
+when: tune_up_price is not None
+oracle: extract_float(tune_up_price) == 50
+yields: f"Tune-up price should be $50, but got {tune_up_price}"
+```
+
+## What I changed, in a nutshell
+
+| Before | After | Why |
+|---|---|---|
+| `conversations: 2` | `conversations: 1` | Single-value check, not metamorphic |
+| `when: conv[0].tune_up_price == 50` | `when: tune_up_price is not None` | `when` should guard, not assert |
+| `if` / `then` | `oracle` | Simple equality → oracle is the right tool |
+| `then: "The tune-up price is $50."` | `oracle: extract_float(tune_up_price) == 50` | `then` needs a boolean expression |
+| — | `yields: ...` | Moved the human-readable message here |
+| `conv[0].tune_up_price == 50` | `extract_float(tune_up_price) == 50` | `money` type → parse the number first |
+
+One small heads-up 👀: this rule is **profile-bound** to `bike_repair_and_maintenance_scheduler.yaml`, since that's the profile exposing `tune_up_price` as `money`. If you ever rename that field, remember to update the rule too. Want me to also add a companion check (e.g., that the price is *at least* $50, or that a tune-up was actually offered)? Just say the word! 🙌

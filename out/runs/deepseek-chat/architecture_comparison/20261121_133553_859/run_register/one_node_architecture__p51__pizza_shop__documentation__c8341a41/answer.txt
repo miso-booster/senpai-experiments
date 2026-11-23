@@ -1,0 +1,51 @@
+Hey there! 😊 Great question — connectors are basically the **bridge** between Sensei and the chatbot you want to test. Instead of writing code, you describe the chatbot's API in a YAML file, and Sensei uses it to send messages and read replies. Super handy! 🔌
+
+Let me break it down for you 👇
+
+## What connectors are used for
+
+A **Custom YAML Connector** lets Sensei talk to *any* chatbot API without writing a single line of code. You just describe:
+
+- **where** to send the message (URL + endpoint),
+- **how** to send it (method, headers, payload shape),
+- and **where** the bot's reply lives in the JSON response.
+
+Then Sensei can run your profiles against that bot, log conversations, and extract outputs for your rules. 🎯
+
+## The fields
+
+Here's the full set of configuration fields:
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | ✅ Yes |
+| `send_message.path` | API endpoint path (appended to `base_url`) | ✅ Yes |
+| `send_message.method` | HTTP method (`POST`, `GET`, `PUT`, `DELETE`) | No (default: `POST`) |
+| `send_message.headers` | Custom headers (e.g., `Authorization`) | No |
+| `send_message.payload_template` | JSON structure with the `{user_msg}` placeholder | ✅ Yes |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | ✅ Yes |
+
+## A quick example
+
+Here's a minimal one so you can see the shape of it:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+A couple of things worth remembering 💡:
+
+- **`{user_msg}`** is the placeholder — that's where Sensei injects the simulated user's message.
+- **`response_path`** uses dot notation to dig into the JSON, e.g. `data.messages.0.content` → `response["data"]["messages"][0]["content"]`.
+
+By the way, I noticed your `connectors/345634_config.yml` is still using the placeholder `https://api.example.com` — so it won't actually reach a real bot yet. If you tell me the real API details, I'd be happy to help you fill it in! 🙌
+
+Want me to walk through a more complex example (like auth headers or nested payloads), or help you fix that config?

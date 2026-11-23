@@ -1,0 +1,61 @@
+conversation ID: one_node_architecture__p50__pizza_shop__documentation__cf383218
+$$$
+Great question! 😊 Let me break down what an **oracle** means in Sensei-check.
+
+## The short version
+
+An **oracle** is the condition a rule checks over a conversation (or set of conversations). It's the "expected truth" that Sensei-check evaluates — if it holds, the rule passes; if not, it fails. 🎯
+
+## In the rule syntax
+
+You'll see it as a field in your YAML rules:
+
+```yaml
+name: unique_order_ids
+description: No duplicate order_id across all conversations
+conversations: all
+oracle: is_unique('order_id')
+```
+
+Here, `oracle: is_unique('order_id')` is a Python expression that must evaluate to `True` for the rule to pass.
+
+## Two flavors of rules
+
+Sensei-check rules can express their check in two ways:
+
+**1. `oracle`** — a single boolean expression:
+
+```yaml
+name: chatbot_fills_all_slots
+description: All conversation slots are filled
+conversations: 1
+oracle: data_collected() == True
+```
+
+**2. `if` / `then`** — an implication, which reads like a law ("if X, then Y"). This is especially handy for **metamorphic** rules:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+In the `if`/`then` form, the `then` part is effectively the oracle — it's what must hold whenever the `if` precondition is satisfied. ✅
+
+## Why "oracle" is a loaded word here
+
+In classic software testing, the **oracle problem** is: *how do you know what the "correct" output is?* For chatbots, absolute answers are hard to pin down. That's why Sensei-check leans on **metamorphic relations** — instead of asserting "the price must be $18.50", you assert *relations* like "more toppings ⇒ higher price". The oracle becomes a **relation between conversations** rather than a fixed expected value. 🍕
+
+## Quick mental model
+
+- `when:` → **which** conversations are eligible (the filter)
+- `if:` → the **precondition** (optional, for implications)
+- `oracle:` / `then:` → the **actual check** that must hold
+
+So whenever you see `oracle:` in a rule, think: *"this is the assertion Sensei-check will verify."* 💡
+
+Want me to help you write or fix an oracle for one of your pizza-shop rules? Just say the word! 🙌
+$$$

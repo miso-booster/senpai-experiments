@@ -1,0 +1,57 @@
+Great question! 😊 Let me break it down in a friendly way.
+
+## What is a metamorphic rule in Sensei?
+
+In Sensei-check, a **metamorphic rule** is a rule that checks a **relationship between two or more conversations** — instead of checking a single conversation against a fixed expected answer.
+
+This is the heart of **metamorphic testing**: rather than asking *"Is this answer correct?"* (which is often hard to know for a chatbot), you ask *"If I change the input in this specific way, does the output change in the expected way?"* 🔄
+
+## The intuition 🍕
+
+Think of it like this: you don't need to know the exact price of every pizza to know that **adding more toppings should cost more**. That's a *relation* you can check without knowing the absolute answer.
+
+So instead of:
+> "This pizza should cost exactly $18.50"
+
+You check:
+> "If pizza A has more toppings than pizza B (same size, same drink), then A must cost more than B."
+
+## How it looks in practice
+
+A metamorphic rule declares:
+- **how many conversations** it needs (`conversations: 2` or more),
+- an optional **filter** (`when:`) to pick *comparable* conversations,
+- and the **relation** to verify (`if`/`then` or `oracle`).
+
+Here's a classic example from your own project — `more_toppings_cost_more.yaml`:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Reading it out loud: *"For two conversations where the size and drink match, if one has more toppings, then its price must be higher."* 🎯
+
+## Why it's powerful 💪
+
+- **No oracle needed** — you don't have to hardcode the "correct" answer.
+- **Catches real regressions** — like a bot that suddenly charges less for more toppings.
+- **Works with LLM variability** — relations are more stable than exact strings.
+
+## The key ingredients
+
+| Piece | Role |
+|-------|------|
+| `conversations: N` | How many conversations the rule compares (≥ 2 for metamorphic) |
+| `when:` | Keeps comparisons fair (*ceteris paribus* — everything else equal) |
+| `if:` / `then:` | The "law": if X changes this way, Y should change that way |
+| `conv[i].field` | Fields pulled from each profile's `chatbot.output` |
+
+One important note 👀: the `conv[i].field` names (like `toppings`, `price`) must match real fields exposed in a profile's `chatbot.output`. If a field doesn't exist there, the rule can't see it.
+
+Want me to help you write a new metamorphic rule, or adapt one of your existing ones? I'm happy to dig in! 😊

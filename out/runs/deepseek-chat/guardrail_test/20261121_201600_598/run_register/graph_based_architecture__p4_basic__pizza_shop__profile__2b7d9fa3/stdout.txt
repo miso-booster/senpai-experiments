@@ -1,0 +1,116 @@
+conversation ID: graph_based_architecture__p4_basic__pizza_shop__profile__2b7d9fa3
+$$$
+Hey there! 😊 Thanks for reaching out — I'd love to help, but I have to be upfront with you: I'm limited to **SENSEI RULES, SENSEI PROFILES, and SENSEI CONNECTORS** — their docs, concepts, file paths, and explanations. Writing a Python automation script (even one that *generates* profiles) falls outside that scope, so I can't provide the code for it. 🙏
+
+That said, I *can* be super useful here — let me help you think about **what a valid profile looks like** so that whatever automation you build produces something Sensei will actually accept. Here's a practical checklist you can bake into your generator 👇
+
+---
+
+## ✅ What makes a profile "valid" (the essentials)
+
+### 1. Top-level structure
+Every profile needs these sections (some optional, but recommended):
+
+```yaml
+test_name: "my_first_sensei_profile"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe what the simulated user wants and how they behave."
+  context:
+    - "Who the user is, constraints, preferences, availability, etc."
+  goals:
+    - "Main request with a {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste your bot's real fallback here"
+  output:
+    - important_field:
+        type: string
+        description: "What you want to extract/validate"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### 2. `user.goals` — the trickiest part to get right
+This is where most auto-generated profiles break. Rules to enforce:
+
+- **Every `{{variable}}` in a goal string must be declared** as a mapping entry in the same `goals` list — **exact, case-sensitive match**.
+- **Every declared variable should be used** in at least one goal string (otherwise it's dead weight).
+- Each variable needs:
+  - `function:` one of `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `pairwise()`
+  - `type:` `int`, `float`, `string`, or a **custom type** that exists in `types/`
+  - `data:` a list, a numeric range (`min`/`max`/`step` or `linspace`), an `any(...)` LLM list, or a custom list function
+- **No `list` type in `user.goals`** — that's only valid in `chatbot.output`.
+- If using `random(n)` or `another(n)`, ensure **`n ≤ len(data)`**.
+- If using `pairwise()`, you need **at least 2 pairwise variables** to be meaningful.
+- If using `combinations` as `conversation.number`, you need **≥2 nested `forward()` or ≥2 `pairwise()`** variables.
+
+### 3. `chatbot.output` — the contract for rules
+- Each field needs a `type` and a `description`.
+- Valid types: `int`, `float`, `string`, `time(...)`, `date(...)`, `list[type]`, `money`/`currency` (if defined in `types/`), or any custom type.
+- **Custom types must exist** in `types/` — the `extraction` schema is what's used here (not `format`).
+- Use **stable, descriptive names** — rules will reference these as `conv[i].<field_name>`.
+
+### 4. `conversation`
+- `number`: int, `combinations`, `combinations(p)`, or `combinations(p, forward|pairwise)`
+- `goal_style`: exactly one of `steps: N`, `random steps: M` (M ≤ 20), or `all_answered:` (with optional `export`, `limit`)
+- `interaction_style`: only the **reserved keywords** — `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, or `random: [...]`. **Never translate these.**
+
+### 5. `llm` (optional but common)
+- `temperature`, `model`, `model_prov`
+- `format.type`: `text` or `speech` (speech needs a `config` path)
+
+---
+
+## 🧠 A sanity-check flow your automation could follow
+
+Even without me writing the code, here's the logic you'd want to implement (in plain English):
+
+1. **Ask the LLM for a draft profile** with a strict schema in the prompt (paste the template from the docs as the target shape).
+2. **Parse the YAML** — reject if it doesn't parse.
+3. **Cross-check variables**: extract all `{{...}}` from goal strings → compare against declared variable names → flag mismatches both ways.
+4. **Validate types**: for each variable, confirm `type` is a primitive or exists in `types/`.
+5. **Validate functions**: confirm `function` is one of the allowed keywords; check `n ≤ len(data)` for `random(n)`/`another(n)`.
+6. **Validate `conversation.number`**: if it's `combinations`, confirm the forward/pairwise preconditions.
+7. **Validate `interaction_style`**: every entry must be a reserved keyword (or a `random:` list of them).
+8. **Run `validation_check.py`** on the result — that's the official validator and will catch anything you missed:
+
+```bash
+python validation_check.py --profile path/to/profile.yml --output path/to/output --combined-matrix --verbose
+```
+
+That last step is your best friend — it produces a JSON of format errors plus CSVs of the value-combination matrices, so you can inspect `forward`/`pairwise` coverage. 🎯
+
+---
+
+## 🙋 Want to go deeper?
+
+If you'd like, I can help you with any of these **within scope**:
+
+- 📝 Draft a **profile template** tailored to your pizza-shop project (I can see your existing profiles — e.g. `pizza_order_test_custom.yml` is a great reference for `pairwise` + `forward` usage).
+- 🔍 Walk through **why a specific profile might fail validation** — just paste it.
+- 🧩 Explain how a **custom type** in `types/` should be shaped so it works in both `user.goals` and `chatbot.output`.
+- 🔗 Help with **connectors** if your automation needs to actually *run* the generated profiles against a bot.
+
+Which of those would be most helpful? 😊
+$$$

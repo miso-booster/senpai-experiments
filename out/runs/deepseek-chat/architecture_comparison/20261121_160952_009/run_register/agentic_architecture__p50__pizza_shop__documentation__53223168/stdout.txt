@@ -1,0 +1,57 @@
+conversation ID: agentic_architecture__p50__pizza_shop__documentation__53223168
+$$$
+Great question! 😊 Here's the short version, based on `sensei-check-doc.md` and `rules-examples.md`.
+
+## What is an oracle?
+
+In SENSEI-check, an **oracle** is the field in a rule that holds the **boolean condition to check** over a conversation (or set of conversations). If the expression evaluates to `True`, the rule passes; if `False`, it fails.
+
+Think of it as the "verdict expression" of a rule — the thing that decides pass/fail. 🎯
+
+## Where it fits in a rule
+
+A rule can express its check in **one of two ways**:
+
+1. **`oracle:`** — a single boolean expression (the classic "oracle" style).
+2. **`if:` / `then:`** — an implication ("if X, then Y should hold"), which is often clearer for metamorphic relations.
+
+So `oracle` is essentially the direct form of the check, while `if`/`then` is the implication form. You use one or the other.
+
+## Examples
+
+**Single-conversation oracle** (from `rules-examples.md`):
+```yaml
+name: chatbot_fills_all_slots
+description: All conversation slots are filled
+conversations: 1
+active: True
+oracle: data_collected()==True
+yields: |
+  f"Missing slots: {missing_slots()}"
+```
+
+**Global oracle** (across all conversations):
+```yaml
+name: unique_order_ids
+description: No duplicate order_id across all conversations
+conversations: all
+oracle: is_unique('order_id')
+```
+
+**Metamorphic oracle** (comparing two conversations):
+```yaml
+name: language_consistency
+description: Comparable cases respond in the same language (ENG)
+conversations: 2
+when: conv[0].pizza_type == conv[1].pizza_type and conv[0].size == conv[1].size
+oracle: language(conv[0].chatbot_phrases) == 'ENG' and language(conv[1].chatbot_phrases) == 'ENG'
+```
+
+## A couple of handy details
+
+- **`when:`** is an optional *filter* that selects which conversations the oracle applies to (it doesn't decide pass/fail by itself — it narrows the cohort).
+- **`yields:`** (or `on-error:`) lets you attach a helpful message explaining failures.
+- The oracle expression can use the built-in helpers (`extract_float`, `currency`, `language`, `is_unique`, `data_collected`, `only_talks_about`, etc.) and, for profile-bound rules, fields from the profile's `chatbot.output` via `conv[i].field`.
+
+Want me to help you write an oracle for a specific check? Just tell me what you're validating (and which profile, if it's profile-bound) and I'll draft it. 🚀
+$$$

@@ -1,0 +1,90 @@
+Aquí tienes el perfil 🍕. Lo basé en la guía `sensei-chat-guide.md` y me alineé con las convenciones de tus perfiles existentes (`pizza_and_drink_order_placement.yaml` y `pizza_order_test_custom.yml`).
+
+```yaml
+test_name: "pizzeria_order_summary"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza and a drink from a pizzeria chatbot.
+    You want to place a single order, confirm the details, and get the final
+    price in US dollars.
+  context:
+    - "You are ordering dinner for yourself tonight."
+    - "You want to pick up the order at the store."
+    - "You only care about the pizza type, the drink, the order id and the final price."
+  goals:
+    - "Ask what kinds of pizzas are available."
+    - "Order a {{pizza_type}} pizza."
+    - "Ask what drinks are available."
+    - "Order one {{drink}}."
+    - "Ask for the final price in US dollars."
+    - "Ask for your order id to confirm the order."
+    - pizza_type:
+        function: forward()
+        type: string
+        data:
+          - Margherita
+          - Pepperoni
+          - Four cheese
+          - Hawaiian
+          - Vegetarian
+          - Carbonara
+    - drink:
+        function: forward()
+        type: string
+        data:
+          - Coke
+          - Sprite
+          - Fanta
+          - Iced Tea
+          - Water
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I didn't get that. I can help you order a pizza and a drink."
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the user ordered (e.g. Margherita, Pepperoni)."
+    - drink:
+        type: string
+        description: "The drink the user ordered (e.g. Coke, Sprite)."
+    - order_id:
+        type: string
+        description: "The unique identifier of the order. Look for phrases like 'order number' or 'order ID'."
+    - final_price:
+        type: currency
+        description: "The final price of the order in US dollars, including the pizza and the drink."
+
+conversation:
+  number: 5
+  max_cost: 1.0
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - change your mind
+```
+
+### Qué hace y por qué 🔍
+- **`chatbot.output`** expone exactamente los 4 campos que pediste: `pizza_type`, `drink`, `order_id` y `final_price`. Usé `currency` para el precio (como en tus otros perfiles) para que las reglas puedan parsearlo con `extract_float(...)`.
+- **`user.goals`** guía al simulador a preguntar disponibilidad, ordenar pizza + bebida, y pedir el precio final en USD y el id del pedido.
+- **Variables** `pizza_type` y `drink` con `forward()` para cubrir las opciones de forma determinista.
+- **`conversation`**: 5 conversaciones, `all_answered` (termina cuando se cubren los objetivos) y estilos de interacción variados para hacer la prueba más realista.
+
+### Nota sobre reglas ⚠️
+Si luego quieres crear reglas para este perfil, podrás referenciar los campos como `conv[i].pizza_type`, `conv[i].drink`, `conv[i].order_id` y `conv[i].final_price`. Avísame si quieres que te arme alguna regla y la alineamos con este `chatbot.output` 😊.
+
+¿Quieres que lo guarde con algún nombre de archivo específico o que ajuste algo (idioma en español, más tipos de pizza, etc.)?

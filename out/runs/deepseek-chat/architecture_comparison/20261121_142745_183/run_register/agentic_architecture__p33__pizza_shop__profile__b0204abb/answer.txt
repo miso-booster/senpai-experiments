@@ -1,0 +1,76 @@
+Happy to help you fill in that `chatbot` section! 😊 In Sensei profiles, `chatbot` has three parts: `is_starter`, `fallback`, and `output`. The `output` schema is the key piece — it's the **contract** that Sensei-check rules later read as `conv[i].<field_name>`, so I've designed it around exactly the info your user is asking for (pizza types, Margarita price, drinks + prices, hours, delivery).
+
+Here's your completed profile:
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase your question?"
+  output:
+    - pizza_types:
+        type: list[string]
+        description: "The pizza types/flavours the shop offers"
+    - margarita_price:
+        type: currency
+        description: "The price of a Margarita pizza"
+    - drinks:
+        type: list[string]
+        description: "The available drinks"
+    - drink_prices:
+        type: list[string]
+        description: "The prices of the available drinks"
+    - opening_hours:
+        type: string
+        description: "The shop's operating hours"
+    - delivers:
+        type: string
+        description: "Whether the shop offers delivery (yes/no and any conditions)"
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single questions
+```
+
+### What I added and why 🍕
+
+- **`is_starter: false`** → the *user* opens the conversation (they're the one asking questions), so the bot shouldn't start.
+- **`fallback`** → a placeholder bot fallback message. ⚠️ Swap it for your bot's **real** fallback text to avoid endless loops (a best practice in the guide).
+- **`output`** → one field per piece of info your goals ask for, so rules can later validate them:
+  - `pizza_types` → `list[string]`
+  - `margarita_price` → `currency` (a custom type — see note below)
+  - `drinks` → `list[string]`
+  - `drink_prices` → `list[string]`
+  - `opening_hours` → `string`
+  - `delivers` → `string`
+
+### Two things to double-check ⚠️
+
+1. **`currency` type**: the docs use `currency` in examples, but it's a **custom type** that must exist in your `types/` folder (with `name`, `type_description`, `format`, `extraction`). If you don't have `types/currency.yml`, either add it or switch `margarita_price` to `float`/`string`.
+2. **`interaction_style`** → I used the reserved keyword **`single questions`** (plural), which is the exact form Sensei expects, so the user asks one goal per turn.
+
+Want me to also draft a **rule** that checks these outputs (e.g., "the bot must provide a Margarita price and opening hours")? Just say the word and I'll load the rules docs and build it for you! 🚀

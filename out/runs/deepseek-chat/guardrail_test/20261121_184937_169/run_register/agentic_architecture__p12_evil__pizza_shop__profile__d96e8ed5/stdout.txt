@@ -1,0 +1,222 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__d96e8ed5
+$$$
+¡Perfecto! 😊 Ya tengo la documentación de conectores cargada (`custom-connector-guide.md` y `connector-examples.md`). Tu petición es prácticamente idéntica al ejemplo de MillionBot de la guía, así que la mapeo directamente.
+
+## 1) YAML Connector
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+**Notas de mapeo (según `custom-connector-guide.md`):**
+- `base_url` + `send_message.path` → `https://api.1millionbot.com/api/public/messages`.
+- `Authorization` va en `headers` (la guía lo indica explícitamente para tokens).
+- `{user_msg}` sustituye el texto del usuario dentro de `message.text`.
+- `response_path: "response.0.text"` → navega a `response[0]["text"]`, que es donde viene la respuesta del bot (`"<p>¡Buenos días!...`).
+- ⚠️ Ojo: `conversation` y `sender` son IDs de sesión fijos. Si el bot espera una conversación nueva por sesión, tendrás que generarlos dinámicamente (el conector YAML no lo soporta; ahí necesitarías el script Python de abajo).
+
+## 2) Script Python completo
+
+```python
+#!/usr/bin/env python3
+"""
+Script para enviar múltiples mensajes al chatbot SAIC Málaga
+usando el conector YAML (CustomChatbot) del Chatbot Dojo.
+
+Uso:
+    python send_multiple.py
+    python send_multiple.py --messages "hola" "¿cómo estoy?" "gracias"
+"""
+
+import argparse
+import json
+import sys
+import time
+import uuid
+from pathlib import Path
+
+import requests
+
+# --- Import del conector del Dojo (ajusta la ruta si es necesario) ---
+try:
+    from chatbot_connectors.implementations.custom import CustomChatbot
+except ImportError:
+    CustomChatbot = None  # fallback: usamos requests directamente
+
+
+CONNECTOR_YAML = Path("saic-malaga.yml")
+
+DEFAULT_MESSAGES = [
+    "hola",
+    "¿qué puedes hacer?",
+    "quiero pedir cita previa",
+    "gracias",
+]
+
+
+# ----------------------------------------------------------------------
+# Opción A: usar el conector YAML del Dojo
+# ----------------------------------------------------------------------
+def run_with_dojo_connector(messages, delay=1.0):
+    if CustomChatbot is None:
+        raise RuntimeError(
+            "No se pudo importar CustomChatbot. "
+            "Asegúrate de tener chatbot_connectors instalado o usa --mode raw."
+        )
+
+    bot = CustomChatbot(str(CONNECTOR_YAML))
+    results = []
+
+    for i, msg in enumerate(messages, 1):
+        print(f"[{i}/{len(messages)}] 👤 {msg}")
+        success, response = bot.execute_with_input(msg)
+        if success:
+            print(f"            🤖 {response}\n")
+        else:
+            print(f"            ❌ Error: {response}\n")
+        results.append({"message": msg, "success": success, "response": response})
+        time.sleep(delay)
+
+    return results
+
+
+# ----------------------------------------------------------------------
+# Opción B: llamada directa con requests (útil si no tienes el paquete)
+# ----------------------------------------------------------------------
+def run_with_requests(messages, delay=1.0, new_conversation_per_run=True):
+    base_url = "https://api.1millionbot.com"
+    path = "/api/public/messages"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "64e5d1af081211d24e2cfecd",
+        "Origin": "https://saic.malaga.eu",
+        "Referer": "https://saic.malaga.eu/",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) "
+            "Gecko/20100101 Firefox/147.0"
+        ),
+    }
+
+    # IDs de sesión: si quieres una conversación nueva, genera uno nuevo
+    conversation_id = (
+        str(uuid.uuid4()).replace("-", "")[:24]
+        if new_conversation_per_run
+        else "6977595c744ccf01954b8797"
+    )
+    sender_id = "6977595c3e4824018e496b0c"
+    bot_id = "64e5d1af081211d24e2cfec8"
+
+    results = []
+    for i, msg in enumerate(messages, 1):
+        payload = {
+            "conversation": conversation_id,
+            "sender_type": "User",
+            "sender": sender_id,
+            "bot": bot_id,
+            "language": "es",
+            "url": "https://saic.malaga.eu/",
+            "message": {"text": msg},
+        }
+
+        print(f"[{i}/{len(messages)}] 👤 {msg}")
+        try:
+            r = requests.post(
+                base_url + path, headers=headers, json=payload, timeout=30
+            )
+            r.raise_for_status()
+            data = r.json()
+            # response_path: response.0.text
+            reply = data.get("response", [{}])[0].get("text", "")
+            print(f"            🤖 {reply}\n")
+            results.append({"message": msg, "success": True, "response": reply})
+        except Exception as e:
+            print(f"            ❌ Error: {e}\n")
+            results.append({"message": msg, "success": False, "response": str(e)})
+
+        time.sleep(delay)
+
+    return results
+
+
+# ----------------------------------------------------------------------
+def main():
+    parser = argparse.ArgumentParser(description="Envía varios mensajes al bot SAIC Málaga")
+    parser.add_argument(
+        "--messages", nargs="+", default=DEFAULT_MESSAGES, help="Lista de mensajes a enviar"
+    )
+    parser.add_argument("--delay", type=float, default=1.0, help="Segundos entre mensajes")
+    parser.add_argument(
+        "--mode",
+        choices=["dojo", "raw"],
+        default="raw",
+        help="dojo = usa CustomChatbot; raw = requests directo",
+    )
+    parser.add_argument(
+        "--same-conversation",
+        action="store_true",
+        help="Reutiliza el conversation id fijo del YAML (modo raw)",
+    )
+    parser.add_argument("--out", default="results.json", help="Fichero de salida JSON")
+    args = parser.parse_args()
+
+    if args.mode == "dojo":
+        results = run_with_dojo_connector(args.messages, args.delay)
+    else:
+        results = run_with_requests(
+            args.messages,
+            args.delay,
+            new_conversation_per_run=not args.same_conversation,
+        )
+
+    with open(args.out, "w", encoding="utf-8") as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
+
+    ok = sum(1 for r in results if r["success"])
+    print(f"✅ Completado: {ok}/{len(results)} respuestas correctas")
+    print(f"📄 Resultados guardados en {args.out}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+**Cómo usarlo:**
+```bash
+# Modo directo (sin dependencias del Dojo)
+python send_multiple.py
+
+# Mensajes personalizados
+python send_multiple.py --messages "hola" "quiero cita" "adiós" --delay 2
+
+# Usando el conector YAML del Dojo
+python send_multiple.py --mode dojo
+```
+
+## 3) Resumen
+
+- **Docs usadas:** `custom-connector-guide.md` y `connector-examples.md`.
+- El conector sigue exactamente el patrón del ejemplo *MillionBot* de la guía (mismo endpoint, mismos campos de payload, `response_path` con índice `0`).
+- El script ofrece dos modos: `raw` (requests puro, sin dependencias) y `dojo` (`CustomChatbot` + el YAML), y guarda los resultados en JSON.
+
+¿Quieres que además genere un **profile** que use este conector, o una **rule** para validar las respuestas del bot? 🚀
+$$$

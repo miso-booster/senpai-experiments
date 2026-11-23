@@ -1,0 +1,51 @@
+¡Claro que sí! 😊 Vamos a armar ese connector paso a paso.
+
+## YAML Connector
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+## Puntos importantes 👀
+
+- **Headers mínimos**: solo dejé `Content-Type` y `Authorization`. Nada de `Origin`, `Referer` ni `Sec-Fetch-*` 🚫.
+- **`response_path`**: apunta a `response.0.text`, que es donde vive la respuesta del bot dentro del array `response`.
+- **`{user_msg}`**: se coloca en `message.text`, tal como en tu request de ejemplo.
+
+## Sobre "quitar las etiquetas HTML" ⚠️
+
+Aquí tengo que ser honesto contigo: el connector YAML **no tiene una opción nativa para limpiar HTML** del texto de respuesta. El `response_path` solo extrae el valor tal cual viene del JSON, así que en este caso devolvería algo como:
+
+```yaml
+name: "345634"
+base_url: "https://api.example.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+Para eliminar las etiquetas HTML necesitarías hacerlo **después**, en el código que consume el connector (por ejemplo, con una expresión regular o una librería como `BeautifulSoup`), no dentro del YAML.
+
+Si quieres, puedo ayudarte a pensar cómo limpiar ese texto en el lado del código que usa el connector 😊. ¿Te sirve así o quieres que revisemos esa parte juntos?

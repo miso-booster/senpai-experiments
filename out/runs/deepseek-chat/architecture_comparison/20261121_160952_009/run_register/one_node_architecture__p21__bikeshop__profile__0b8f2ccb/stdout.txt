@@ -1,0 +1,78 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__0b8f2ccb
+$$$
+Hey there! 😊 Love this scenario — a fresh bike that needs a personal touch. Let me put together a profile for a user who just got a new bike and wants the shop to set it up with a new seat and handlebar grips.
+
+A couple of design notes before the YAML:
+- I used `forward()` on the seat and grips so you get a nice deterministic grid of combinations (great for later metamorphic rules if you add them).
+- `chatbot.output` exposes `seat_choice`, `grips_choice`, `setup_confirmation`, and `setup_price` — handy fields if you later want to write rules about pricing or confirmation.
+- I kept `is_starter: false` since the user opens the conversation.
+
+```yaml
+test_name: "bike_setup_customization"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who recently bought a new bike and wants the local bike shop
+    to set it up to your liking. You want to replace the seat and the handlebar grips
+    with options that feel more comfortable for your riding style.
+  context:
+    - "You just bought a new bike and haven't ridden it much yet."
+    - "The stock seat and grips feel uncomfortable on longer rides."
+    - "You want the shop to install the new parts for you, not just sell them."
+    - "You are friendly but a bit particular about comfort and fit."
+  goals:
+    - "Explain that you recently bought a new bike and want it set up for your comfort."
+    - "Ask if the shop can replace the seat with a {{seat_type}} seat."
+    - "Ask if the shop can replace the handlebar grips with {{grip_type}} grips."
+    - "Ask how much the setup service (installation) would cost."
+    - "Ask when you could bring the bike in to have the work done."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [gel comfort, ergonomic, sport racing, wide cruiser]
+    - grip_type:
+        function: forward()
+        type: string
+        data: [ergonomic rubber, lock-on, foam comfort, leather]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_choice:
+        type: string
+        description: "The seat type the chatbot confirms it can install or offer for the user."
+    - grips_choice:
+        type: string
+        description: "The handlebar grip type the chatbot confirms it can install or offer for the user."
+    - setup_confirmation:
+        type: string
+        description: "The chatbot's confirmation that it can set up / install the new seat and grips on the bike."
+    - setup_price:
+        type: money
+        description: "The price quoted by the chatbot for the setup/installation service."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+A few things you can tweak easily:
+- **`conversation.number: combinations`** will use the full grid from the two `forward()` variables (4 × 4 = 16 combos). If that's too many, switch to `combinations(0.5)` or `pairwise()` on one of them.
+- If you'd rather the user **change their mind** mid-conversation about the seat or grips, just add `change your mind` to `interaction_style` — it fits this scenario really well 😄.
+- Want me to also draft a matching **Sensei rule** (e.g., "setup price is always quoted when both parts are confirmed")? Just say the word and I'll whip one up! 🚲✨
+$$$

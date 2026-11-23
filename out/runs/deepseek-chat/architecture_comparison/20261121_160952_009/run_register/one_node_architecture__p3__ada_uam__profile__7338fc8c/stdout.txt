@@ -1,0 +1,108 @@
+conversation ID: one_node_architecture__p3__ada_uam__profile__7338fc8c
+$$$
+¡Hola! 😊 Claro que sí, con gusto te ayudo a dejar ese perfil bien ordenadito. Le eché un ojo y encontré varios detallitos que hay que corregir. Te los resumo rapidito:
+
+1. **Faltaba la declaración de `identificador_id_uam`** — en los `goals` usas `{{identificador_id_uam}}`, pero nunca lo declaras como variable (solo aparecía su `type` y `data` "sueltos" debajo del goal de `user_account`). Eso rompe el perfil.
+2. **El bloque de `user_account` estaba mal indentado** — sus `type` y `data` quedaron fuera de sitio, mezclados con el goal anterior.
+3. **Faltaban las `function`** en las variables (`forward()` en este caso, para que vayan emparejadas y se cubran las combinaciones).
+4. **Faltaba `interaction_style`** en `conversation` (es opcional, pero si lo tenías en tu versión original conviene recuperarlo; aquí te dejo `single questions` como en tus otros perfiles).
+5. **El `fallback` tenía `\n` literales** — en YAML conviene escribirlo como bloque o con comillas para que no queden caracteres raros.
+
+Aquí tienes la versión corregida y lista para usar 👇
+
+```yaml
+test_name: "Asistencia Técnica y Cuentas"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Usuario con problemas técnicos relacionados con plataformas virtuales y cuentas de usuario."
+  context:
+    - "Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad."
+    - "Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias."
+    - "Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento."
+  goals:
+    - "Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU)."
+    - "Preguntar sobre los procedimientos para obtener una cuenta ID-UAM."
+    - "Solicitar los pasos necesarios para establecer la contraseña por primera vez."
+    - "Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado."
+    - "Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}."
+    - identificador_id_uam:
+        function: forward()
+        type: string
+        data:
+          - '123456789'
+          - '987654321'
+          - '112233445'
+          - '556677889'
+          - '998877665'
+    - user_account:
+        function: forward()
+        type: string
+        data:
+          - usuario123
+          - maria.garcia
+          - juan_lopez_2023
+          - pedro.salas
+          - sara.martinez
+
+chatbot:
+  is_starter: false
+  fallback: |
+    ¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro
+    catálogo de servicios.
+    Respondo a preguntas dirigidas al
+    Centro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+    - contact_info:
+        type: string
+        description: "Detalles de contacto del CAU"
+    - operational_hours:
+        type: string
+        description: "Horarios operativos del CAU"
+    - available_services_list:
+        type: string
+        description: "Servicios disponibles para crear cuenta"
+    - password_setup_link:
+        type: string
+        description: "Enlace para establecer contraseña"
+    - contact_information:
+        type: string
+        description: "Opciones de asistencia para recuperación de ID-UAM"
+    - recovery_steps:
+        type: string
+        description: "Pasos para recuperar ID-UAM"
+    - activation_code:
+        type: string
+        description: "Código de activación para cambiar contraseña"
+    - user_account:
+        type: string
+        description: "Nombre de usuario para recuperación"
+    - identificador_id_uam:
+        type: string
+        description: "Identificador único de ID-UAM"
+    - password_change_steps:
+        type: string
+        description: "Pasos para cambiar la contraseña"
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 30
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que quede redondo ✨:
+
+- Usé `forward()` en ambas variables para que se recorran de forma determinista y emparejada (5 valores cada una → 5 combinaciones). Si prefieres aleatoriedad, cambia a `random()`.
+- Añadí `role` porque es muy recomendable para darle contexto al simulador (en tu versión faltaba).
+- Si quieres que las combinaciones se calculen automáticamente, podrías usar `number: combinations` en lugar de `5` fijo. Con dos `forward()` ya tienes la matriz lista para ello.
+
+¿Quieres que te lo deje con `combinations` en vez de número fijo, o que le añada algún `interaction_style` extra como `make spelling mistakes`? ¡Dime y lo ajustamos! 🙌
+$$$

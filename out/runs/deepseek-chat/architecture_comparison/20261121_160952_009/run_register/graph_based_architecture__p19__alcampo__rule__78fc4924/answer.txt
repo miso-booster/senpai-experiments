@@ -1,0 +1,35 @@
+Hey there! 😊 Great idea — a global, profile-agnostic rule that checks whether the chatbot actually talks about current promotions. Let me walk you through it 👇
+
+## The rule
+
+```yaml
+name: promotions_mentioned
+description: The chatbot must provide information about current promotions (profile-agnostic global rule)
+conversations: 1
+oracle: utterance_index('assistant', 'current promotions, discounts, special offers or deals') > 0
+```
+
+## Why this works 🧠
+
+Since you don't want to tie it to a specific profile, we lean on a **generic helper** instead of `conv[i].field` slots:
+
+- **`utterance_index('assistant', ...)`** is LLM-backed and scans the assistant's turns for a topic. It returns the turn index where the topic appears, or `0`/`-1` if it never shows up.
+- By asserting `> 0`, we require that the assistant *did* mention promotions somewhere in the dialogue. ✅
+
+## A couple of things to keep in mind 👀
+
+1. **`utterance_index` is LLM-backed**, so allow for minor variability — it's a semantic check, not an exact string match. That's actually perfect here, because "promotions" can be phrased many ways ("20% off this week", "2-for-1 deal", "loyalty discount", etc.).
+2. **`conversations: 1`** means this runs per conversation. If you'd rather require that *at least some* conversations mention promotions across a batch, you could switch to a global form like:
+
+```yaml
+name: promotions_mentioned_globally
+description: At least one conversation must surface current promotions
+conversations: all
+oracle: num_exist("utterance_index('assistant', 'current promotions, discounts, special offers or deals') > 0") >= 1
+```
+
+## Want it stricter? 🔍
+
+If you want to make sure the bot *doesn't* just mention the word but actually gives concrete info, you could combine it with `semantic_content` — but that helper is usually applied to a profile output field, so for a truly profile-agnostic rule, `utterance_index` is the cleanest choice.
+
+Want me to adapt this to a specific profile's `chatbot.output` field instead (e.g., a `promotion` slot)? Just say the word and I'll tailor it! 🙌

@@ -1,0 +1,50 @@
+conversation ID: agentic_architecture__p38__pizza_shop__rule__5c789970
+$$$
+Nice — good news! Several of your profiles already expose `order_id`, so this rule can be **profile-bound** (the most common and recommended pattern per `sensei-check-doc.md` §3.2). Here are the candidates I found:
+
+| Profile file | `order_id` type | Other relevant outputs |
+|---|---|---|
+| `pizza_and_drink_order_placement.yaml` | `string` | `order_summary`, `total_cost`, `estimated_readiness_time`, `pickup_location` |
+| `pizza_order_test_custom.yml` | `string` | `price`, `time` |
+| `user_sim_pizzaorder_predefined.yml` | `str` | `price`, `time` |
+
+**Quick question before I finalise:** which profile should this rule target? (If you just want the rule to work regardless of profile, I can also make it a *general* rule — but since `order_id` is a profile-specific output, a profile-bound rule is the cleaner choice.)
+
+---
+
+Meanwhile, here's how I'd write it. The idea is simple: a **single-conversation oracle** that asserts `order_id` was actually extracted (i.e., not `None` and not empty). This follows the `data_collected()` / `missing_slots()` pattern from `rules-examples.md`, but scoped to just the one field you care about:
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide an order ID at the end of the conversation (profile-bound, reads chatbot.output.order_id)
+conversations: 1
+active: true
+oracle: |
+  conv[0].order_id is not None and str(conv[0].order_id).strip() != ""
+yields: |
+  f"Missing order_id: the chatbot did not provide an order ID (got {conv[0].order_id!r})"
+```
+
+### Why this shape?
+- **`conversations: 1`** → it's a per-conversation check, not a metamorphic comparison (per `sensei-check-doc.md` §4).
+- **`conv[0].order_id`** → reads the field straight from the profile's `chatbot.output` (the contract described in `sensei-chat-guide.md` §2.1.1 and `sensei-check-doc.md` §3.1). No invented fields 👍.
+- **`is not None and str(...).strip() != ""`** → catches both "never extracted" (`None`) and "extracted but empty" cases.
+- **`yields`** → gives a helpful failure message (the docs use `yields:` for this, see `rules-examples.md`).
+
+### Alternative (if you want to check *all* slots at once)
+If you'd rather assert that **every** output field was filled (not just `order_id`), the docs' built-in helper does exactly that:
+
+```yaml
+name: all_slots_filled
+description: All chatbot.output slots are filled, including order_id
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: |
+  f"Missing slots: {missing_slots()}"
+```
+
+---
+
+👉 **Tell me which profile to target** (e.g., `pizza_and_drink_order_placement.yaml`) and I'll lock in the final version — and if you'd like, I can also add a companion **global uniqueness** rule (`is_unique('order_id')`, per `sensei-check-doc.md` §5.5) so no two conversations share the same ID. Want me to include that too? 😊
+$$$

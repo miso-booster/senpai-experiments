@@ -1,0 +1,89 @@
+conversation ID: agentic_architecture__p2__ada_uam__profile__0a3c54d0
+$$$
+¡Perfecto! 😊 Ya tengo lo que necesitaba. He revisado la guía de perfiles (`sensei-chat-guide.md`) y he mirado los perfiles existentes del proyecto para seguir las mismas convenciones (idioma español, `gpt-4o-mini`, fallback del CAU, `single questions`, etc.).
+
+Aquí tienes el perfil propuesto. La idea: **pocas variables de entrada** (solo lo justo para dar variedad) y **muchos `chatbot.output`** orientados a comprobar que el bot da un soporte correcto (pasos, enlaces, contacto, requisitos, etc.).
+
+```yaml
+test_name: Estudiante Erasmus recién llegado sin configurar sus servicios
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la universidad y no sabe
+    cómo configurar ni acceder a sus servicios digitales (Moodle, Sigma, correo
+    institucional, wifi, etc.). No conoces los procedimientos, no tienes todavía
+    tus credenciales y necesitas que te guíen paso a paso.
+  context:
+    - "Acabas de llegar de otro país y es tu primera semana en la universidad."
+    - "No sabes qué es Sigma ni cómo se usa, y no has entrado nunca a Moodle."
+    - "No tienes claras tus credenciales institucionales ni cómo obtenerlas."
+    - "Prefieres explicaciones sencillas, paso a paso, y enlaces o contactos donde ampliar información."
+  goals:
+    - "Preguntar cómo configurar y acceder a {{servicio}} por primera vez."
+    - "Pedir los pasos para obtener o activar tus credenciales de acceso."
+    - "Solicitar el contacto o la vía de soporte técnico si algo falla."
+    - servicio:
+        function: another()
+        type: string
+        data: [Moodle, Sigma, el correo institucional, la wifi del campus]
+
+chatbot:
+  is_starter: false
+  fallback: Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+    - service_requested:
+        type: string
+        description: "Servicio sobre el que el usuario pide ayuda (Moodle, Sigma, correo, wifi...)"
+    - setup_steps:
+        type: list[string]
+        description: "Pasos concretos indicados por el bot para configurar o acceder al servicio"
+    - credentials_instructions:
+        type: string
+        description: "Indicaciones sobre cómo obtener o activar las credenciales institucionales"
+    - access_requirements:
+        type: string
+        description: "Requisitos previos necesarios para acceder (cuenta institucional, alta, etc.)"
+    - support_contact:
+        type: string
+        description: "Datos de contacto o vía de soporte técnico proporcionados por el bot"
+    - support_hours:
+        type: string
+        description: "Horario de atención del soporte, si se indica"
+    - help_links:
+        type: list[string]
+        description: "Enlaces o recursos de ayuda mencionados por el bot"
+    - problem_resolved:
+        type: string
+        description: "Indicación de si el bot resolvió la duda o derivó a otro canal"
+    - unanswered_question:
+        type: string
+        description: "Pregunta del usuario que el bot no llegó a responder, si la hay"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+### Qué hace y por qué está así 🧩
+
+- **Entradas mínimas**: solo una variable, `servicio`, con `another()` para ir rotando entre Moodle, Sigma, correo y wifi sin repetir hasta agotar opciones. Nada de fechas, IDs ni datos personales.
+- **`chatbot.output` pensado para reglas**: cada campo es un "contrato" que luego puedes leer en SENSEI-check como `conv[i].setup_steps`, `conv[i].support_contact`, etc. Ejemplos de checks que podrás escribir:
+  - `setup_steps` no vacío → el bot da pasos reales.
+  - `support_contact` presente → siempre ofrece vía de soporte.
+  - `credentials_instructions` presente cuando se pide acceso por primera vez.
+  - `unanswered_question` vacío → no deja preguntas sin responder.
+- **Convenciones del proyecto**: mismo modelo (`gpt-4o-mini`), mismo `fallback` del CAU, `single questions` y `max_cost` como en los perfiles existentes.
+
+¿Quieres que lo guarde tal cual, o prefieres ajustar algo (por ejemplo, añadir `change language` para probar respuestas multilingües, o cambiar el número de conversaciones)? Y si luego quieres, te preparo las **reglas** que lean estos outputs. 🚀
+$$$

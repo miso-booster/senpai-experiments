@@ -1,0 +1,127 @@
+conversation ID: graph_based_architecture__p32__pizza_shop__profile__241a0e9c
+$$$
+¡Claro que sí! 🍕 Me encanta ayudarte a montar un perfil para tu pizzería. Vamos a crear uno limpio y funcional que capture justo lo que necesitas: **tipo de pizza, bebida, ID del pedido y precio final en dólares**.
+
+## 📄 Perfil propuesto: `pizza_order_summary.yml`
+
+```yaml
+test_name: "pizza_order_summary"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer placing a pizza order for pickup at a local pizza shop.
+    You want to choose a pizza, add a drink, and confirm the final price.
+  context:
+    - "You are ordering for a casual dinner tonight."
+    - "You prefer to keep the order simple: one pizza and one drink."
+  goals:
+    - "Order a {{pizza_type}} pizza in {{size}} size."
+    - "Add {{drink}} as the drink."
+    - "Ask for the order ID and the final price in dollars."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Four cheese, Vegetarian]
+    - size:
+        function: forward(pizza_type)
+        type: string
+        data: [small, medium, large]
+    - drink:
+        function: another()
+        type: string
+        data: [Coke, Sprite, Fanta, Water, Iced Tea]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the customer ordered (e.g., Margarita, Pepperoni)."
+    - drink:
+        type: string
+        description: "The drink the customer ordered (e.g., Coke, Sprite)."
+    - order_id:
+        type: string
+        description: "The unique order identifier provided by the chatbot."
+    - final_price:
+        type: currency
+        description: "The final price of the order in dollars, including pizza and drink."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - default
+```
+
+## 🔍 Puntos clave del perfil
+
+- **`chatbot.output`** define exactamente los 4 campos que pediste. Como `final_price` usa el tipo `currency`, Sensei lo extraerá como un valor numérico con moneda — perfecto para luego escribir reglas tipo `conv[0].final_price > 0` en Sensei-check. 💵
+- **`pizza_type` + `size`** usan `forward()` anidado, así que generas una matriz de combinaciones pizza × tamaño.
+- **`drink`** usa `another()` para ir rotando bebidas sin repetir hasta agotar la lista.
+- **`conversation.number: combinations`** aprovecha la matriz generada por los `forward()` anidados.
+- **`goal_style.all_answered`** con `export: true` te genera un CSV para verificar qué outputs se cumplieron en cada conversación. 📊
+
+## ⚠️ Un detalle importante sobre `currency`
+
+El tipo `currency` debe existir en tu carpeta `types/`. Si no lo tienes aún, crea `types/currency.yml` así:
+
+```yaml
+test_name: "currency_type_profile"
+
+user:
+  language: English
+  role: "A customer using currency values in conversation."
+  context:
+    - "You provide prices with currency symbols or codes."
+  goals:
+    - "Ask for the total price in {{currency_value}}"
+    - currency_value:
+        function: random()
+        type: string
+        data: ["18.50 EUR", "$25", "£12.99"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - total_price:
+        type: currency
+        description: "A float number with a currency"
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 3
+  interaction_style:
+    - default
+```
+
+> 💡 Nota: en tus perfiles existentes (`pizza_and_drink_order_placement.yaml`, `pizza_and_drinks_information_seeker.yaml`) ya usas `money` como tipo. Si prefieres mantener consistencia con esos perfiles, puedes cambiar `currency` por `money` en el output — solo asegúrate de que el tipo esté definido en `types/`.
+
+## ✅ Validación rápida
+
+Antes de correrlo, puedes validar el perfil con:
+
+```bash
+python validation_check.py \
+  --profile C:\articles\2026\Senpai.2026\SENPAI\graph_based\Senpai-Assistant\sensei_projects\pizza_shop\profiles\pizza_order_summary.yml \
+  --output C:\articles\2026\Senpai.2026\SENPAI\graph_based\Senpai-Assistant\sensei_projects\pizza_shop\output \
+  --combined-matrix \
+  --verbose
+```
+
+¿Quieres que te ayude a **ajustar el número de conversaciones**, añadir **interaction styles** (como `change your mind` o `make spelling mistakes`), o preparar una **regla de Sensei-check** que valide que el precio sea mayor que cero? ¡Dime y lo armamos! 😊
+$$$

@@ -1,0 +1,50 @@
+conversation ID: agentic_architecture__p50__pizza_shop__documentation__0c55fb5e
+$$$
+Great question! 😊 Here's the short version, based on `sensei-check-doc.md` and `rules-examples.md`.
+
+## What an oracle is
+
+In SENSEI-check, an **oracle** is the field in a rule that holds the **boolean condition to verify** — the actual "check" that must evaluate to `True` for the rule to pass.
+
+```yaml
+name: small_base_price_floor
+description: Small pizzas should cost at least $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+Here `oracle:` is a Python-style expression that returns `True`/`False`. If it's `False`, the rule fails.
+
+## Where it fits
+
+A rule can express its check in **one of two ways**:
+
+1. **`oracle:`** — a single boolean expression. Best for **single-conversation** checks (traditional oracles) and global checks.
+2. **`if:` / `then:`** — an implication ("if X, then Y"). Best for **metamorphic** relations across 2+ conversations, because it reads like a law.
+
+So `oracle` and `if/then` are **alternatives** — you use one or the other, not both.
+
+## The "oracle problem" context
+
+The docs mention that metamorphic testing "alleviates the **oracle problem**" — i.e., the difficulty of knowing the *absolute correct answer* for a chatbot reply. Instead of asserting an exact answer, you check *relations* between conversations (e.g., more toppings ⇒ higher price). That's why `if/then` exists alongside `oracle`.
+
+## Quick examples of `oracle` in action
+
+```yaml
+# Single conversation
+oracle: data_collected() == True
+
+# Global (all conversations)
+oracle: is_unique('order_id')
+
+# Style check
+oracle: only_talks_about('pizza orders, delivery info')
+```
+
+## One gotcha ⚠️
+
+In **single-conversation** rules, fields are referenced directly (`price`, `size`). In **multi-conversation** rules you use `conv[i].field` (e.g., `conv[0].price`). And those field names must match your profile's `chatbot.output` — don't invent them.
+
+Want me to show you a full rule using `oracle` for one of your actual profiles? Just tell me which one (or I can list them for you). 🚀
+$$$

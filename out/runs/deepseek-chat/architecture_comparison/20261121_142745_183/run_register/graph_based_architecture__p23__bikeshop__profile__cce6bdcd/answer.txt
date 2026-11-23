@@ -1,0 +1,98 @@
+Hey there! 👋 Happy to help you get this profile working — I can see a few things that would trip Sensei up. Let me walk you through them one by one 😊
+
+---
+
+## 🔍 What's wrong
+
+### 1. `llm.temperature: low` ❌
+Temperature must be a **float** (e.g. `0.0`, `0.7`). `low` is not a valid value — Sensei expects a number.
+
+### 2. `chatbot.output` types `str` and `money` ❌
+- `str` is **not** a valid type — the correct primitive is **`string`**.
+- `money` is **not** a built-in type. The built-in currency-like type is **`currency`** (or you'd need a custom type in `types/`). Since your project already uses `money` in other profiles, you likely have a custom `types/money.yml` — but if it's not there, it'll fail. Safest bet: use `currency` (built-in) or confirm `types/money.yml` exists.
+
+### 3. `seat_price` and `care_bike` have **no `type`** ❌
+Every output field **must** declare a `type`. Without it, extraction fails.
+
+### 4. `conversation.goal_style` is missing ⚠️
+You have `number: 5` but no `goal_style`. That means Sensei won't know how/when to end each conversation. You should add one (e.g. `all_answered` or `steps`).
+
+### 5. `conversation.number: 5` with no variables ⚠️
+That's fine technically (it just runs 5 conversations), but since you have no `{{variables}}` in your goals, all 5 conversations will be identical. Consider `number: 1` unless you *want* repeated runs.
+
+### 6. `is_starter: False` — check your bot 🤔
+Your original `qa.yml` had `is_starter: true`. If your bot **waits** for the user to speak first, keep `true`. If the bot greets first, `false` is correct. Just make sure it matches reality, otherwise the conversation may stall.
+
+---
+
+## ✅ Fixed version
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.0
+  model: gpt-4o-mini
+
+user:
+  language: English
+  role: you have to act as a user talking to a virtual assistant of a bike shop
+  context:
+    - You are interested in asking the items below.
+    - Just stick to asking opening times, prices of tire, price of tune-up, price of seat, and actions to the care of bike. Do not ask anything else.
+  goals:
+    - "opening and closing time of the bike shop"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: the opening and closing time of the shop
+    - tire:
+        type: currency
+        description: the price of a new tire
+    - tune_up:
+        type: currency
+        description: the price of a tune-up
+    - seat_price:
+        type: currency
+        description: the price of a new seat
+    - care_bike:
+        type: string
+        description: actions to take care of the bike
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      export: true
+      limit: 9
+  interaction_style:
+    - default
+```
+
+---
+
+## 📝 Quick summary of the fixes
+
+| Issue | Before | After |
+|---|---|---|
+| Temperature | `low` | `0.0` |
+| Output type | `str` | `string` |
+| Output type | `money` | `currency` (or keep `money` **only if** `types/money.yml` exists) |
+| Missing types | *(none)* | `currency` / `string` added |
+| Goal style | *(missing)* | `all_answered` with `limit: 9` |
+| Conversation count | `5` | `1` (no variables to vary) |
+| Starter | `False` | `true` (matches your original) |
+
+---
+
+💡 **One thing to double-check:** if your project really does have a `types/money.yml`, you can safely keep `money` instead of `currency` — just confirm the file exists in your `types/` folder. Otherwise, `currency` is the built-in safe choice.
+
+Want me to also add a `goal_style.max_cost` cap, or tweak the `interaction_style` (e.g. add `single questions` so each goal is asked one at a time)? Just say the word! 🚀

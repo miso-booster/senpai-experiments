@@ -1,0 +1,46 @@
+conversation ID: agentic_architecture__p15__alcampo__rule__6587e2f4
+$$$
+Hey! 👋 I dug into your rule and the project, and I found the profile it's clearly meant for. Here's what's going on and how to make it work.
+
+## 🔍 What I found
+
+**Target profile:** `customer_service_assistance.yaml` — its `chatbot.output` exposes exactly the fields your rule references:
+- `contact_options`
+- `customer_service_number`
+- `hours_of_operation`
+- `online_form_instructions`
+- `required_fields`
+- `message_details`
+
+So this is a **profile-bound rule** (Case A). Good news: the field names you used already match the profile. 🎉
+
+## 🐞 What's off in your rule
+
+Based on `sensei-check-doc.md` and `rules-examples.md`:
+
+1. **Typo:** `descriptin:` → should be `description:`.
+2. **`when:` uses `conv[i].user_request`** — but `user_request` is **not** a field in the profile's `chatbot.output`. That reference will fail. The `when:` filter should only use real output fields (or be dropped).
+3. **`if:` is used without `then:`** — the docs say `if`/`then` is an implication pair. A lone `if:` isn't a valid relation. For a "both fields must be present" check, the right construct is a single `oracle:`.
+4. **`conversations: 2`** — a metamorphic rule needs a `when:` that selects *comparable pairs*. Since your intent is really "the bot provides these two pieces of info," a **single-conversation oracle** (`conversations: 1`) is the cleaner fit.
+
+## ✅ Working rule
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+active: true
+oracle: conv[0].contact_options is not None and conv[0].customer_service_number is not None
+yields: "Missing contact info: contact_options={conv[0].contact_options}, customer_service_number={conv[0].customer_service_number}"
+```
+
+**What changed & why:**
+- Fixed the `description` typo.
+- Switched to a single-conversation `oracle` (no `when`/`if`/`then` needed) — this is the documented pattern for "these outputs must be filled."
+- Removed the invalid `conv[i].user_request` reference (not in `chatbot.output`).
+- Added a `yields:` message (per `rules-examples.md`) so failures are readable — kept it as a plain quoted string so the YAML stays valid.
+
+## 🤔 One thing to confirm
+
+I assumed you want to target **`customer_service_assistance.yaml`** — is that right? If so, I can also offer a **metamorphic variant** (2 conversations) that checks consistency, e.g. "the contact number is the same across two inquiries." Just say the word and I'll write that version too. 😊
+$$$

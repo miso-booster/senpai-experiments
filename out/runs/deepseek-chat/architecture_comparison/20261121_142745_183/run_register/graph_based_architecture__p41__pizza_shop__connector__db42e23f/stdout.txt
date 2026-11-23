@@ -1,0 +1,57 @@
+conversation ID: graph_based_architecture__p41__pizza_shop__connector__db42e23f
+$$$
+¡Claro que sí! 😊 Vamos a montar ese conector YAML para el bot de Alcampo paso a paso.
+
+## Análisis rápido 🔍
+
+- **Base URL:** `https://alcampo.botslovers.com`
+- **Endpoint:** `/bot/web` (POST)
+- **Placeholder del mensaje:** `{user_msg}` va dentro de `data.message.message.message.text`
+- **Response path:** el texto del bot está en `messages.0.0.message.text` (¡ojo, hay un array anidado doble! 👀)
+
+## YAML Connector ✅
+
+```yaml
+name: "Alcampo"
+base_url: "https://alcampo.botslovers.com"
+send_message:
+  path: "/bot/web"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Origin: "https://alcampo.botslovers.com"
+    Referer: "https://alcampo.botslovers.com/Admin/Widget?mobile=0&user=0&lang=es"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    data:
+      id_user: "377611"
+      idweb_user: "ea38fe92-ad92-4610-9d62-ef7fecb1679b"
+      session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+      message:
+        message:
+          message:
+            text: "{user_msg}"
+        iduser: "377611"
+        session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+        channel: "web"
+      widget_form: "TRUE"
+      contexto_extra: []
+      lang: "es"
+    accion: "response_bot"
+response_path: "messages.0.0.message.text"
+```
+
+## Notas importantes 📝
+
+1. **`response_path` con doble índice:** La respuesta trae `"messages":[[{...}]]`, es decir, un array dentro de otro array. Por eso usamos `messages.0.0.message.text` (primer elemento del array externo → primer elemento del array interno → `message.text`). Si solo pusieras `messages.0.message.text` no funcionaría 😅.
+
+2. **Headers mínimos:** De todos los que capturaste, los realmente relevantes para que el servidor acepte la petición son `Content-Type`, `Origin` y `Referer`. El resto (`Sec-Fetch-*`, `Priority`, `TE`, etc.) son generados automáticamente por el navegador y no suelen ser necesarios. Los incluí por seguridad, pero puedes quitarlos si quieres un YAML más limpio ✨.
+
+3. **IDs de sesión y usuario:** `id_user`, `idweb_user` y `session` están hardcodeados con los valores de tu captura. Si el bot requiere sesiones dinámicas, tendrías que gestionarlas aparte — pero para pruebas con el conector YAML, esto funciona bien 👍.
+
+4. **`contexto_extra: []`** se mantiene como array vacío tal cual venía en la petición original.
+
+¿Quieres que te ayude a probarlo o a limpiar los headers? 🚀
+$$$

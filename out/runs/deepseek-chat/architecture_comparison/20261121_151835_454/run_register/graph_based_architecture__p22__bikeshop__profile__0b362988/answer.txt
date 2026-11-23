@@ -1,0 +1,80 @@
+Hey there! 😊 Happy to help you craft that profile — it's a really nice, realistic scenario (rider discomfort + uncertainty about fit vs. worn parts). Let me walk you through a solid profile you can drop into your `profiles/` folder, then explain the key choices so you can tweak it.
+
+## The profile
+
+```yaml
+test_name: "rider_discomfort_fit_or_wear_advice"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who has been experiencing discomfort while riding your bike.
+    You are not sure whether the bike is not fitted correctly to you or whether some
+    components are simply worn out. You want advice on possible adjustments and on
+    the services the shop offers, but you do NOT explicitly ask to book an appointment.
+  context:
+    - "You ride regularly (commuting + weekend rides) and the discomfort has been building up over the last few weeks."
+    - "You feel it mainly in your {{discomfort_area}}, and it gets worse on longer rides."
+    - "You are not very technical, so you are unsure whether it's a fit issue or worn parts."
+    - "You are polite and curious, and you appreciate clear explanations."
+  goals:
+    - "Explain that you feel discomfort while riding, mainly in your {{discomfort_area}}."
+    - "Say you're not sure if the bike isn't fitted correctly or if some components are worn."
+    - "Ask what adjustments could help with the discomfort."
+    - "Ask which services the shop offers that could help (e.g., fit check, tune-up, component inspection)."
+    - "Ask how you could tell whether a component is worn out."
+    - discomfort_area:
+        function: forward()
+        type: string
+        data: [lower back, knees, wrists and hands, neck and shoulders, saddle area]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - adjustment_advice:
+        type: string
+        description: "The adjustments the chatbot suggests to address the discomfort (e.g., saddle height, handlebar position, stem length)."
+    - fit_vs_wear_guidance:
+        type: string
+        description: "The chatbot's guidance on how to distinguish a fit problem from worn components."
+    - offered_services:
+        type: string
+        description: "The services the shop offers that could help (e.g., bike fitting, tune-up, component inspection)."
+    - worn_component_check:
+        type: string
+        description: "How the chatbot says the user can tell whether a component is worn out."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+## Why it's built this way 👀
+
+- **No appointment goal** — I deliberately left out any "book/schedule" goal, and I added an explicit note in `role` that the user does *not* explicitly ask to book. That keeps the simulator honest to your scenario.
+- **`discomfort_area` with `forward()`** — this gives you deterministic coverage across the different body areas, so you test the bot's advice for each one. If you want more variety without a full grid, swap it to `random()` or `another()`.
+- **`chatbot.output` fields** — these are the things you'll likely want to validate later (and reference in Sensei-check rules as `conv[i].adjustment_advice`, etc.). I kept names stable and descriptive, per the best practices.
+- **`single question` interaction style** — fits nicely with a Q&A-style shop bot and keeps each turn focused. You could add `make spelling mistakes` or `long phrases` if you want to stress the bot a bit more.
+- **`all_answered` goal style** — the conversation ends once all goals are covered, with a `limit` safety cap so it can't run away.
+
+## Quick tweaks you might want ✨
+
+- Want to test multilingual? Add `change language: [Spanish, German]` to `interaction_style`.
+- Want to check the bot doesn't push an appointment? You could add an output field like `appointment_pushback` (type `string`) describing whether the bot tried to book — then write a rule on it later.
+- If you'd rather have a fixed number of turns, replace `all_answered` with `steps: 6`.
+
+Want me to also sketch a **Sensei-check rule** that verifies the bot doesn't push an appointment, or one that checks the advice mentions at least one concrete adjustment? Just say the word and I'll draft it for you 😊

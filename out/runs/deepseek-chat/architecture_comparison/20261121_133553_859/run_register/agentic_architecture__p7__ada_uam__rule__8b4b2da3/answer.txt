@@ -1,0 +1,32 @@
+I found the profile 🎯 — `consultante_de_servicios_y_asistencia_del_cau.yaml`, and it exposes exactly the three fields you mentioned (`contact_email`, `contact_phone`, `physical_address`), plus a few more.
+
+Here's the rule, built on the `semantic_content(value, description)` helper (LLM-backed semantic match) so it tolerates formatting variations like "91 497 4029" vs "914974029":
+
+```yaml
+name: cau_contact_info_correct
+description: >
+  Checks that the chatbot provides the correct contact information for the CAU
+  (Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B,
+  first floor, office TI-107; email cau@uam.es; phone 91 497 4029).
+  Profile-bound rule for consultante_de_servicios_y_asistencia_del_cau.
+active: True
+conversations: 1
+oracle: |
+  semantic_content(contact_email, 'cau@uam.es') and
+  semantic_content(contact_phone, '91 497 4029') and
+  semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107, Madrid')
+yields: |
+  f"Wrong CAU contact info -> email: {contact_email}, phone: {contact_phone}, address: {physical_address}"
+```
+
+**How it maps to the docs** (`sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`):
+- `conversations: 1` → single-conversation oracle, as in the minimal oracle examples.
+- `contact_email`, `contact_phone`, `physical_address` are read directly from the profile's `chatbot.output` (the rule↔profile contract described in §3.1 of `sensei-check-doc.md`).
+- `semantic_content(value, desc)` is the documented LLM-backed helper for semantic matching — ideal here because the bot may phrase the address differently (e.g. "Edificio B, planta primera, despacho TI-107") while still being correct.
+- `yields` gives a helpful failure message, following the `rules-examples.md` style.
+
+A couple of notes ⚠️:
+- `semantic_content` is LLM-backed, so expect minor variability — it's the right tool for free-text fields like these.
+- The profile also has `service_hours`, `service_catalog_link`, `faq_link`, etc. If you want, I can extend the rule to check those too (you'd just need to give me the expected values).
+
+Want me to also add a stricter variant (e.g. exact email match with `contact_email.strip().lower() == 'cau@uam.es'`) or check the extra fields? 😊

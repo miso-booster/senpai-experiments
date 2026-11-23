@@ -1,0 +1,72 @@
+Hey there! 😊 Happy to help you build a new profile for the Alcampo project.
+
+Quick heads-up before the YAML: I noticed your `customer_service_assistance.yaml` has a **YAML syntax error** — the `user` and `goals` keys are missing their colons (`user` → `user:`, `goals` → `goals:`). That's why it shows up as a parse error in your project. Worth fixing when you get a chance! 🛠️
+
+Now, here's a fresh profile focused on **asking the chatbot for items to add to the shopping cart**. It follows the same style as your other Alcampo profiles (English, `single questions`, `gpt-4o-mini`, sensible cost caps) and exposes `chatbot.output` fields you can later reference in Sensei-check rules as `conv[i].<field>`.
+
+```yaml
+test_name: Shopping Cart Item Addition
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A shopper building an online grocery cart at Alcampo who wants the chatbot
+    to help find and add specific items to the cart.
+  context:
+    - You are preparing a weekly grocery order and want to fill your cart efficiently.
+    - You have a mix of everyday staples and a few special items in mind.
+    - You prefer clear guidance on how to add products to your cart and confirm what is already in it.
+  goals:
+    - Ask the chatbot how to add a product to your shopping cart on the Alcampo website.
+    - Request help finding a specific item to add to your cart, such as {{product_name}}.
+    - Ask the chatbot to confirm which items are currently in your cart.
+    - Inquire about the price of the {{product_name}} before adding it to the cart.
+    - Ask how to change the quantity of an item already in your cart.
+    - product_name:
+        function: forward()
+        type: string
+        data: [whole milk, free-range eggs, whole wheat bread, olive oil, organic bananas]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - add_to_cart_instructions:
+        type: string
+        description: Steps or guidance on how to add a product to the shopping cart
+    - product_name:
+        type: string
+        description: Name of the product the user wants to add to the cart
+    - product_price:
+        type: money
+        description: Price of the product being added to the cart
+    - cart_items:
+        type: list[string]
+        description: Items currently present in the shopping cart
+    - cart_item_count:
+        type: int
+        description: Total number of items in the shopping cart
+    - quantity_update_instructions:
+        type: string
+        description: Guidance on how to change the quantity of an item in the cart
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 24
+  interaction_style:
+    - single questions
+```
+
+A couple of notes so it plays nicely with your project 👀:
+
+- **`product_name`** is declared as a variable and reused in both the goal text and `chatbot.output` — that keeps the contract clean for any future rules (e.g., checking that the confirmed `cart_items` actually contains the requested `product_name`).
+- I used `money` for prices to match the convention in your other profiles (like `delivery_fee`, `order_amount`).
+- If you'd like a matching **Sensei-check rule** (say, "the requested product must appear in `cart_items` after being added"), just say the word and I'll draft it for you! 🛒✨

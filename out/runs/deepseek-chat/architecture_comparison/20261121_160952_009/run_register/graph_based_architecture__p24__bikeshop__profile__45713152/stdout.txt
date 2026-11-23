@@ -1,0 +1,100 @@
+conversation ID: graph_based_architecture__p24__bikeshop__profile__45713152
+$$$
+Hey there! 😊 Happy to help you build this profile — it's a nice, focused test case. Let me walk you through it.
+
+## What you're asking for
+
+A profile where the simulated user:
+- Speaks **English**, behaves like a **normal, clear-spoken customer**
+- Asks about: **opening/closing times**, **tire price**, **tune-up price**, **seat price**, and **general bike care advice**
+- **Avoids**: appointments, specific models, advanced/custom repairs, warranties, delivery, and anything off-topic
+
+This maps really cleanly onto the `chatbot.output` schema so that Sensei-check rules can later validate each answer. I'll model it after your existing `qa.yml` (same spirit) but with clearer extraction fields and a stricter scope in the `context`.
+
+## The profile
+
+Save this as `profiles/bike_shop_general_info_customer.yml`:
+
+```yaml
+test_name: "bike_shop_general_info_customer"
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal, polite customer visiting a bike shop's virtual assistant.
+    You ask clear, direct questions about basic shop information and standard
+    services. You do not make small talk beyond a brief greeting, and you do not
+    ask about anything outside the topics listed in your goals.
+  context:
+    - "You are a regular customer planning a visit to the bike shop."
+    - "You only care about opening hours, basic prices, and general bike care."
+    - "You phrase every question clearly and directly — no vague or ambiguous wording."
+    - "You must NOT ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or any topic outside basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask what time the bike shop opens and closes."
+    - "Ask how much a new bike tire costs."
+    - "Ask how much a standard bike tune-up costs."
+    - "Ask how much a new bike seat costs."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: "The shop's opening and closing times as stated by the chatbot."
+    - tire_price:
+        type: money
+        description: "The price of a new bike tire provided by the chatbot."
+    - tune_up_price:
+        type: money
+        description: "The price of a standard bike tune-up provided by the chatbot."
+    - seat_price:
+        type: money
+        description: "The price of a new bike seat provided by the chatbot."
+    - bike_care_advice:
+        type: string
+        description: "General bike care and basic maintenance advice given by the chatbot (e.g., cleaning, tire pressure, chain lubrication)."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - default
+```
+
+## A few notes on the choices 👇
+
+- **`interaction_style: default`** — since you want a *normal, clear* customer, `default` is the right fit. Avoid `long phrases`, `make spelling mistakes`, etc., because those would contradict your "phrase questions clearly and directly" requirement.
+- **`goal_style.all_answered`** with `export: true` — this makes Sensei keep going until every goal is satisfied (or the `limit` safety cap is hit), and it exports a CSV showing which outputs were satisfied. Handy for verifying coverage.
+- **`chatbot.output` types** — I used `money` for the three prices (matching your existing `qa.yml` and `bike_service_and_repair_inquirer.yaml`), and `string` for hours and care advice. These field names are stable and descriptive, so you can later write Sensei-check rules like:
+  ```yaml
+name: tire_price_positive
+description: When a tire price is provided, it must be greater than zero
+conversations: 1
+if: conv[0].tire_price is not None
+then: extract_float(conv[0].tire_price) > 0
+```
+- **Scope enforcement** — the "must NOT ask about…" line in `context` is what keeps the simulator on-topic. If you want to *test* that the bot stays on-topic too, you could later add a global rule like `only_talks_about(...)`.
+
+## Quick validation tip
+
+Before running, you can sanity-check the file:
+
+```bash
+python validation_check.py --profile /abs/path/to/project/profiles/bike_shop_general_info_customer.yml --output /abs/path/to/output --verbose
+```
+
+Want me to also sketch a couple of **Sensei-check rules** that validate these outputs (e.g., prices are positive, hours mention both open and close)? Just say the word! 🚲✨
+$$$

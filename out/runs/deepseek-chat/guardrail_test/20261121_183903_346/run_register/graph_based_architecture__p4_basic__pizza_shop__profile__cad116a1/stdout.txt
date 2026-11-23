@@ -1,0 +1,147 @@
+conversation ID: graph_based_architecture__p4_basic__pizza_shop__profile__cad116a1
+$$$
+Hey there! 😊 I'd love to help, but I have to be upfront with you: **I'm limited to SENSEI RULES, SENSEI PROFILES, and SENSEI CONNECTORS** — their docs, concepts, file paths, and explanations. Writing a full Python automation script (LLM-driven profile generator) falls outside that scope, so I can't hand you the code itself. 🙏
+
+That said, I *can* help you design the **profile-authoring contract** your automation should target — which is honestly the hardest part. Let me break down what a "valid profile" must satisfy, so you (or your team) can build the generator around it.
+
+---
+
+## 🎯 What "valid" means for a Sensei profile
+
+Your automation should produce YAML that passes `validation_check.py` and runs cleanly. Here are the invariants to enforce:
+
+### 1. Top-level structure
+Every profile needs these sections:
+- `test_name` — string
+- `user` — with `language`, `role`, `context`, `goals`
+- `chatbot` — with `is_starter`, `fallback`, `output`
+- `conversation` — with `number`, `goal_style`, `interaction_style`
+- `llm` — optional (defaults apply), but include it if you want control over `temperature`, `model`, `model_prov`, `format`
+
+### 2. Variable ↔ goal consistency (the #1 source of errors ⚠️)
+- Every `{{variable}}` used in a goal string **must** be declared as a mapping in `goals` with the **exact same name** (case-sensitive).
+- Every declared variable **should** be referenced in at least one goal string.
+- Your generator should do a regex pass: extract `{{...}}` from goal strings, diff against declared variable keys, and fail loudly on mismatch.
+
+### 3. Type rules
+- In `user.goals`: only `int`, `float`, `string`, or **custom types** from `types/`. ❌ No `list`, `time`, `date` here.
+- In `chatbot.output`: primitives + `time(...)`, `date(...)`, `list[...]`, and custom types. ✅
+- Custom types must exist as YAML files in `types/` with `name`, `type_description`, `format`, `extraction`.
+
+### 4. Function rules
+- `random(n)` → `n ≤ len(data)`
+- `another(n)` → same constraint
+- `forward(dep)` → `dep` must be another declared variable
+- `pairwise()` → needs **≥2** pairwise variables to be meaningful
+- `combinations` as `conversation.number` → requires **≥2 nested forward** OR **≥2 pairwise** variables
+
+### 5. Interaction style rules
+- Only use reserved keywords: `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`
+- `random: [...]` wraps a list of the above
+- **Never translate** these keywords
+
+### 6. `chatbot.output` ↔ rules contract
+If you plan to write Sensei-check rules later, `output` field names become `conv[i].<field_name>`. So:
+- Use stable, descriptive names (`total_price`, not `p1`)
+- Pick the right `type` (`currency` not `string` for money)
+- Reuse names across profiles when semantics match
+
+---
+
+## 🧠 Suggested architecture for your generator
+
+Even though I can't write the code, here's the *shape* your automation should take — all of it driven by the rules above:
+
+```yaml
+test_name: "profile_generation_pipeline"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a profile-generation assistant that turns a high-level spec
+    (domain, goals, variables, output fields) into a valid Sensei profile.
+  context:
+    - "Step 1 (INPUT): receive a high-level spec (domain, goals, variables, output fields)."
+    - "Step 2 (LLM CALL): prompt the model with the profile schema plus the spec."
+    - "Step 3 (PARSE): load the YAML response."
+    - "Step 4 (VALIDATE, deterministic, not LLM): schema check (required keys), '{{var}} <-> declared var diff', type legality per section, function arity checks, interaction_style keyword whitelist."
+    - "Step 5 (IF INVALID): feed errors back to the LLM and retry (max N times)."
+    - "Step 6 (WRITE): save to profiles/<test_name>.yml."
+    - "Step 7 (RUN): python validation_check.py --profile ... --combined-matrix --verbose."
+  goals:
+    - "Receive the high-level spec for {{domain}}."
+    - "Generate a profile that covers the goals: {{goals}}."
+    - "Declare the variables: {{variables}}."
+    - "Expose the output fields: {{output_fields}}."
+    - domain:
+        function: random()
+        type: string
+        data: [pizza shop, rental car, banking, travel]
+    - goals:
+        function: random()
+        type: string
+        data: [order placement, information seeking, unrecognized query handling]
+    - variables:
+        function: random()
+        type: string
+        data: [size, toppings, drink, quantity]
+    - output_fields:
+        function: random()
+        type: string
+        data: [price, order_id, time, total_cost]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - generated_profile:
+        type: string
+        description: "The YAML profile produced by the pipeline."
+    - validation_status:
+        type: string
+        description: "Whether the generated profile passed validation."
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 7
+  interaction_style:
+    - default
+```
+
+The key insight: **let the LLM draft, but let deterministic code validate.** LLMs are great at filling in `role`, `context`, and goal phrasing — but they'll happily invent a `list` type in `user.goals` or forget to declare a variable. Your validator is the safety net. 🛡️
+
+---
+
+## 📋 A checklist your validator should run
+
+| Check | Why |
+|---|---|
+| All required top-level keys present | Schema validity |
+| `{{var}}` set == declared var set | Prevents runtime crash |
+| `user.goals` types ∈ {int, float, string, custom} | `list`/`time`/`date` raise here |
+| `chatbot.output` types ∈ {primitives, time, date, list, custom} | Extraction schema |
+| Custom types referenced exist in `types/` | File resolution |
+| `random(n)` / `another(n)` with `n ≤ len(data)` | Silent truncation otherwise |
+| `forward(dep)` → `dep` is declared | Dependency resolution |
+| `conversation.number: combinations` → ≥2 forward or ≥2 pairwise | Matrix generation |
+| `interaction_style` ⊆ whitelist | Reserved keywords only |
+| `chatbot.fallback` is non-empty | Prevents infinite loops |
+
+---
+
+## 💡 One more tip
+
+If you want the LLM to be *reliable*, give it **2–3 full example profiles** in the prompt (like the ones in your project: `pizza_order_test_custom.yml`, `pizza_and_drink_order_placement.yaml`) as few-shot anchors. The model will mimic the structure far better than from a schema alone. And always run `validation_check.py` after generation — it's your ground truth. ✅
+
+---
+
+Want me to go deeper on any piece? For example, I can walk you through **exactly how `combinations` interacts with `forward`/`pairwise`**, or help you **design the `chatbot.output` schema** for a specific domain so your generated profiles are rule-ready. Just say the word! 🍕✨
+$$$

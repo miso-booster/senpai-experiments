@@ -1,0 +1,44 @@
+Great news — your rule's fields actually exist in a real profile! 🎉 Here's what I found and what needs fixing.
+
+## Profile match
+`customer_service_assistance.yaml` exposes exactly the outputs your rule references (plus more):
+- `contact_options`
+- `customer_service_number`
+- `hours_of_operation`
+- `online_form_instructions`
+- `required_fields`
+- `message_details`
+
+So this is a **profile-bound rule** (Case A). ✅
+
+## Issues in your current rule
+Based on `sensei-check-doc.md` and `rules-examples.md`, there are several problems:
+
+1. **Typo in the key**: `descriptin:` → must be `description:`.
+2. **`when:` uses `user_request`** — that field doesn't exist in the profile's `chatbot.output`, and it's not a documented helper. `when` should filter on real `conv[i].<field>` slots. Since this profile is *dedicated* to customer service, you don't really need a `when` filter at all.
+3. **`if:` checks `is not None`** — that's a weak precondition. The docs recommend `if`/`then` to express a real relation. Also, checking `is not None` on the *same* fields you're asserting is basically a "data was collected" check, which is better done with the `data_collected()` / `missing_slots()` helpers.
+4. **`conversations: 2`** — fine, but the profile generates 3 conversations; that's OK since `when`/`if` select eligible tuples. However, if you want to check *all* conversations, `conversations: all` is cleaner for a "did the bot provide contact info" check.
+
+## Proposed corrected rule
+Here's a clean version that checks the bot actually provided both contact options and the customer service number (using the documented `data_collected`/`missing_slots` helpers):
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and the customer service number for customer service inquiries (profile customer_service_assistance).
+conversations: 1
+active: true
+oracle: |
+  conv[0].contact_options is not None and conv[0].customer_service_number is not None
+yields: |
+  f"Missing contact info: {missing_slots()}"
+```
+
+**Before I finalize**, a couple of quick questions so I nail the intent:
+
+1. **Target profile** — confirm we're targeting `customer_service_assistance.yaml`? (It's the only one exposing these fields.)
+2. **What exactly do you want to check?**
+   - (a) *Both fields are filled* (non-null) — the version above, or
+   - (b) *The values are semantically correct* (e.g., the number is a real Alcampo number, options are valid channels) — this would use `semantic_content(...)`.
+3. **Scope** — should this run on a single conversation (`conversations: 1`) or across all generated conversations (`conversations: all`)?
+
+Tell me your preference and I'll produce the final YAML. 😊

@@ -1,0 +1,101 @@
+Here's your eduroam profile! 🎓📶 It simulates a frustrated user who keeps failing to get eduroam working, and the `setup_method` variable cycles through the different ways they could try to connect.
+
+```yaml
+test_name: "eduroam_setup_troubleshooting"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a student or staff member at a university who is trying to connect
+    to the eduroam Wi-Fi network on your device, but you cannot get it to work.
+    You are not very technical, so you follow the instructions the support
+    chatbot gives you step by step, but something always goes wrong. You are
+    polite but increasingly frustrated and you want the connection fixed.
+  context:
+    - "You have valid university credentials (username and password)."
+    - "You are not sure which settings are correct, so you rely on the chatbot's guidance."
+    - "You have already tried once on your own and it failed, which is why you are asking for help."
+    - "You are willing to try alternative setup methods if the first one does not work."
+  goals:
+    - "Explain that you are trying to set up eduroam on your {{device}} using the {{setup_method}} method, but it is not working."
+    - "Describe the error or problem you see when you try the {{setup_method}} method: {{error_message}}."
+    - "Ask the chatbot for step-by-step help to get eduroam working with the {{setup_method}} method."
+    - "If it still fails, ask whether you should try a different setup method instead."
+    - device:
+        function: random()
+        type: string
+        data:
+          - Windows laptop
+          - macOS laptop
+          - Android phone
+          - iPhone
+          - Linux laptop
+    - setup_method:
+        function: forward()
+        type: string
+        data:
+          - the automatic installer/configuration tool
+          - manual configuration (entering the network name, EAP method, and credentials by hand)
+          - the eduroam CAT (Configuration Assistant Tool) profile
+          - the geteduroam app
+          - connecting through the university's web portal / captive portal
+    - error_message:
+        function: random()
+        type: string
+        data:
+          - the device keeps asking for the password over and over
+          - the connection drops immediately after it seems to connect
+          - it says the certificate cannot be verified
+          - it says the username or password is incorrect even though you are sure it is right
+          - the network does not appear in the list of available Wi-Fi networks
+          - it connects but there is no internet access
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you rephrase your question?"
+  output:
+    - setup_method_recommended:
+        type: string
+        description: "The setup method the chatbot recommends or walks the user through"
+    - steps_provided:
+        type: list[string]
+        description: "The step-by-step instructions the chatbot gives the user"
+    - resolved:
+        type: string
+        description: "Whether the chatbot indicates the eduroam connection is fixed (yes/no/unknown)"
+    - alternative_method_suggested:
+        type: string
+        description: "Any alternative setup method the chatbot suggests if the first one fails"
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 8
+    max_cost: 0.15
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - single questions
+```
+
+### What this profile does 🚀
+
+- **`setup_method` is the core variable** — it uses `forward()` so each conversation walks through a *different* way of setting up eduroam (auto-installer → manual config → CAT profile → geteduroam app → captive portal). That gives you clean, non-repeating coverage of each method.
+- **`device`** and **`error_message`** are randomized per conversation, so the same setup method gets tested against different failure scenarios.
+- **`chatbot.output`** captures what a rule would likely want to check later: which method was recommended, the steps given, whether it was resolved, and whether an alternative was suggested.
+
+### Notes on the docs I used 📚
+
+- Structure, `user.goals` variable declaration, `forward()`/`random()` functions, and `chatbot.output` schema all follow `sensei-chat-guide.md`.
+- `conversation.number: 5` matches the 5 `setup_method` values with `forward()` (deterministic iteration). If you'd rather cover combinations of method × device, I can switch `device` to `pairwise()` and set `number: combinations(0.6, pairwise)`.
+- `list[string]` in `chatbot.output` is a valid output type per the docs (lists are allowed in `output`, just not in `user.goals`).
+
+Want me to tweak anything — e.g., add a `change language` interaction style, adjust the number of conversations, or tailor the `chatbot.output` fields so they line up with a specific rule you plan to write? 😊

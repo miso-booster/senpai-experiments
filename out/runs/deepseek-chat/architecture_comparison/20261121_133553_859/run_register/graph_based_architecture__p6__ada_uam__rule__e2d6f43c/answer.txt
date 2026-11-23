@@ -1,0 +1,44 @@
+¡Hola! 😊 Encantado de ayudarte con esta regla para tu proyecto **ada_uam**. Vamos a crear una regla que verifique que el chatbot haya recogido los tres datos de contacto del CAU: email, teléfono y dirección física.
+
+Como los tres campos vienen directamente de tu `chatbot.output`, la forma más limpia y robusta es usar el helper **`data_collected()`**, que comprueba que **todos** los outputs extraídos son no nulos. Así, si falta cualquiera de los tres, la regla falla. 👌
+
+```yaml
+name: cau_contact_info_complete
+description: The chatbot must collect all CAU contact information (email, phone, physical address)
+conversations: 1
+oracle: data_collected() is True
+```
+
+### ¿Por qué esta regla? 🤔
+
+- **`data_collected()`** devuelve `True` solo si **todos** los slots del `chatbot.output` están rellenos (no `None`). Como tu perfil expone exactamente `contact_email`, `contact_phone` y `physical_address`, esto cubre justo lo que pides.
+- Es una regla de **una sola conversación** (`conversations: 1`), porque no necesitas comparar pares — solo verificar que la info está completa.
+
+### Alternativa más explícita (si quieres mensajes de error más claros) 🔍
+
+Si prefieres que la regla falle de forma visible cuando falte algo concreto, puedes usar `missing_slots()`:
+
+```yaml
+name: cau_contact_info_complete
+description: The chatbot must collect all CAU contact information (email, phone, physical address)
+conversations: 1
+oracle: missing_slots() == []
+on-error: "Missing CAU contact slots: {missing_slots()}"
+```
+
+Esta versión te dice **exactamente qué falta** en el mensaje de error, lo cual es muy útil para depurar. 💡
+
+### Un consejo extra ✨
+
+Si además quieres asegurarte de que el email y el teléfono tienen un **formato razonable** (no solo que existan), podrías añadir comprobaciones como:
+
+```yaml
+name: cau_contact_info_valid
+description: CAU contact info is present and well-formed
+conversations: 1
+oracle: data_collected() is True and '@' in contact_email and len(contact_phone) >= 9
+```
+
+Pero ojo 👀: esto ya depende de cómo formatee tu bot los datos, así que úsalo solo si tienes claro el formato esperado.
+
+¿Quieres que te ayude a añadir también alguna comprobación de formato o a integrar esta regla junto con tu `conversation_lengths`? ¡Aquí estoy! 🙌

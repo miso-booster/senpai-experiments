@@ -1,0 +1,28 @@
+Hey there! 😊 Happy to help you craft that rule.
+
+Since there's no profile yet, this is a **rule-first design** — so I'll pick clear, descriptive field names and document what a future profile's `chatbot.output` must expose for the rule to work. I'll keep it as a simple single-conversation oracle that checks the lactose-free availability field is actually filled in (non-null) and mentions availability.
+
+```yaml
+name: lactose_free_availability_check
+description: >
+  Checks that the chatbot reports availability for lactose-free products.
+  Rule-first design: expects a future profile whose chatbot.output exposes
+  `lactose_free_availability` (string) and `lactose_free_products` (list[string]).
+  The availability field must be filled and the product list must not be empty.
+conversations: 1
+active: true
+oracle: |
+  conv[0].lactose_free_availability is not None
+  and len(conv[0].lactose_free_products) > 0
+yields: |
+  f"Lactose-free availability not reported. availability={conv[0].lactose_free_availability}, products={conv[0].lactose_free_products}"
+```
+
+A couple of quick notes so this plays nicely later 👇
+
+- **Fields to add to the future profile's `chatbot.output`:**
+  - `lactose_free_availability` → `type: string` (e.g. "Yes, available in-store and online")
+  - `lactose_free_products` → `type: list[string]` (e.g. `["lactose-free milk", "lactose-free cheese"]`)
+- If you'd rather check the *content* of the availability answer (e.g. that it actually says "available"), you can swap the oracle for a semantic check like `semantic_content(conv[0].lactose_free_availability, 'lactose-free products are available') is True` — just keep in mind that helper is LLM-backed, so allow for minor variability.
+
+Want me to also draft the matching profile skeleton so the rule has a home? Just say the word! 🚀

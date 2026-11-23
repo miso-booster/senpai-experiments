@@ -1,0 +1,23 @@
+Hey there! 😊 Happy to help with that metamorphic rule.
+
+Quick heads-up before the YAML: for this rule to work, the profile(s) it targets need to expose a `drink` field in `chatbot.output` (and a `price` field, since we're comparing costs). Looking at your project, `pizza_and_drink_order_placement.yaml` has `total_cost` and `order_summary` but no separate `drink` or `price` slots — so you'd want to add those to the profile's `chatbot.output` first, or adapt the field names below to match what you actually have. 👍
+
+Here's the rule, assuming a `drink` field (string, e.g. `"none"` when no drink is ordered) and a `price` field:
+
+```yaml
+name: drink_costs_two_extra
+description: Adding a drink to an otherwise identical order costs exactly 2 dollars more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings and conv[0].number == conv[1].number
+if:   conv[0].drink != 'none' and conv[1].drink == 'none'
+then: extract_float(conv[0].price) == extract_float(conv[1].price) + 2
+```
+
+A few notes so it behaves nicely in your project 👀:
+
+- **`when:`** keeps the two orders comparable (same size, toppings, quantity) so the only meaningful difference is the drink — that's the *ceteris paribus* part of metamorphic testing.
+- **`if:`/`then:`** reads like a law: *"If one order has a drink and the other doesn't (all else equal), then the drink order costs exactly $2 more."*
+- If your profile uses a different "no drink" marker (e.g. `null`, `""`, or `"no drink"`), swap `'none'` accordingly.
+- If you'd rather check "at least $2 more" (in case of rounding or combos), change `==` to `>=`.
+
+Want me to also adapt this to the actual field names in `pizza_and_drink_order_placement.yaml` (like `total_cost`), or help you add the missing `drink`/`price` slots to that profile? Just say the word! 🍕🥤

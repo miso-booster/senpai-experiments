@@ -1,0 +1,35 @@
+conversation ID: agentic_architecture__p39__pizza_shop__rule__befadd05
+$$$
+I've reviewed the profiles. Here's what I found — and there's an important catch I need to flag before writing the rule.
+
+## 🔍 Candidate profiles
+
+| Profile | Has `drink` output? | Has price output? | Notes |
+|---|---|---|---|
+| **`pizza_and_drink_order_placement.yaml`** | ❌ No (only `drink_options` = text list) | ✅ `total_cost` (money) | Best match for "drink + cost" domain |
+| `pizzaorder_ivan_test.yml` | ❌ No (`selected_drink_type` only) | ❌ No price field | — |
+| `pizza_order_test_custom.yml` | ❌ No (`drink` is a *goal variable*, not an output) | ✅ `price` (currency) | — |
+| `user_sim_pizzaorder_predefined.yml` | ❌ No (`drink` is a *goal variable*) | ✅ `price` (money) | — |
+
+## ⚠️ The catch: no profile exposes a `drink` output
+
+Your request says the output name should be **`drink`**. But none of the existing profiles have a `chatbot.output` field literally named `drink`:
+
+- In `pizza_and_drink_order_placement.yaml`, drinks appear only as `drink_options` (a text description of available drinks), and the price field is `total_cost`.
+- In the other profiles, `drink` exists only as a **goal variable** (input), not as an extracted output.
+
+A metamorphic rule needs to compare *extracted outputs* across two conversations (e.g., `conv[0].drink` vs `conv[1].drink`). So for the rule to work as you described, the target profile must expose a `drink` output field.
+
+## 🤔 How would you like to proceed?
+
+**Option A — Extend `pizza_and_drink_order_placement.yaml`** (my recommendation)
+Add a `drink` output field (e.g., the chosen drink type) to its `chatbot.output`, then write the rule against `drink` and `total_cost`. This keeps your requested output name `drink` and uses the existing price field.
+
+**Option B — Point me to a different profile**
+If you have another profile in mind that already exposes `drink` + a price field, tell me its filename.
+
+**Option C — Rule-first (no profile change yet)**
+I write the rule now assuming a future profile exposes `drink` and a price field, and I document exactly which outputs that profile must provide.
+
+Which option do you prefer? Also, for the price comparison, should I use `total_cost` (from `pizza_and_drink_order_placement.yaml`) or a different field name?
+$$$

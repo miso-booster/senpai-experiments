@@ -1,0 +1,79 @@
+conversation ID: one_node_architecture__p20__bikeshop__profile__a1dab62e
+$$$
+Hey there! 😊 Love this one — an appointment-focused profile is a great way to stress-test how the bot handles dates and times. Here's a profile that sets up a wheel-change appointment with a nice spread of day/time variables (using `forward()` nesting so you get a real grid of combinations).
+
+```yaml
+test_name: "wheel_change_appointment"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who needs to book an appointment at a bike shop to have
+    your wheels changed. You want to confirm the date, time, and service clearly
+    with the assistant.
+  context:
+    - "Your current wheels are worn out and you'd like them replaced as soon as possible."
+    - "You are flexible about the exact day but have a few preferred time slots."
+    - "You want the appointment confirmed with a specific date and time."
+  goals:
+    - "Ask to set an appointment to have your wheels changed on {{ap_date}} at {{hour}}."
+    - "Confirm the service is a wheel change."
+    - "Ask the assistant to confirm the appointment date and time."
+    - ap_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - "next Monday"
+          - "November 6th, 2024"
+          - "December 12th, 2024"
+    - hour:
+        function: forward(ap_date)
+        type: string
+        data:
+          - "09:00"
+          - "10:30"
+          - "13:00"
+          - "15:30"
+          - "17:00"
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmed_date:
+        type: date
+        description: "The date of the appointment, confirmed by the assistant"
+    - confirmed_time:
+        type: time("hh:mm")
+        description: "The time of the appointment, confirmed by the assistant"
+    - confirmed_service:
+        type: string
+        description: "The service to be performed (wheel change), confirmed by the assistant"
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 8
+  interaction_style:
+    - default
+```
+
+A few notes so it behaves the way you expect 👇
+
+- **`forward()` nesting**: `ap_date` iterates deterministically, and `hour` is nested on `ap_date`, so you get a full grid of date × time combinations — perfect for probing date/time handling.
+- **`conversation.number: combinations`** uses that full matrix (since we have two nested `forward()` variables). If you want a smaller sample, switch to `combinations(0.5)`.
+- **`chatbot.output`** exposes `confirmed_date`, `confirmed_time`, and `confirmed_service` — these are exactly the fields you'd later reference in Sensei-check rules as `conv[i].confirmed_date`, etc. (e.g., checking the confirmed date matches what the user asked for).
+- **`is_starter: true`** assumes the bot greets first; flip it to `false` if your bot waits for the user.
+
+Want me to also draft a matching Sensei-check rule (like "confirmed date equals the requested date")? Just say the word! 🚲
+$$$

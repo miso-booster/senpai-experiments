@@ -1,0 +1,32 @@
+conversation ID: one_node_architecture__p25__bikeshop__rule__9b940af5
+$$$
+Here's a rule that checks those exact values across your `qa` profile's outputs 🚲
+
+A couple of quick notes before the YAML:
+- Your `opening_and_closing` field is a `str` (e.g. "10:00 to 20:00"), so I use `extract_float` to pull the numbers out and check they're within 10–20.
+- `tire`, `tune_up` are `money` and `seat_price` is a `str` — I use `extract_float` on all of them so the comparison works regardless of type.
+
+```yaml
+name: qa_prices_and_hours
+description: Checks the qa profile outputs — opening/closing hours within 10-20, tune-up = 50, seat = 20, tire = 20
+conversations: 1
+active: True
+oracle: |
+  extract_float(opening_and_closing) >= 10 and extract_float(opening_and_closing) <= 20
+  and extract_float(tune_up) == 50
+  and extract_float(seat_price) == 20
+  and extract_float(tire) == 20
+yields: |
+  f"Unexpected values — opening/closing: {opening_and_closing}, tune_up: {tune_up}, seat: {seat_price}, tire: {tire}"
+```
+
+A few things worth flagging 👀:
+
+1. **`opening_and_closing` is a range string** like `"10:00 to 20:00"`. `extract_float` grabs the *first* number only (so it checks the opening time). If you want to validate **both** opening and closing, the string needs to be parsed more carefully — the helper library doesn't have a built-in "extract all numbers" function. If you'd like, I can suggest a workaround (e.g. splitting the string, or changing the profile to expose two separate numeric fields like `opening_hour` and `closing_hour`).
+
+2. **`money` type** — `extract_float` works fine on it, but if the currency matters you can add `currency(tire) == 'USD'` etc.
+
+3. **Field names** — I used the exact names from your `chatbot.output` (`opening_and_closing`, `tire`, `tune_up`, `seat_price`). If you rename any of them in the profile, update the rule to match.
+
+Want me to also add a version that checks opening and closing separately? Just say the word 😊
+$$$

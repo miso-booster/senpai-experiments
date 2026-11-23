@@ -1,0 +1,108 @@
+¡Perfecto! 😊 Ya tengo todo lo que necesito. Aquí tienes el perfil, basado en la guía `sensei-chat-guide.md`.
+
+## 📋 Perfil: recomendación de recetas y planificación de menús
+
+He visto que ya existe `recipe_management_and_cooking_support.yaml`, pero ese perfil se centra en **descubrir funcionalidades** (cómo buscar recetas, listas de la compra, pesca sostenible). El tuyo es distinto: quiere **poner a prueba la capacidad real del chatbot de recomendar recetas concretas y planificar menús**. Por eso creo un perfil nuevo y específico.
+
+```yaml
+test_name: "Alcampo Recipe Recommendation and Menu Planning"
+
+llm:
+  temperature: 0.9
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente de Alcampo que quiere que el chatbot le recomiende recetas
+    concretas y le ayude a planificar los menús de la semana, adaptándose a sus
+    preferencias, número de comensales y presupuesto.
+  context:
+    - "personality: personalities/conversational-user"
+    - "Cocinas para {{comensales}} personas y quieres resolver las comidas de varios días."
+    - "Tienes preferencias alimentarias claras y quieres recetas que las respeten."
+    - "Buscas recetas fáciles, con ingredientes que puedas comprar en Alcampo."
+    - "Te interesa que el menú sea equilibrado y ajustado a un presupuesto."
+  goals:
+    - "Pide una recomendación de receta {{tipo_plato}} para {{comensales}} personas con {{preferencia}}"
+    - "Pide un menú semanal equilibrado para {{dias}} días con un presupuesto de {{presupuesto}} euros"
+    - "Pregunta qué ingredientes necesitas comprar para la receta recomendada"
+    - "Solicita una alternativa {{alternativa}} a una de las recetas propuestas"
+    - tipo_plato:
+        function: random()
+        type: string
+        data: [primer plato, segundo plato, postre, cena ligera, comida rápida]
+    - comensales:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 6
+          step: 1
+    - preferencia:
+        function: pairwise()
+        type: string
+        data: [vegetariana, sin gluten, baja en calorías, con pescado, con carne, vegana]
+    - dias:
+        function: random()
+        type: int
+        data: [3, 5, 7]
+    - presupuesto:
+        function: random()
+        type: int
+        data: [30, 50, 80, 120]
+    - alternativa:
+        function: pairwise()
+        type: string
+        data: [más económica, más rápida, sin lactosa, más saludable]
+
+chatbot:
+  is_starter: false
+  fallback: "🤩 ¡Qué buena idea cocinar en casa! Cuéntame qué tipo de receta o menú buscas y te ayudo a planificarlo."
+  output:
+    - receta_recomendada:
+        type: string
+        description: "Nombre de la receta concreta recomendada por el chatbot"
+    - ingredientes_receta:
+        type: list[string]
+        description: "Lista de ingredientes necesarios para la receta recomendada"
+    - menu_semanal:
+        type: list[string]
+        description: "Platos propuestos para cada día del menú semanal"
+    - numero_comensales:
+        type: int
+        description: "Número de comensales para el que se ha planificado"
+    - coste_estimado:
+        type: float
+        description: "Coste estimado del menú o de la receta en euros"
+    - respeta_preferencia:
+        type: string
+        description: "Indica si la recomendación respeta la preferencia alimentaria solicitada"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 12
+    max_cost: 0.15
+  interaction_style:
+    - random:
+        - long phrases
+        - single questions
+        - change your mind
+```
+
+## 🔍 Qué hace este perfil y por qué
+
+- **`user.role` y `context`**: definen a un cliente que quiere recomendaciones reales y planificación, no solo información de funcionalidades.
+- **`user.goals` con variables**: combinan peticiones de receta, menú semanal, lista de ingredientes y alternativas. Uso `pairwise()` en `preferencia` y `alternativa` para cubrir combinaciones eficientemente, y `random()` en el resto (según la tabla de funciones de la guía).
+- **`chatbot.output`**: es el **contrato para futuras reglas**. Extraigo campos como `receta_recomendada`, `menu_semanal`, `coste_estimado` o `respeta_preferencia`, que luego podrás validar con SENSEI-check (por ejemplo, que el menú respete la preferencia o que el coste no supere el presupuesto).
+- **`conversation`**: 3 conversaciones, con límites de coste por ejecución y por conversación, y estilos de interacción variados para que el bot se enfrente a usuarios que cambian de opinión o escriben frases largas.
+
+## 💡 Siguiente paso opcional
+
+Si quieres, puedo crearte también una **regla SENSEI-check** que valide, por ejemplo, que `respeta_preferencia` sea coherente con la preferencia pedida o que `coste_estimado` no supere el presupuesto. Dime y lo preparamos juntos 🚀.
+
+¿Quieres que ajuste algo (idioma, número de conversaciones, campos extraídos) o lo dejamos así?

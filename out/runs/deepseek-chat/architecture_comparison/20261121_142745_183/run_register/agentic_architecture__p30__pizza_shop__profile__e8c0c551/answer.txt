@@ -1,0 +1,94 @@
+Here's your pizza shop profile! 🍕
+
+```yaml
+test_name: "pizza_shop_rude_impatient"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude, impatient customer ordering pizza. You are in a hurry and
+    have no patience for small talk. You speak bluntly, interrupt, and push the
+    staff to move fast. You expect quick answers and get annoyed by any delay or
+    unnecessary questions.
+  context:
+    - "You are extremely impatient and want everything done as fast as possible."
+    - "You are rude: short, blunt, and dismissive. You do not say please or thank you."
+    - "You get irritated if the bot asks too many questions or is slow to respond."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}} and tell them to hurry up"
+    - "Ask for {{drink}} and demand it fast"
+    - "Ask how long the {{delivery_mode}} will take, and complain it's too slow"
+    - "Ask for the {{total_price}} and tell them to get it done already"
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, family]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [pepperoni, mushrooms, olives, extra cheese]
+    - drink:
+        function: random()
+        type: string
+        data: [Coke, Fanta, water, beer]
+    - delivery_mode:
+        function: random()
+        type: string
+        data: [delivery, pickup]
+    - total_price:
+        function: random()
+        type: string
+        data: [price, total, bill]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - order_id:
+        type: string
+        description: "The order identifier / confirmation number"
+    - total_price:
+        type: currency
+        description: "Final price of the order including taxes"
+    - estimated_time:
+        type: time("hh:mm")
+        description: "Estimated delivery or pickup time"
+    - pizza_size:
+        type: string
+        description: "The size of the pizza ordered"
+    - toppings:
+        type: list[string]
+        description: "The toppings on the pizza"
+
+conversation:
+  number: combinations(0.6, pairwise)  # two pairwise functions define the matrix
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+### What's going on here 🧐
+
+- **Rude & impatient user** — captured in `user.role` and `user.context` (blunt, dismissive, wants speed, no please/thank you).
+- **4 goals** — order pizza, ask for a drink, ask about timing, ask for the price. Each uses `{{variables}}`.
+- **4 variables** — `size`, `toppings`, `drink`, `delivery_mode` (plus a `total_price` helper variable used in the last goal).
+- **2 pairwise functions** — `size` and `toppings` both use `pairwise()`. Per the docs, **two pairwise variables are exactly what's needed** to build a pairwise-coverage matrix, so `conversation.number: combinations(0.6, pairwise)` derives the conversation count from that matrix (60% of it here — bump to `combinations` or `combinations(1, pairwise)` for full coverage).
+- **`chatbot.output`** — defines the extractable fields (`order_id`, `total_price`, `estimated_time`, `pizza_size`, `toppings`) so you can later write profile-bound rules referencing `conv[i].total_price`, etc.
+
+A couple of notes:
+- I used `combinations(0.6, pairwise)` to keep the run lean; change the fraction if you want more coverage.
+- The `total_price` variable is just a wording helper (price/total/bill) — it's distinct from the `total_price` output field, which is what gets extracted. If that naming overlap feels confusing, I can rename the variable to something like `price_word`.
+
+Want me to also create a matching rule (e.g., checking the order has an `order_id` and a positive `total_price`)? Just say the word 😊

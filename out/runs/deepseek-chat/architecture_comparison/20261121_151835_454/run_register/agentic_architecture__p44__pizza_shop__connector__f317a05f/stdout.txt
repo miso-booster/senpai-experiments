@@ -1,0 +1,50 @@
+conversation ID: agentic_architecture__p44__pizza_shop__connector__f317a05f
+$$$
+¡Claro que sí! 😄 He revisado tu connector de Ada UAM y la documentación (`custom-connector-guide.md` y `connector-examples.md`), y he adaptado los valores a partir de tu petición HTTP de Morón de la Frontera.
+
+Aquí tienes el nuevo connector:
+
+```yaml
+name: "Gallo Morón de la Frontera"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+  payload_template:
+    conversation: "67ea76f4e213b2dcbc146e2b"
+    sender_type: "User"
+    sender: "67ea76f40643a3dd27e59411"
+    bot: "65ca19e7dbbb4e26cbeadf24"
+    language: "es"
+    url: "https://www.morondelafrontera.es/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Qué he cambiado respecto a Ada UAM 🔧
+
+| Campo | Ada UAM | Morón de la Frontera |
+|-------|---------|----------------------|
+| `name` | "Ada UAM" | "Gallo Morón de la Frontera" |
+| `Authorization` | `60a3bee2e3987316fed3218f` | `65ca19e7dbbb4e26cbeadf28` |
+| `conversation` | `682ce1ce271ce860cffde0fd` | `67ea76f4e213b2dcbc146e2b` |
+| `sender` | `682ce1cefe831160cee700ed` | `67ea76f40643a3dd27e59411` |
+| `bot` | `60a3be81f9a6b98f7659a6f9` | `65ca19e7dbbb4e26cbeadf24` |
+| `url` | UAM | `https://www.morondelafrontera.es/` |
+
+### Lo que se mantiene igual ✅
+- `base_url`, `path`, `method` y `language` (mismo backend de MillionBot).
+- La estructura del `payload_template` (incluido `message.text: "{user_msg}"`).
+- El `response_path: "response.0.text"` — tu respuesta de ejemplo tiene la forma `{"response":[{"text":"..."}]}`, así que `response.0.text` extrae correctamente el texto del Gallo. 🐓
+
+### Un par de notas 💡
+- El `Authorization` va en la cabecera tal cual lo envía el navegador (sin `Bearer`), igual que en Ada UAM.
+- No he incluido cabeceras como `Origin`, `Referer` o `User-Agent` porque el ejemplo de Ada UAM tampoco las usa y el endpoint público de MillionBot no las requiere. Si en algún momento el bot rechaza peticiones, podríamos añadirlas (como hace el ejemplo de Metro Madrid en `connector-examples.md`).
+- Los IDs (`conversation`, `sender`) parecen ser de sesión; si el bot deja de responder, puede que necesites regenerarlos desde la web del ayuntamiento.
+
+¿Quieres que lo guarde como un archivo nuevo (por ejemplo `gallo-moron.yaml`) o prefieres ajustar algo antes? 😊
+$$$

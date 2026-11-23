@@ -1,0 +1,61 @@
+conversation ID: agentic_architecture__p16__alcampo__rule__761b125a
+$$$
+Great news — I found a profile that already fits your use case really well! 🎉
+
+**Candidate profile:** `dietary_needs_and_special_products_inquiry.yaml`
+
+It's a customer asking about dietary needs / special products, and it already exposes a `lactose_free_availability` output field (plus related ones like `lactose_free_cheese_brands`). So we don't actually need to invent variables — we can bind the rule to this existing profile.
+
+Here are the relevant `chatbot.output` fields:
+- `fresh_dairy_types`
+- `lactose_free_availability` ← the key one for your rule
+- `lactose_free_cheese_brands`
+- `plant_based_recommendations`
+- `soy_product_information`
+- `vegetarian_burger_options`
+- `vegan_burger_options`
+- `plant_based_burger_flavors`
+- `nutritional_values_reference`
+- `prepared_meat_options`
+- `perishables_brand_selection`
+
+Before I write the rule, a quick question to make sure I target the right thing:
+
+**Do you want the rule bound to this existing profile (`dietary_needs_and_special_products_inquiry.yaml`), or should it be a standalone rule-first design with my own variable names (as you originally suggested)?**
+
+If you're happy with the existing profile, here's the rule I'd propose (using `lactose_free_availability`):
+
+```yaml
+name: lactose_free_availability_confirmed
+description: >
+  Checks that when the user asks about lactose-free products, the chatbot
+  confirms their availability (profile: dietary_needs_and_special_products_inquiry).
+conversations: 1
+active: true
+when: conv[0].lactose_free_availability is not None
+oracle: |
+  len(conv[0].lactose_free_availability.strip()) > 0
+yields: |
+  f"Lactose-free availability was not confirmed: '{conv[0].lactose_free_availability}'"
+```
+
+And if you'd rather go **rule-first** (no profile binding, my own variable names), I'd write something like this — and a future profile would need to expose `lactose_free_available` (string) and `lactose_free_products` (list[string]):
+
+```yaml
+name: lactose_free_products_available
+description: >
+  Rule-first design: checks that lactose-free products are reported as available
+  and that at least one lactose-free product is listed.
+  Requires a future profile exposing chatbot.output fields:
+  lactose_free_available (string) and lactose_free_products (list[string]).
+conversations: 1
+active: true
+when: conv[0].lactose_free_available is not None
+oracle: |
+  'yes' in conv[0].lactose_free_available.lower() and len(conv[0].lactose_free_products) > 0
+yields: |
+  f"Lactose-free availability='{conv[0].lactose_free_available}', products={conv[0].lactose_free_products}"
+```
+
+Which direction do you prefer — **bind to the existing profile** (recommended, since it already has `lactose_free_availability`), or **rule-first with custom variable names**? Let me know and I'll finalise it. 😊
+$$$

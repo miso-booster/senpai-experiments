@@ -1,0 +1,83 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__3617bcbc
+$$$
+Hey there! 😊 Happy to help you build that profile — a customer bringing in a newly bought bike to get it fitted to their liking (new seat + handlebar grips). Let me put together a clean, runnable profile for your bikeshop project.
+
+A couple of quick design notes so it fits your project nicely:
+- I kept the `chatbot.output` fields focused on what you'd want to validate later (seat/grip availability, prices, and the appointment confirmation) — these are also the fields your future Sensei-check rules would read as `conv[i].<field>`.
+- I used `forward()` on the seat and grip options so you get systematic coverage, and `all_answered` so the conversation keeps going until the fitting details are settled.
+
+```yaml
+test_name: bike_fitting_customization
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike and wants it tailored to
+    your liking. You want to replace the seat and the handlebar grips with ones
+    that suit your comfort and riding style, and you'd like the shop to set it up
+    for you.
+  context:
+    - "You just bought a new bike and it's still stock — nothing has been adjusted yet."
+    - "You find the default seat uncomfortable and the grips too slippery."
+    - "You care about comfort for daily commuting and weekend rides."
+    - "You'd like the shop to do the fitting for you rather than doing it yourself."
+  goals:
+    - "Explain that you just bought a new bike and want it set up for your comfort."
+    - "Ask if the shop can replace the seat with a {{seat_type}} seat."
+    - "Ask if the shop has {{grip_type}} handlebar grips available."
+    - "Ask how much the seat and the grips would cost together."
+    - "Ask if you can book an appointment to have the bike fitted, ideally {{appointment_day}}."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [comfort gel, ergonomic, sport, memory foam]
+    - grip_type:
+        function: forward()
+        type: string
+        data: [ergonomic, lock-on, silicone, rubber]
+    - appointment_day:
+        function: another()
+        type: string
+        data: [tomorrow, this Saturday, next Monday]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_availability:
+        type: string
+        description: "Confirmation of whether the shop can provide/replace the requested seat type."
+    - grip_availability:
+        type: string
+        description: "Confirmation of whether the requested handlebar grips are available."
+    - fitting_price:
+        type: money
+        description: "The total price quoted for the seat and grips (including fitting if mentioned)."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the fitting appointment, including the agreed date/time."
+
+conversation:
+  number: combinations(0.6, forward)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+A few things you might want to tweak 👇
+- **`money` type**: I used `money` since your other bikeshop profiles (e.g. `qa.yml`, `bike_service_and_repair_inquirer.yaml`) already use it — just make sure a `money` custom type exists in your `types/` folder. If it doesn't, swap it for `currency` or `float`.
+- **`conversation.number`**: `combinations(0.6, forward)` needs at least two `forward()` variables (you have `seat_type` and `grip_type`), so that's covered. Bump the fraction up if you want fuller coverage.
+- **`model_prov`**: I added `openai` to match your other profiles — remove it if your setup doesn't need it.
+
+Want me to also draft a matching **Sensei-check rule** (e.g., "if a seat type is confirmed available, a price must be quoted") to go with this profile? Just say the word! 🚲✨
+$$$

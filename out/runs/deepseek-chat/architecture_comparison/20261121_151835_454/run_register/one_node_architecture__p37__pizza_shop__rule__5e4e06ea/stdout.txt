@@ -1,0 +1,34 @@
+conversation ID: one_node_architecture__p37__pizza_shop__rule__5e4e06ea
+$$$
+¡Buena idea! 😊 Esa regla encaja perfecto como un **oracle de una sola conversación** usando `utterance_index`, que te dice en qué turno el asistente menciona algo. La idea: el turno donde el asistente confirma la bebida debe existir (índice > 0).
+
+Aquí tienes la regla lista para pegar en `rules/`:
+
+```yaml
+name: assistant_confirms_drink
+description: The assistant confirms that the drink requested by the user was added to the order
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'confirms the drink was added to the order') > 0
+yields: "The assistant did not confirm that the requested drink was added to the order"
+```
+
+Un par de notas para que funcione bien en tu proyecto 👇
+
+- **`utterance_index` es LLM-backed**, así que describe el evento con una frase clara y semántica (como arriba). Evita patrones demasiado literales tipo `"added"`, porque el bot puede decirlo de mil formas ("He añadido tu Coca-Cola", "Your Sprite is in the order", etc.).
+- Si quieres ser más estricto y comprobar que la confirmación ocurre **después** de que el usuario pide la bebida, puedes encadenar dos índices:
+
+```yaml
+name: assistant_confirms_drink_after_request
+description: The assistant confirms the drink after the user requests it
+conversations: 1
+active: true
+oracle: |
+  utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms the drink was added to the order')
+yields: "The assistant did not confirm the drink after the user ordered it"
+```
+
+- Ten en cuenta que tu perfil `pizza_and_drink_order_placement.yaml` expone `order_summary` y `drink_options`, pero **no** un campo específico de "bebida confirmada". Por eso esta regla es de tipo *global* (no depende de `chatbot.output`) y se apoya en el texto de la conversación. 👌
+
+¿Quieres que la adapte para que también verifique que la bebida confirmada coincide con la que pidió el usuario (por ejemplo, comparando con `conv[0].drink_type`)? 🍕🥤
+$$$

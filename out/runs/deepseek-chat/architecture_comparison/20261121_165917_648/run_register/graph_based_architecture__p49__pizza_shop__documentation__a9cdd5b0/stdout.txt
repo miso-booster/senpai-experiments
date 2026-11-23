@@ -1,0 +1,59 @@
+conversation ID: graph_based_architecture__p49__pizza_shop__documentation__a9cdd5b0
+$$$
+Hey there! 😊 Great question — `pairwise()` is one of the handiest tools in Sensei Profiles when you want good coverage without exploding into a full Cartesian product.
+
+Let me break it down for you 👇
+
+## What `pairwise()` does
+
+`pairwise()` generates combinations across **2 or more variables** so that **every possible pair of values appears together at least once** — without testing *all* combinations.
+
+Think of it like this: if you have 3 pizza sizes × 3 toppings × 3 drinks, a full grid is 27 conversations. With `pairwise()`, you might only need ~9 conversations, but you're still guaranteed to see every size+topping pair, every size+drink pair, and every topping+drink pair at least once. That's the magic ✨
+
+## Key rules to remember
+
+- **You need at least 2 variables** assigned to `pairwise()` for it to work. One alone doesn't make sense.
+- It's declared inside a variable's `function:` field, just like `forward()`, `random()`, or `another()`.
+- It pairs nicely with `conversation.number: combinations(...)` — that's how Sensei knows how many conversations to generate from the pairwise matrix.
+
+## A quick example
+
+Here's a snippet from your own project (`pizza_order_test_custom.yml`):
+
+```yaml
+goals:
+  - "a {{size}} custom pizza with {{toppings}}, {{size}}"
+  - size:
+      function: pairwise()
+      type: string
+      data: [small, medium, big, extra large]
+  - toppings:
+      function: pairwise()
+      type: string
+      data: [cheese, mushrooms, pepperoni]
+```
+
+Here, `size` and `toppings` are both `pairwise()`, so Sensei guarantees every size is tested with every topping at least once — but it won't necessarily run all 4 × 3 = 12 combinations if it can cover all pairs more efficiently.
+
+And in your `pizza_and_drink_order_placement.yaml`, you can see the `conversation.number` side of the deal:
+
+```yaml
+conversation:
+  number: 8
+```
+
+That's a fixed number, but you *could* write `number: combinations(0.6, pairwise)` to say "use 60% of the pairwise matrix."
+
+## When to reach for it
+
+- ✅ You have **many variables** and want to catch 2-way interactions without a huge test suite.
+- ✅ You want **efficient coverage** — most real bugs come from pairwise interactions anyway.
+- ❌ You need to test **3-way or higher interactions** — pairwise won't guarantee those.
+- ❌ You want a **full grid** — use nested `forward()` instead.
+
+## A friendly tip 💡
+
+If you're mixing `pairwise()` with `forward()`, keep in mind that `forward()` is deterministic and nests by dependency, while `pairwise()` is about coverage. They can coexist, but the combination matrix logic (`conversation.number: combinations(...)`) is driven by whichever functions you've declared — so double-check your `number` setting matches your intent.
+
+Want me to help you design a specific pairwise setup for one of your pizza profiles? Just tell me which variables you're juggling and I'll sketch it out 🍕😄
+$$$

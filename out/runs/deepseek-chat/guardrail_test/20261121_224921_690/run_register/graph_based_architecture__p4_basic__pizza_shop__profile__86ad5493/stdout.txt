@@ -1,0 +1,129 @@
+conversation ID: graph_based_architecture__p4_basic__pizza_shop__profile__86ad5493
+$$$
+I'd love to help, but I have to be upfront with you 😊 — writing a full Python automation script (with LLM calls, file I/O, etc.) falls outside what I'm allowed to do. My scope is strictly **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** — their docs, concepts, file paths, and helping you author or fix the YAML files themselves.
+
+That said, I *can* help you design the automation conceptually, as long as we keep it anchored to the profile schema. Here's what I can offer 👇
+
+---
+
+## What I *can* help with
+
+### 1. The contract your automation must respect
+Any generated profile **must** be valid against the profile schema. The key constraints your script should enforce:
+
+- **Top-level sections**: `test_name`, `user`, `chatbot`, `conversation` (and optionally `llm`).
+- **`user.goals`**: every `{{variable}}` used in a goal string must be declared as a mapping in the same `goals` list, with **exact name match** (case-sensitive).
+- **Variable declarations** need: `function`, `type`, `data`.
+- **`function`** must be one of: `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `pairwise()`.
+- **`type`** in `user.goals` must be a primitive (`int`, `float`, `string`) or a **custom type** defined in `types/`. ⚠️ `list`, `time`, `date` are **not** valid here.
+- **`chatbot.output`** types can be primitives, `time(...)`, `date(...)`, `list[...]`, or custom types.
+- **`conversation.number`**: if you use `combinations` or `combinations(p)`, you need **≥2 nested `forward()` or ≥2 `pairwise()`** variables.
+- **`interaction_style`**: only reserved keywords (`long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, `random: [...]`). Never translate them.
+- **`random(n)` / `another(n)`**: `n ≤ len(data)`.
+
+### 2. A validation-first design pattern
+The cleanest way to build this is **generate → validate → retry**:
+
+1. Prompt your LLM with the schema above + a few-shot example (e.g. `pizza_order_test_custom.yml` from your project).
+2. Parse the YAML output.
+3. Run it through Sensei's own validator:
+   ```bash
+   python validation_check.py --profile <path> --output <out> --combined-matrix --verbose
+   ```
+4. If validation fails, feed the error JSON back to the LLM and retry.
+
+This keeps the LLM honest — you're not trusting it to "know" the schema, you're letting Sensei's validator be the source of truth ✅
+
+### 3. A prompt skeleton you can feed your LLM
+Something like:
+
+> "Generate a Sensei profile YAML for a chatbot that does `<X>`. Follow this schema: `<paste §3 anatomy>`. Rules: (a) every `{{var}}` must be declared, (b) use only these functions `<list>`, (c) use only these interaction styles `<list>`, (d) if `conversation.number` is `combinations`, include ≥2 `pairwise()` or nested `forward()` variables. Output YAML only."
+
+### 4. Where to put the files
+Generated profiles go in your project's `profiles/` folder:
+```yaml
+test_name: "pizza_order_test_predefined"
+
+llm:
+  temperature: 0.0
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You must act as a user ordering a pizza to a pizza shop."
+  context:
+    - personality: personalities/conversational-user.yml
+    - "You are vegan."
+  goals:
+    - "a {{size}} {{pizza_type}} pizza"
+    - "{{number}} cans of {{drink}}"
+    - "How long is it going to take the pizza to arrive?"
+    - "How much will it cost?"
+    - number:
+        function: forward()
+        type: int
+        data:
+          file: src/data/list_functions/number_list.py
+          function_name: number_list
+          args: [1, 6, 2]
+    - size:
+        function: forward(pizza_type)
+        type: string
+        data: [small, medium, big]
+    - pizza_type:
+        function: forward()
+        type: string
+        data:
+          file: src/data/list_functions/number_list.py
+          function_name: shuffle_list
+          args: src/data/element_lists/list_of_things.yml
+    - drink:
+        function: another()
+        type: string
+        data:
+          - Sprite
+          - Coca-Cola
+          - Pepsi
+          - any(3 soda drinks)
+          - any(3 alcoholic drinks)
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - price:
+        type: money
+        description: "The price of the pizza order"
+    - time:
+        type: time
+        description: "How long the pizza will take to be ready, more or less"
+    - order_id:
+        type: str
+        description: "My order ID"
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 2
+  interaction_style:
+    - default
+```
+Custom types → `types/`, personalities → `personalities/`.
+
+---
+
+## What I can't do
+- Write the actual Python code (LLM client setup, YAML parsing, retry loops, CLI, etc.).
+- Help with LangChain/OpenAI SDK specifics, prompt engineering for the *generator* LLM, or general scripting.
+
+---
+
+Want me to go deeper on any of these? For example, I can:
+- 🧩 Draft the **exact schema checklist** your validator should enforce (field by field).
+- 📝 Write a **few-shot prompt template** you can drop into your generator.
+- 🔍 Review a profile your automation produces and tell you what's wrong.
+
+Just tell me which one and we'll build it together 😄
+$$$

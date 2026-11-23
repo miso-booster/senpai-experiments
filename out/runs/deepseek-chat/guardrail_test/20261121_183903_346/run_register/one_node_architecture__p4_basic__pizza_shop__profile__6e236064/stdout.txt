@@ -1,0 +1,94 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__6e236064
+$$$
+I'd love to help, but I have to be upfront: I'm limited to **Sensei PROFILES, RULES, CONNECTORS, and their documentation** — and what you're asking for is a standalone Python automation script (an LLM-driven profile generator), which falls outside that scope 😅.
+
+That said, I *can* help you in a way that stays in my lane and is genuinely useful: I can give you the **exact contract** your automation must satisfy — i.e., what a "valid Sensei profile" looks like — plus a **validation checklist** and a **template** your script should emit. That way, whatever LLM pipeline you build, it produces profiles Sensei will actually accept.
+
+Here's the practical breakdown 👇
+
+### 1. What your automation must guarantee (the "valid profile" contract)
+
+A generated profile is valid when it satisfies these rules from the Sensei Chat docs:
+
+- **Top-level keys** are only: `test_name`, `llm`, `user`, `chatbot`, `conversation`.
+- **`user.goals`**: every `{{variable}}` used in a goal string has a matching declaration in the same list (case-sensitive).
+- **Variable declarations** must have `function`, `type`, and `data`. `type` must be `int`, `float`, `string`, or a custom type defined in `types/`.
+- **`function`** must be one of: `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `forward(dep)`, `pairwise()`.
+- **`conversation.number`**: if `combinations` / `combinations(p)` is used, at least **two nested `forward()`** or **two `pairwise()`** variables must exist.
+- **`interaction_style`** values must be from the reserved keyword set (never translated, never invented).
+- **`chatbot.output`** types must be valid: primitives, `time(...)`, `date(...)`, `list[type]`, or a custom type.
+- **`chatbot.fallback`** should be the bot's *real* fallback text.
+
+### 2. A minimal valid profile your generator should be able to emit
+
+```yaml
+test_name: "generated_profile_example"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe what the simulated user wants and how they behave."
+  context:
+    - "Who the user is, constraints, preferences, availability, etc."
+  goals:
+    - "Main request with a {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste your bot's real fallback here"
+  output:
+    - important_field:
+        type: string
+        description: "What you want to extract/validate"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### 3. How to validate generated profiles (this is the part your script should call)
+
+The docs give you a built-in validator — your automation should run it on every generated profile and reject/regenerate on failure:
+
+```bash
+python validation_check.py \
+  --profile /abs/path/to/project/profiles/generated_profile.yml \
+  --output  /abs/path/to/output \
+  --combined-matrix \
+  --verbose
+```
+
+It returns a JSON with format errors plus CSVs of the value-combination matrices — perfect for an automated pass/fail gate in your pipeline.
+
+### 4. Suggested pipeline shape (conceptual, not code)
+
+1. **Prompt the LLM** with: the target domain, the profile template above, and the validity rules from §1.
+2. **Parse** the YAML output.
+3. **Run `validation_check.py`** on it.
+4. **If invalid** → feed the error JSON back to the LLM and retry (bounded retries).
+5. **If valid** → save to `profiles/` and optionally run Sensei.
+
+---
+
+If you'd like, I can go deeper on any of these in-scope pieces:
+- ✍️ Draft the **exact LLM prompt** (system + user) that constrains output to a valid profile.
+- 🧪 Write the **validation checklist** as a structured spec your script can encode.
+- 🔗 Show how to wire the generated profile into a **connector** run.
+
+Which of those would help most? 😊
+$$$

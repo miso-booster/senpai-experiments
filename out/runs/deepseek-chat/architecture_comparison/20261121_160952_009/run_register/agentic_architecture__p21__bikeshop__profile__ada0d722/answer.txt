@@ -1,0 +1,73 @@
+Here's a profile for your scenario — a customer who just bought a new bike and wants it personalized at the shop by swapping the seat and the handlebar grips 🚲
+
+```yaml
+test_name: bike_customization_seat_and_grips
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A customer who recently bought a new bike and wants to bring it to the shop
+    to have it tailored to their liking by changing the seat and the handlebar grips.
+  context:
+    - "You just bought a brand-new bike and want it set up to feel comfortable and personal."
+    - "You specifically want a different seat and new handlebar grips, but you are open to the shop's recommendations."
+    - "You care about comfort and fit more than performance upgrades."
+    - "You would like to know what options are available, the cost, and whether it can be done today or by appointment."
+  goals:
+    - "Explain that you just bought a new bike and want it tailored to your liking."
+    - "Ask if the shop can change the seat on your new bike."
+    - "Ask what seat options are available and which one they recommend for comfort."
+    - "Ask if they can also replace the handlebar grips."
+    - "Ask what grip options are available and which ones they recommend."
+    - "Ask how much the seat and grip changes will cost in total."
+    - "Ask how long the setup will take and whether you can leave the bike today or need an appointment."
+    - "Confirm the final choice of seat and grips and the total price."
+
+chatbot:
+  is_starter: false
+  fallback: I'm sorry it's a little loud in my shop, can you say that again?
+  output:
+    - seat_options:
+        type: string
+        description: The seat/saddle options the chatbot offers for the new bike, including any recommendation.
+    - grips_options:
+        type: string
+        description: The handlebar grip options the chatbot offers, including any recommendation.
+    - total_price:
+        type: money
+        description: The total price quoted for changing the seat and the handlebar grips, including currency if present.
+    - service_time:
+        type: string
+        description: The estimated time or turnaround the chatbot gives for the seat and grip changes.
+    - appointment_details:
+        type: string
+        description: Details of any appointment or drop-off arrangement confirmed by the chatbot, including date and time if provided.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 30
+  interaction_style:
+    - single questions
+```
+
+### What this profile does
+- **User simulation** (`sensei-chat-guide.md` §3–§5): the simulated customer walks in with a freshly bought bike and a clear, comfort-focused goal — swap the **seat** and the **handlebar grips**. The goals are written as a natural progression (ask about seat → grips → price → timing → confirm), so the conversation flows like a real shop visit.
+- **Chatbot contract** (`chatbot.output`, §6): I defined fields that mirror the business properties you'll likely want to validate later — `seat_options`, `grips_options`, `total_price`, `service_time`, and `appointment_details`. These are named so that **profile-bound rules** can later reference them as `conv[i].total_price`, etc.
+- **Conversation controls** (§5): `number: 3` runs three conversations, `all_answered` ends each one once all goals are satisfied, and `single questions` keeps the user asking one thing at a time — matching the style of your existing `bike_repair_and_maintenance_scheduler.yaml` and `bike_service_and_repair_inquirer.yaml`.
+
+### A couple of things to confirm/decide
+1. **`money` type** — I used `type: money` in `chatbot.output` to match your existing bike profiles. Just make sure a `types/money.yml` custom type exists in your project (the docs note custom types must be defined in `types/`). If it doesn't, we can switch to `currency` or `float`.
+2. **Personality** — your other bike profiles reference `personalities/rude-user` / `skeptical-user`. I left personality out to keep this customer friendly and cooperative. Want me to add one (e.g., a picky/indecisive customer)?
+3. **Language** — set to English; happy to switch or add `change language` interaction style if you test multilingual bots.
+
+Want me to save this as a file (e.g., `bike_customization_seat_and_grips.yaml`), tweak the outputs, or also draft a matching rule for it? 😊

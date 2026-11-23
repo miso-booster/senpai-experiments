@@ -1,0 +1,90 @@
+Hey there! 😊 Happy to help you build this profile — it's a nice, focused one. Let me walk you through it and then give you the full YAML.
+
+## What this profile does
+
+You're essentially describing a **clean, single-topic Q&A customer** — someone who asks five clear things and nothing else. That maps really well to:
+
+- `interaction_style: [single question]` → keeps the user asking one thing at a time (matches "phrase questions clearly and directly").
+- `goal_style: all_answered` → the conversation ends once all five goals are satisfied, which is perfect for a "did the bot answer everything?" test.
+- A `chatbot.output` schema with one field per request → so you (or Sensei-check rules) can validate each answer individually.
+
+## A couple of design notes 👀
+
+- I'm using **`money`** for the three price fields (tire, tune-up, seat) so extraction is clean and comparable.
+- For **opening/closing times**, `string` is safest here since the bot may phrase hours in many ways (e.g., "9 AM to 6 PM"). If you want stricter extraction later, you could split into two `time(...)` fields — but `string` keeps it robust for now.
+- For **bike care advice**, `string` is right — it's free-form guidance, not a structured value.
+- I added a `context` line explicitly telling the user **not** to drift into appointments, models, warranties, etc. That's how you enforce the "don't ask about X" constraint — the simulator respects context constraints.
+- `is_starter: false` → the bot greets first (typical for a shop assistant). Flip to `true` if your bot waits for the user.
+
+## The profile YAML
+
+```yaml
+test_name: "bike_shop_general_info_and_services"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer visiting a bike shop's virtual assistant.
+    You want clear, direct answers about the shop's hours, basic prices,
+    and general bike care. You phrase your questions plainly and politely,
+    like an everyday customer would.
+  context:
+    - "You are only interested in basic shop information and standard services."
+    - "Ask one clear question at a time and wait for the answer."
+    - "Do NOT ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or anything outside basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask what time the bike shop opens and closes."
+    - "Ask how much a new bike tire costs."
+    - "Ask how much a standard bike tune-up costs."
+    - "Ask how much a new bike seat costs."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: "The shop's opening and closing times as stated by the chatbot."
+    - tire_price:
+        type: money
+        description: "The price of a new bike tire provided by the chatbot."
+    - tune_up_price:
+        type: money
+        description: "The price of a standard bike tune-up provided by the chatbot."
+    - seat_price:
+        type: money
+        description: "The price of a new bike seat provided by the chatbot."
+    - bike_care_advice:
+        type: string
+        description: "General advice on basic bike maintenance and good practices, such as cleaning, tire pressure, and chain lubrication."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - single questions
+```
+
+## Why these choices 🚲
+
+- **`number: 3`** → runs the profile three times. Since there are no variables, each run is essentially the same scenario — good for catching flakiness in the bot's answers. Bump it up if you want more coverage.
+- **`export: true`** → generates a CSV showing which outputs were satisfied, super handy for a quick pass/fail glance.
+- **`limit: 10`** → safety cap so it can't loop forever if the bot dodges a question.
+- **`temperature: 0.4`** → keeps the simulated user consistent and on-script (you want a *normal, clear* customer, not a chaotic one).
+
+## Quick tip 💡
+
+If you later want to *assert* things with Sensei-check rules (e.g., "tire price must be greater than zero"), the `chatbot.output` fields above are already your contract — rules can read them as `conv[i].tire_price`, `conv[i].opening_and_closing`, etc. So you're set up for that from day one.
+
+Want me to also draft a matching **Sensei-check rule** (like "all five fields must be non-empty") to go with this profile? Just say the word! 🙌

@@ -1,0 +1,76 @@
+conversation ID: agentic_architecture__p43__pizza_shop__connector__67f4c97f
+$$$
+¡Con gusto! 😊 Revisando tu conector contra la guía de conectores personalizados, la estructura que tienes es correcta: `base_url`, `send_message` con `path`, `method`, `headers`, `payload_template` y `response_path` están todos presentes y bien formados. El `response_path: "response.text"` navega correctamente tu JSON de respuesta (`response → text`), así que el problema no está en el YAML en sí.
+
+## 🔍 Diagnóstico
+
+El campo clave de tu conector:
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+Y tu respuesta real:
+
+```json
+{
+  "status": "success",
+  "response": {
+    "text": "¡Hola! ¿Cómo puedo ayudarte hoy?"
+  }
+}
+```
+
+Según la guía, `response_path` usa **notación de puntos** para navegar el JSON:
+- `"response.text"` → `response["response"]["text"]` ✅
+
+Eso **debería** funcionar con tu respuesta. Si te está fallando, las causas más probables son:
+
+1. **El `Content-Type` no se está enviando bien** → el servidor podría devolver algo distinto (HTML de error, etc.) y entonces `response.text` no existe.
+2. **La API espera el header `Accept: application/json`** además del `Content-Type`.
+3. **El payload anidado** `message: { text: ... }` es correcto según tu request de ejemplo, así que eso está bien. 👍
+
+## ✅ Versión ajustada (más robusta)
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Accept: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+## 📋 Qué cambié y por qué
+
+| Cambio | Motivo |
+|--------|--------|
+| Añadí `Accept: "application/json"` | Muchas APIs devuelven HTML si no se lo pides explícitamente; eso rompería `response.text`. |
+| Mantuve `response_path: "response.text"` | Es **correcto** para tu JSON: navega `response → text`. |
+| Mantuve el `payload_template` anidado | Coincide exactamente con tu request de ejemplo (`message.text`). |
+
+## 🧪 Cómo verificar
+
+Si tras esto sigue fallando, prueba a:
+- Confirmar que la URL final es `https://api.anotherexample.com/api/chat` (sin doble slash ni path extra).
+- Revisar si la API requiere algún header de autenticación (`Authorization`) — la guía lo cubre en la sección *Bot with Authentication*.
+- Comprobar que la respuesta **real** (no la de ejemplo) tiene la misma forma `{ "response": { "text": ... } }`.
+
+¿Quieres que te ayude a probarlo o a añadir autenticación si tu API la necesita? 🚀
+$$$

@@ -1,0 +1,34 @@
+conversation ID: agentic_architecture__p39__pizza_shop__rule__cac57c73
+$$$
+I found a strong candidate! 🍕🥤
+
+**Profile: `pizza_and_drink_order_placement.yaml`**
+
+Its `chatbot.output` fields are:
+- `pizza_options` (string)
+- `drink_options` (string)
+- `order_summary` (string)
+- `total_cost` (money)
+- `estimated_readiness_time` (time)
+- `pickup_location` (string)
+- `order_id` (string)
+
+⚠️ **Important note:** This profile does **not** expose a field literally named `drink`. The drink-related info lives inside `order_summary` (free text) and `drink_options` (list of available drinks). There's also no dedicated field for the *number of drinks* or the *drink type* as a structured output — those are only in the user goals (`drink_type`, `number_of_drinks`).
+
+For a metamorphic rule that checks "adding a drink costs $2 extra", I need to compare two conversations where one has a drink and the other doesn't, and assert the price difference is exactly $2. To do that cleanly, the rule needs structured fields like:
+- `drink` (e.g., the chosen drink type, or a boolean/flag for whether a drink was added)
+- `total_cost` (already present ✅)
+
+**Before I write the rule, I need your confirmation on two things:**
+
+1. **Target profile** — Is `pizza_and_drink_order_placement.yaml` the profile you want this rule bound to? (It's the only one with drink ordering + a `total_cost` field.)
+
+2. **The `drink` output field** — You said the output name should be `"drink"`, but this profile doesn't have a `drink` field yet. To make the rule work, I'd need to **add a `drink` field to the profile's `chatbot.output`** (e.g., `type: string`, description: "The drink type ordered, or 'none' if no drink was added"). 
+
+   👉 Do you want me to:
+   - **(a)** Add a `drink` field to `pizza_and_drink_order_placement.yaml` and then write the rule against it, or
+   - **(b)** Write the rule assuming a future profile will expose `drink` (rule-first design), or
+   - **(c)** Target a different profile?
+
+Once you confirm, I'll generate the metamorphic rule (and the profile update if you choose option **a**). 😊
+$$$

@@ -1,0 +1,29 @@
+Here's a connector that matches your request/response pair, keeping only the essential headers and pointing `response_path` at the plain-text field (the HTML tags live inside `response.0.text`, so the connector will return that string — you'll want to strip tags downstream or use a text-cleaning step, since the YAML connector itself doesn't transform content):
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of friendly notes 😊:
+
+- **Minimal headers** — I kept `Content-Type`, `Authorization`, `Origin`, and `Referer` (the last two are often required by 1millionbot's CORS-style checks), and dropped any `Sec-Fetch-*` / `User-Agent` browser noise as you asked.
+- **HTML stripping** — the YAML connector spec only supports extracting a value via `response_path`; it doesn't run transformations. So `response.0.text` will come back as `"<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>"`. If you need clean text, the usual approach is to strip tags in the calling code (e.g., a small regex or `BeautifulSoup`), or add a post-processing step in your pipeline. Want me to sketch that snippet for you?

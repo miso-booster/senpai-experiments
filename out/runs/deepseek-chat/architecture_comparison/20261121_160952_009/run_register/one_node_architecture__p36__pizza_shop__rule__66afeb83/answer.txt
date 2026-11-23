@@ -1,0 +1,21 @@
+Hey! 😊 Happy to help — I spotted the issue right away 👀
+
+Your rule is missing the `if:` clause. Right now it only has `when:` and `then:`, but `then:` only makes sense paired with an `if:` precondition. Without `if:`, the rule has no metamorphic relation to check (and `then` alone isn't valid — you need either `oracle:` or the `if:`/`then:` pair).
+
+Also, a small heads-up: the `when:` filter compares `conv[0].drink == conv[1].drink`, but the `pizza_order_test_custom.yml` profile (which exposes `price`) doesn't actually have a `drink` field in its `chatbot.output` — it has `price`, `time`, and `order_id`. So that filter may not match anything. I'll keep it as-is since it mirrors your existing rule, but flag it so you can decide.
+
+Here's the fixed rule:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+The key fix is the `if:` line — it states the precondition ("the first order has more toppings"), and `then:` asserts the expected consequence ("so it costs more"). Together they form the metamorphic relation. 🍕
+
+One more thing to double-check: make sure the profile you're running this against actually exposes `size`, `toppings`, `drink`, and `price` in its `chatbot.output`. If any of those are missing, the rule won't be able to evaluate them. Want me to help align the rule with a specific profile's outputs? Just say the word! 🙌

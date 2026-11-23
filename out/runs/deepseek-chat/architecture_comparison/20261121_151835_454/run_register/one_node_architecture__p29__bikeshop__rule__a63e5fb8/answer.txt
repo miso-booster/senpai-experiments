@@ -1,0 +1,35 @@
+Hey there! 😊 Great idea — that's a really useful check for your bike shop project. Let me help you build it.
+
+Looking at your profiles, the most natural fit is **`appointment.yml`**, which already exposes `confirmed_date`, `confirmed_time`, and `confirmed_service` in its `chatbot.output`. That means we can write a **profile-bound rule** that checks all three get filled when the user asks to schedule a service. 🎯
+
+Here's a rule that verifies the chatbot actually confirms the appointment (date + time + service all present):
+
+```yaml
+name: appointment_confirmation_present
+description: When the user schedules a bike service, the chatbot must confirm date, time, and service (profile appointment)
+conversations: 1
+active: true
+oracle: |
+  conv[0].confirmed_date is not None and conv[0].confirmed_time is not None and conv[0].confirmed_service is not None
+yields: |
+  f"Missing appointment details — date: {conv[0].confirmed_date}, time: {conv[0].confirmed_time}, service: {conv[0].confirmed_service}"
+```
+
+A couple of notes so it works smoothly for you 👇
+
+- **Field names must match `chatbot.output`.** In `appointment.yml` the fields are `confirmed_date`, `confirmed_time`, and `confirmed_service` — so we use exactly those. If you rename them in the profile, update the rule too.
+- **`conversations: 1`** works here because each conversation is a single appointment attempt. If you want to check across the whole batch, you could switch to `conversations: all` and use a global helper instead.
+
+If you'd rather use the built-in slot helper (which checks *all* extracted outputs are non-null), here's a more compact variant:
+
+```yaml
+name: appointment_all_slots_filled
+description: All appointment outputs (date, time, service) are collected for the appointment profile
+conversations: 1
+active: true
+oracle: data_collected() is True
+yields: |
+  f"Missing slots: {missing_slots()}"
+```
+
+The first rule is more explicit about *what* must be confirmed; the second is a quick catch-all. I'd lean toward the first for clarity. Want me to also add a check that the confirmed service matches what the user asked for? That'd need a small tweak — just say the word! 🚲✨

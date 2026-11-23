@@ -1,0 +1,47 @@
+conversation ID: agentic_architecture__p45__pizza_shop__connector__b5e3253e
+$$$
+¡Listo! Aquí tienes el conector 😊
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### What I did and why
+
+- **Docs used:** `custom-connector-guide.md` and `connector-examples.md`.
+- **Headers:** kept only the two that actually matter for the API call — `Content-Type: application/json` and `Authorization`. I dropped `Host`, `Origin`, and `Referer`, since those are browser/transport-level headers and not needed (the guide's MillionBot example only uses `Content-Type` + `Authorization`).
+- **Payload:** mapped 1:1 from your request body, with `message.text` set to the `{user_msg}` placeholder as required by the docs.
+- **Response:** `response_path: "response.0.text"` extracts the first element of the `response` array, matching the documented dot-notation behaviour (`results.0.content` style).
+
+### ⚠️ One thing to flag about "HTML tags removed"
+
+The connector DSL (per `custom-connector-guide.md`) only supports **extracting** a value via `response_path` — there's **no documented option to strip HTML** from the extracted text. So the raw value returned would be:
+
+```
+<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>
+```
+
+I don't want to invent an undocumented field like `strip_html: true`, so I left it out. A couple of options:
+
+1. **Handle it downstream** — in your SENSEI rules, use the documented text helpers to normalise/compare content rather than relying on exact HTML.
+2. **Check with me** — if your version of the connector supports a post-processing option, tell me the exact field name and I'll add it.
+
+Would you like me to also draft a profile + rule pair for this bot (e.g., a language-consistency rule), or is the connector enough for now?
+$$$

@@ -1,0 +1,87 @@
+conversation ID: one_node_architecture__p2_basic__pizza_shop__profile__34f8b53e
+$$$
+I'd love to help, but that request is outside what I can do 😊 — I'm Senpai, and I focus exclusively on **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (plus their documentation). Writing a standalone C program for a bike shop scheduler isn't part of that scope, so I'll have to pass on it.
+
+That said, if you're actually trying to **test** a bike shop chatbot with Sensei, I can absolutely help with things like:
+
+- ✍️ Writing a **profile** that simulates a user booking a bike shop appointment (with `date`/`time` variables, `forward()`/`pairwise()` coverage, etc.)
+- 🧪 Creating **rules** that check appointment logic (e.g., "later dates shouldn't be cheaper", "same service + same duration ⇒ same price", "all slots filled")
+- 🔌 Setting up a **connector** to reach your bike shop chatbot's API
+
+Here's a quick taste of what a profile for that scenario could look like:
+
+```yaml
+test_name: "bike_shop_appointment_booking"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer booking a bike repair appointment at a local bike shop.
+    Ask about available services, choose a service, and book a date and time.
+  context:
+    - "You need your bike fixed before the weekend."
+    - "You prefer morning slots."
+  goals:
+    - "Book a {{service}} appointment on {{appointment_date}} at {{appointment_time}}"
+    - "Ask for the estimated price and duration"
+    - service:
+        function: forward()
+        type: string
+        data: [tune-up, brake repair, wheel truing, full service]
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - any(3 dates within the next 14 days)
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data: ["09:00", "11:00", "14:00", "16:00"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - appointment_id:
+        type: string
+        description: "Booking reference for the appointment"
+    - appointment_datetime:
+        type: string
+        description: "Confirmed date and time of the appointment"
+    - estimated_price:
+        type: currency
+        description: "Estimated price for the service"
+    - estimated_duration:
+        type: time("hh:mm")
+        description: "Estimated duration of the repair"
+
+conversation:
+  number: combinations(0.5, forward)
+  goal_style:
+    steps: 6
+    max_cost: 0.2
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - single questions
+```
+
+And a matching rule to check that a full service costs at least as much as a tune-up:
+
+```yaml
+name: full_service_not_cheaper_than_tuneup
+description: A full service should not cost less than a tune-up
+conversations: 2
+when: conv[0].service == 'full service' and conv[1].service == 'tune-up'
+then: extract_float(conv[0].estimated_price) >= extract_float(conv[1].estimated_price)
+```
+
+Want me to flesh out the full profile + a set of rules for your bike shop scenario? Just tell me a bit about the chatbot's actual outputs and I'll tailor it 🚲✨
+$$$

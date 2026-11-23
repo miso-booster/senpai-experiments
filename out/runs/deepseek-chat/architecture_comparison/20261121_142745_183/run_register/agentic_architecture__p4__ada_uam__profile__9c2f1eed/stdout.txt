@@ -1,0 +1,81 @@
+conversation ID: agentic_architecture__p4__ada_uam__profile__9c2f1eed
+$$$
+¡Perfecto! 😊 Ya existe un perfil muy cercano a lo que pides: **`consultante_de_servicios_y_asistencia_del_cau.yaml`**. De hecho, ya extrae exactamente los cuatro campos que quieres conseguir:
+
+- `contact_phone` → número de teléfono
+- `contact_email` → email
+- `physical_address` → dirección física
+- `service_hours` → horarios
+
+Así que tienes dos caminos. Te propongo esto:
+
+## Opción A — Reutilizar el perfil existente (recomendado)
+El perfil actual ya cubre tu caso, pero sus **goals** están más orientados a "catálogo de servicios / FAQ / ID-UAM" que a obtener explícitamente los datos de contacto. Podríamos **ajustar los goals** para que el usuario simulado pregunte de forma más directa por teléfono, email, dirección y horarios.
+
+## Opción B — Crear un perfil nuevo y enfocado
+Un perfil más limpio y específico, centrado solo en "obtener los datos de contacto del CAU", sin la parte de catálogo/FAQ/ID-UAM.
+
+---
+
+Antes de escribir el YAML, una pregunta rápida para no duplicar trabajo:
+
+**¿Prefieres que (A) ajuste el perfil existente `consultante_de_servicios_y_asistencia_del_cau.yaml`, o (B) cree uno nuevo enfocado solo en los datos de contacto?**
+
+Mientras decides, te dejo un borrador de la **Opción B** (perfil nuevo, enfocado) para que veas cómo quedaría:
+
+```yaml
+test_name: "Soporte de contacto del CAU de la UAM"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario de la Universidad Autónoma de Madrid (UAM) que necesita
+    ponerse en contacto con el Centro de Atención a Usuarios (CAU) y quiere
+    obtener sus datos de contacto y horarios de atención.
+  context:
+    - "personality: personalities/skeptical-user"
+    - "Tienes una incidencia con un servicio de la UAM y necesitas saber cómo contactar con el CAU."
+    - "Quieres obtener el número de teléfono, el correo electrónico, la dirección física y los horarios de atención del CAU."
+    - "Prefieres información concreta y verificable, sin rodeos."
+  goals:
+    - "Preguntar cuál es el número de teléfono del CAU."
+    - "Preguntar cuál es el correo electrónico de contacto del CAU."
+    - "Preguntar cuál es la dirección física del CAU."
+    - "Preguntar cuáles son los horarios de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "Por favor, ¿me lo puedes decir con otras palabras? Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física del CAU"
+    - service_hours:
+        type: string
+        description: "Horarios de atención del CAU"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 10
+  interaction_style:
+    - single questions
+```
+
+Este borrador sigue la guía `sensei-chat-guide.md`: define `user.goals` como preguntas directas, y `chatbot.output` con los cuatro campos que quieres extraer (nombres estables y descriptivos, ideales para reglas posteriores).
+
+Dime si vas con **A** o **B** y lo dejo listo 👌.
+$$$

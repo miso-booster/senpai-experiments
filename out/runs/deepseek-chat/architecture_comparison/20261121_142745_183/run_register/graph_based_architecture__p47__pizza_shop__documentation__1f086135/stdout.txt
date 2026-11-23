@@ -1,0 +1,51 @@
+conversation ID: graph_based_architecture__p47__pizza_shop__documentation__1f086135
+$$$
+Great question! 😊 Let me break down what a **metamorphic rule** means in the context of Sensei.
+
+## The short version
+
+A **metamorphic rule** is a rule in Sensei-check that checks a **relationship between two or more conversations** — instead of checking one conversation's answer against a fixed expected value. 🎯
+
+## Why does this matter?
+
+Normally, testing a chatbot means comparing its answer to a "correct" answer (an *oracle*). But for chatbots, that's often impossible — there's no single right answer, and answers vary a lot. Metamorphic testing solves this by checking **relations** instead of absolute values.
+
+Think of it like this: you might not know the exact price of a pizza 🍕, but you *do* know that **adding more toppings should cost more**. That's a metamorphic relation!
+
+## How it works in Sensei-check
+
+A metamorphic rule typically:
+
+1. **Selects comparable conversations** with a `when:` filter (e.g., same size and drink)
+2. **Varies one dimension** and asserts how the output should change — usually with `if:` / `then:`
+
+Here's a real example from your project (`more_toppings_cost_more.yaml`):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Reading it out loud: *"When two orders have the same size and drink, if one has more toppings, then it must cost more."* 🍕💰
+
+## The key ingredients
+
+- **`conversations: 2`** (or more) — metamorphic rules compare *multiple* conversations
+- **`when:`** — keeps things fair by controlling confounders (the *ceteris paribus* idea)
+- **`if:` / `then:`** — expresses the relation as a "law"
+- **`conv[i].field`** — accesses outputs coming from a profile's `chatbot.output`
+
+## Common patterns
+
+- **Monotonicity**: more toppings → higher price
+- **Invariance**: same configuration → same price
+- **Consistency**: same language across comparable dialogs
+
+So in a nutshell: a metamorphic rule lets you test *how outputs should relate* when inputs change in controlled ways — super handy when there's no single "correct" answer to compare against! 🙌
+
+Want me to help you write a new metamorphic rule, or dig deeper into any of these patterns?
+$$$

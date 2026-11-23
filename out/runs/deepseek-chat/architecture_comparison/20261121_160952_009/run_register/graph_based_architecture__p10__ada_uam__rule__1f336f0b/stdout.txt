@@ -1,0 +1,113 @@
+conversation ID: graph_based_architecture__p10__ada_uam__rule__1f336f0b
+$$$
+¡Hola! 😊 ¡Qué buen perfil tienes montado! Se nota que está bien pensado para probar el flujo de admisiones de la UAM. Vamos a darle caña 💪
+
+Antes de lanzarte, un detalle importante: tu perfil expone **muchísimos** campos en `chatbot.output` (links, fechas, horas, requisitos, costos…). Eso es genial, pero significa que las reglas que te proponga deben usar **exactamente esos nombres de campo**. Te dejo varias ideas, de más simples a más "metamórficas", para que puedas empezar suave y luego profundizar 👇
+
+---
+
+## 1️⃣ Regla global: el bot responde en el mismo idioma que el usuario
+
+Como tu usuario habla en **español**, tiene todo el sentido comprobar que el bot no se va al inglés (o a otro idioma) a mitad de la conversación. Esta regla **no depende de campos concretos**, así que es perfecta para arrancar.
+
+```yaml
+name: responds_in_spanish
+description: El asistente responde en el mismo idioma que el usuario (español)
+conversations: 1
+oracle: responds_in_same_language() is True
+```
+
+---
+
+## 2️⃣ Regla global: el bot no se sale del tema (admisiones UAM)
+
+Tu usuario solo pregunta por admisiones, grados, cursos y Welcome Day. Si el bot empieza a hablar de recetas de cocina… malo 🍳. Esta regla vigila el alcance temático.
+
+```yaml
+name: scope_admissions_only
+description: El asistente se mantiene en el dominio de admisiones, grados, cursos y Welcome Day
+conversations: 1
+oracle: only_talks_about('admission process, degrees, courses, Welcome Day, enrollment, university info')
+```
+
+---
+
+## 3️⃣ Regla de recolección de datos: no deben quedar huecos
+
+Aquí ya entramos en tu `chatbot.output`. La idea: si el usuario pidió info de admisión, grados, cursos y Welcome Day, el bot debería haber rellenado los campos correspondientes. `missing_slots()` te dice qué quedó en `None`.
+
+```yaml
+name: key_slots_are_filled
+description: Tras la conversación, los campos clave de admisión y Welcome Day no deben quedar vacíos
+conversations: 1
+oracle: missing_slots() == []
+```
+
+> 💡 Ojo: esto es **estricto**. Si tu bot no siempre rellena *todos* los campos (por ejemplo `application_fee` si el usuario nunca pregunta por el costo), esta regla fallará. Es una buena señal para revisar si el perfil está pidiendo demasiado o si el bot debería extraer más. Si quieres algo más laxo, mira la siguiente 👇
+
+---
+
+## 4️⃣ Regla de coherencia semántica: la fecha del Welcome Day tiene sentido
+
+Aquí usamos `semantic_content` sobre un campo concreto. La idea es comprobar que lo que el bot devuelve en `welcome_day_date` es realmente una fecha (y no un texto raro).
+
+```yaml
+name: welcome_day_date_is_a_date
+description: El campo welcome_day_date debe contener una fecha válida del evento
+conversations: 1
+oracle: semantic_content(welcome_day_date, 'a valid calendar date for the Welcome Day event') is True
+```
+
+---
+
+## 5️⃣ Regla de unicidad global: los links no se repiten entre conversaciones
+
+Tienes 6 conversaciones (`number: 6`). Si el bot devuelve el mismo `admission_to_grados_link` en todas… sospechoso 🤔. Esta regla comprueba que el link de admisión es único por conversación (útil si esperas variación por grado).
+
+```yaml
+name: admission_link_unique
+description: El link de admisión a grados no se repite idéntico entre conversaciones
+conversations: all
+oracle: is_unique('admission_to_grados_link')
+```
+
+> ⚠️ Cuidado: si el bot **siempre** devuelve la misma URL oficial de admisiones (lo cual es normal), esta regla fallará. Úsala solo si esperas variación. Si no, sáltala o cámbiala por `is_unique('welcome_day_date')` o similar.
+
+---
+
+## 6️⃣ Regla metamórfica: si el usuario pregunta por un grado concreto, debe aparecer en la lista
+
+Esta es la más "metamórfica" y la más interesante 🔥. La idea: si en una conversación el usuario pidió info sobre un grado específico (por ejemplo "Licenciatura en Psicología"), ese grado debería aparecer en `grados_available`.
+
+```yaml
+name: requested_degree_appears_in_list
+description: Si el usuario pregunta por un grado concreto, debe aparecer en grados_available
+conversations: 1
+if: grados_available is not None
+then: semantic_content(grados_available, 'includes the degree the user asked about') is True
+```
+
+> 💡 Esta es una versión simplificada; si quieres afinarla, podrías comparar dos conversaciones con `grados` distintos y comprobar que las listas difieren. Pero para empezar, esta ya te da señal.
+
+---
+
+## 🎯 Mi recomendación para empezar
+
+Si es tu primera vez probando este perfil, yo iría **en este orden**:
+
+1. **`responds_in_spanish`** → valida lo más básico (idioma).
+2. **`scope_admissions_only`** → valida que no se va del tema.
+3. **`key_slots_are_filled`** → te dice si el bot está extrayendo bien los datos.
+4. Y luego, si todo va bien, las de `semantic_content` para afinar.
+
+Así vas de menos a más y no te abrumas con fallos a la primera 😅
+
+---
+
+Un par de avisos importantes 🙋:
+
+- Tu regla existente `conversation_lengths` está con `active: false`. Si quieres que cuente, actívala (`active: true`).
+- Recuerda que `semantic_content`, `only_talks_about` y `responds_in_same_language` son **LLM-backed**, así que pueden tener pequeñas variaciones entre ejecuciones. No te asustes si un día pasa y otro no con el mismo input 🤏.
+
+¿Quieres que te ayude a **afinar** alguna de estas reglas para que encaje mejor con lo que esperas del bot, o prefieres que te proponga una **regla metamórfica de 2 conversaciones** comparando grados distintos? ¡Dime y lo montamos! 🚀
+$$$

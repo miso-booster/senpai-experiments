@@ -1,0 +1,32 @@
+Here's a connector that matches your request/response, keeping only the essential headers and stripping HTML from the reply 👇
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of quick notes so nothing surprises you later 😊
+
+- **HTML removal:** the standard `response_path` returns the raw string, so `<p>…</p>` tags would come through as-is. The connector schema itself doesn't have a built-in "strip HTML" option — that cleanup normally happens on the consumer side (e.g., a small regex/BeautifulSoup step after `execute_with_input`). If your pipeline supports a post-processing hook, apply the strip there.
+- **Headers kept minimal:** I included only `Content-Type`, `Authorization`, `Origin`, and `Referer` — no `Sec-Fetch-*` or browser fingerprint headers.
+- **`response_path`:** `response.0.text` correctly targets the first element of the `response` array and its `text` field.
+
+Want me to also draft a tiny Python snippet that wraps this connector and strips the HTML tags from the returned text? Just say the word 🙌

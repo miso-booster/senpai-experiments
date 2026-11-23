@@ -1,0 +1,45 @@
+Hey there! 👋 Happy to help you debug this one — and I can already see the culprit 😄
+
+## The problem: missing `if` clause
+
+Your rule has a `then:` but **no `if:`**. In Sensei-check, `if`/`then` is an **implication**: *"If [precondition], then [expected relation]."* Without the `if`, the `then` has no condition to trigger on — so the relation is never actually checked as intended (and the rule effectively can't fire correctly).
+
+Also, look closely at your `then:` — it says `conv[0].price > conv[1].price`, but **nothing in the rule says `conv[0]` has *more* toppings than `conv[1]`**. So even if it ran, it would assert "conv[0] is more expensive" for *every* pair, which is wrong.
+
+## The fix
+
+Add the `if:` that establishes the metamorphic precondition (more toppings on `conv[0]`):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+## Why this works now ✅
+
+- **`when:`** picks *comparable* pairs (same size & drink) — ceteris paribus 🎯
+- **`if:`** says "conv[0] has strictly more toppings" — the input variation
+- **`then:`** asserts the price relation — the metamorphic expectation
+
+That's the classic metamorphic pattern: *hold confounders equal, vary one dimension, assert monotonicity.*
+
+## A couple of friendly tips 👀
+
+1. **`active: true`** — lowercase `true` is the YAML boolean; `True` (Python-style) may not parse as expected. Your project's other rules use `active: true`, so match that.
+2. **Consider `number` (quantity)** — your project's `more_toppings_cost_more.yaml` doesn't filter on quantity, but the doc's canonical example does (`conv[0].number == conv[1].number`). If quantity can differ between conversations, add it to `when:` to avoid false positives:
+   ```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+3. **Field names must exist in `chatbot.output`** — make sure `size`, `drink`, `toppings`, and `price` are all exposed by your pizza profile, otherwise the rule can't evaluate them.
+
+Want me to double-check any of your other rules (like `same_number_of_toopings_cost_the_same` — I spotted a typo in its name 😅) or help you tighten the `when:` filters? Just say the word! 🍕

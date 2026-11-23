@@ -1,0 +1,73 @@
+conversation ID: graph_based_architecture__p42__pizza_shop__connector__2ab91b64
+$$$
+¡Hola! 😊 Claro que sí, te ayudo a arreglarlo. He revisado tu connector y encontré **varios puntos** que no coinciden con la petición real que me pasaste. Vamos por partes:
+
+## 🔍 Problemas detectados
+
+### 1. `base_url` incorrecto
+Tu connector apunta a `https://api.bot.com`, pero la petición real va a `api.1millionbot.com`.
+
+### 2. `path` incorrecto
+Tienes `/api/messages`, pero el endpoint real es `/api/public/messages`.
+
+### 3. Faltan campos obligatorios en el `payload_template`
+La API espera `conversation`, `sender_type`, `sender`, `bot` y `url` — sin ellos, el bot no sabe con qué conversación hablar.
+
+### 4. Falta el header `Authorization`
+La petición real incluye `Authorization: 64e5d1af081211d24e2cfecd`, que es la clave de acceso al bot.
+
+### 5. `response_path` incorrecto ⚠️
+Aquí está el fallo más sutil: pusiste `"request.text"`, que devuelve **tu propio mensaje** (`"hola"`), no la respuesta del bot. La respuesta real del bot está en `response[0].text`, es decir:
+
+```yaml
+name: "Ada UAM"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "60a3bee2e3987316fed3218f"
+  payload_template:
+    conversation: "682ce1ce271ce860cffde0fd"
+    sender_type: "User"
+    sender: "682ce1cefe831160cee700ed"
+    bot: "60a3be81f9a6b98f7659a6f9"
+    language: "es"
+    url: "https://www.uam.es/uam/tecnologias-informacion/servicios-ti/acceso-remoto-red"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+## ✅ Connector corregido
+
+```yaml
+name: "Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+## 💡 Un detalle extra
+
+La respuesta del bot viene con HTML (`<p>¡Buenos días!<br><br>...</p>`). El connector te devolverá ese texto tal cual — si quieres mostrarlo limpio en pantalla, tendrás que quitar las etiquetas HTML después de recibirlo (eso ya sería en tu código, no en el YAML).
+
+Y ojo 👀: los valores de `conversation`, `sender` y `bot` son **específicos de esa sesión**. Si el bot genera una conversación nueva, quizá necesites actualizarlos.
+
+¿Quieres que te ayude a probarlo o a adaptarlo para otra web? 🚀
+$$$

@@ -1,0 +1,73 @@
+Hey there! 😊 I'd love to help, but I have to be upfront: I'm Senpai, and I can only help with **Sensei profiles, rules, and connectors** — I can't actually place pizza orders for you. That's the chatbot's job, not mine! 🍕
+
+That said, if you're testing a pizza-ordering bot, I *can* help you build the Sensei pieces to simulate this exact scenario. For example, here's a **profile** that simulates a user ordering a large BBQ pizza and a soda:
+
+```yaml
+test_name: "bbq_pizza_and_soda_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: A customer placing a pizza and drink order for pickup.
+  context:
+    - "You want a large BBQ pizza and a soda."
+  goals:
+    - "Order a {{pizza_size}} {{pizza_type}} pizza."
+    - "Order {{number_of_drinks}} {{drink_type}}."
+    - pizza_size:
+        function: default()
+        type: string
+        data: [large]
+    - pizza_type:
+        function: default()
+        type: string
+        data: [BBQ Chicken]
+    - number_of_drinks:
+        function: default()
+        type: int
+        data: [1]
+    - drink_type:
+        function: default()
+        type: string
+        data: [soda]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - order_summary:
+        type: string
+        description: "Summary of the pizza and drink order"
+    - total_cost:
+        type: money
+        description: "Total cost of the order"
+    - order_id:
+        type: string
+        description: "Unique order identifier"
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+And if you want to **verify** the bot handles this correctly, here's a matching rule checking that the order summary mentions the BBQ pizza:
+
+```yaml
+name: bbq_order_summary_present
+description: The order summary mentions the BBQ pizza and a drink
+conversations: 1
+active: true
+oracle: |
+  semantic_content(order_summary, 'A large BBQ pizza and a soda drink')
+```
+
+Want me to tweak the profile (e.g., add a specific soda brand, change the size options, or make it a multi-conversation metamorphic test)? Just say the word! 🙌

@@ -1,0 +1,60 @@
+Here's how I'd approach it 😊 — I checked the rules and profiles docs, and also looked at your project profiles.
+
+## What I found in your project
+
+Three profiles already expose an `order_id` field in `chatbot.output`:
+
+| Profile | `order_id` type | Other outputs |
+|---|---|---|
+| `pizza_and_drink_order_placement.yaml` | `string` | pizza_options, drink_options, order_summary, total_cost, estimated_readiness_time, pickup_location |
+| `pizza_order_test_custom.yml` | `string` | price, time |
+| `user_sim_pizzaorder_predefined.yml` | `str` | price, time |
+
+Since the field name is `order_id` in all of them, the rule below works for any of these profiles. 👇
+
+## The rule
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide an order_id at the end of the conversation (profile-bound, reads chatbot.output.order_id)
+active: True
+conversations: 1
+oracle: order_id is not None and str(order_id).strip() != ""
+yields: "Chatbot did not provide an order_id (got: {order_id})"
+```
+
+## Why it's written this way
+
+- **`conversations: 1`** → this is a single-conversation oracle, not a metamorphic relation. We're checking one conversation's extracted output.
+- **`oracle: order_id is not None and str(order_id).strip() != ""`** → the extractor fills `order_id` from `chatbot.output`; if the bot never gave one, it stays `None`. The extra `strip()` guard also rejects empty/whitespace-only values, which is a common false positive.
+- **`yields`** → gives you a helpful failure message showing what was actually extracted (per the `yields` pattern in `rules-examples.md`).
+- **`active: True`** → the rule runs by default; flip to `False` to park it.
+
+## Two alternatives depending on what you mean by "provided"
+
+**1. Stricter — the whole output schema must be complete** (uses the `data_collected()` / `missing_slots()` helpers from `sensei-check-doc.md`):
+
+```yaml
+name: order_id_provided_strict
+description: All chatbot.output slots are filled, including order_id
+active: True
+conversations: 1
+oracle: data_collected() is True and 'order_id' not in missing_slots()
+yields: "Missing slots: {missing_slots()}"
+```
+
+**2. Global — order IDs must also be unique across the batch** (from the docs' `is_unique` example):
+
+```yaml
+name: unique_order_ids
+description: Every conversation has a unique order_id
+active: True
+conversations: all
+oracle: is_unique('order_id')
+```
+
+## One thing to confirm ⚠️
+
+Which profile should this rule target? The rule itself is profile-agnostic in syntax (it just reads `order_id`), but the *meaning* depends on the profile. My suggestion: `pizza_and_drink_order_placement.yaml`, since it's the most complete order-placement flow and has `order_id` typed as `string`.
+
+Also worth noting: `user_sim_pizzaorder_predefined.yml` declares `order_id` as `type: str` — the docs list `string` as the valid primitive, so you may want to change that to `string` for consistency. Want me to do that too?

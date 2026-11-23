@@ -1,0 +1,23 @@
+conversation ID: one_node_architecture__p19__alcampo__rule__fdc388b2
+$$$
+Hey there! 😊 Great idea — a global rule that checks whether the chatbot actually delivered current promotions info, without tying it to any specific profile's `chatbot.output`. Here's a clean one using the generic helpers:
+
+```yaml
+name: provides_current_promotions
+description: The chatbot provides information about current promotions or discounts
+conversations: 1
+active: true
+oracle: |
+  utterance_index('assistant', 'current promotions or discounts') > 0
+yields: |
+  f"The chatbot did not provide information about current promotions"
+```
+
+A couple of notes so it behaves the way you expect 👀:
+
+- **`utterance_index('assistant', ...)`** is LLM-backed, so it looks for the *concept* of current promotions/discounts in the assistant's turns rather than an exact string. That makes it flexible across phrasings like "this week's offers", "20% off", etc.
+- It's **profile-agnostic** — no `conv[i].field` references, so it works across all your Alcampo profiles (Promotions and Offers, Product Discovery and Promotions, etc.).
+- If you want to be a bit stricter and also catch cases where the bot *mentions* promotions but gives no concrete offer, you could pair it with a topic-scope check. But for a straightforward "did it talk about current promotions?" rule, this is the sweet spot.
+
+Want me to also make a **metamorphic variant** (e.g., "if the user asks about promotions in two comparable conversations, both should surface at least one offer")? Just say the word! 🙌
+$$$

@@ -1,0 +1,114 @@
+conversation ID: graph_based_architecture__p2__ada_uam__profile__db9bfe51
+$$$
+¡Hola! 😊 ¡Qué buena idea! Un perfil de estudiante Erasmus recién llegado es súper útil para probar que el bot da un soporte claro a alguien que parte de cero con Moodle, Sigma y demás servicios. Vamos a montarlo 🚀
+
+Antes de escribir el YAML, te comento un par de decisiones de diseño para que el perfil encaje bien con tus reglas de Sensei-check:
+
+- **Variables de entrada**: solo unas pocas (por ejemplo, `nombre`, `pais_origen`, `servicio_principal`). Así el perfil es ligero pero variado.
+- **`chatbot.output`**: aquí está la clave para validar el soporte. Definimos campos que capturen *qué* información útil dio el bot (pasos, enlaces, requisitos, contacto...). Así luego puedes escribir reglas tipo `conv[i].moodle_access_steps is not None` o `only_talks_about(...)`.
+- **`interaction_style`**: `single questions` va genial para que el usuario vaya preguntando una cosa a la vez, como haría alguien perdido. También puedes añadir `make spelling mistakes` si quieres simular a alguien que escribe rápido y con fallos (muy realista para un Erasmus 😅).
+
+Aquí tienes el perfil completo, listo para copiar en `profiles/erasmus_newcomer_setup.yaml`:
+
+```yaml
+test_name: "Erasmus recién llegado: configuración de Moodle, Sigma y servicios"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la UAM y no conoce
+    nada de los servicios digitales. Necesitas ayuda paso a paso para
+    configurar tu cuenta y acceder a Moodle, Sigma y el resto de
+    plataformas. Hablas español con fluidez pero no conoces la jerga
+    interna (ID-UAM, NIA, CAU...), así que pides que te lo expliquen.
+  context:
+    - personality: personalities/curious-user
+    - "Acabas de recibir tu carta de admisión Erasmus y aún no tienes contraseña ni acceso a nada."
+    - "No sabes qué es Sigma ni para qué sirve, y tampoco qué es el ID-UAM."
+    - "Tienes un portátil con Windows y otro con macOS, y no sabes cuál usar para la VPN."
+    - "Prefieres que te den enlaces y pasos concretos antes que explicaciones largas."
+  goals:
+    - "Preguntar cómo crear tu contraseña por primera vez con tu {{nombre}} y tu NIA de Erasmus."
+    - "Pedir ayuda para acceder a Moodle y saber qué entornos hay disponibles para tu programa."
+    - "Preguntar qué es Sigma y cómo entrar por primera vez."
+    - "Solicitar los pasos para configurar la VPN en tu {{sistema_operativo}}."
+    - "Pedir los datos de contacto del CAU por si algo falla."
+    - nombre:
+        function: random()
+        type: string
+        data: [Luca, Marta, Sofía, Jonas, Elif]
+    - sistema_operativo:
+        function: forward()
+        type: string
+        data: [Windows, macOS]
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - password_creation_steps:
+        type: string
+        description: "Pasos para crear la contraseña por primera vez"
+    - moodle_access_requirements:
+        type: string
+        description: "Requisitos para acceder a Moodle (cuenta institucional, etc.)"
+    - moodle_environments:
+        type: string
+        description: "Entornos de Moodle disponibles (Grado, Postgrado, etc.)"
+    - sigma_access_info:
+        type: string
+        description: "Información sobre qué es Sigma y cómo acceder"
+    - vpn_installation_steps:
+        type: string
+        description: "Pasos para instalar y configurar la VPN"
+    - vpn_download_links:
+        type: string
+        description: "Enlaces de descarga del cliente VPN por sistema operativo"
+    - cau_contact_email:
+        type: string
+        description: "Correo de contacto del CAU"
+    - cau_contact_phone:
+        type: string
+        description: "Teléfono de contacto del CAU"
+    - cau_service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+    - services_catalog_link:
+        type: string
+        description: "Enlace al catálogo de servicios"
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 25
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👇
+
+- **`number: 4`** con `forward()` en `sistema_operativo` te da 2 valores × 2 repeticiones aprox. Si quieres cubrir más combinaciones, podrías añadir un segundo `forward()` y usar `combinations`. Pero como pediste pocas variables, así está perfecto.
+- **Los `output`** son tu contrato con las reglas. Por ejemplo, podrías escribir una regla como:
+  ```yaml
+name: moodle_access_implies_password_steps
+description: If Moodle access requirements are provided, password creation steps are also provided
+conversations: 1
+if: conv[0].moodle_access_requirements is not None
+then: conv[0].password_creation_steps is not None
+```
+  para comprobar que si el bot habla de Moodle, también dio los pasos de contraseña (algo que un Erasmus necesita sí o sí).
+- **`fallback`** está copiado del estilo de tus otros perfiles del CAU, para que el bot no entre en bucle si no entiende.
+
+¿Quieres que te ayude a **escribir una regla de Sensei-check** que valide este perfil (por ejemplo, que el bot siempre mencione el CAU o que no se salga del tema)? O si prefieres, puedo ajustar el perfil para añadir un `goal` sobre **Sigma** más específico o cambiar los idiomas de `change language`. ¡Dime por dónde tiramos! 😄
+$$$

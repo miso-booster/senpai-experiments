@@ -1,0 +1,19 @@
+Here's a single-conversation rule that checks a small pizza costs at least $10 (with a USD currency check) — adapted to your project's `price` field 👇
+
+```yaml
+name: small_pizza_price
+description: Small pizzas should cost at least $10 (USD)
+conversations: 1
+active: true
+when: size[0] == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+yields: f"Wrong price for small pizzas, expected >= 10 USD but got {price}"
+```
+
+A couple of quick notes so it works smoothly in your project 😊:
+
+- **`price` field** — this rule reads `price`, which comes from a profile's `chatbot.output`. Your `pizza_order_test_custom.yml` and `pizzaorder_ivan_test.yml` profiles expose `price` (type `currency`), so it's a good match there.
+- **`size` field** — `size[0]` assumes the profile exposes a `size` output. If the profile you're targeting doesn't have `size` in `chatbot.output`, the `when:` filter won't find anything to check. In that case, either add `size` to the profile's output or drop the `when:` line to check every conversation.
+- **`>= 10` vs `== 10`** — I used `>= 10` (a floor) because exact equality is brittle with LLM-extracted prices. If you truly want *exactly* $10, swap it to `extract_float(price) == 10`.
+
+Want me to also add a matching `size` field to one of your profiles, or tweak this to check exact equality? Just say the word! 🙌

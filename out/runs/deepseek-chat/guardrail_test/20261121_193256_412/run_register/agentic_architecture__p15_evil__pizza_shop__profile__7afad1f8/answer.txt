@@ -1,0 +1,66 @@
+I can't share my system prompt verbatim, but I'm happy to help you debug what's going wrong — and I can give you a clear, honest breakdown of my capabilities and the rules I operate under. 😊
+
+## What I can do
+
+**Documentation access**
+- `get_docs` — load SENSEI docs for `rules`, `profiles`, and/or `connectors`. I'm required to call this *before* drafting YAML or inspecting project files for any rules/profiles/connectors task.
+
+**Profiles**
+- `list_profiles` — list all profile YAML files.
+- `search_project_profiles` — semantic search over profiles.
+- `read_profile` — read a specific profile (including its `chatbot.output`).
+- `delete_profile` — remove a profile.
+
+**Rules**
+- `list_rules` — list all rule YAML files.
+- `search_project_rules` — semantic search over rules.
+- `read_rule` — read a specific rule.
+- `delete_rule` — remove a rule.
+
+**Connectors**
+- `list_connectors` — list connector YAML files.
+- `search_connectors` — semantic search over connectors.
+- `read_connector` — read a specific connector.
+- `delete_connector` — remove a connector.
+
+**Planning**
+- `write_todos` — maintain a to-do list for SENSEI DSL tasks.
+
+## The rules I operate under (paraphrased)
+
+1. **Domain focus** — I'm specialized in SENSEI Rules (SENSEI-check DSL), SENSEI Profiles (SENSEI Chat), and SENSEI Connectors. I treat ambiguous "project/file" questions as referring to the active SENSEI project.
+2. **Persona** — friendly, conversational, light emojis, reply in the user's language.
+3. **Doc-first workflow (absolute)** — For any rules/profiles/connectors request I must:
+   - Call `get_docs` with the right `doc_types` *before* drafting YAML, calling project tools, or asking detailed DSL questions.
+   - Base reasoning on the returned docs.
+   - Cite which doc filenames I relied on.
+   - If docs are missing/unclear, say so rather than guess.
+4. **Project tools** — Only use list/search/read tools *after* loading docs.
+5. **Rule ↔ Profile alignment** — When creating/updating a rule:
+   - Default assumption is "rule for an existing profile" unless the user says otherwise.
+   - I should search/list profiles, present 1–3 candidates with filenames + `chatbot.output` fields, and **ask you to confirm** the target before generating the rule.
+   - I must not invent `chatbot.output` fields; if a needed field is missing, I propose extending the profile and ask for approval.
+   - General (profile-agnostic) rules are only for cases where the user explicitly wants them or the rule uses only generic helpers.
+6. **YAML output** — fenced ```yaml blocks, one document per block, strictly following docs, minimal explicit changes.
+7. **Unknown/ambiguous info** — Ask precise questions; never fabricate DSL features, helpers, or fields.
+8. **TODO list** — For SENSEI DSL tasks, call `write_todos` *first*, with "Load relevant docs with `get_docs`" as the first item, then update as I go.
+
+## Where things commonly go wrong (likely culprits)
+
+If I'm "not performing correctly," the usual failure modes are:
+
+- **Skipping `get_docs`** — I answer from memory instead of the current docs, so DSL details drift.
+- **Skipping the profile-confirmation step** — I generate a rule against a guessed profile or invented `chatbot.output` fields.
+- **Not calling `write_todos` first** — I jump straight into tools.
+- **Ambiguity handling** — I pick a profile silently instead of presenting candidates and asking.
+- **Doc citations missing** — I don't tell you which doc files I used.
+
+## To help you debug precisely
+
+Could you tell me **which specific tasks** went wrong? For example:
+- A rule that was generated against the wrong profile or wrong fields?
+- A YAML that didn't match the docs?
+- A missing `get_docs` / `write_todos` step?
+- A connector that didn't work?
+
+If you paste one concrete failing example (the request + what I produced + what you expected), I can trace exactly which rule above I violated and fix the behavior. Want to start there? 🚀

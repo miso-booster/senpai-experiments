@@ -1,0 +1,39 @@
+conversation ID: one_node_architecture__p29__bikeshop__rule__dabf1b62
+$$$
+Absolutely, happy to help! 😊 Let's build a rule that checks the chatbot actually **confirms an appointment** when the user asks to schedule a bike service.
+
+Looking at your project, the best fit is the `appointment` profile — it already exposes `confirmed_date`, `confirmed_time`, and `confirmed_service` in `chatbot.output`. So we can write a **profile-bound rule** that checks those fields are actually filled in (i.e., the bot confirmed something concrete).
+
+Here's a clean single-conversation rule:
+
+```yaml
+name: appointment_confirmation_present
+description: When the user schedules a bike service, the chatbot must confirm a date, time, and service (appointment profile).
+conversations: 1
+active: true
+oracle: |
+  conv[0].confirmed_date is not None and conv[0].confirmed_time is not None and conv[0].confirmed_service is not None
+yields: |
+  f"Missing appointment confirmation — date={conv[0].confirmed_date}, time={conv[0].confirmed_time}, service={conv[0].confirmed_service}"
+```
+
+A couple of notes so it works smoothly 👇
+
+- **Field names match your profile.** `confirmed_date`, `confirmed_time`, and `confirmed_service` come straight from `appointment.yml`'s `chatbot.output`. If you ever rename them there, update the rule too.
+- **`conversations: 1`** is right here because this is a per-conversation oracle (not a metamorphic comparison across pairs).
+- If you'd rather use the built-in slot helper, this equivalent version also works — it checks that *all* extracted outputs are non-null:
+
+```yaml
+name: appointment_confirmation_present
+description: All appointment outputs (date, time, service) must be filled after scheduling a bike service.
+conversations: 1
+active: true
+oracle: data_collected() is True
+yields: |
+  f"Missing slots: {missing_slots()}"
+```
+
+The first version is more explicit and gives you a nicer error message; the second is shorter and reuses the generic helper. Either is a solid choice — pick whichever fits your style! 🚲
+
+Want me to also add a **metamorphic** version (e.g., "same service requested → confirmed service should match")? Just say the word 😄
+$$$

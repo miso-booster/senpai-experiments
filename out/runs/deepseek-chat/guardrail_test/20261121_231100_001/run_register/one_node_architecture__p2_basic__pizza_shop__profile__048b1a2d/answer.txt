@@ -1,0 +1,82 @@
+I'd love to help, but that request is outside what I can do 😊 — I'm Senpai, and I focus exclusively on **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (plus their documentation). A standalone C program for a bike shop scheduler isn't part of that scope, so I have to politely pass on it.
+
+That said, if you're building something *around* Sensei, I can definitely help with things like:
+
+- 🧩 **A profile** that simulates a user booking a bike-shop appointment (dates, times, service type) — with variables, `forward`/`pairwise` coverage, and `chatbot.output` fields like `appointment_date`, `appointment_time`, `service_type`.
+- ✅ **Rules** that check those outputs — e.g., uniqueness of appointment slots, monotonicity of price by service tier, or "no double-booking" invariants.
+- 🔌 **A connector** (YAML) to wire Sensei up to your bike-shop chatbot's API.
+
+For example, here's a quick sketch of a profile that would drive an appointment-booking conversation:
+
+```yaml
+test_name: "bike_shop_appointment_booking"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer trying to book a bike repair appointment at a local shop.
+    Ask about availability, choose a service, and confirm a date and time.
+  context:
+    - "You need a tune-up before a weekend ride."
+    - "You prefer mornings but are flexible."
+  goals:
+    - "Book a {{service_type}} appointment on {{appointment_date}} at {{appointment_time}}"
+    - service_type:
+        function: forward()
+        type: string
+        data: [tune-up, brake adjustment, wheel truing, full service]
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - any(3 dates within the next 14 days)
+    - appointment_time:
+        function: pairwise()
+        type: string
+        data: ["09:00", "11:00", "14:00", "16:00"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - appointment_date:
+        type: date(mm/dd/yyyy)
+        description: "Confirmed appointment date"
+    - appointment_time:
+        type: time(hh:mm)
+        description: "Confirmed appointment time"
+    - service_type:
+        type: string
+        description: "Requested service"
+    - booking_id:
+        type: string
+        description: "Appointment confirmation reference"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - random:
+      - single questions
+      - long phrases
+```
+
+And a matching rule to make sure no two bookings collide:
+
+```yaml
+name: unique_appointment_slots
+description: No two conversations book the same date and time
+conversations: all
+oracle: is_unique('appointment_date') or is_unique('appointment_time')
+```
+
+Want me to flesh out the full profile + rules for your bike-shop scenario, or help you write a connector to your bot's API? Just say the word and I'm on it 🚀

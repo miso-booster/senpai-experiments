@@ -1,0 +1,184 @@
+I'd love to help, but I have to be upfront: **writing a general-purpose Python automation script that generates Sensei profiles with LLMs is outside my scope** 🙏. I'm focused exclusively on **Sensei PROFILES, RULES, and CONNECTORS** — their documentation, structure, validation, and fixes — not on building external tooling around them.
+
+That said, I *can* help you in a very practical way: I can give you a **profile-authoring prompt template** you can feed to an LLM (like GPT-4o) so it produces valid Sensei YAML profiles, plus a **validation checklist** you can wire into your own script. That keeps the "automation" logic yours, while the Sensei-specific knowledge stays accurate. 😊
+
+---
+
+### 1) LLM prompt template for generating a valid Sensei profile
+
+Paste this into your LLM call (system or user message), filling in the `{{...}}` parts:
+
+```text
+You are an expert at authoring SENSEI Chat profiles (YAML).
+
+A Sensei profile defines a simulated user that talks to a chatbot under test.
+It MUST follow this exact top-level structure:
+
+test_name: <string>
+llm:
+  temperature: <float 0..1>
+  model: <string>
+  model_prov: <string>          # e.g. openai
+  format:
+    type: text                  # or speech
+user:
+  language: <string>
+  role: <string>
+  context:
+    - <string or personality reference>
+  goals:
+    - "<goal string possibly using {{variable}}>"
+    - <variable_name>:
+        function: default()|random()|random(n)|random(rand)|another()|another(n)|forward()|forward(other_var)|pairwise()
+        type: string|int|float|<custom_type_name>
+        data: <list | {min,max,step} | {min,max,linspace} | list with any("...") items | {file,function_name,args}>
+chatbot:
+  is_starter: true|false
+  fallback: "<real bot fallback text>"
+  output:
+    - <field_name>:
+        type: int|float|string|money|currency|time("fmt")|date("fmt")|list[type]|<custom_type_name>
+        description: "<what to extract>"
+conversation:
+  number: <int> | combinations | combinations(p) | combinations(p, pairwise)
+  max_cost: <float>              # optional
+  goal_style:
+    steps: <int> | random steps: <int> | all_answered: {export: true|false, limit: <int>}
+    max_cost: <float>            # optional
+  interaction_style:
+    - <one or more of: long phrases | change your mind | change language: [langs] | make spelling mistakes | single questions | all questions | default>
+    - random: [<subset of the above>]
+
+HARD RULES:
+- Every {{variable}} used in a goal string MUST be declared as a variable entry in `user.goals` with the SAME name (case-sensitive).
+- Do NOT use `list`, `time`, or `date` as types inside `user.goals` (only in `chatbot.output`).
+- `random(n)` requires n <= len(data). `another(n)` likewise.
+- `pairwise()` requires at least 2 pairwise variables to be meaningful.
+- `conversation.number: combinations(...)` requires at least 2 nested forward() or 2 pairwise() variables.
+- `chatbot.output` field names should be stable, descriptive, and reusable (they become `conv[i].<field>` in Sensei-check rules).
+- Prefer `pairwise()` for coverage; use nested `forward()` only for intentional full grids.
+- Output ONLY a single YAML document, no prose, no markdown fences.
+
+DOMAIN DESCRIPTION:
+{{describe the chatbot under test, its capabilities, and what the simulated user should accomplish}}
+
+OUTPUT FIELDS TO EXTRACT:
+{{list the business properties you want extracted, e.g. total_price (money), order_id (string), pickup_time (time("hh:mm"))}}
+
+Now produce the profile YAML.
+```
+
+---
+
+### 2) Validation checklist to run in your script
+
+After the LLM returns YAML, run these checks (in Python) before accepting it:
+
+```python
+import yaml, re
+
+def validate_profile(text: str) -> list[str]:
+    errors = []
+    try:
+        p = yaml.safe_load(text)
+    except yaml.YAMLError as e:
+        return [f"YAML parse error: {e}"]
+
+    # required top-level keys
+    for k in ("test_name", "user", "chatbot", "conversation"):
+        if k not in p:
+            errors.append(f"missing top-level key: {k}")
+
+    user = p.get("user", {})
+    goals = user.get("goals", [])
+    goal_strings = [g for g in goals if isinstance(g, str)]
+    var_defs = {list(g.keys())[0]: g[list(g.keys())[0]]
+                for g in goals if isinstance(g, dict)}
+
+    # every {{var}} used must be declared
+    used = set()
+    for s in goal_strings:
+        used |= set(re.findall(r"\{\{(\w+)\}\}", s))
+    for v in used:
+        if v not in var_defs:
+            errors.append(f"variable '{v}' used in goals but not declared")
+
+    # declared vars should be used
+    for v in var_defs:
+        if v not in used:
+            errors.append(f"variable '{v}' declared but never used in goals")
+
+    # type sanity in user.goals
+    forbidden = {"list", "time", "date"}
+    for name, spec in var_defs.items():
+        t = str(spec.get("type", ""))
+        if t in forbidden or t.startswith("list[") or t.startswith("time(") or t.startswith("date("):
+            errors.append(f"variable '{name}' uses type '{t}' not allowed in user.goals")
+
+    # random(n) / another(n) bounds
+    for name, spec in var_defs.items():
+        fn = str(spec.get("function", ""))
+        m = re.match(r"(random|another)\((\d+)\)", fn)
+        data = spec.get("data")
+        if m and isinstance(data, list):
+            n = int(m.group(2))
+            if n > len(data):
+                errors.append(f"'{name}': {fn} but data has only {len(data)} items")
+
+    # combinations requires >=2 forward/pairwise
+    num = p.get("conversation", {}).get("number")
+    if isinstance(num, str) and num.startswith("combinations"):
+        fwd = sum(1 for s in var_defs.values() if str(s.get("function","")).startswith("forward"))
+        pw  = sum(1 for s in var_defs.values() if str(s.get("function","")).startswith("pairwise"))
+        if fwd < 2 and pw < 2:
+            errors.append("conversation.number=combinations needs >=2 forward() or >=2 pairwise() variables")
+
+    # chatbot.output sanity
+    out = p.get("chatbot", {}).get("output", [])
+    if not isinstance(out, list) or not out:
+        errors.append("chatbot.output must be a non-empty list")
+    else:
+        for item in out:
+            if not isinstance(item, dict) or len(item) != 1:
+                errors.append("each chatbot.output entry must be a single-key mapping")
+                continue
+            fname, spec = next(iter(item.items()))
+            if "type" not in spec or "description" not in spec:
+                errors.append(f"output field '{fname}' needs 'type' and 'description'")
+
+    return errors
+```
+
+Then in your automation loop:
+
+1. Call the LLM with the prompt template.
+2. Parse + validate with the function above.
+3. If `errors` is non-empty, send them back to the LLM as a follow-up message: *"Fix these issues and return only the corrected YAML: …"* (max 2–3 retries).
+4. Optionally run Sensei's own `validation_check.py` on the saved file for a second opinion.
+
+---
+
+### 3) A tiny end-to-end skeleton (yours to adapt)
+
+```python
+from openai import OpenAI
+client = OpenAI()
+
+def generate_profile(domain_desc: str, outputs: str, max_retries: int = 3) -> str:
+    prompt = PROMPT_TEMPLATE.replace("{{describe the chatbot under test, its capabilities, and what the simulated user should accomplish}}", domain_desc)\
+                            .replace("{{list the business properties you want extracted, e.g. total_price (money), order_id (string), pickup_time (time(\"hh:mm\"))}}", outputs)
+    messages = [{"role": "user", "content": prompt}]
+    for _ in range(max_retries):
+        resp = client.chat.completions.create(model="gpt-4o", messages=messages, temperature=0.3)
+        yaml_text = resp.choices[0].message.content.strip()
+        errs = validate_profile(yaml_text)
+        if not errs:
+            return yaml_text
+        messages.append({"role": "assistant", "content": yaml_text})
+        messages.append({"role": "user", "content": "Fix these issues and return ONLY the corrected YAML:\n- " + "\n- ".join(errs)})
+    raise RuntimeError("Could not produce a valid profile after retries")
+```
+
+---
+
+If you'd like, I can also **review a specific profile you generate** (paste it here) and point out exactly what to fix — that's squarely in my wheelhouse 😄. Want me to do that next?

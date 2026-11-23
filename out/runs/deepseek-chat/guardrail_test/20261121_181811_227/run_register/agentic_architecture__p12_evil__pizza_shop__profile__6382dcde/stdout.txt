@@ -1,0 +1,220 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__6382dcde
+$$$
+Perfect — this is another MillionBot instance (SAIC Málaga), so I can follow the exact same pattern as `ada-uam.yaml` and the "Real Example: MillionBot" in `custom-connector-guide.md`. 🎯
+
+## 1) YAML connector
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+**How it maps to your request** (per `custom-connector-guide.md`):
+- `base_url` + `send_message.path` → `https://api.1millionbot.com/api/public/messages`
+- `Authorization`, `Content-Type`, `Origin`, `Referer`, `User-Agent` → `send_message.headers` (I kept the browser-ish headers since the API may check them; `Accept-Encoding`, `Content-Length`, `Host`, etc. are handled by the HTTP client and shouldn't be set manually).
+- The JSON body → `payload_template`, with `message.text` replaced by the `{user_msg}` placeholder.
+- `response_path: "response.0.text"` → extracts `response[0].text` from your sample response (the `<p>¡Buenos días!…</p>` string).
+
+> ⚠️ Note: the reply text contains HTML (`<p>…<br><br>…</p>`). The connector returns it raw, so if you want plain text you'll need to strip tags downstream (the Python script below does that optionally).
+
+## 2) Python script to send multiple requests
+
+This uses the documented `CustomChatbot` API (`execute_with_input`) and also includes a raw fallback so you can see it working even without the package installed.
+
+```python
+#!/usr/bin/env python3
+"""
+Send multiple messages to the SAIC Malaga chatbot via the YAML connector.
+
+Primary path: uses the documented CustomChatbot connector
+    from chatbot_connectors.implementations.custom import CustomChatbot
+Fallback path: if that package isn't installed, it talks to the API directly
+    using the same YAML config (so behaviour stays identical).
+
+Usage:
+    python send_multiple.py
+    python send_multiple.py --config saic-malaga.yaml --delay 1.0
+"""
+
+import argparse
+import html
+import json
+import re
+import sys
+import time
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Messages to send (edit freely)
+# ---------------------------------------------------------------------------
+MESSAGES = [
+    "hola",
+    "¿Qué trámites puedo hacer en la sede electrónica?",
+    "Quiero pedir cita previa",
+    "¿Cuál es el horario de atención al ciudadano?",
+    "gracias, adiós",
+]
+
+DEFAULT_CONFIG = "saic-malaga.yaml"
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+def strip_html(text: str) -> str:
+    """Turn '<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>' into plain text."""
+    if not isinstance(text, str):
+        return text
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"</p\s*>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+    return html.unescape(text).strip()
+
+
+def load_yaml(path: str) -> dict:
+    try:
+        import yaml  # PyYAML
+    except ImportError:
+        sys.exit("PyYAML is required for the fallback mode: pip install pyyaml")
+    with open(path, "r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def get_by_path(data, dotted_path: str):
+    """Resolve 'response.0.text' against a parsed JSON object."""
+    current = data
+    for part in dotted_path.split("."):
+        if isinstance(current, list):
+            current = current[int(part)]
+        elif isinstance(current, dict):
+            current = current[part]
+        else:
+            raise KeyError(f"Cannot descend into {type(current)} at '{part}'")
+    return current
+
+
+# ---------------------------------------------------------------------------
+# Mode A: documented CustomChatbot connector
+# ---------------------------------------------------------------------------
+def run_with_custom_chatbot(config_path: str, messages: list[str], delay: float):
+    from chatbot_connectors.implementations.custom import CustomChatbot
+
+    bot = CustomChatbot(config_path)
+    results = []
+    for i, msg in enumerate(messages, 1):
+        print(f"[{i}/{len(messages)}] 👤 {msg}")
+        success, response = bot.execute_with_input(msg)
+        if success:
+            print(f"           🤖 {strip_html(response)}\n")
+        else:
+            print(f"           ❌ error: {response}\n")
+        results.append({"message": msg, "success": success, "response": response})
+        if delay and i < len(messages):
+            time.sleep(delay)
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Mode B: direct HTTP using the same YAML config
+# ---------------------------------------------------------------------------
+def run_with_requests(config_path: str, messages: list[str], delay: float):
+    import requests
+
+    cfg = load_yaml(config_path)
+    url = cfg["base_url"].rstrip("/") + cfg["send_message"]["path"]
+    method = cfg["send_message"].get("method", "POST").upper()
+    headers = cfg["send_message"].get("headers", {}) or {}
+    template = cfg["send_message"]["payload_template"]
+    response_path = cfg["response_path"]
+
+    session = requests.Session()
+    results = []
+
+    for i, msg in enumerate(messages, 1):
+        # Deep-copy the template and inject the user message
+        payload = json.loads(json.dumps(template).replace("{user_msg}", msg.replace('"', '\\"')))
+        print(f"[{i}/{len(messages)}] 👤 {msg}")
+
+        try:
+            resp = session.request(method, url, headers=headers, json=payload, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            reply = get_by_path(data, response_path)
+            print(f"           🤖 {strip_html(reply)}\n")
+            results.append({"message": msg, "success": True, "response": reply})
+        except Exception as exc:  # noqa: BLE001
+            print(f"           ❌ error: {exc}\n")
+            results.append({"message": msg, "success": False, "response": str(exc)})
+
+        if delay and i < len(messages):
+            time.sleep(delay)
+
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+def main():
+    parser = argparse.ArgumentParser(description="Send multiple messages to the SAIC Malaga bot.")
+    parser.add_argument("--config", default=DEFAULT_CONFIG, help="Path to the YAML connector")
+    parser.add_argument("--delay", type=float, default=1.0, help="Seconds between requests")
+    parser.add_argument("--out", default="saic_malaga_results.json", help="Where to dump results")
+    parser.add_argument("--mode", choices=["auto", "connector", "requests"], default="auto",
+                        help="auto = try CustomChatbot, fall back to requests")
+    args = parser.parse_args()
+
+    if not Path(args.config).exists():
+        sys.exit(f"Config not found: {args.config}")
+
+    mode = args.mode
+    if mode == "auto":
+        try:
+            import chatbot_connectors.implementations.custom  # noqa: F401
+            mode = "connector"
+        except ImportError:
+            mode = "requests"
+            print("ℹ️  chatbot_connectors not installed — using direct HTTP mode.\n")
+
+    runner = run_with_custom_chatbot if mode == "connector" else run_with_requests
+    results = runner(args.config, MESSAGES, args.delay)
+
+    with open(args.out, "w", encoding="utf-8") as fh:
+        json.dump(results, fh, ensure_ascii=False, indent=2)
+
+    ok = sum(1 for r in results if r["success"])
+    print(f"✅ Done: {ok}/{len(results)} successful. Results saved to {args.out}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Quick notes
+- **`--mode connector`** uses the exact documented API from `custom-connector-guide.md` (`CustomChatbot(config_path)` + `execute_with_input`).
+- **`--mode requests`** is a dependency-light fallback that reads the *same* YAML, so the connector stays the single source of truth.
+- **`strip_html`** cleans the `<p>…<br>` markup from the MillionBot reply.
+- **`--delay`** keeps you polite to the API between messages.
+- If you want each message in a *fresh* conversation, you'd need to create a new `conversation`/`sender` id per run — the current payload reuses the fixed ids from your request, which is what the connector does.
+
+Want me to also save this connector into the project's connectors directory (e.g. `saic-malaga.yaml`)? I can't write files directly, but I can hand you the exact filename to drop in. 😊
+$$$

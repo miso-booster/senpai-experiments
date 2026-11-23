@@ -1,0 +1,97 @@
+Hey there! 👋 Happy to help you fix this profile — I spotted a few things that would trip up Sensei. Let me walk you through them 😊
+
+## What's broken 🔍
+
+### 1. `chatbot:` section is missing (biggest issue!)
+Your `is_starter`, `fallback`, and `output` are **indented under `user:`** instead of being under their own `chatbot:` key. That means Sensei won't recognize them at all — the output schema (which rules depend on!) would be lost.
+
+### 2. `conversation.number` is missing
+Every profile needs a `number` for how many conversations to run. Without it, the run won't know how many times to execute.
+
+### 3. `export: 1` should be a boolean
+`export` expects `true` or `false`, not `1`.
+
+### 4. `type: str` should be `type: string`
+In `chatbot.output`, the primitive is `string` (not `str`). `str` is only valid inside a custom type's `extraction` field.
+
+### 5. `interaction_style: single question` → should be `single questions`
+The reserved keyword is plural: `single questions`. A typo here means the style won't be applied.
+
+### 6. Fallback has a stray backtick + troubleshooting text
+That `` `\nFor troubleshooting... `` looks like it leaked from a LangChain error message. Your `fallback` should be the **real bot fallback text** — otherwise Sensei may loop. I'd trim it to just the human-readable part.
+
+---
+
+## Here's the fixed version ✅
+
+```yaml
+test_name: general_information_seeker
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+    - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+    - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+    - Ask what types of questions the chatbot can answer.
+    - Ask what the daily opening hours are.
+    - Ask about the estimated order time, without specifying the number of pizzas.
+    - Ask what drink options are available and their prices.
+    - Ask about the pricing for a custom pizza.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - available_information:
+        type: string
+        description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+    - opening_hours:
+        type: string
+        description: The daily opening hours of the pizza shop, as stated by the chatbot.
+    - estimated_order_time:
+        type: string
+        description: The chatbot's explanation of the estimated order time, including factors that influence it.
+    - drink_options_and_prices:
+        type: string
+        description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+    - custom_pizza_pricing:
+        type: string
+        description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+---
+
+## Quick summary of changes 📝
+
+| Fix | Before | After |
+|-----|--------|-------|
+| Section | `is_starter`/`output` under `user` | Moved under `chatbot:` |
+| Conversation count | *(missing)* | `number: 3` |
+| Export flag | `export: 1` | `export: false` |
+| Output type | `type: str` | `type: string` |
+| Interaction style | `single question` | `single questions` |
+| Fallback | had stray backtick + troubleshooting text | cleaned up |
+
+I kept `number: 3` to match the original project version of this profile — feel free to bump it if you want more coverage 😊
+
+One friendly tip 💡: since your `chatbot.output` fields (`opening_hours`, `estimated_order_time`, etc.) are the contract that Sensei-check rules read via `conv[i].<field_name>`, keeping those names stable is a good habit — any rule referencing them will thank you later!
+
+Want me to double-check anything else, or help you validate this with `validation_check.py`? 🚀

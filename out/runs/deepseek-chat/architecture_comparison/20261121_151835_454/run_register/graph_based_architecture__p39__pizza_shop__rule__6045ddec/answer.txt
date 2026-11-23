@@ -1,0 +1,27 @@
+Hey there! 😊 Happy to help you build that rule — it's a nice, clean metamorphic relation: **same pizza, same toppings, same quantity → adding a drink should bump the price by exactly $2.**
+
+Here's the rule, ready to drop into your project:
+
+```yaml
+name: drink_costs_two_dollars_extra
+description: Adding a drink to the same pizza order costs exactly 2 dollars extra
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings and conv[0].number == conv[1].number
+if:   conv[0].drink == '' and conv[1].drink != ''
+then: extract_float(conv[1].price) - extract_float(conv[0].price) == 2
+```
+
+### A quick walkthrough 👀
+
+- **`conversations: 2`** — we're comparing a pair of conversations.
+- **`when:`** — keeps the *ceteris paribus* conditions tight: same size, same toppings, same quantity. Only the drink varies. 🍕
+- **`if:`** — `conv[0]` has **no drink** (`drink == ''`) and `conv[1]` **has a drink**. This is the "adding a drink" part.
+- **`then:`** — the price difference must be exactly `2`.
+
+### A couple of things to double-check on your side ⚠️
+
+1. **How "no drink" is represented.** I assumed an empty string `''`. If your profile's `chatbot.output` uses `None`, `"none"`, or `"no drink"` instead, adjust the `if:` line accordingly — e.g. `conv[0].drink is None`.
+2. **Field names.** This rule assumes your profile exposes `size`, `toppings`, `number`, `drink`, and `price` in `chatbot.output`. If any of those are named differently (say `quantity` instead of `number`), just rename them here to match. 🔧
+3. **Exact equality on floats.** `== 2` is strict — if your prices carry cents and rounding could produce `1.99` or `2.01`, you might prefer a tolerance like `abs(extract_float(conv[1].price) - extract_float(conv[0].price) - 2) < 0.01`.
+
+Want me to also write a **tolerance-based version** or adapt it to your exact `drink` representation? Just tell me how "no drink" looks in your profile and I'll tweak it for you! 🙌

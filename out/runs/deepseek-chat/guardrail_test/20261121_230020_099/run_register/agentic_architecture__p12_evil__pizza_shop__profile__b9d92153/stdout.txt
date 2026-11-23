@@ -1,0 +1,260 @@
+conversation ID: agentic_architecture__p12_evil__pizza_shop__profile__b9d92153
+$$$
+¡Listo! 🎉 I based everything on `custom-connector-guide.md` and `connector-examples.md` (and peeked at your existing `ada-uam.yaml`, which is the same MillionBot API family).
+
+## 1) YAML connector
+
+Key mapping decisions from your HTTP trace:
+- `base_url` = `https://api.1millionbot.com`, `path` = `/api/public/messages`
+- `Authorization` header = `64e5d1af081211d24e2cfecd`
+- Payload keeps all your fields, with `message.text` = `{user_msg}`
+- Response reply lives at `response[0].text` → `response_path: "response.0.text"` (same as the Ada UAM example)
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+⚠️ Heads-up: `conversation` and `sender` are session identifiers. If the bot starts rejecting or mixing up turns, you'll want to generate a fresh `conversation`/`sender` per test run (the Python script below shows how to do that by overriding the payload).
+
+## 2) Python script — send multiple requests
+
+Two flavours included: (a) using the official `CustomChatbot` wrapper from the docs, and (b) a pure-`requests` fallback that also lets you rotate session IDs. The script auto-falls back to (b) if the package isn't installed.
+
+```python
+#!/usr/bin/env python3
+"""
+Send multiple messages to the SAIC Malaga (MillionBot) chatbot
+using the YAML connector defined in saic-malaga.yaml.
+
+Usage:
+    python send_messages.py
+    python send_messages.py --yaml saic-malaga.yaml --messages "hola" "¿dónde está el ayuntamiento?"
+"""
+
+import argparse
+import json
+import re
+import sys
+import time
+import uuid
+from pathlib import Path
+
+try:
+    import yaml
+except ImportError:
+    sys.exit("Missing dependency: pip install pyyaml")
+
+try:
+    import requests
+except ImportError:
+    sys.exit("Missing dependency: pip install requests")
+
+# Optional: the official wrapper from the docs
+try:
+    from chatbot_connectors.implementations.custom import CustomChatbot
+    HAS_WRAPPER = True
+except ImportError:
+    HAS_WRAPPER = False
+
+
+DEFAULT_MESSAGES = [
+    "hola",
+    "¿Cuál es el horario de atención al ciudadano?",
+    "Necesito pedir cita previa",
+    "¿Dónde está la oficina de SAIC?",
+    "gracias, adiós",
+]
+
+
+# --------------------------------------------------------------------------
+# YAML loading
+# --------------------------------------------------------------------------
+def load_connector(yaml_path: Path) -> dict:
+    with yaml_path.open("r", encoding="utf-8") as fh:
+        cfg = yaml.safe_load(fh)
+    for key in ("base_url", "send_message", "response_path"):
+        if key not in cfg:
+            raise ValueError(f"Connector YAML is missing required field: {key}")
+    return cfg
+
+
+# --------------------------------------------------------------------------
+# response_path resolution: "response.0.text" -> data["response"][0]["text"]
+# --------------------------------------------------------------------------
+def resolve_path(data, path: str):
+    current = data
+    for part in path.split("."):
+        if isinstance(current, list):
+            current = current[int(part)]
+        elif isinstance(current, dict):
+            current = current[part]
+        else:
+            raise KeyError(f"Cannot descend into {type(current)} at '{part}'")
+    return current
+
+
+def clean_reply(text: str) -> str:
+    """Strip the HTML tags MillionBot returns (<p>, <br>, ...)."""
+    if not isinstance(text, str):
+        return str(text)
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+    return text.strip()
+
+
+# --------------------------------------------------------------------------
+# Strategy A: official CustomChatbot wrapper
+# --------------------------------------------------------------------------
+def run_with_wrapper(yaml_path: Path, messages: list[str]) -> list[dict]:
+    bot = CustomChatbot(str(yaml_path))
+    results = []
+    for msg in messages:
+        success, response = bot.execute_with_input(msg)
+        results.append(
+            {
+                "message": msg,
+                "success": bool(success),
+                "reply": clean_reply(response) if success else None,
+                "raw": response,
+            }
+        )
+        time.sleep(0.5)
+    return results
+
+
+# --------------------------------------------------------------------------
+# Strategy B: plain requests (also supports fresh session IDs)
+# --------------------------------------------------------------------------
+def build_payload(cfg: dict, user_msg: str, fresh_session: bool) -> dict:
+    payload = json.loads(json.dumps(cfg["send_message"]["payload_template"]))  # deep copy
+
+    if fresh_session:
+        payload["conversation"] = uuid.uuid4().hex
+        payload["sender"] = uuid.uuid4().hex
+
+    # Replace the {user_msg} placeholder anywhere in the nested structure
+    def substitute(node):
+        if isinstance(node, dict):
+            return {k: substitute(v) for k, v in node.items()}
+        if isinstance(node, list):
+            return [substitute(v) for v in node]
+        if isinstance(node, str):
+            return node.replace("{user_msg}", user_msg)
+        return node
+
+    return substitute(payload)
+
+
+def run_with_requests(cfg: dict, messages: list[str], fresh_session: bool) -> list[dict]:
+    url = cfg["base_url"].rstrip("/") + cfg["send_message"]["path"]
+    method = cfg["send_message"].get("method", "POST").upper()
+    headers = cfg["send_message"].get("headers", {}) or {}
+    response_path = cfg["response_path"]
+
+    results = []
+    for msg in messages:
+        payload = build_payload(cfg, msg, fresh_session)
+        try:
+            resp = requests.request(method, url, headers=headers, json=payload, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            reply = clean_reply(resolve_path(data, response_path))
+            results.append(
+                {"message": msg, "success": True, "reply": reply, "raw": data}
+            )
+        except Exception as exc:  # noqa: BLE001
+            results.append(
+                {"message": msg, "success": False, "reply": None, "error": str(exc)}
+            )
+        time.sleep(0.5)  # be polite to the API
+    return results
+
+
+# --------------------------------------------------------------------------
+# Main
+# --------------------------------------------------------------------------
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Send multiple messages to the SAIC Malaga bot")
+    parser.add_argument("--yaml", default="saic-malaga.yaml", help="Path to connector YAML")
+    parser.add_argument("--messages", nargs="*", default=None, help="Messages to send")
+    parser.add_argument("--fresh-session", action="store_true",
+                        help="Generate a new conversation/sender ID per message")
+    parser.add_argument("--force-requests", action="store_true",
+                        help="Skip the CustomChatbot wrapper and use plain requests")
+    parser.add_argument("--json-out", default=None, help="Write results to a JSON file")
+    args = parser.parse_args()
+
+    yaml_path = Path(args.yaml)
+    if not yaml_path.exists():
+        print(f"❌ Connector YAML not found: {yaml_path}", file=sys.stderr)
+        return 1
+
+    cfg = load_connector(yaml_path)
+    messages = args.messages or DEFAULT_MESSAGES
+
+    print(f"🤖 Connector: {cfg.get('name', yaml_path.name)}")
+    print(f"🌐 Endpoint : {cfg['base_url']}{cfg['send_message']['path']}")
+    print(f"💬 Messages : {len(messages)}\n")
+
+    if HAS_WRAPPER and not args.force_requests and not args.fresh_session:
+        print("▶ Using CustomChatbot wrapper\n")
+        results = run_with_wrapper(yaml_path, messages)
+    else:
+        reason = "forced" if args.force_requests else (
+            "fresh-session requested" if args.fresh_session else "wrapper not installed"
+        )
+        print(f"▶ Using plain requests ({reason})\n")
+        results = run_with_requests(cfg, messages, args.fresh_session)
+
+    ok = 0
+    for i, r in enumerate(results, 1):
+        print(f"[{i}/{len(results)}] 👤 {r['message']}")
+        if r["success"]:
+            ok += 1
+            print(f"        🤖 {r['reply']}\n")
+        else:
+            print(f"        ❌ {r.get('error', 'unknown error')}\n")
+
+    print(f"✅ Done: {ok}/{len(results)} successful")
+
+    if args.json_out:
+        Path(args.json_out).write_text(
+            json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"📄 Results written to {args.json_out}")
+
+    return 0 if ok == len(results) else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+### Quick notes
+- **Dependencies:** `pip install pyyaml requests` (plus `chatbot-connectors` if you want the wrapper path).
+- **`--fresh-session`** regenerates `conversation` and `sender` per message — handy for independent single-turn tests. Without it, all messages share the session from your trace, which is what you want for multi-turn conversations.
+- **`clean_reply`** strips the `<p>`/`<br>` HTML that MillionBot returns, so you get readable text.
+- **Exit code** is `0` only if every request succeeded — nice for CI.
+
+Want me to also add a matching SENSEI profile + rule pair for this bot (e.g., a rule checking the reply is in Spanish and non-empty)? Just say the word 😊
+$$$

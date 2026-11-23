@@ -1,0 +1,38 @@
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el campo `library_hours` del perfil realmente mencione el horario de **9 a 20**.
+
+Como el perfil expone `library_hours` como texto libre (string), lo más robusto es usar el helper `semantic_content`, que hace una comprobación semántica con LLM sobre el contenido del campo. Así no dependemos de un formato exacto como "9:00-20:00" vs "de 9 a 20 h".
+
+Aquí tienes la regla lista para pegar 👇
+
+```yaml
+name: library_hours_9_to_20
+description: El horario de atención de la biblioteca debe ser de 9 a 20 (perfil Préstamos y Recursos de la Biblioteca)
+conversations: 1
+oracle: semantic_content(library_hours, 'La biblioteca atiende de 9:00 a 20:00')
+on-error: "El horario reportado no coincide con 9 a 20: {conv[0].library_hours}"
+```
+
+### ¿Por qué así? 🤔
+
+- **`conversations: 1`** → es un oráculo de una sola conversación, no una relación metamórfica (no necesitamos comparar pares).
+- **`semantic_content(library_hours, '...')`** → compara el texto extraído en `library_hours` con la descripción esperada, tolerando variaciones de redacción ("de 9 a 20", "9:00–20:00 h", "abierto de 9 a 8 de la tarde", etc.).
+- **`on-error`** → te muestra el valor real cuando falla, para que sea fácil depurar 👀.
+
+### Alternativa más estricta (si el formato es fijo) 🔍
+
+Si en tu proyecto el horario siempre viene en un formato numérico predecible (por ejemplo `"9:00 - 20:00"`), podrías hacer una comprobación más determinista:
+
+```yaml
+name: library_hours_9_to_20_strict
+description: El horario de la biblioteca debe contener 9 y 20 como horas de apertura/cierre
+conversations: 1
+oracle: "'9' in library_hours and '20' in library_hours"
+```
+
+⚠️ Ojo: esta versión es frágil (podría dar falsos positivos con textos como "el 20 de mayo abrimos a las 9"). Por eso te recomiendo la versión con `semantic_content` como principal.
+
+### Un detalle importante sobre el campo 📌
+
+La regla asume que `library_hours` es un campo de `chatbot.output` del perfil — y efectivamente lo es en el perfil que compartiste ✅. Solo asegúrate de que el nombre coincida exactamente (`library_hours`), porque si lo renombras en el perfil, la regla dejará de funcionar.
+
+¿Quieres que también te prepare una regla metamórfica (por ejemplo, comparando dos conversaciones donde una pregunta por horarios y otra no, para verificar que la respuesta es consistente)? 😊

@@ -1,0 +1,55 @@
+conversation ID: graph_based_architecture__p48__pizza_shop__documentation__ab28beb0
+$$$
+Great question! 😊 Let me walk you through which fields in a SENSEI profile are **optional** versus required.
+
+## Fields that are NOT mandatory in a profile
+
+### 1. `llm` section — entirely optional
+If you omit it, Sensei applies defaults (model, temperature) and the format defaults to `text`. You only need it when you want to override the model/temperature or switch to `speech` mode.
+
+```yaml
+# This whole block can be left out
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+```
+
+### 2. `user.context` — optional
+The `context` list (personality references, freeform constraints, preferences) isn't required. A profile can work with just `role` and `goals`.
+
+### 3. `chatbot.is_starter` and `chatbot.fallback` — optional
+- `is_starter` has a default behavior if omitted.
+- `fallback` is helpful (to avoid endless loops) but not strictly required.
+
+### 4. `chatbot.output` — optional in principle
+You can run a profile without extracting any outputs. **However**, if you plan to write profile-bound rules that reference `conv[i].<field>`, you'll need those fields here — so it's optional for running, but often needed for testing. ⚠️
+
+### 5. `conversation.max_cost` and `goal_style.max_cost` — optional
+These are safety caps. Nice to have, but not required.
+
+### 6. `conversation.interaction_style` — optional
+If omitted, the simulator behaves naturally (effectively `default`).
+
+### 7. `conversation.number` — technically optional
+It has a default, but you'll usually want to set it explicitly.
+
+---
+
+## What IS mandatory (the essentials)
+
+- `test_name` — identifies the profile.
+- `user.language`
+- `user.role`
+- `user.goals` — the actual requests the simulated user makes (and any variable declarations).
+- `chatbot.output` — **required if** your rules depend on extracted fields.
+
+---
+
+### Quick tip 💡
+A minimal working profile really just needs `test_name`, `user` (with `language`, `role`, `goals`), and `chatbot`. Everything else is polish or safety.
+
+Want me to show you a **minimal profile example** side-by-side with a fuller one so you can see exactly what's optional? 👀
+$$$

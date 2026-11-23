@@ -1,0 +1,41 @@
+conversation ID: graph_based_architecture__p6__ada_uam__rule__20f8a120
+$$$
+¡Claro que sí! 😊 Vamos a crear esa regla para tu proyecto **ada_uam**.
+
+Como quieres verificar que el chatbot haya recogido **todos** los datos de contacto del CAU (email, teléfono y dirección física), la forma más limpia y directa es usar el helper **`data_collected()`**, que justamente devuelve `True` cuando **todos** los outputs extraídos son no-nulos. Es perfecto para este caso 👌.
+
+Aquí tienes la regla lista para pegar:
+
+```yaml
+name: cau_contact_info_complete
+description: The chatbot must collect all CAU contact information (email, phone, physical address)
+conversations: 1
+oracle: data_collected() is True
+```
+
+### ¿Por qué esta regla funciona? 🔍
+
+- **`data_collected()`** revisa **todos** los slots definidos en `chatbot.output` y devuelve `True` solo si **ninguno** quedó en `None`.
+- Como tu `chatbot.output` expone exactamente `contact_email`, `contact_phone` y `physical_address`, esta regla garantiza que los tres se hayan rellenado. ✅
+- Es una regla **profile-bound** (atada a tu perfil), así que si mañana agregas otro slot al `chatbot.output`, la regla lo cubrirá automáticamente. ¡Cero mantenimiento extra! 🙌
+
+### Alternativa más explícita (si prefieres nombrar los campos) 🧐
+
+Si quieres dejar **explícito** en la regla qué campos estás verificando (útil para documentación o para dar un mensaje de error más claro), puedes usar `missing_slots()`:
+
+```yaml
+name: cau_contact_info_complete_explicit
+description: The chatbot must collect email, phone and physical address for the CAU
+conversations: 1
+oracle: missing_slots() == []
+on-error: "Missing CAU contact info. Slots still empty: {missing_slots()}"
+```
+
+Esta versión hace lo mismo, pero además te dice **cuáles** slots faltaron cuando falla — muy útil para depurar 💡.
+
+### Un detalle importante ⚠️
+
+Ambas reglas asumen que los tres campos (`contact_email`, `contact_phone`, `physical_address`) están declarados en el `chatbot.output` del perfil que estás evaluando. Si alguno no está en el perfil, `data_collected()` no lo considerará. Así que asegúrate de que el perfil que uses en esta prueba exponga los tres tal cual los pegaste. 👍
+
+¿Quieres que te ayude también a crear una regla que valide el **formato** del email o del teléfono (por ejemplo, con `semantic_content`)? ¡Sería un buen complemento! 😄
+$$$

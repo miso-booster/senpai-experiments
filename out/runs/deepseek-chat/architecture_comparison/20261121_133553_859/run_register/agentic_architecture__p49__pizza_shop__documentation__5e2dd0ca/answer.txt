@@ -1,0 +1,49 @@
+# About `pairwise` — heads-up first ⚠️
+
+I checked the rules documentation (`sensei-check-doc.md` and `rules-examples.md`), and I have to be honest with you: **there is no `pairwise` function documented** in the SENSEI-check DSL. I don't want to invent semantics for something that isn't in the docs, so let me explain what *does* exist and what you probably mean.
+
+## What the docs actually say about comparing conversations
+
+Metamorphic rules in Sensei-check compare **pairs (or tuples) of conversations**, but this is done through the rule structure itself, not a `pairwise()` helper:
+
+- `conversations: <N>` — declares how many conversations the rule needs (N ≥ 2 for metamorphic rules).
+- `when:` — a filter that selects **comparable cohorts** (e.g., same size/drink/quantity).
+- `conv[0]`, `conv[1]`, … — direct indexing into the selected conversations.
+- `oracle:` or `if:`/`then:` — the relation checked across those conversations.
+
+So "pairwise" behaviour is expressed like this (from `sensei-check-doc.md`, §5.1):
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Under the hood (§8), Sensei-check selects conversations via `when:` and applies the relation across **the matching tuple(s)** — i.e., it effectively evaluates pairs, but there's no user-facing `pairwise()` call.
+
+## The closest documented helpers
+
+If you were thinking of a function that iterates over pairs, the documented dataset/global helpers are:
+
+| Helper | What it does |
+|---|---|
+| `exists(condition:str)` | True if **any** conversation satisfies the expression |
+| `num_exist(condition:str)` | Count of conversations satisfying the expression |
+| `is_unique(property)` | Property is unique across all conversations |
+
+These operate over the whole set (`conversations: all`), not over explicit pairs.
+
+## So, which is it? 🤔
+
+Could you clarify what you're after?
+
+1. **You want to compare two conversations** → use `conversations: 2` + `when:` + `conv[0]`/`conv[1]` (the metamorphic pattern above).
+2. **You saw `pairwise` somewhere** (a newer version of the docs, a codebase, or another tool) → tell me where, and I'll check whether it's a real helper I should account for.
+3. **You want a global check over all pairs** (e.g., "no two conversations should have the same X") → `is_unique('field')` is the documented way.
+
+Which one matches your intent? Once you confirm, I can write the exact rule for you (and if it's profile-bound, I'll check the target profile's `chatbot.output` fields first 😊).
+
+**Docs relied on:** `sensei-check-doc.md`, `rules-examples.md`.

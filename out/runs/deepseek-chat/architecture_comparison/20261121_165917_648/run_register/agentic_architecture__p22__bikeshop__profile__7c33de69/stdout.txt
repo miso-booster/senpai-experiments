@@ -1,0 +1,85 @@
+conversation ID: agentic_architecture__p22__bikeshop__profile__7c33de69
+$$$
+Here's a profile tailored to your scenario. The key design choice: the user is **uncertain** whether the discomfort comes from fit or worn components, wants **advice on adjustments and shop services**, but **never explicitly asks to book an appointment** — so the goals deliberately avoid any booking request.
+
+```yaml
+test_name: bike_discomfort_fit_or_wear_advice
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A cyclist who experiences discomfort while riding and is unsure whether the
+    cause is a poorly fitting bike or worn-out components. You want advice on
+    possible adjustments and on the services the shop offers, but you do NOT
+    explicitly ask to book an appointment.
+  context:
+    - "You feel discomfort (e.g., in your knees, back, or hands) during and after rides."
+    - "You are not sure if the bike is not fit correctly or if your components are simply worn."
+    - "You want to understand what adjustments might help and what services the shop provides."
+    - "You are curious but cautious: you want information first, not a commitment."
+    - "You do not explicitly ask to book an appointment; you only want advice and service information."
+  goals:
+    - "Describe the discomfort you feel while riding and ask what might be causing it."
+    - "Ask whether the problem could be due to the bike not being fit correctly."
+    - "Ask whether worn components (e.g., {{worn_component}}) could be the cause."
+    - "Ask what adjustments could be made to improve comfort."
+    - "Ask which services the shop offers that could help with your discomfort."
+    - "Ask how you can tell whether it is a fit issue or a worn component."
+    - worn_component:
+        function: random()
+        type: string
+        data: [chain, cassette, brake pads, tires, bottom bracket, saddle]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - possible_causes:
+        type: string
+        description: "The possible causes the chatbot suggests for the rider's discomfort (e.g., poor bike fit, worn components)."
+    - fit_assessment:
+        type: string
+        description: "The chatbot's explanation of whether the discomfort could be due to the bike not being fit correctly."
+    - worn_component_assessment:
+        type: string
+        description: "The chatbot's explanation of whether worn components could be causing the discomfort."
+    - suggested_adjustments:
+        type: string
+        description: "The adjustments the chatbot recommends to improve comfort (e.g., saddle height, stem length, cleat position)."
+    - offered_services:
+        type: string
+        description: "The services the shop offers that could address the discomfort (e.g., bike fitting, tune-up, component replacement)."
+    - appointment_requested:
+        type: string
+        description: "Whether the chatbot tried to book an appointment or the user explicitly requested one. Should reflect that no appointment was explicitly requested by the user."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 30
+  interaction_style:
+    - single questions
+```
+
+### How this maps to the docs (`sensei-chat-guide.md`)
+
+- **`user.role` + `user.context`** capture the persona: discomfort, uncertainty between fit vs. wear, and the explicit constraint that the user does **not** ask to book an appointment.
+- **`user.goals`** are plain-string goals plus one declared variable (`worn_component`) using `random()` over a list of components — matching the variable/function pattern in §4.
+- **`chatbot.output`** defines the extraction schema (§6). I added an `appointment_requested` field so you can later write a rule asserting the user never explicitly booked — useful given your requirement.
+- **`conversation`** uses `all_answered` with a safety `limit`, plus `single questions` interaction style, consistent with the other bike profiles in your project.
+
+### Notes / things to confirm
+- I kept the same `fallback` text as your other bike-shop profiles for consistency — swap it if your bot's real fallback differs.
+- The `appointment_requested` output is a bit of a "meta" field; if you plan to validate "no booking was made," a rule reading `conv[i].appointment_requested` would work. Want me to draft that rule next? If so, I'll load the rules docs and confirm this profile as the target first. 😊
+
+Want me to save this as a file (e.g., `bike_discomfort_fit_or_wear_advice.yaml`) or adjust anything (language, number of conversations, interaction styles)?
+$$$

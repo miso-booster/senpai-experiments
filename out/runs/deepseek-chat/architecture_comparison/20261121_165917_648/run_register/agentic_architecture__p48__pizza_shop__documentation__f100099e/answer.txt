@@ -1,0 +1,36 @@
+Great question! Based on `sensei-chat-guide.md`, here's the breakdown of what's **optional** in a profile 😊
+
+## 🟢 Fields that are NOT mandatory
+
+### `llm` (the whole block)
+The FAQ is explicit: *"Do I have to define `llm`? No."* If omitted, defaults are applied (model, temperature) and `format` defaults to `text`. You only need it when you want overrides or `speech` mode.
+
+### Inside `llm`
+- `temperature` — optional override
+- `model` / `model_prov` — optional overrides
+- `format.config` — only relevant when `format.type: speech`
+
+### Inside `user`
+- `context` — optional. It can hold a `personality: personalities/<file>.yml` reference (also optional) plus freeform constraints/preferences.
+- `goals` — technically optional in the sense that a profile can run without declared variables, but you'll almost always want it. Variables declared inside `goals` are only needed if you use `{{variable}}` placeholders.
+
+### Inside `chatbot`
+- `output` — optional. If you don't need extraction (and don't plan profile-bound rules), you can skip it. But note: **rules read `conv[i].<field>` from `chatbot.output`**, so omit it only if no rule depends on it.
+- `fallback` — not strictly required, but the docs strongly recommend putting your bot's real fallback text there to avoid endless loops.
+- `is_starter` — has a sensible default behaviour (who opens the conversation); set it when you care.
+
+### Inside `conversation`
+- `max_cost` (run-level cap) — optional
+- `goal_style.max_cost` (per-conversation cap) — optional
+- `goal_style.all_answered.limit` — optional, defaults to 30
+- `goal_style.all_answered.export` — optional (defaults to not exporting)
+- `interaction_style` — optional; if omitted the user simulator behaves naturally (`default`)
+
+## 🔴 What you basically always need
+- `test_name`
+- `user.language`
+- `user.role`
+- `conversation.number` and a `goal_style` (e.g. `steps: N`) to define how the conversation ends
+
+## ⚠️ One caveat
+The docs describe these as optional/defaulted, but they don't spell out a formal "required vs optional" schema per field. If you want, I can run `validation_check.py`-style reasoning against a specific profile in your project — just tell me which one, or I can list your profiles for you. 📋

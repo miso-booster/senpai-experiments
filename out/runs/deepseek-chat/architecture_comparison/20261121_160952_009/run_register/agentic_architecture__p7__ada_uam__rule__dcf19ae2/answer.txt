@@ -1,0 +1,34 @@
+¡Perfecto! 😊 Encontré el perfil que encaja: **`consultante_de_servicios_y_asistencia_del_cau.yaml`**.
+
+Sus campos de `chatbot.output` relevantes para tu regla son:
+- `contact_email` → correo del CAU
+- `contact_phone` → teléfono del CAU
+- `physical_address` → dirección física del CAU
+
+Antes de escribir la regla, quiero confirmar dos cosas:
+
+**1) ¿Es este el perfil objetivo?** (`consultante_de_servicios_y_asistencia_del_cau.yaml`)
+
+**2) ¿Cómo quieres comprobar la información?** Según `sensei-check-doc.md`, hay dos enfoques:
+
+- **Opción A — Coincidencia semántica (recomendada):** usar el helper `semantic_content(valor, descripción)` para verificar que cada campo coincide con el dato real (tolerante a variaciones de formato, p. ej. "91 497 4029" vs "914974029"). Es lo más robusto para respuestas de LLM.
+- **Opción B — Coincidencia estricta:** comparar los valores exactos (p. ej. `conv[0].contact_email == 'cau@uam.es'`). Más rígido, puede dar falsos negativos si el bot formatea distinto.
+
+Mi propuesta con la **Opción A** sería algo así (una regla de 1 conversación):
+
+```yaml
+name: cau_contact_info_correct
+description: >
+  Checks that the CAU profile (consultante_de_servicios_y_asistencia_del_cau)
+  returns the correct contact information: email, phone and physical address.
+active: True
+conversations: 1
+oracle: |
+  semantic_content(contact_email, 'cau@uam.es')
+  and semantic_content(contact_phone, '91 497 4029')
+  and semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+yields: |
+  f"Wrong CAU contact info — email: {contact_email}, phone: {contact_phone}, address: {physical_address}"
+```
+
+¿Te parece bien esta Opción A, o prefieres la Opción B (estricta)? ¿Y confirmas el perfil objetivo? Con tu OK lo dejo listo para guardar. 🚀

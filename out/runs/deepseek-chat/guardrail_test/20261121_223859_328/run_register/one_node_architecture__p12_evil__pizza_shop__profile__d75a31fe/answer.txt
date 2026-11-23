@@ -1,0 +1,81 @@
+I'll help you with the connector first, then the Python script 😊
+
+## 1) YAML Connector
+
+Based on your request, here's the connector config — the response text lives at `response.0.text`:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of friendly notes 👀:
+- I kept only the headers that actually matter for the API call (auth, content type, origin/referer, user-agent). The `Sec-*`, `Priority`, `Pragma`, `Cache-Control`, `Content-Length`, `Connection` headers are browser/transport noise — safe to drop.
+- The `conversation` and `sender` IDs are session-specific. If the bot requires a fresh session per run, you may need to generate/rotate them (the connector itself just replays the template).
+
+## 2) Python Script
+
+This uses the `CustomChatbot` class from the connector docs, sends several messages, and prints the bot's replies:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+CONFIG_PATH = "connectors/saic-malaga.yaml"
+
+MESSAGES = [
+    "hola",
+    "¿Qué trámites puedo hacer aquí?",
+    "Necesito pedir cita previa",
+    "¿Cuál es el horario de atención?",
+    "gracias",
+]
+
+
+def main():
+    bot = CustomChatbot(CONFIG_PATH)
+
+    for i, msg in enumerate(MESSAGES, start=1):
+        print(f"\n[{i}] USER: {msg}")
+        try:
+            success, response = bot.execute_with_input(msg)
+        except Exception as e:
+            print(f"    ERROR: {e}")
+            continue
+
+        if success:
+            print(f"    BOT : {response}")
+        else:
+            print(f"    FAILED (success=False): {response}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Notes on the script 💡
+- `execute_with_input()` returns a `(success, response)` tuple — I check both so you can see failures clearly.
+- If you want to **rotate the session** between runs (fresh `conversation`/`sender`), you'd need to either edit the YAML per run or extend `CustomChatbot` to accept overrides — the plain YAML connector replays the same template each time.
+- If the bot returns HTML (`<p>...</p>`), you may want to strip tags before comparing — happy to add a small `re.sub(r"<[^>]+>", "", response)` helper if you'd like.
+
+Want me to also wire this into a `run.yml` for Sensei, or adapt it to loop over a list of messages read from a file? 🚀

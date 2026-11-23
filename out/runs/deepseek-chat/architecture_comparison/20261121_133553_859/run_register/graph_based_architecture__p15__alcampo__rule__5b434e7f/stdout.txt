@@ -1,0 +1,105 @@
+conversation ID: graph_based_architecture__p15__alcampo__rule__5b434e7f
+$$$
+Hey there! 👋 Happy to help you get this rule working 😊
+
+Before diving in, I want to flag a few things — because right now this rule has some structural issues that would prevent it from running correctly. Let me walk you through them one by one 🔍
+
+---
+
+## 1. Typo in the header
+
+```yaml
+name: conversation_lengths
+description: The number of turns of the user and the chatbot equal the conversation length
+conversations: 1
+active: false
+oracle: conversation_length() == conversation_length('assistant') + conversation_length('user')
+```
+
+That should be `description:`. Small thing, but Sensei-check expects the exact key name.
+
+---
+
+## 2. Missing `then:` clause
+
+You have an `if:` but no `then:`. In Sensei-check, `if`/`then` is an **implication** — you need both sides:
+
+```yaml
+name: conversation_lengths
+description: The number of turns of the user and the chatbot equal the conversation length
+active: false
+conversations: 1
+oracle: conversation_length() == conversation_length('assistant') + conversation_length('user')
+```
+
+Right now the rule has no actual assertion, so there's nothing to check. Also — as written, your `if:` is basically the same as your `when:`, which means the rule would just re-assert the filter. That's not really a metamorphic relation.
+
+---
+
+## 3. Fields must exist in `chatbot.output`
+
+This is the big one ⚠️. Your rule references:
+
+- `conv[i].user_request`
+- `conv[i].contact_options`
+- `conv[i].customer_service_number`
+
+All of these must be **actual fields exposed by the target profile's `chatbot.output`**. If the profile doesn't expose `contact_options` or `customer_service_number`, the rule won't work — you'd need to add them to the profile first.
+
+Also, `user_request` sounds like something the *simulated user* says — that's usually not a `chatbot.output` field. If it's not in `chatbot.output`, it can't be referenced as `conv[i].user_request`.
+
+---
+
+## 4. What is this rule actually trying to check?
+
+Here's the thing — a metamorphic rule needs a **relation between conversations**, not just "both fields are non-null." If both conversations are just checking "the bot filled in the slot," that's really a **single-conversation oracle** (or a `data_collected()` check), not a 2-conversation metamorphic rule.
+
+So let me offer you two clean versions depending on what you actually want 👇
+
+---
+
+### ✅ Option A — Single-conversation oracle (simplest, likely what you want)
+
+If the goal is: *"when the user asks about contact info, the bot must provide contact options / a service number"* — that's a per-conversation check:
+
+```yaml
+name: customer_service_contact_info
+description: When the user asks about contact options or the customer service number, the chatbot must provide the corresponding information.
+conversations: 1
+when: user_request in ['contact options', 'customer service number']
+oracle: contact_options is not None or customer_service_number is not None
+```
+
+> ⚠️ Again: `user_request`, `contact_options`, and `customer_service_number` must all be real `chatbot.output` fields in your profile. If `user_request` isn't one, you'll need to either add it to the profile or filter on something else (e.g., a scenario tag).
+
+---
+
+### ✅ Option B — True 2-conversation metamorphic rule
+
+If you genuinely want to compare two conversations, here's a meaningful relation — *"the same contact info should be reported consistently regardless of how the user phrases the request"*:
+
+```yaml
+name: customer_service_contact_info
+description: Contact options and customer service number are reported consistently regardless of how the user phrases the request.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: conv[0].customer_service_number == conv[1].customer_service_number
+```
+
+This asserts: *if both conversations produced their respective info, the service number must match across them.* That's a real metamorphic invariant ✨
+
+---
+
+## Quick checklist before you run it 📝
+
+- [ ] `description:` spelled correctly
+- [ ] `if:` has a matching `then:`
+- [ ] Every `conv[i].<field>` exists in the target profile's `chatbot.output`
+- [ ] `user_request` is actually a profile output (or replace the filter)
+- [ ] The relation is meaningful (not just re-checking the filter)
+
+---
+
+Could you tell me which profile this rule is meant to target, and whether `user_request`, `contact_options`, and `customer_service_number` are already in its `chatbot.output`? That way I can tailor the fix exactly to your setup 🎯
+$$$

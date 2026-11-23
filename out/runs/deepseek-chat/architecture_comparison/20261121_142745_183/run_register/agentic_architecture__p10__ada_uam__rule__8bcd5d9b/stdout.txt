@@ -1,0 +1,94 @@
+conversation ID: agentic_architecture__p10__ada_uam__rule__8bcd5d9b
+$$$
+¡Perfecto! 🎉 Ya localicé tu perfil **`usuarios_nuevos_y_admisiones.yaml`** en el proyecto. Como tiene 16 campos en `chatbot.output`, lo más útil es combinarlo con un set de reglas que cubran tanto **calidad de conversación** (globales) como **contenido extraído** (ligadas al perfil).
+
+Me basé en `sensei-check-doc.md`, `rules-examples.md` y `sensei-chat-guide.md` para diseñarlas. Aquí va mi propuesta 👇
+
+## 🧩 Set de reglas sugerido
+
+| # | Regla | Tipo | Qué comprueba |
+|---|-------|------|---------------|
+| 1 | `admisiones_responds_in_same_language` | Global | El bot responde en español (el usuario habla en Spanish) |
+| 2 | `admisiones_no_repeated_answers` | Global | El bot no repite respuestas casi idénticas |
+| 3 | `admisiones_only_talks_about_domain` | Global | El bot no se sale del dominio (admisión, grados, Welcome Day…) |
+| 4 | `admisiones_fills_all_slots` | Ligada al perfil | Todos los `chatbot.output` se rellenan |
+| 5 | `admisiones_links_are_not_empty` | Global | No devuelve botones/links vacíos |
+| 6 | `admisiones_application_fee_is_positive` | Ligada al perfil | `application_fee` es un importe válido > 0 |
+
+## 📄 YAML de las reglas
+
+```yaml
+name: admisiones_responds_in_same_language
+description: El chatbot responde en el mismo idioma que el usuario (español) en el perfil usuarios_nuevos_y_admisiones
+conversations: 1
+active: true
+oracle: responds_in_same_language() is True
+yields: f"El chatbot no responde en el mismo idioma que el usuario"
+```
+
+```yaml
+name: admisiones_no_repeated_answers
+description: El chatbot no repite respuestas casi idénticas en el perfil usuarios_nuevos_y_admisiones
+conversations: 1
+active: true
+oracle: not repeated_answers(method='tf-idf', threshold=0.75)
+yields: |
+  f"El chatbot repite respuestas: {repeated_answers(method='tf-idf', threshold=0.75)}"
+```
+
+```yaml
+name: admisiones_only_talks_about_domain
+description: El chatbot se mantiene en el dominio de admisión, grados, cursos y Welcome Day
+conversations: 1
+active: true
+oracle: only_talks_about('proceso de admisión, listas de espera, grados y cursos ofrecidos, Welcome Day, información para futuros estudiantes, inscripción y contacto de admisiones') is True
+yields: |
+  f"El chatbot se sale del dominio: {only_talks_about('proceso de admisión, listas de espera, grados y cursos ofrecidos, Welcome Day, información para futuros estudiantes, inscripción y contacto de admisiones')}"
+```
+
+```yaml
+name: admisiones_fills_all_slots
+description: Todos los campos de chatbot.output del perfil usuarios_nuevos_y_admisiones se rellenan
+conversations: 1
+active: true
+oracle: data_collected() is True
+yields: |
+  f"Slots sin rellenar: {missing_slots()}"
+```
+
+```yaml
+name: admisiones_links_are_not_empty
+description: El chatbot no devuelve botones o enlaces vacíos en el perfil usuarios_nuevos_y_admisiones
+conversations: 1
+active: true
+oracle: |
+  not chatbot_returns("LINK: <empty>") and not chatbot_returns("AVAILABLE BUTTONS:", and_not="- BUTTON TEXT:")
+yields: f"El chatbot devuelve enlaces/botones vacíos"
+```
+
+```yaml
+name: admisiones_application_fee_is_positive
+description: El coste de la solicitud de admisión (application_fee) es un importe válido mayor que 0
+conversations: 1
+active: true
+when: conv[0].application_fee is not None
+oracle: extract_float(conv[0].application_fee) > 0
+yields: |
+  f"application_fee inválido: {conv[0].application_fee}"
+```
+
+## 💡 Notas importantes
+
+- **Reglas 1–3 y 5 son globales**: usan solo helpers genéricos (`responds_in_same_language`, `repeated_answers`, `only_talks_about`, `chatbot_returns`) y no dependen de campos concretos del perfil. Son las más "seguras" para empezar.
+- **Reglas 4 y 6 son ligadas al perfil**: usan `data_collected()`/`missing_slots()` y `conv[0].application_fee`, que corresponden directamente a los campos de tu `chatbot.output`. ✅
+- ⚠️ **Ojo con la regla 4 (`fills_all_slots`)**: tu perfil tiene 16 outputs y solo 6 conversaciones con `steps: 30`. Es muy probable que **no** se rellenen todos en cada conversación (p. ej. `welcome_day_date` solo aparece si el usuario pregunta por el evento). Si te da muchos falsos negativos, te sugiero **desactivarla** o crear una versión más laxa que solo exija los campos clave (por ejemplo `admission_to_grados_link`, `grados_available`, `welcome_day_link`). ¿Quieres que te prepare esa variante?
+- **Sobre `application_fee`**: en el perfil está declarado como `type: money`, pero en la guía de perfiles (`sensei-chat-guide.md`) los tipos documentados son `int`, `float`, `string`, `time`, `date`, `list[...]` y custom types. `money` **no** aparece como tipo estándar. Si no tienes un custom type `money` en `types/`, la extracción podría fallar. Te recomiendo revisarlo (quizá usar `float` o un custom type). ¿Quieres que lo comprobemos?
+
+## 🚀 Cómo probarlo
+
+1. Guarda cada bloque YAML como un archivo en `rules/` (p. ej. `rules/admisiones_responds_in_same_language.yaml`).
+2. Ejecuta Sensei con tu perfil para generar las conversaciones.
+3. Lanza Sensei-check sobre esas conversaciones y revisa el CSV de resultados.
+
+¿Quieres que ajuste alguna de estas reglas, que te prepare la variante laxa de `fills_all_slots`, o que añada reglas más específicas (por ejemplo, verificar que `welcome_day_date` sea una fecha futura)? 😊
+$$$

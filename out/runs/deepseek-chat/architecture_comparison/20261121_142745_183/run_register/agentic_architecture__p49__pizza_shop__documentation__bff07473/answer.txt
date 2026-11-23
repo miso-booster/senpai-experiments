@@ -1,0 +1,44 @@
+Good question! But I want to be upfront with you: after checking the docs (`sensei-check-doc.md` and `rules-examples.md`), **there is no helper or DSL feature called `pairwise`** documented in SENSEI-check. So I can't describe a `pairwise` function as such without inventing something — and I won't do that 😅.
+
+That said, I suspect what you're really asking about is **how SENSEI-check compares conversations in pairs** — which is the core of metamorphic testing. Let me explain that, since it's the closest documented concept.
+
+## How pairwise comparison works in SENSEI-check
+
+Metamorphic rules compare **pairs (or tuples) of conversations** that meet a selection filter, asserting how outputs should change (or not) when inputs change. The docs describe this in `sensei-check-doc.md` (sections 1–5).
+
+The mechanism is:
+
+1. **`conversations: 2`** — declares the rule needs 2 conversations per evaluation.
+2. **`when:`** — a filter that selects *comparable* pairs (ceteris paribus conditions). Only pairs satisfying it are evaluated.
+3. **`if:` / `then:`** (or a single `oracle:`) — the relation checked across the pair, using `conv[0].field` and `conv[1].field`.
+
+### Example (from the docs)
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Here:
+- `when` picks pairs with the **same** size/drink/quantity (controls confounders).
+- `if` says "conversation 0 has more toppings than conversation 1".
+- `then` asserts "conversation 0 costs more".
+
+### Key points about the pairing model
+
+- **`conv[i]`** is how you access each conversation in the pair; fields like `conv[0].size` come from the profile's `chatbot.output`.
+- The pairing is **implicit**: you don't call a function — you declare `conversations: 2` and reference `conv[0]` / `conv[1]`. Sensei-check forms the pairs and applies `when` to filter eligible ones.
+- For **global** checks across all conversations, use `conversations: all` with helpers like `is_unique('order_id')`, `exists(...)`, `num_exist(...)`.
+
+## Could you mean something else?
+
+If by "pairwise" you meant one of these, let me know and I'll dig in:
+- **`repeated_answers`** — compares assistant replies for near-duplicates (similarity methods: `tf-idf`, `jaccard`, `sequence-matcher`, `exact`).
+- **`is_unique(property)`** — checks a field is unique across all conversations.
+- **`exists` / `num_exist`** — dataset-level checks.
+
+Which one were you after? Or if you saw `pairwise` somewhere specific (a file, an error message), point me to it and I'll take a look 🔍.

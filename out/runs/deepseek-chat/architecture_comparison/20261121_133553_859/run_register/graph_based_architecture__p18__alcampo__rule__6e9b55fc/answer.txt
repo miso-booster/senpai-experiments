@@ -1,0 +1,83 @@
+¡Hola! 😊 Claro que sí, te ayudo con esa regla. Antes de escribirla, déjame aclararte un par de cosas para que quede bien alineada con tu proyecto:
+
+## Puntos clave a tener en cuenta
+
+**1. El campo `eco_friendly_toys` debe existir en el `chatbot.output` del perfil.**  
+La regla que te voy a proponer asume que hay un perfil de SENSEI Chat que expone ese slot. Si aún no lo tienes, tendrás que añadirlo primero en el perfil, por ejemplo:
+
+```yaml
+test_name: "eco_friendly_toys_profile"
+
+user:
+  language: English
+  role: "You are a customer looking for eco-friendly toys."
+  context:
+    - "You care about sustainability and environmentally friendly products."
+  goals:
+    - "Ask for eco-friendly toys available in the store"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - eco_friendly_toys:
+        type: list[string]
+        description: List of eco-friendly toys returned by the chatbot
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+**2. ¿Qué quieres comprobar exactamente?**  
+"Ha devuelto una lista de juguetes eco-friendly" puede significar varias cosas. Te propongo la interpretación más habitual: **que el slot no esté vacío y contenga al menos un elemento**. Si quieres algo más estricto (por ejemplo, que todos los juguetes sean realmente eco-friendly según una lista cerrada, o que la lista tenga un mínimo de N elementos), dímelo y lo ajusto.
+
+## Regla propuesta
+
+```yaml
+name: eco_friendly_toys_returned
+description: The chatbot must return a non-empty list of eco-friendly toys during the conversation
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) > 0
+on-error: "Expected a non-empty eco_friendly_toys list, got: {conv[0].eco_friendly_toys}"
+```
+
+### Qué hace esta regla 👀
+
+- **`conversations: 1`** → es una regla de una sola conversación (un oráculo clásico, no metamórfico).
+- **`conv[0].eco_friendly_toys`** → accede al slot del perfil. Recuerda: el nombre debe coincidir **exactamente** con el campo declarado en `chatbot.output`.
+- **`is not None and len(...) > 0`** → comprueba que el slot se ha rellenado y que la lista no está vacía.
+- **`on-error`** → mensaje útil para depurar cuando falla.
+
+## Variantes que quizá te interesen
+
+**Si quieres exigir un mínimo de juguetes (p. ej. al menos 2):**
+```yaml
+name: eco_friendly_toys_minimum
+description: The chatbot returns at least two eco-friendly toys
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) >= 2
+```
+
+**Si quieres comprobar además que el chatbot lo mencionó en el diálogo (no solo que se extrajo):**
+```yaml
+name: eco_friendly_toys_mentioned
+description: The chatbot confirms eco-friendly toys and mentions them in the conversation
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) > 0 and utterance_index('assistant', 'eco-friendly') > 0
+```
+
+**Si tienes una lista cerrada de juguetes válidos y quieres verificar que todos pertenecen a ella:**
+```yaml
+name: eco_friendly_toys_valid
+description: The eco-friendly toys collected are all from the allowed list
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and all(t in ['wooden train','recycled puzzle','bamboo blocks'] for t in conv[0].eco_friendly_toys)
+```
+
+---
+
+¿Te encaja la primera versión, o prefieres alguna de las variantes? Y si me confirmas el nombre exacto del perfil y los campos reales de su `chatbot.output`, te la dejo afinada al 100% 🚀

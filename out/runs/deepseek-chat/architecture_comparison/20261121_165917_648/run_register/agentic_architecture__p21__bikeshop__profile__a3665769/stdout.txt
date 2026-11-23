@@ -1,0 +1,89 @@
+conversation ID: agentic_architecture__p21__bikeshop__profile__a3665769
+$$$
+Here's a profile for your scenario, following the conventions I saw in `bike_repair_and_maintenance_scheduler.yaml` and `appointment.yml` (same fallback message, `all_answered` goal style, bikeshop-flavored outputs):
+
+```yaml
+test_name: bike_setup_customization
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A customer who recently bought a new bike and wants to bring it to the shop
+    to have it set up and tailored to their liking, specifically by changing the
+    seat and the handlebar grips.
+  context:
+    - You bought a new bike recently and it still feels uncomfortable with the stock seat and grips.
+    - You want the shop to help you pick and install a seat and handlebar grips that fit your preferences.
+    - You are not sure which exact models you want, so you are open to recommendations from the shop.
+    - You want to know if this can be done in a single visit and how much it will cost.
+  goals:
+    - "Ask if the shop can set up a new bike and tailor it to your liking"
+    - "Ask to change the {{seat}} seat to something more comfortable"
+    - "Ask to change the handlebar grips to {{grips}}"
+    - "Ask for a recommendation if the shop has better options for the seat or grips"
+    - "Ask how much the seat and grips change will cost"
+    - "Ask if the setup can be done today or schedule an appointment"
+    - seat:
+        function: random()
+        type: string
+        data:
+          - a wider, padded seat
+          - a narrower racing seat
+          - a gel seat
+    - grips:
+        function: random()
+        type: string
+        data:
+          - softer rubber grips
+          - ergonomic grips
+          - lock-on grips
+
+chatbot:
+  is_starter: false
+  fallback: I'm sorry it's a little loud in my shop, can you say that again?
+  output:
+    - setup_offered:
+        type: string
+        description: Confirmation from the chatbot that the shop can set up and tailor the new bike. Look for positive confirmations like "Yes, we can set up your bike" or similar.
+    - seat_recommendation:
+        type: string
+        description: The seat option recommended or agreed upon by the chatbot, including any model or type mentioned.
+    - grips_recommendation:
+        type: string
+        description: The handlebar grips option recommended or agreed upon by the chatbot, including any model or type mentioned.
+    - total_price:
+        type: money
+        description: The total price for the seat and grips change and setup, as stated by the chatbot. Extract the numerical value including currency if present.
+    - appointment_confirmation:
+        type: string
+        description: Confirmation of the setup appointment or same-day service, including the date and time if provided. Extract the full confirmation message.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - default
+```
+
+### What this profile does 🚲
+- **`user.role` / `context`**: describes a customer with a brand-new bike who wants it tailored — specifically the **seat** and **handlebar grips** — and is open to shop recommendations.
+- **`user.goals`**: a natural progression — ask about setup, request seat + grips changes (with `{{seat}}` / `{{grips}}` variables), ask for recommendations, ask about price, and ask about timing/appointment. The two variables use `random()` so each conversation picks a different seat/grip preference.
+- **`chatbot.output`**: the extraction schema — `setup_offered`, `seat_recommendation`, `grips_recommendation`, `total_price`, and `appointment_confirmation`. These are the fields any future **profile-bound rule** would reference as `conv[i].<field>`.
+- **`conversation`**: 3 conversations, `all_answered` goal style (ends when all goals are satisfied), a `max_cost` cap, and `default` interaction style — matching the style of your existing bikeshop profiles.
+
+### A couple of notes 📝
+- I reused your project's existing fallback message (`"I'm sorry it's a little loud in my shop..."`) for consistency.
+- I used `type: money` for `total_price` to match `bike_repair_and_maintenance_scheduler.yaml`. If you don't have a `money` custom type in `types/`, let me know and I can switch it to `currency` or `float`.
+
+Want me to also create a **rule** that validates this profile (e.g., "if a seat and grips change is confirmed, a total price must be provided")? If so, I'll load the rules docs and we can align it to these output fields. 😊
+$$$

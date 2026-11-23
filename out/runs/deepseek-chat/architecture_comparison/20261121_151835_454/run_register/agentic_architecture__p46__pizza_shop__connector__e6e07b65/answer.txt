@@ -1,0 +1,29 @@
+```yaml
+name: "1MillionBot"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+**What was wrong and what I changed** (based on `custom-connector-guide.md` and `connector-examples.md`):
+
+- **`base_url`** → `https://api.1millionbot.com` (the broken one pointed at a placeholder `api.bot.com`; the trace shows the real host).
+- **`path`** → `/api/public/messages` (matches the trace; the broken one used `/api/messages`).
+- **`headers.Authorization`** → kept exactly as provided (`64e5d1af081211d24e2cfecd`), no `Bearer` prefix.
+- **`payload_template`** → now mirrors the real request body: `conversation`, `sender_type`, `sender`, `bot`, `language`, `url`, and nested `message.text: "{user_msg}"`.
+- **`response_path`** → `response.0.text` (the assistant reply lives in the `response` array's first element; the broken `request.text` was extracting the user's own message).
+- **`name`** → cleaned up to a valid string (the broken file had doubled quotes).

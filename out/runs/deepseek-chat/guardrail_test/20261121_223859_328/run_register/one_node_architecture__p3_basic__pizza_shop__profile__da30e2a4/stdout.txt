@@ -1,0 +1,70 @@
+conversation ID: one_node_architecture__p3_basic__pizza_shop__profile__da30e2a4
+$$$
+Hey there! 😊 I'd love to help, but I have to be upfront: I'm Senpai, and I only work with **Sensei profiles, rules, and connectors** — I can't actually place pizza orders for you (that's the chatbot-under-test's job, not mine!).
+
+What I *can* do is help you build or tweak the Sensei pieces that would simulate this exact scenario. For example, if you want a profile where the simulated user orders a **large BBQ pizza + a soda**, I can draft that for you. Here's a quick example based on your project's style:
+
+```yaml
+test_name: "bbq_pizza_and_soda_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: A customer placing a pizza and drink order for pickup.
+  context:
+    - "You are ordering dinner for yourself tonight."
+    - "You want a large BBQ pizza and a soda."
+  goals:
+    - "Order a {{pizza_size}} {{pizza_type}} pizza."
+    - "Order {{number_of_drinks}} {{drink_type}}."
+    - pizza_size:
+        function: default()
+        type: string
+        data: [large]
+    - pizza_type:
+        function: default()
+        type: string
+        data: [BBQ Chicken]
+    - number_of_drinks:
+        function: default()
+        type: int
+        data: [1]
+    - drink_type:
+        function: default()
+        type: string
+        data: [soda]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - order_summary:
+        type: string
+        description: "Summary of the pizza and drink order"
+    - total_cost:
+        type: money
+        description: "Total cost of the order"
+    - order_id:
+        type: string
+        description: "Unique order identifier"
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+A couple of quick notes 👀:
+- Your existing `pizza_and_drink_order_placement.yaml` profile already covers ordering pizza + drinks with `forward()` combos — this one is just a **single fixed scenario** (large BBQ + 1 soda) if you want a focused test.
+- If you'd rather **verify** something about this order (e.g., "BBQ pizza costs more than Margarita"), I can help you write a matching Sensei-check rule too.
+
+Want me to adapt this to a specific profile in your project, or add a rule to check the order? 🍕
+$$$

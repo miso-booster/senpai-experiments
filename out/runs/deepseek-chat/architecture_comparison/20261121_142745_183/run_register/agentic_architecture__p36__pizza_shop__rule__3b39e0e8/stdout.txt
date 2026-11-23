@@ -1,0 +1,61 @@
+conversation ID: agentic_architecture__p36__pizza_shop__rule__3b39e0e8
+$$$
+Hey! 👋 I dug into this using `sensei-check-doc.md` and `rules-examples.md` (plus `sensei-chat-guide.md` for the `chatbot.output` contract). Here's what's going on.
+
+## Why it's not working
+
+Your rule is missing the `if:` line — the actual metamorphic precondition. Compare yours with the canonical version in `rules-examples.md`:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more (same size, drink and quantity)
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Without `if:`, the `then:` clause is evaluated for **every** pair that passes `when:` — including pairs where conv[0] has *fewer or equal* toppings. Those pairs legitimately have a lower/equal price, so the rule fails constantly. The `if`/`then` form is an implication ("if X, then Y"), and you dropped the antecedent.
+
+Two secondary issues worth flagging:
+
+1. **`when:` is too loose.** Per §6.2 of `sensei-check-doc.md` ("keep filters tight — control confounders"), you also need to hold **quantity** equal, otherwise a pair with 1 pizza vs 3 pizzas breaks the price comparison.
+2. **Field names must match a real profile's `chatbot.output`.** Your rule uses `size`, `toppings`, `drink`, `price` — but none of your pizza profiles expose `toppings` or `size` as separate fields. See below.
+
+## ⚠️ Profile alignment problem
+
+I searched your project and found three pizza profiles. None of them currently supports this rule:
+
+| Profile | Relevant `chatbot.output` fields | Problem |
+|---|---|---|
+| `pizza_order_test_custom.yml` | `price`, `time`, `order_id` | ❌ no `size`, `toppings`, `drink`, `number` |
+| `pizza_and_drink_order_placement.yaml` | `order_summary`, `total_cost`, `order_id`, … | ❌ no `toppings`/`size`/`drink`; price is `total_cost` |
+| `pizzaorder_ivan_test.yml` | `selected_pizza_type`, `selected_pizza_size`, `selected_drink_type`, `drink_quantity` | ❌ no `toppings`, no price field at all |
+
+So even with `if:` in place, the rule would error out on missing fields.
+
+## Fixed rule (assuming the profile exposes the needed fields)
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more (same size, drink and quantity)
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Changes: added the missing `if:` precondition, added `conv[0].number == conv[1].number` to the `when:` filter, and clarified the description.
+
+## What I need from you 🙋
+
+**Which profile should this rule target?** My best guess is `pizza_order_test_custom.yml` (it's the "custom pizza" one and already has `price`), but it needs its `chatbot.output` extended with `size`, `toppings`, `drink`, and `number` before the rule can work.
+
+Want me to:
+- **(a)** write the updated `pizza_order_test_custom.yml` profile with those extra output fields, or
+- **(b)** adapt the rule to a different profile's actual field names (e.g. `pizzaorder_ivan_test.yml` → `selected_pizza_size`, `selected_drink_type`, `drink_quantity` — though it has no price field yet)?
+
+Just tell me which profile and I'll wire it up properly 😊
+$$$

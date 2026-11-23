@@ -1,0 +1,35 @@
+conversation ID: one_node_architecture__p26__bikeshop__rule__1c73adf1
+$$$
+Hey there! 😊 Let's take a look at your rule together — there are a few things that need fixing so it actually checks what you want.
+
+## What's off
+
+1. **`conversations: 2` is unnecessary.** You're only checking a single price value, not comparing two conversations. This should be `1`.
+2. **The `when` filter is wrong.** `when: conv[0].tune_up_price == 50` filters *to only the conversations where the price is already 50* — so the rule would trivially pass and never catch a wrong price. That's the opposite of what you want!
+3. **The `then` clause isn't a boolean expression.** `"The tune-up price is $50."` is just a string — Sensei-check needs a Python expression that evaluates to `True`/`False`. It should actually *compare* the price.
+4. **`if`/`then` is overkill here.** For a simple equality check on one conversation, a plain `oracle` is cleaner.
+5. **Comparing a money value to `50` directly is fragile.** Money fields (like `tune_up_price` in your `bike_repair_and_maintenance_scheduler` and `bike_service_and_repair_inquirer` profiles) may come back as `"$50.00"` or `"50 USD"`. Use `extract_float(...)` to parse the number safely.
+
+## Fixed version
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price equals $50 (profile-bound to tune_up_price output).
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+yields: f"Expected tune-up price of $50, but got {tune_up_price}"
+```
+
+## What I changed
+
+- **`conversations: 2` → `1`** — single-conversation check, no comparison needed.
+- **Removed the `when` filter** — it was excluding exactly the cases you want to test. Now every conversation is checked.
+- **Replaced `if`/`then` with `oracle`** — simpler and correct for a single equality assertion.
+- **`then: "The tune-up price is $50."` → `oracle: extract_float(tune_up_price) == 50`** — a real boolean comparison instead of a descriptive string.
+- **Added `extract_float(...)`** — so `"$50.00"`, `"50 USD"`, etc. all parse correctly.
+- **Added a `yields` message** — helpful feedback showing the actual value when it fails.
+
+One quick note 👀: this rule is **profile-bound** — it relies on `tune_up_price` existing in your profile's `chatbot.output`. That field is present in `bike_repair_and_maintenance_scheduler.yaml` and `bike_service_and_repair_inquirer.yaml`, so it'll work there. If you run it against a profile that doesn't expose `tune_up_price`, it won't have anything to check.
+
+Want me to also add a currency check (e.g. `currency(tune_up_price) == 'USD'`) so it doesn't pass on a $50 in another currency? Just say the word! 🚲
+$$$

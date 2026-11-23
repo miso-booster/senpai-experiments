@@ -1,0 +1,29 @@
+Hey there! 😊 Happy to help you check this rule.
+
+There are a few issues with it, so let me walk you through them and then give you a corrected version.
+
+**What's off:**
+
+1. **`conversations: 2` is wrong for this check.** You're only evaluating a single value (`tune_up_price == 50`), so this is a single-conversation oracle — it should be `conversations: 1`. Metamorphic rules (`conversations: 2`+) are for comparing *pairs* of conversations.
+2. **`when: conv[0].tune_up_price == 50` is circular.** You're filtering conversations to only those where the price is already 50, then checking that it's 50 — that will always pass (or be "not applicable"). The `when` filter should select *which* conversations to evaluate, not pre-assert the thing you're testing.
+3. **`then: "The tune-up price is $50."` is not a boolean expression.** `then` (and `oracle`) must evaluate to `True`/`False` — a plain string is truthy and doesn't actually check anything.
+4. **`conv[0].tune_up_price` vs `tune_up_price`.** For a single-conversation rule, you don't need the `conv[0].` prefix — you can reference the field directly (like `tune_up_price` or `tune_up_price[0]` depending on how it's stored). Also, since `tune_up_price` is typed as `money`, it's safer to parse it with `extract_float` before comparing to a number.
+5. **Missing `yields`** — optional, but a helpful error message makes failures easier to read.
+
+Here's the corrected version:
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price equals $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+yields: f"Expected tune-up price to be $50, got {tune_up_price}"
+```
+
+**What I changed:**
+- `conversations: 2` → `conversations: 1` (single-conversation oracle).
+- Removed the circular `when` filter.
+- Replaced the string `then` with a proper boolean `oracle` using `extract_float(...) == 50`.
+- Added a `yields` message for clearer failure output.
+
+One heads-up 👀: `tune_up_price` appears in your `bike_repair_and_maintenance_scheduler` and `bike_service_and_repair_inquirer` profiles, so this rule is profile-bound to those — just make sure the profile you run it against actually exposes `tune_up_price` in `chatbot.output`. Want me to also add a tolerance (e.g. `abs(... - 50) < 0.01`) in case of float rounding? 😊

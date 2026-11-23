@@ -1,0 +1,53 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__2582bcab
+$$$
+I'd love to help, but I have to be upfront: **writing standalone Python automation scripts (LLM pipelines, orchestration code, etc.) falls outside what I can do here** 🙏. My scope is strictly **SENSEI PROFILES, SENSEI RULES, and SENSEI CONNECTORS** — their documentation, structure, validation, and fixes.
+
+That said, I *can* help you in a very practical way: I can give you the **exact profile schema, validation rules, and a ready-to-use prompt template** you'd feed to an LLM so it produces valid Sensei profiles. That's the "brain" of your automation — the Python wrapper is just plumbing around it.
+
+Here's what a valid profile must satisfy (from the docs), which is what your automation should enforce:
+
+**Hard requirements for a valid profile:**
+- `test_name` present (string)
+- `user.language`, `user.role`, `user.goals` present
+- Every `{{variable}}` used in a goal string **must be declared** in `goals` with the exact same name (case-sensitive)
+- Each declared variable needs `function`, `type`, and `data`
+- `function` must be one of: `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `forward(dep)`, `pairwise()`
+- `type` in `user.goals` must be a primitive (`int`, `float`, `string`) or a **custom type** defined in `types/` — **not** `list`, `time`, or `date`
+- `chatbot.output` types may be primitives, `time(...)`, `date(...)`, `list[...]`, or custom types
+- `conversation.number` must be an int, `combinations`, `combinations(p)`, or `combinations(p, fn)` — and `combinations` requires **≥2 nested `forward()` or ≥2 `pairwise()`** variables
+- `random(n)` / `another(n)` require `n ≤ len(data)`
+- `interaction_style` values must be from the reserved keyword set (never translated)
+
+**A prompt template you can feed to an LLM** (this is the piece your Python code would call):
+
+```yaml
+# meta-prompt (not a Sensei profile itself — this is what you send to your LLM)
+system: |
+  You are a Sensei profile generator. Output ONLY a single valid YAML document
+  matching the Sensei profile schema. Do not invent fields. Do not use list/time/date
+  types in user.goals. Every {{variable}} must be declared in user.goals with
+  function, type, and data. Use only these functions: default, random, random(n),
+  random(rand), another, another(n), forward, forward(dep), pairwise.
+  Use only these interaction_style keywords: long phrases, change your mind,
+  change language, make spelling mistakes, single questions, all questions, default.
+user: |
+  Generate a Sensei profile for: <describe your chatbot domain here>.
+  The chatbot exposes these outputs: <list them>.
+  Target scenario: <what the simulated user should do>.
+```
+
+Then your Python automation would:
+1. Call the LLM with the meta-prompt above.
+2. Parse the returned YAML.
+3. Run `python validation_check.py --profile <generated>.yml --output <dir> --combined-matrix --verbose` to validate it.
+4. If validation fails, feed the error back to the LLM and retry.
+
+That validation step is the key — it's the official Sensei validator, so you don't have to re-implement schema checks yourself. 🎯
+
+Want me to help you with any of these next?
+- ✍️ Draft a **concrete profile** for one of your pizza-shop scenarios (I can see your existing profiles and match their style)
+- 🔍 Review one of your current profiles for schema issues
+- 🧩 Write the **meta-prompt** tailored to your pizza domain specifically
+
+Just say the word and I'll jump in! 😊
+$$$

@@ -1,0 +1,61 @@
+Hey there! 😊 Happy to help you draft that rule — but let me flag one thing up front so we build it right 👀
+
+## ⚠️ Quick heads-up: this is a "rule-first" design
+
+Since there's **no profile yet**, we're in the *rule-first* pattern described in the Sensei-check docs (§3.2, pattern 3). That means:
+
+- The rule will **assume** a future profile exposes certain `chatbot.output` fields.
+- You'll need to **document** which fields that profile must provide, or the rule won't work once you wire it up.
+- I'll pick sensible field names — but when the profile lands, either match them or rename in the rule.
+
+## 🧀 Suggested `chatbot.output` fields (for the future profile)
+
+For a lactose-free availability check, I'd expect something like:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `product_name` | string | The product being asked about |
+| `lactose_free` | bool | Whether the product is lactose-free |
+| `available` | bool | Whether it's currently in stock |
+| `stock_quantity` | int | Units available (optional, but handy) |
+
+## 📏 The rule
+
+Here's a clean single-conversation oracle — if a user asks about a lactose-free product, the bot must report availability **and** confirm the lactose-free status:
+
+```yaml
+name: lactose_free_availability
+description: >
+  When a user asks about a lactose-free product, the assistant must confirm
+  the product is lactose-free AND report its availability. Assumes a profile
+  exposing chatbot.output fields: product_name, lactose_free, available.
+conversations: 1
+if:   lactose_free is True
+then: available is not None and product_name is not None
+on-error: "Lactose-free product '{product_name}' did not report availability (available={available})"
+```
+
+## 🔁 Want a metamorphic version too?
+
+If you'd rather compare **two conversations** (e.g., lactose-free vs. regular version of the same product), here's a nice relational check — *if the lactose-free variant is unavailable, the bot must say so explicitly rather than silently substituting*:
+
+```yaml
+name: lactose_free_no_silent_substitution
+description: >
+  If a lactose-free product is unavailable, the assistant must not silently
+  report it as available. Compares lactose-free vs regular variants of the
+  same product. Assumes chatbot.output: product_name, lactose_free, available.
+conversations: 2
+when: conv[0].product_name == conv[1].product_name
+if:   conv[0].lactose_free is True and conv[0].available is False
+then: conv[1].available is False or conv[1].lactose_free is False
+on-error: "Lactose-free '{conv[0].product_name}' unavailable but bot implied availability"
+```
+
+## ✅ Before you activate it
+
+1. **Create the profile** with those `chatbot.output` slots (or tell me your preferred names and I'll adapt).
+2. **Update the `description`** to name the actual profile — e.g. *"Checks availability reporting for the `lactose_free_lookup` profile."*
+3. **Test with a couple of generated conversations** to make sure `when`/`if` filters actually match.
+
+Want me to also sketch the matching **SENSEI Chat profile** stub so the rule has something to bind to? Just say the word and I'll draft it 🚀

@@ -1,0 +1,73 @@
+Here's a profile that captures exactly that "change of heart" scenario 🍕 — the user starts customizing a pizza, then pivots to a predefined one. I've used the `change your mind` interaction style plus explicit goals that walk through the switch, and I made sure the `chatbot.output` fields line up with what your existing rules expect (`price`, `order_id`, `time`).
+
+```yaml
+test_name: "custom_to_predefined_pizza_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza. You begin by asking for a custom pizza
+    and start choosing toppings, but partway through you change your mind and
+    decide to order a predefined pizza instead.
+  context:
+    - "You are ordering for a casual dinner at home."
+    - "You are a bit indecisive and often reconsider your choices."
+    - "You want to keep the order simple in the end."
+  goals:
+    - "Ask for a custom pizza."
+    - "Start customizing it: a {{size}} pizza with {{toppings}}."
+    - "Then change your mind and say you'd rather order a predefined pizza instead."
+    - "Order a {{pizza_type}} pizza in {{size}} size."
+    - "Ask how much it will cost and how long it will take to be ready."
+    - size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [cheese, mushrooms, pepperoni, ham, olives]
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Vegetarian, Hawaiian, Four cheese]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - price:
+        type: currency
+        description: "The final price of the pizza order."
+    - time:
+        type: time("hh:mm:ss")
+        description: "The estimated time until the order is ready."
+    - order_id:
+        type: string
+        description: "The order identifier."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - change your mind
+    - single questions
+```
+
+A few notes to help you get the most out of it 😊:
+
+- **The switch is baked into the goals** — the user explicitly asks for a custom pizza, starts customizing, then pivots. The `change your mind` interaction style reinforces this naturally during the dialogue.
+- **`conversation.number: combinations`** works here because you have two nested `forward()` variables (`size` and `pizza_type`) plus a `pairwise()` (`toppings`), so there's a valid combination matrix to draw from.
+- **Output fields match your rules** — `price`, `time`, and `order_id` are the same names used in `pizza_order_test_custom.yml`, so rules like `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same` can reference them without changes.
+
+Want me to also add a rule that verifies the bot correctly handles the switch (e.g., the final order reflects the predefined pizza, not the abandoned custom one)? Just say the word! 🙌
