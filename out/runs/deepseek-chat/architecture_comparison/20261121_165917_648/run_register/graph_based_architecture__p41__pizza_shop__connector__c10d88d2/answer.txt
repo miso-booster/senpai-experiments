@@ -1,0 +1,43 @@
+¡Claro que sí! 😊 Vamos a montar ese conector para el bot de Alcampo. He revisado la petición y la respuesta, y aquí tienes el YAML listo para usar:
+
+```yaml
+name: "Alcampo"
+base_url: "https://alcampo.botslovers.com"
+send_message:
+  path: "/bot/web"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Origin: "https://alcampo.botslovers.com"
+    Referer: "https://alcampo.botslovers.com/Admin/Widget?mobile=0&user=0&lang=es"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    accion: "response_bot"
+    data:
+      id_user: "377611"
+      idweb_user: "ea38fe92-ad92-4610-9d62-ef7fecb1679b"
+      session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+      message:
+        message:
+          message:
+            text: "{user_msg}"
+        iduser: "377611"
+        session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+        channel: "web"
+      widget_form: "TRUE"
+      contexto_extra: []
+      lang: "es"
+response_path: "messages.0.0.message.text"
+```
+
+### 🔍 Un par de detalles importantes
+
+- **`response_path`**: la respuesta tiene una estructura anidada curiosa — `messages` es una lista que contiene otra lista, y dentro está el objeto `message.text`. Por eso el path es `messages.0.0.message.text` (primer elemento de la lista externa → primer elemento de la lista interna → `message` → `text`). 👀
+- **`{user_msg}`**: lo he colocado en `data.message.message.message.text`, que es donde viaja el texto del usuario en la petición original.
+- **Headers**: he incluido los que suelen ser relevantes (`Content-Type`, `Origin`, `Referer`, `User-Agent`). Los demás (`Accept-Encoding`, `Sec-Fetch-*`, `Priority`, etc.) normalmente los gestiona el cliente HTTP automáticamente, así que no hace falta replicarlos.
+
+### ⚠️ Ojo con los IDs de sesión
+
+Los valores `id_user`, `idweb_user` y `session` están "hardcodeados" tal cual venían en tu captura. Si el bot espera una sesión válida y única por conversación, puede que necesites generar esos valores dinámicamente (o reutilizar los de una sesión real). Si quieres, cuéntame cómo se obtienen y te ayudo a plantearlo. 🙌
+
+¿Quieres que lo probemos con un mensaje de ejemplo o ajustamos algo más?

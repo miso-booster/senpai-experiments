@@ -1,0 +1,91 @@
+conversation ID: graph_based_architecture__p29__bikeshop__rule__3cbdd3a6
+$$$
+Hey there! 😊 Absolutely — that's a great use case for a Sensei-check rule. Let me walk you through it.
+
+## Quick check first: what does your profile expose?
+
+Before writing the rule, the key question is: **what fields does your SENSEI Chat profile's `chatbot.output` expose?** For a bike service appointment, you'd typically want something like:
+
+```yaml
+# profiles/bike_service_appointment.yaml
+test_name: "bike_service_appointment"
+
+user:
+  language: English
+  role: >
+    You are a customer trying to schedule a bike service appointment.
+    Ask about available dates, the type of service needed, and confirm the appointment.
+  context:
+    - "You own a road bike that needs regular maintenance."
+  goals:
+    - "Schedule a {{service_type}} for your bike"
+    - "Ask for the next available appointment date"
+    - "Confirm the appointment"
+    - service_type:
+        function: random()
+        type: string
+        data: [basic tune-up, full service, brake adjustment, wheel truing]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - appointment_confirmed:
+        type: bool
+        description: Whether the appointment was confirmed
+    - appointment_date:
+        type: string
+        description: Confirmed service date
+    - service_type:
+        type: string
+        description: Type of bike service requested
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+If your profile already has fields like these, great — we just reference them. If not, you'll want to add them first (rules shouldn't invent fields the profile doesn't expose 🙂).
+
+## The rule itself
+
+Here's a clean single-conversation rule that checks the chatbot confirms the appointment when the user asks to schedule one:
+
+```yaml
+name: bike_service_confirmation
+description: Chatbot confirms the appointment when the user asks to schedule a bike service
+conversations: 1
+if:   utterance_index('user', 'schedule a bike service') > 0
+then: conv[0].appointment_confirmed is True and conv[0].appointment_date is not None
+```
+
+### Why this works
+- **`if:`** — we only apply the check when the user actually asked to schedule a service (using the LLM-backed `utterance_index` helper to find that turn).
+- **`then:`** — we assert the profile captured a confirmation (`appointment_confirmed is True`) *and* a date (`appointment_date is not None`). That's a nice, concrete signal that the bot didn't just say "sure!" without actually booking anything.
+
+## If you'd rather check the *dialogue text* instead of profile fields
+
+Sometimes you don't have structured output yet, and you just want to verify the bot's wording confirms the booking. In that case:
+
+```yaml
+name: bike_service_confirmation_text
+description: Chatbot explicitly confirms the appointment in its replies
+conversations: 1
+if:   utterance_index('user', 'schedule a bike service') > 0
+then: utterance_index('assistant', 'confirmed') > 0
+```
+
+This is more of a "smoke test" — it's looser, but handy when you're prototyping before your `chatbot.output` is fully wired up.
+
+## A couple of tips 💡
+- **Prefer the profile-bound version** (`appointment_confirmed`, `appointment_date`) once your outputs exist — it's far more reliable than string matching on free text.
+- **Tighten the `if:`** if your users phrase things many ways — e.g. `utterance_index('user', 'book') > 0 or utterance_index('user', 'schedule') > 0`.
+- **Want a metamorphic twist?** If you generate conversations with different `service_type` values, you could add a 2-conversation rule checking that the confirmed date stays consistent for the same requested date across variations. Happy to sketch that too!
+
+Want me to adapt this to your actual `chatbot.output` field names? Just paste your profile and I'll tailor it exactly 🚲✨
+$$$

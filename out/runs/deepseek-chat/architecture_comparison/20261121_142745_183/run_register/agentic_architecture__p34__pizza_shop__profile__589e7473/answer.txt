@@ -1,0 +1,114 @@
+Here's a profile that captures the switch you described. It follows the same conventions as your existing pizza profiles (`pizza_order_test_custom.yml` and `user_sim_pizzaorder_predefined.yml`) and leans on the `change your mind` interaction style to drive the mid-conversation pivot.
+
+```yaml
+test_name: "pizza_order_custom_then_predefined"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza over the phone. You start by trying to
+    build a custom pizza from scratch, but partway through the conversation you
+    change your mind and decide to order a predefined pizza from the menu instead.
+  context:
+    - personality: personalities/conversational-user.yml
+    - your name is Jon Doe
+    - "You first want a custom pizza, but you get unsure about the toppings and
+       eventually prefer a ready-made pizza from the menu."
+  goals:
+    - "a {{size}} custom pizza with {{toppings}}"
+    - "Actually, I changed my mind — I'd rather have the {{predefined_pizza}} pizza instead"
+    - "{{cans}} cans of {{drink}}"
+    - how much will it cost
+    - how long will it take to be ready
+
+    - size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - big
+          - extra large
+
+    - toppings:
+        function: pairwise()
+        type: string
+        data:
+          - cheese
+          - mushrooms
+          - pepperoni
+          - olives
+
+    - predefined_pizza:
+        function: another()
+        type: string
+        data:
+          - Margherita
+          - Pepperoni
+          - Four Cheese
+          - Vegetarian
+          - Hawaiian
+
+    - cans:
+        function: forward(drink)
+        type: int
+        data:
+          min: 1
+          max: 6
+          step: 1
+
+    - drink:
+        function: forward()
+        type: string
+        data:
+          - Sprite
+          - Coca-Cola
+          - Orange Fanta
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my pizza shop, can you say that again?"
+  output:
+    - final_pizza:
+        type: string
+        description: "The pizza the customer ultimately ordered (the predefined one, not the custom one)"
+    - price:
+        type: currency
+        description: "The final price of the pizza order"
+    - time:
+        type: time("hh:mm:ss")
+        description: "The estimated time for the pizza to be ready"
+    - order_id:
+        type: string
+        description: "The order identifier"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+### What this profile does 🍕
+- **The storyline:** the simulated user opens with a **custom pizza** request (`size` + `toppings`), then explicitly **changes their mind** and asks for a **predefined pizza** from the menu (`predefined_pizza`), plus drinks and price/ETA questions.
+- **`change your mind` interaction style** is the key driver — it makes the simulator naturally pivot mid-conversation, which is exactly the behaviour you described.
+- **`chatbot.output`** captures `final_pizza` so a later rule can verify the bot honoured the *predefined* choice rather than the abandoned custom one. I kept `price`, `time`, and `order_id` consistent with your existing pizza profiles so any profile-bound rules can be reused.
+
+### Notes / things you may want to tweak
+- I set `conversation.number: 2` and `goal_style.steps: 6` (a bit longer than your other profiles, since the change-of-mind needs room to play out). Adjust as you like.
+- `predefined_pizza` uses `another()` so you cycle through menu options without repeats. If you'd rather cover combinations, swap to `pairwise()`.
+- I referenced `personalities/conversational-user.yml` (as in your existing profiles) — make sure that file exists in your `personalities/` folder.
+
+Want me to also write a **rule** that checks the bot ends up confirming the predefined pizza (using `final_pizza`)? If so, I'll pull up the rules docs and we can align it to this profile's outputs. 😊

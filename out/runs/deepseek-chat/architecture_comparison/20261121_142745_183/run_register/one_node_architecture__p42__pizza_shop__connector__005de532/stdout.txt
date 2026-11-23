@@ -1,0 +1,43 @@
+conversation ID: one_node_architecture__p42__pizza_shop__connector__005de532
+$$$
+¡Claro que sí! 😊 I can see exactly what's going on. Your connector has a few mismatches with the real API — let me walk you through them:
+
+1. **`base_url` is wrong** → the request goes to `api.1millionbot.com`, not `api.bot.com`.
+2. **`path` is wrong** → it's `/api/public/messages`, not `/api/messages`.
+3. **Missing `Authorization` header** → the API requires it (`64e5d1af081211d24e2cfecd`).
+4. **Payload is incomplete** → the API needs `conversation`, `sender_type`, `sender`, `bot`, and `url` too.
+5. **`response_path` is wrong** → `request.text` just echoes your own message back. The bot's reply lives at `response.0.text`.
+
+Here's the fixed connector 👇
+
+```yaml
+name: "Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of friendly notes 💡:
+
+- The `conversation`, `sender`, and `bot` IDs look like **session-specific values** captured from your browser. If the bot stops responding after a while, you may need to refresh those IDs (or check whether the API lets you start a new conversation dynamically).
+- The reply comes back as **HTML** (`<p>¡Buenos días!<br>...`). That's fine for testing, but if you want clean text downstream, you might strip tags later.
+- I added `Origin` and `Referer` since the real request includes them — some APIs reject requests without them.
+
+Want me to also adapt this into a profile that targets this bot? Just say the word 😄
+$$$

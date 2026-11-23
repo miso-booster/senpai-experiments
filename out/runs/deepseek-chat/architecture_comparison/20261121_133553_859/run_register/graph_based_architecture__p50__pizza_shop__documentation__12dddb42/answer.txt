@@ -1,0 +1,46 @@
+Great question! 😊 Let me break it down for you.
+
+## What is an oracle?
+
+In testing, an **oracle** is simply the **mechanism that tells you whether a test passed or failed** — it's the "source of truth" you compare against. Think of it like a judge at a contest: it looks at the result and decides "correct" or "incorrect." 🧑‍⚖️
+
+## How it works in Sensei-check
+
+In Sensei-check rules, `oracle:` is a field where you write a **Python expression** that must evaluate to `True` (pass) or `False` (fail). It's the condition checked over one or more conversations.
+
+Here's a simple example from your own project:
+
+```yaml
+name: only_talks_about_pizzas
+description: The chatbot only talks about pizzas
+conversations: 1
+oracle: 'only_talks_about(''pizza orders, drink orders, information on delivery of pizzas, information about the pizza shop'')'
+```
+
+Here the oracle is `only_talks_about(...)` — if the chatbot stays on topic, it returns `True` and the rule passes. ✅
+
+## The "oracle problem" 🧩
+
+The tricky part is that for chatbots, it's often **hard to know the "correct" answer** in advance (there are many valid ways to phrase a reply). That's exactly why Sensei-check supports **metamorphic rules** — instead of checking an absolute answer, you check a **relationship** between conversations.
+
+In those cases, you often use `if:` / `then:` instead of a single `oracle:`. For example, from your project:
+
+```yaml
+name: more_toppings_cost_more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Here the `if`/`then` pair *is* the oracle — it checks that "more toppings ⇒ higher price," without needing to know the exact price. 🍕
+
+## Quick summary
+
+| Term | Meaning |
+|------|---------|
+| **Oracle** | The pass/fail check for a rule |
+| **`oracle:` field** | A single boolean expression (single-conversation or global rules) |
+| **`if:` / `then:`** | An implication-style oracle, great for metamorphic rules |
+
+Want me to show you more oracle examples, or help you write one for a specific rule in your pizza shop project? 😄

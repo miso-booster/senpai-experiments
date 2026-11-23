@@ -1,0 +1,128 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__8035bb4e
+$$$
+Hey! 😊 Quick reality check before we dive in: I'm your SENSEI assistant, so I can't hand you a full Python automation script. But I *can* give you the exact, doc-grounded blueprint an LLM-driven generator needs to produce **valid** profiles — the schema, the hard constraints, the prompt design, and how to validate the output. That's the part that actually makes such a script work.
+
+Docs I relied on: `sensei-chat-guide.md` (profile anatomy, types, functions, `chatbot.output`), plus `sensei-check-doc.md` and `rules-examples.md` (for the rule ↔ `chatbot.output` contract). I also peeked at your existing `pizza_and_drink_order_placement.yaml` to match project conventions.
+
+---
+
+## 🧭 The core idea
+
+A "valid profile generator" is really a **constrained YAML emitter**. The LLM should never free-form the whole file — instead:
+
+1. **You** (or a schema) decide the domain skeleton.
+2. **The LLM** fills in domain-specific content (role, context, goals, data lists, output fields).
+3. **A validator** (`validation_check.py`) rejects anything malformed.
+4. **A repair loop** feeds errors back to the LLM.
+
+That's the architecture. Now the constraints the LLM must respect.
+
+---
+
+## ✅ Hard constraints the LLM must obey (from `sensei-chat-guide.md`)
+
+These are the rules that break profiles most often — bake them into your prompt *and* your validator:
+
+| Area | Constraint |
+|---|---|
+| `test_name` | Required string. |
+| `user.goals` | Every `{{variable}}` in a goal string **must** have a matching declared variable (case-sensitive), and every declared variable **should** be used in a goal. |
+| Variable `type` | Only `int`, `float`, `string`, or a **custom type** from `types/`. ❌ No `list`, `time`, `date` in `user.goals`. |
+| `data` | Explicit list, numeric range (`min`/`max`/`step` or `linspace`), or `any("...")` LLM-generated items. |
+| `function` | Only `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `forward(dep)`, `pairwise()`. |
+| `random(n)` / `another(n)` | `n ≤ len(data)`. |
+| `pairwise()` | Needs **≥ 2** pairwise variables. |
+| `conversation.number: combinations` | Needs **≥ 2** nested `forward()` or **≥ 2** `pairwise()` variables. |
+| `chatbot.output` types | `int`, `float`, `string`, `time(...)`, `date(...)`, `list[...]`, or custom types. |
+| `interaction_style` | Only the reserved keywords: `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, `random: [...]`. **Never translate these.** |
+| `goal_style` | One of `steps: N`, `random steps: M` (M ≤ 20), or `all_answered:` (with optional `export`, `limit`). |
+| `chatbot.fallback` | Should be the bot's **real** fallback text (prevents loops). |
+
+---
+
+## 🧩 Recommended generator design
+
+**Step 1 — LLM produces a *partial* "domain spec" (JSON), not YAML.**  
+Ask for something like:
+
+```json
+{
+  "domain": "hotel booking",
+  "user_role": "...",
+  "context_facts": ["...", "..."],
+  "goals": [{"text": "Book a {{room_type}} for {{nights}} nights", "vars": ["room_type","nights"]}],
+  "variables": [
+    {"name": "room_type", "type": "string", "function": "forward()", "data": ["single","double","suite"]},
+    {"name": "nights", "type": "int", "function": "random()", "data": {"min":1,"max":7,"step":1}}
+  ],
+  "outputs": [
+    {"name": "total_price", "type": "currency", "description": "..."},
+    {"name": "booking_id", "type": "string", "description": "..."}
+  ],
+  "conversation": {"number": 4, "goal_style": {"steps": 5}, "interaction_style": ["long phrases"]}
+}
+```
+
+JSON is far easier to validate than YAML, and you can then render YAML deterministically.
+
+**Step 2 — Validate the JSON against the constraints table above** (pure Python, no LLM). Reject early: unknown functions, `list` type in goals, `random(n)` with `n > len(data)`, `combinations` without enough forward/pairwise vars, bad interaction keywords.
+
+**Step 3 — Render YAML** with a fixed template (so formatting is always correct).
+
+**Step 4 — Run `validation_check.py`** on the rendered profile (per §8 of the guide) and feed any errors back to the LLM for a repair pass.
+
+**Step 5 — Optional: generate a matching rule** using the same `chatbot.output` field names, so the profile/rule contract holds (see `sensei-check-doc.md` §3.1).
+
+---
+
+## 🎯 Prompt skeleton for the LLM (fill-in-the-blanks)
+
+```
+You are generating a SENSEI Chat profile for the domain: {domain}.
+
+Return ONLY JSON matching this schema: {json_schema}
+
+Rules you MUST follow:
+- Variables may only use types: int, float, string, or a custom type from {available_types}.
+- Functions allowed: default, random, random(n), random(rand), another, another(n), forward, forward(dep), pairwise.
+- random(n)/another(n): n must be <= number of data items.
+- pairwise() requires at least 2 pairwise variables.
+- conversation.number "combinations" requires >=2 forward or >=2 pairwise variables.
+- interaction_style keywords must be exactly one of: long phrases, change your mind,
+  change language, make spelling mistakes, single questions, all questions, default, random.
+- Every {{variable}} in a goal must be declared, and every declared variable must appear in a goal.
+- chatbot.output types: int, float, string, time(...), date(...), list[...], or custom types.
+- chatbot.fallback must be realistic bot fallback text.
+```
+
+---
+
+## 🧪 Validation checklist (your Python should assert these)
+
+- [ ] `test_name` present.
+- [ ] All `{{vars}}` ↔ declared variables match both directions.
+- [ ] No forbidden types in `user.goals`.
+- [ ] All `function` values in the allowed set.
+- [ ] `random(n)`/`another(n)` bounds OK.
+- [ ] `pairwise` count ≥ 2 if used; `combinations` prerequisites met.
+- [ ] `interaction_style` keywords are exact reserved strings.
+- [ ] `goal_style` is one valid form.
+- [ ] `chatbot.output` types valid.
+- [ ] `validation_check.py` passes.
+
+---
+
+## ⚠️ Two things to watch
+
+1. **Custom types** (`currency`, `phone_number`, etc.) must exist in `types/` before the LLM references them — otherwise the profile fails. Have your generator either restrict to built-ins or auto-create the type YAML.
+2. **`chatbot.output` is a contract** — if you later write rules, field names must match exactly (`sensei-check-doc.md` §3.1). Generate outputs with stable, descriptive names.
+
+---
+
+Want me to go further? I can:
+- 📝 Draft the **JSON schema** for the LLM output, or
+- 🧱 Write a **ready-to-use profile template** (like the one in §7 of the guide) tailored to your domain, or
+- 🔗 Design the **matching rule** once you pick a profile.
+
+Just tell me the domain you're targeting and I'll build the SENSEI side with you! 🚀
+$$$

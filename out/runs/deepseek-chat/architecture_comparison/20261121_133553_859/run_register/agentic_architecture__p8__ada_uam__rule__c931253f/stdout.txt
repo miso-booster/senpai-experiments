@@ -1,0 +1,49 @@
+conversation ID: agentic_architecture__p8__ada_uam__rule__c931253f
+$$$
+¡Hola! 😊 Comparé tu regla con la guía de reglas y con el perfil real del proyecto (`consultante_de_servicios_y_asistencia_del_cau.yaml`). Aquí va el veredicto.
+
+## ¿Está bien la regla?
+
+**Casi.** La estructura es válida y los tres campos existen en `chatbot.output` del perfil, pero hay **dos problemas**:
+
+### 1. `when` y `oracle` son idénticos (redundante y semánticamente raro)
+En una regla de una sola conversación, `when` es un **filtro** que selecciona qué conversaciones aplican, y `oracle` es la **condición que se valida**. Pusiste la misma expresión en ambos. Eso significa: *"solo evalúa esta conversación si ya cumple el criterio, y luego comprueba que cumple el criterio"*. El resultado es que la regla **nunca puede fallar** (si no cumple, se descarta; si cumple, pasa). Es una tautología. 🚫
+
+Para una comprobación de valores absolutos como esta, lo correcto es poner la condición **solo en `oracle`** y dejar `when` fuera (o usarlo para filtrar por algo distinto, p. ej. que los campos no estén vacíos).
+
+### 2. Falta `active` y un `yields` útil (opcional pero recomendable)
+Según los ejemplos de reglas, conviene declarar `active: True` y añadir un `yields` con un mensaje de error claro. No es obligatorio, pero mejora mucho la depuración.
+
+### 3. Detalle sobre el teléfono
+El perfil declara `contact_phone` como `string`, así que comparar con `'91 497 4029'` es correcto **si el extractor devuelve exactamente ese formato**. Ojo: si el bot responde "914974029" o "+34 91 497 40 29", la comparación fallará aunque la info sea correcta. Como no hay un helper de normalización de teléfonos documentado, lo dejo como comparación exacta (es lo más fiel a tu intención).
+
+## Versión ajustada ✅
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details (profile consultante_de_servicios_y_asistencia_del_cau).
+conversations: 1
+active: True
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+yields: |
+  f"CAU contact info mismatch: email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+## Explicación línea por línea 📖
+
+- **`name` / `description`**: identificador y propósito. Añadí en la descripción el perfil objetivo, como recomienda la guía ("document the relationship").
+- **`conversations: 1`**: es una regla de **una sola conversación** (un oráculo clásico), no metamórfica. Correcto para comprobar valores absolutos.
+- **`active: True`**: la regla se evalúa (las inactivas se ignoran).
+- **`oracle`**: la condición que debe cumplirse. Aquí comparamos los tres campos extraídos (`contact_email`, `contact_phone`, `physical_address`) con los valores esperados. Todos existen en `chatbot.output` del perfil, así que el contrato perfil↔regla está bien alineado. 👍
+- **`yields`**: mensaje de error con f-string que muestra los valores reales cuando falla — muy útil para saber *qué* salió mal. Lo puse en bloque `|` para que el f-string con comillas dobles y llaves se lea sin ambigüedad en YAML.
+
+## Resumen de cambios
+| Antes | Después | Motivo |
+|-------|---------|--------|
+| `when` = `oracle` (idénticos) | Eliminado `when` | Evitaba que la regla pudiera fallar (tautología) |
+| Sin `active` | `active: True` | Explícito y consistente con los ejemplos |
+| Sin `yields` | `yields` con detalle | Mejor diagnóstico de fallos |
+| Descripción genérica | Menciona el perfil | Trazabilidad perfil↔regla |
+
+¿Quieres que la guarde como archivo en `rules/` o prefieres ajustar algo (por ejemplo, hacer la comparación del teléfono más tolerante)? 😊
+$$$

@@ -1,0 +1,56 @@
+conversation ID: graph_based_architecture__p26__bikeshop__rule__4c60e429
+$$$
+Hey there! 👋 Happy to help you check this rule — and yep, there are a few things we should fix so it actually does what you want 😊
+
+## What's off with the current rule
+
+Let me walk you through it piece by piece:
+
+1. **`conversations: 2` is unnecessary** 🚩
+   You're only checking a single conversation's `tune_up_price`. There's no comparison between two conversations here, so this should be `conversations: 1`. Using `2` would force Sensei-check to look for pairs and use `conv[0]`/`conv[1]`, which doesn't match your intent.
+
+2. **`when: conv[0].tune_up_price == 50` is a filter, not a check** 🚩
+   `when:` *selects* which conversations the rule applies to. If you filter on `tune_up_price == 50`, you're only running the rule on conversations that *already* have the right price — so the rule can never fail. That defeats the purpose!
+
+3. **`if:` / `then:` are being misused** 🚩
+   - `if: conv[0].tune_up_price is not None` — this is fine as a *precondition*, but combined with the `when:` filter above it becomes redundant.
+   - `then: "The tune-up price is $50."` — this is just a **string**, not a boolean expression. Sensei-check needs something that evaluates to `True`/`False`. A plain sentence will not be evaluated as a check.
+
+4. **`conv[0].tune_up_price == 50` assumes a numeric field** ⚠️
+   If `tune_up_price` comes from `chatbot.output` as a `currency` type (e.g., `"50.00 USD"` or `"$50"`), comparing it directly to `50` will fail. You'd want to use `extract_float(...)` and `currency(...)` instead. I'll show both versions below.
+
+## ✅ Fixed version (assuming numeric field)
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price equals 50 (single-conversation oracle).
+conversations: 1
+when: conv[0].tune_up_price is not None
+oracle: conv[0].tune_up_price == 50
+```
+
+## ✅ Fixed version (assuming currency/string field — safer)
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price equals 50 USD.
+conversations: 1
+when: conv[0].tune_up_price is not None
+oracle: extract_float(conv[0].tune_up_price) == 50 and currency(conv[0].tune_up_price) == 'USD'
+```
+
+## 🔍 Summary of what I changed
+
+| Before | After | Why |
+|---|---|---|
+| `conversations: 2` | `conversations: 1` | Only one conversation is involved |
+| `when: conv[0].tune_up_price == 50` | `when: conv[0].tune_up_price is not None` | `when` should *select* conversations, not pre-check the answer |
+| `if:` / `then:` with a string | `oracle:` with a boolean expression | `then` must be a boolean; a plain sentence isn't evaluated |
+| `conv[0].tune_up_price == 50` | `extract_float(...) == 50 and currency(...) == 'USD'` (if currency type) | Handles `"$50"` / `"50.00 USD"` formats robustly |
+
+## 💡 One thing to double-check
+
+Make sure your SENSEI Chat profile's `chatbot.output` actually exposes a field named **`tune_up_price`** — otherwise the rule won't find it. If the field is named differently (e.g., `price`, `service_price`), just swap the name in the rule to match 👌
+
+Want me to help you adapt this into a metamorphic rule too (e.g., "tune-up price should be higher than a basic service price")? Just say the word! 🚀
+$$$

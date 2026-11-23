@@ -1,0 +1,91 @@
+# Hey there! 👋 Happy to help you build that profile!
+
+Love this scenario — it's a really nice, realistic "diagnostic" user: someone who's *uncomfortable* but doesn't know why, and wants guidance rather than a booking. Let me walk you through a profile that captures that vibe 🚴‍♂️
+
+## What we're going for
+
+- **Role**: a cyclist experiencing discomfort, unsure whether it's fit or worn components.
+- **Tone**: uncertain, exploratory — asks for advice, **never explicitly books**.
+- **Goals**: describe the discomfort, ask about fit adjustments, ask about component wear/services, ask what the shop recommends.
+- **Outputs**: fields a rule could later check (e.g., whether the bot offered adjustments, mentioned services, or tried to push an appointment).
+
+## Ready-to-use profile
+
+Save this as `profiles/discomfort_fit_or_wear_inquirer.yaml`:
+
+```yaml
+test_name: "discomfort_fit_or_wear_inquirer"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who has been feeling discomfort while riding your bike.
+    You are not sure whether the bike is not fitted correctly or whether some
+    components are simply worn out. You want advice on possible adjustments or
+    services the shop offers. You are curious and open, but you do NOT want to
+    book an appointment — you only want information and recommendations.
+  context:
+    - "You ride regularly, mostly for commuting and weekend rides."
+    - "The discomfort is mild but persistent — knees, lower back, and hands."
+    - "You suspect either a fit issue or worn saddle/grips/pedals, but you're not sure."
+    - "You are polite and a bit uncertain; you ask follow-up questions."
+    - "You explicitly avoid asking to schedule anything."
+  goals:
+    - "Describe that you feel discomfort while riding and that you're not sure if it's a fit issue or worn components."
+    - "Ask whether the shop can help with bike fit adjustments."
+    - "Ask what kinds of adjustments or services the shop offers for discomfort like this."
+    - "Ask how you could tell whether your components (saddle, grips, pedals) are worn out."
+    - "Ask for a general recommendation on what to do next, without booking an appointment."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_offered:
+        type: string
+        description: "Whether the chatbot mentions bike fit adjustments or fitting services. Look for phrases like 'we offer bike fitting' or 'we can adjust your position'."
+    - services_for_discomfort:
+        type: string
+        description: "The services or adjustments the chatbot suggests for discomfort while riding (e.g., saddle height adjustment, stem change, tune-up)."
+    - worn_component_guidance:
+        type: string
+        description: "The chatbot's guidance on how to tell if components like saddle, grips, or pedals are worn out."
+    - recommendation_next_step:
+        type: string
+        description: "The chatbot's general recommendation on what the user should do next."
+    - appointment_push:
+        type: string
+        description: "Whether the chatbot proactively suggests booking an appointment, even though the user did not ask for one."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 15
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+## A few notes on the choices 👀
+
+- **`single question`** keeps each turn focused — great for a user who's exploring step by step.
+- **`all_answered`** with `limit: 15` gives the conversation room to breathe without runaway cost.
+- **`appointment_push`** in `chatbot.output` is a sneaky-but-useful field: it lets a future Sensei-check rule verify the bot *doesn't* over-eagerly push bookings when the user only wants advice. Nice invariant to test! ✅
+- The **role** and **context** explicitly say "do NOT book" — this steers the simulator away from accidentally asking for an appointment.
+
+## Want to tweak it?
+
+- If you'd like the user to be a bit more **frustrated** (like your `rude-user` personality), add `- personality: personalities/rude-user` to `context`.
+- If you want to test **multilingual** handling, add `change language: [Spanish]` to `interaction_style`.
+- If you'd rather have the user ask everything in one go, swap `single question` for `all questions`.
+
+Want me to also sketch a **Sensei-check rule** that uses those output fields (e.g., "bot should not push an appointment unless the user asks")? Just say the word and I'll draft it for you 😊

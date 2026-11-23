@@ -1,0 +1,37 @@
+¡Buena pregunta! 😊 Vamos a ver por qué esa regla no te funciona y cómo arreglarla.
+
+## Por qué no funciona
+
+Hay **tres problemas** en tu regla:
+
+1. **`conversations:` está vacío** → Sensei-check necesita saber cuántas conversaciones evaluar. Sin un valor (`1`, `2`, `all`...), la regla no puede ejecutarse.
+
+2. **`membership_benefits` no es accesible así directamente.** En las reglas, los campos del `chatbot.output` se leen a través de la colección `conv`, es decir: `conv[0].membership_benefits`. Escribir `membership_benefits` "suelto" solo funciona en reglas de 1 conversación con ciertos campos escalares, pero lo correcto y seguro es usar `conv[0].`.
+
+3. **`membership_benefits` puede ser `None`** (no extraído), y comparar `None != ''` da `True` aunque el campo esté vacío. Mejor comprobar que **no sea nulo y no esté vacío**.
+
+## Regla corregida
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits.
+conversations: 1
+oracle: conv[0].membership_benefits is not None and conv[0].membership_benefits != ''
+yields: f"Membership benefits were not provided or are empty: {conv[0].membership_benefits}"
+```
+
+## Notas importantes 💡
+
+- **Verifica el nombre del campo.** En tus perfiles, el campo equivalente aparece como `membership_benefits` en `general_shopper_and_member_support.yaml`, pero ojo: ese perfil tiene **muchos** outputs y `membership_benefits` solo se llenará si la conversación realmente cubre ese tema. Si el perfil no lo expone con ese nombre exacto, la regla fallará siempre.
+- **Si quieres que aplique a varias conversaciones**, cambia `conversations: 1` por `conversations: all` y usa `exists(...)`:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot informs users about membership benefits in at least one conversation.
+conversations: all
+oracle: exists("conv[0].membership_benefits is not None and conv[0].membership_benefits != ''")
+```
+
+- **Si el objetivo es "todas las conversaciones deben informar"**, entonces sí usa `conversations: all` con un `oracle` que recorra todas — pero para eso necesitarías una condición global; avísame y te la armo.
+
+¿Quieres que la adapte a un perfil concreto (por ejemplo `general_shopper_and_member_support`) o la dejamos genérica? 🙌

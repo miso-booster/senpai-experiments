@@ -1,0 +1,40 @@
+I found the exact profile you pasted — it's `qa.yml` in your project. Its `chatbot.output` fields are:
+
+- `opening_and_closing` (str)
+- `tire` (money)
+- `tune_up` (money)
+- `seat_price` (str)
+- `care_bike` (str)
+
+So I'll build the rule against those exact field names. Here's the rule that checks the values you specified:
+
+```yaml
+name: bike_shop_expected_values
+description: >
+  Checks the extracted outputs of the qa profile: opening/closing time is
+  between 10 and 20 (hours), tune-up costs 50, seat costs 20, and tire costs 20.
+conversations: 1
+active: True
+oracle: |
+  10 <= extract_float(opening_and_closing) <= 20
+  and extract_float(tune_up) == 50
+  and extract_float(seat_price) == 20
+  and extract_float(tire) == 20
+yields: |
+  f"Unexpected values -> opening_and_closing={opening_and_closing}, tune_up={tune_up}, seat_price={seat_price}, tire={tire}"
+```
+
+### A couple of things to double-check ⚠️
+
+1. **`opening_and_closing` "10 to 20"** — this field is a `str` describing the opening/closing time (e.g. `"10am to 8pm"`). `extract_float` only grabs the **first** number, so `10 <= extract_float(...) <= 20` effectively checks that the *opening* hour is between 10 and 20. If you actually want to validate both the opening **and** closing hours, tell me the exact expected format and I'll refine it (e.g. using `semantic_content`).
+
+2. **`seat_price` is typed `str`** — `extract_float` still works on strings, so `extract_float(seat_price) == 20` is fine. But if you'd prefer cleaner numeric checks, consider changing its type to `money` in the profile (like `tire` and `tune_up`). Want me to update the profile too?
+
+3. **`money` type** — `extract_float` handles the numeric part, so `== 50` / `== 20` will work regardless of currency symbol.
+
+Would you like me to:
+- keep it as-is (single rule, first-number check for opening/closing), or
+- split it into separate rules per field, and/or
+- tighten the opening/closing check to validate both hours?
+
+Let me know and I'll finalize it! 😊

@@ -1,0 +1,41 @@
+All set! 😊 Here's your rule. Since there's no profile yet, this is a **rule-first design** (Case C from the docs): I picked clear variable names and I'll tell you exactly what a future profile must expose for it to work.
+
+```yaml
+name: lactose_free_availability_consistency
+description: >
+  For lactose-free product inquiries, the chatbot must report availability
+  consistently: if a product is marked as available, it must also be flagged
+  as lactose-free and have a non-empty availability status. Rule-first design;
+  assumes a future profile exposing product_name, is_lactose_free,
+  is_available and availability_status.
+active: true
+conversations: 1
+when: is_lactose_free == True
+if: is_available == True
+then: availability_status is not None and availability_status != ''
+yields: |
+  f"Lactose-free product {product_name} reported available but availability_status is empty"
+```
+
+### What this checks
+- **Scope (`when`)**: only conversations where the product is actually lactose-free (`is_lactose_free == True`).
+- **Relation (`if`/`then`)**: if the bot says the product is available, then it must also provide a concrete availability status (not empty/null). This catches the classic bug where a bot claims "yes, we have it" but never gives a real stock/availability answer.
+
+### Variables I named (and what a future profile must provide)
+For this rule to run, a profile's `chatbot.output` needs these fields:
+
+| Field | Suggested type | Meaning |
+|---|---|---|
+| `product_name` | `string` | The product being asked about |
+| `is_lactose_free` | `bool` | Whether the product is lactose-free |
+| `is_available` | `bool` | Whether the bot said it's available |
+| `availability_status` | `string` | The concrete availability answer (e.g. "in stock", "out of stock", "available in store X") |
+
+> ⚠️ Note: `bool` isn't in the documented default output types (`int`, `float`, `string`, `time`, `date`, `list[...]`, or custom). If you'd rather stay strictly within documented types, I can switch `is_lactose_free` / `is_available` to `string` (e.g. `"yes"/"no"`) or define a small custom type. Want me to adjust that?
+
+### Heads-up on existing profiles
+I found a close candidate: **`dietary_needs_and_special_products_inquiry.yaml`** — it might already cover lactose-free inquiries. If you'd like, I can read it and either:
+1. **Adapt this rule to its actual `chatbot.output` fields** (making it profile-bound, the recommended pattern), or
+2. Keep it as a standalone rule-first design as above.
+
+Just say the word and I'll wire it up! 🚀

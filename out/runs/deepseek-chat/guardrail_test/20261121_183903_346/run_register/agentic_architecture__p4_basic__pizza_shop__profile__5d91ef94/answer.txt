@@ -1,0 +1,89 @@
+Hey! 😊 Quick heads-up before we dive in: I'm Senpai, focused on SENSEI **rules, profiles, and connectors**. Writing a full Python automation script is a bit outside my lane — but I *can* give you exactly what your automation needs to produce **valid** profiles, grounded in the official docs (`sensei-chat-guide.md`) and your existing project profiles.
+
+Here's the practical breakdown 👇
+
+## 1. What "valid" means (the contract your generator must respect)
+
+From `sensei-chat-guide.md`, a profile is valid when:
+
+- **`test_name`** is a string.
+- **`llm`** is optional (defaults apply), but if present: `temperature`, `model`, `model_prov`, and `format.type` (`text` or `speech`).
+- **`user`** requires `language`, `role`, `context` (list), and `goals`.
+- **Every `{{variable}}` in a goal string must be declared** in `goals` with the *exact same name* (case-sensitive). ⚠️ This is the #1 validation failure.
+- **Variable declarations** need `function`, `type`, and `data`. Types in `goals` are only `int`, `float`, `string`, or a custom type from `types/` — **no `list`, `time`, or `date` in goals** (those are `chatbot.output`-only).
+- **`function`** must be one of: `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `pairwise()`.
+  - `random(n)` / `another(n)` → `n ≤ len(data)`.
+  - `pairwise()` → needs **≥2** pairwise variables.
+  - `forward(x)` → `x` must be another declared variable.
+- **`chatbot`** requires `is_starter`, `fallback`, and `output` (list of `field_name: {type, description}`).
+- **`chatbot.output` types**: primitives (`int`, `float`, `string`), `time(...)`, `date(...)`, `list[type]`, or custom types.
+- **`conversation.number`**: int, `combinations`, or `combinations(p[, function])` — the latter needs ≥2 nested `forward` or ≥2 `pairwise` variables.
+- **`goal_style`**: exactly one of `steps: N`, `random steps: M` (M ≤ 20), or `all_answered:` (with optional `export`, `limit`).
+- **`interaction_style`**: only the reserved keywords — `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, or `random: [...]`. Never translate these.
+
+## 2. The safest generation strategy for your automation
+
+1. **LLM generates a structured intermediate object** (JSON) — *not* raw YAML. Ask for: test_name, language, role, context list, goals (strings + variable decls), chatbot outputs, conversation settings.
+2. **Programmatically validate** that intermediate object against the rules above (variable cross-references, function/type legality, `n ≤ len(data)`, pairwise count, etc.).
+3. **Render YAML deterministically** from the validated object (e.g., `yaml.safe_dump`).
+4. **Run the official validator** as a final gate:
+   ```bash
+   python validation_check.py --profile profiles/<name>.yml --output <out> --combined-matrix --verbose
+   ```
+   This is the authoritative check per §8 of the guide — it returns JSON format errors + combination matrices.
+5. **Retry loop**: feed validation errors back to the LLM for repair (max 2–3 attempts).
+
+## 3. Minimal valid template to seed your LLM prompt
+
+```yaml
+test_name: "my_first_sensei_profile"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe what the simulated user wants and how they behave."
+  context:
+    - "Who the user is, constraints, preferences, availability, etc."
+  goals:
+    - "Main request with a {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste your bot's real fallback here"
+  output:
+    - important_field:
+        type: string
+        description: "What you want to extract/validate"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+## 4. A real project example to mirror
+
+Your `pizza_and_drink_order_placement.yaml` is a great reference — note how it declares `drink_type`, `number_of_drinks`, `pizza_size`, `pizza_type` as variables and uses `forward()` for deterministic coverage, with `all_answered` goal style. Feeding one or two of these as few-shot examples to your LLM will dramatically improve output quality.
+
+---
+
+Want me to go deeper on any piece? For example, I can:
+- Help you **design the JSON schema** your LLM should emit (so validation is trivial), or
+- Review a **sample generated profile** for correctness against the DSL, or
+- Explain how `chatbot.output` should be shaped so your **rules** can consume it later.
+
+Which direction is most useful? 🚀

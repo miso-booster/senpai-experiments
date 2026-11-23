@@ -1,0 +1,42 @@
+¡Claro que sí! 😊 Vamos a crear una regla que compruebe que el chatbot ha devuelto una lista de juguetes eco-friendly durante la conversación.
+
+Antes de nada, un detalle importante 👀: en tu proyecto, el perfil `pet_products_inquiry.yaml` ya expone un campo llamado `eco_friendly_toys` en su `chatbot.output` (tipo `string`). Así que la regla puede apoyarse directamente en ese campo. Si quieres que la regla sea más robusta, te recomiendo que ese campo sea de tipo `list[string]` en el perfil, pero eso lo vemos después.
+
+Aquí tienes la regla:
+
+```yaml
+name: eco_friendly_toys_returned
+description: The chatbot returns a list of eco-friendly toys during the conversation (pet_products_inquiry profile)
+conversations: 1
+active: true
+oracle: |
+  eco_friendly_toys is not None and len(eco_friendly_toys) > 0
+yields: |
+  f"Expected a non-empty list of eco-friendly toys, got: {eco_friendly_toys}"
+```
+
+Un par de notas para que quede bien afinada 🛠️:
+
+- **Si `eco_friendly_toys` es un `string`** (como está ahora en el perfil), `len(...) > 0` comprobará que el texto no esté vacío. Funciona, pero no valida que sea realmente una *lista* de juguetes.
+- **Si quieres validar que es una lista real**, cambia el tipo en el perfil a `list[string]`:
+
+```yaml
+- eco_friendly_toys:
+    type: list[string]
+    description: List of eco-friendly toys from One Two Fun
+```
+
+Y entonces la regla podría comprobar el número de elementos, por ejemplo:
+
+```yaml
+name: eco_friendly_toys_returned
+description: The chatbot returns a list of eco-friendly toys during the conversation (pet_products_inquiry profile)
+conversations: 1
+active: true
+oracle: |
+  eco_friendly_toys is not None and len(eco_friendly_toys) >= 1
+yields: |
+  f"Expected at least one eco-friendly toy, got: {eco_friendly_toys}"
+```
+
+¿Quieres que te ayude también a ajustar el perfil para que el campo sea `list[string]`, o prefieres dejarlo como `string`? 😊

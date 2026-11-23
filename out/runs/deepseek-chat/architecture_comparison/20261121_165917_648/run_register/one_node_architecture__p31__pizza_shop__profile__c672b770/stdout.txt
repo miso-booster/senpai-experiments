@@ -1,0 +1,63 @@
+conversation ID: one_node_architecture__p31__pizza_shop__profile__c672b770
+$$$
+I spotted the issue right away 😊 — your `chatbot:` block is missing! The `is_starter`, `fallback`, and `output` fields got accidentally nested under `user:` instead of being under their own `chatbot:` key. That's why the profile is broken.
+
+Here's the fixed version:
+
+```yaml
+test_name: general_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+  - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+  - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+  - Ask what types of questions the chatbot can answer.
+  - Ask what the daily opening hours are.
+  - Ask about the estimated order time, without specifying the number of pizzas.
+  - Ask what drink options are available and their prices.
+  - Ask about the pricing for a custom pizza.
+chatbot:
+  is_starter: false
+  fallback: 'I''m sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks.'
+  output:
+  - available_information:
+      type: string
+      description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+  - opening_hours:
+      type: string
+      description: The daily opening hours of the pizza shop, as stated by the chatbot.
+  - estimated_order_time:
+      type: string
+      description: The chatbot's explanation of the estimated order time, including factors that influence it.
+  - drink_options_and_prices:
+      type: string
+      description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+  - custom_pizza_pricing:
+      type: string
+      description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+conversation:
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single question
+```
+
+What I fixed 👇
+
+1. **Missing `chatbot:` key** — `is_starter`, `fallback`, and `output` were indented under `user:`. I moved them into a proper `chatbot:` block.
+2. **`custom_pizza_pricing` type** — it was `str`, which isn't a valid Sensei type. Changed to `string`.
+3. **`export: 1`** — this should be a boolean. Changed to `export: false` (matches your other profiles).
+4. **`fallback` cleanup** — I trimmed the stray backtick and the LangChain troubleshooting URL that had leaked into the message. A fallback should be the bot's real reply, not a stack-trace hint 😅.
+
+One friendly heads-up 💡: if you plan to write Sensei-check rules against this profile later, note that `drink_options_and_prices` is typed as `string` — so rules would need text helpers (like `language` or `semantic_content`) rather than numeric comparisons. If you want price-based rules, consider splitting it into a `list[string]` or a dedicated `currency` field. Want me to help with that?
+$$$

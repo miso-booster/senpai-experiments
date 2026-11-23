@@ -1,0 +1,64 @@
+# Hey there! 👋 Happy to help you build that rule!
+
+Looking at your profile, I can see you've got a bike shop assistant with these `chatbot.output` fields:
+
+- `opening_and_closing` (str) — should be **10 to 20** (I'm guessing you mean the shop is open ~10–20 hours, or opens between 10 and 20? Let me flag this below 👇)
+- `tire` (money) — should be **20**
+- `tune_up` (money) — should be **50**
+- `seat_price` (str) — should be **20**
+- `care_bike` (str) — free-form advice
+
+Before I hand you the rule, one quick clarification so we nail it 💡:
+
+> **"The opening and closing should be 10 to 20"** — do you mean:
+> - **(a)** the shop is open for a duration between 10 and 20 hours, or
+> - **(b)** the opening hour is between 10:00 and 20:00 (e.g., "10am–8pm")?
+
+I'll assume **(a) opening duration between 10 and 20 hours** for the rule below, but if it's (b), just swap the logic — happy to adjust! 😊
+
+---
+
+## The rule
+
+Since you want to check **fixed expected values** across conversations, this is a **single-conversation oracle** (not metamorphic — no need to compare pairs here). One rule per check keeps failures easy to read:
+
+```yaml
+name: bike_shop_prices_and_hours
+description: >
+  Checks the bike shop profile outputs: opening duration between 10 and 20 hours,
+  tire = 20, tune-up = 50, seat = 20, and care advice is provided.
+conversations: 1
+oracle: >
+  extract_float(conv[0].tire) == 20 and
+  extract_float(conv[0].tune_up) == 50 and
+  extract_float(conv[0].seat_price) == 20 and
+  extract_float(conv[0].opening_and_closing) >= 10 and
+  extract_float(conv[0].opening_and_closing) <= 20 and
+  conv[0].care_bike is not None
+on-error: >
+  Expected tire=20, tune_up=50, seat=20, hours in [10,20].
+  Got tire={conv[0].tire}, tune_up={conv[0].tune_up},
+  seat={conv[0].seat_price}, hours={conv[0].opening_and_closing},
+  care={conv[0].care_bike}
+```
+
+---
+
+## A few notes & gotchas ⚠️
+
+1. **`seat_price` is typed as `str`** in your profile, not `money`. That's fine — `extract_float` will still pull the number out (e.g., `"20 EUR"` → `20`). But if you want consistency, consider changing its type to `money` in the profile. Your call! 🙂
+
+2. **`opening_and_closing` is a `str`** — `extract_float` grabs the *first* number it finds. So `"10am to 8pm"` → `10` (the opening hour), **not** the duration. That's why I asked about (a) vs (b) above. If your bot returns something like `"open 10 hours a day"`, this works great. If it returns `"10am–8pm"`, you'll want a different check — tell me and I'll rewrite it.
+
+3. **`care_bike`** — I only check it's not `None`. If you want to verify it actually contains advice, you could use `semantic_content(conv[0].care_bike, 'tips to maintain and care for a bike')`. Want me to add that?
+
+4. **Prefer separate rules?** If you'd rather isolate failures (e.g., one rule for prices, one for hours), I can split this into 2–3 smaller rules — often nicer for debugging. Just say the word! 🙌
+
+---
+
+Want me to:
+- 🔀 Split into multiple rules?
+- 🎯 Adjust the opening-hours logic to option (b)?
+- 🧠 Add a `semantic_content` check for `care_bike`?
+
+Let me know and I'll tune it up for you! 🚲✨

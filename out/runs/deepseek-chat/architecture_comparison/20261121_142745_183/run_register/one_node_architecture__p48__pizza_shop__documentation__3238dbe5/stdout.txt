@@ -1,0 +1,48 @@
+conversation ID: one_node_architecture__p48__pizza_shop__documentation__3238dbe5
+$$$
+Great question! 😊 Let me walk you through which fields in a Sensei profile are **optional** versus which ones you really need.
+
+## The short answer
+
+Only a **few** fields are truly mandatory. Most of a profile is optional, and Sensei applies sensible defaults when you leave things out.
+
+## Field-by-field breakdown
+
+### `test_name`
+- **Optional** in practice, but **strongly recommended** — it's how you identify the profile in logs and reports.
+
+### `llm`
+- **Optional.** If you omit it, defaults are applied (model, temperature) and the format defaults to `text`.
+- You only need it when you want to override the model/temperature or switch to `speech` mode.
+
+### `user`
+- `language` — **optional** (defaults to English).
+- `role` — **recommended**, but not strictly enforced.
+- `context` — **optional.**
+- `goals` — this is the **core** of the profile. You need goals for the simulator to do anything meaningful. Variables declared inside `goals` must match the `{{...}}` placeholders exactly.
+
+### `chatbot`
+- `is_starter` — **optional** (defaults to `false`).
+- `fallback` — **optional**, but **highly recommended** so the simulator doesn't loop forever.
+- `output` — **optional** in the strict sense, but if you want to run Sensei-check rules against extracted fields, you need it. No `output` = no `conv[i].field` to inspect.
+
+### `conversation`
+- `number` — **optional** (defaults apply).
+- `goal_style` — **optional** (defaults apply).
+- `interaction_style` — **optional** (defaults to `default` behavior).
+- `max_cost` — **optional.**
+
+## Quick mental model 🍕
+
+Think of a profile like ordering a pizza:
+
+- **Dough** = `user.goals` → without it, there's no pizza.
+- **Toppings** = `llm`, `chatbot.output`, `conversation`, `interaction_style` → you *can* skip them, but the result is plain.
+- **The box** = `test_name` → nice to have so you know which pizza is which.
+
+## Bottom line
+
+The only thing you **really** can't skip is having meaningful `user.goals`. Everything else has a default or is optional — but for a *useful, testable* profile, I'd always include `test_name`, `chatbot.output` (if you plan to write rules), and a real `chatbot.fallback`.
+
+Want me to look at one of your existing profiles (like `pizza_order_test_custom.yml`) and point out which fields you could safely trim or which are doing heavy lifting? 👀
+$$$

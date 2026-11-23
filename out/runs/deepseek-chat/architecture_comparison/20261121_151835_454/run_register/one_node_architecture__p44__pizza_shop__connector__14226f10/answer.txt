@@ -1,0 +1,33 @@
+¡Claro que sí! 😊 Es un caso muy parecido al de Ada UAM, así que la adaptación es directa. Solo hay que cambiar los identificadores (`Authorization`, `conversation`, `sender`, `bot`), el `language` (ya está en `es`, perfecto), la `url` de referencia y el `response_path`, que en este caso es `response.0.text` (igual que Ada UAM, porque la respuesta viene dentro de un array `response`).
+
+Aquí tienes el connector adaptado:
+
+```yaml
+name: "Ayuntamiento de Morón de la Frontera"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+  payload_template:
+    conversation: "67ea76f4e213b2dcbc146e2b"
+    sender_type: "User"
+    sender: "67ea76f40643a3dd27e59411"
+    bot: "65ca19e7dbbb4e26cbeadf24"
+    language: "es"
+    url: "https://www.morondelafrontera.es/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Un par de notas rápidas 👀:
+
+- **`response_path: "response.0.text"`** → la respuesta del bot viene en `response[0].text`, así que apuntamos ahí. ✅
+- **`conversation` y `sender`** son identificadores de sesión que suele generar el frontend. Si el bot espera una sesión nueva por cada prueba, puede que quieras generar valores distintos (o reutilizar los mismos si el bot tolera sesiones compartidas). Tal como están, funcionarán para pruebas básicas.
+- **`Authorization`** es la API key del bot de Morón (`65ca19e7dbbb4e26cbeadf28`), distinta a la de Ada UAM. ✔️
+- El texto de respuesta viene con HTML (`<p>...</p>`). Si quieres limpiarlo antes de compararlo en reglas, puedes hacerlo en el post-procesado o tenerlo en cuenta al escribir reglas (por ejemplo, usando helpers que toleren HTML o normalizando el texto).
+
+¿Quieres que te ayude también a crear un perfil de prueba (Sensei Profile) para validar este connector, o a escribir alguna regla para comprobar que responde en español y se mantiene en el dominio del ayuntamiento? 🚀

@@ -1,0 +1,75 @@
+conversation ID: graph_based_architecture__p24__bikeshop__profile__df7d165c
+$$$
+Hey there! 😊 Happy to help you build that profile — it's a really clean, focused test case. Let me walk you through it.
+
+Your request maps almost perfectly onto the existing `qa.yml` profile in your project, but I'll tailor a fresh one that matches your exact wording and constraints. Here's a complete, runnable profile:
+
+```yaml
+test_name: "bike_shop_general_info_and_services"
+
+llm:
+  temperature: 0.0
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer talking to the virtual assistant of a bike shop.
+    You want general information about the shop and its standard services.
+    Phrase your questions clearly and directly, like a regular customer would.
+  context:
+    - "You are interested in basic shop information and standard pricing."
+    - "You only ask about opening/closing times, the price of a new tire, the price of a standard tune-up, the price of a new seat, and general bike care advice."
+    - "Do not ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or anything outside basic pricing, shop hours, and general bike care."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices."
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: "The opening and closing time of the shop, as stated by the chatbot."
+    - tire_price:
+        type: money
+        description: "The price of a new bike tire provided by the chatbot."
+    - tune_up_price:
+        type: money
+        description: "The price of a standard bike tune-up provided by the chatbot."
+    - seat_price:
+        type: money
+        description: "The price of a new bike seat provided by the chatbot."
+    - bike_care_advice:
+        type: string
+        description: "General advice on how to properly take care of a bike, focusing on basic maintenance and good practices."
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      export: true
+      limit: 9
+  interaction_style:
+    - default
+```
+
+### A few notes on the choices I made 👇
+
+- **`is_starter: true`** — since your bot likely greets first, this lets the assistant open the conversation. If your bot waits for the user, flip it to `false`.
+- **`goal_style: all_answered`** with `export: true` — this runs until every goal is satisfied and exports a CSV showing which outputs were met. Handy for checking coverage. The `limit: 9` is a safety cap (5 goals, so plenty of room).
+- **`interaction_style: default`** — keeps the user natural and clear, exactly as you described ("phrase questions clearly and directly"). No spelling mistakes or language switching here.
+- **`temperature: 0.0`** — deterministic, so the simulated user stays on-script and doesn't wander into forbidden topics.
+- **`chatbot.output`** — I used `money` for the three prices (matches your existing profiles) and `string` for hours and care advice. These fields are also what any **Sensei-check rules** would read later as `conv[i].tire_price`, etc. — so keep the names stable if you plan to write rules against them.
+
+### One thing to double-check ⚠️
+Your `chatbot.output` uses the `money` type — make sure a `types/money.yml` exists in your project (your other profiles like `qa.yml` and `appointment.yml` use it, so it should already be there). If it's missing, the extraction will fail.
+
+Want me to also sketch a **Sensei-check rule** that verifies the bot actually states a price for each item (e.g., `tire_price is not None`)? Just say the word! 🙌
+$$$

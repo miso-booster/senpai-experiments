@@ -1,0 +1,92 @@
+Hey there! 😊 Happy to help you build this profile — it's a nice, focused test of the shop's core Q&A behaviour. Let me walk you through it.
+
+## What your request maps to
+
+Your description is essentially a clean, well-scoped version of the existing `qa.yml` in your project, but with a few important refinements:
+
+- **Explicit scope guardrails** in `context` (no appointments, models, warranties, etc.)
+- **`chatbot.output` fields** that let you validate each answer (hours, tire price, tune-up price, seat price, care advice)
+- **`all_answered` goal style** so the conversation only ends once every question has been addressed — perfect for a "does the bot answer everything correctly?" test
+
+## Suggested profile
+
+Save this as `profiles/bike_shop_general_info_and_services.yml`:
+
+```yaml
+test_name: bike_shop_general_info_and_services
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal, polite customer visiting a bike shop's virtual assistant.
+    You want clear, direct answers about the shop's basic information and standard
+    services. Phrase your questions clearly and directly, like a regular customer would.
+  context:
+    - "You are looking for general information about the shop and its standard services."
+    - "You only care about: opening/closing times, the price of a new bike tire, the price of a standard tune-up, the price of a new bike seat, and general bike care advice."
+    - "Do NOT ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or anything outside basic pricing, shop hours, and general bike care."
+    - "You expect the assistant to use proper bike-shop terminology and to state prices clearly."
+    - "You do not want unsolicited suggestions about unrelated services."
+  goals:
+    - "Ask about the opening and closing times of the bike shop."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices rather than advanced repairs."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: "The shop's opening and closing times as stated by the chatbot."
+    - tire_price:
+        type: money
+        description: "The price of a new bike tire provided by the chatbot."
+    - tune_up_price:
+        type: money
+        description: "The price of a standard bike tune-up provided by the chatbot."
+    - seat_price:
+        type: money
+        description: "The price of a new bike seat provided by the chatbot."
+    - bike_care_advice:
+        type: string
+        description: "General bike care and basic maintenance advice given by the chatbot (cleaning, tire pressure, chain lubrication, etc.)."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: true
+      limit: 10
+  interaction_style:
+    - default
+```
+
+## Why each piece is there 👇
+
+- **`user.context`** — this is where the "don't ask about X" guardrails live. Sensei uses these as behavioural constraints for the simulated user, so the bot won't drift into appointments or warranties.
+- **`user.goals`** — five plain-string goals, one per question. No variables needed here since you want a fixed, repeatable script.
+- **`chatbot.output`** — one field per expected answer. `money` is a great fit for the three prices (it's a custom type already used across your project, e.g. in `qa.yml` and `bike_service_and_repair_inquirer.yaml`). If your project doesn't have a `money` type in `types/`, swap it for `float` or `string`.
+- **`goal_style.all_answered` with `export: true`** — the conversation keeps going until every goal is addressed, and you get a CSV showing which outputs were satisfied. That's exactly what you want for "did the bot answer each request correctly?"
+- **`interaction_style: default`** — natural, customer-like phrasing. No typos or language switching, since you asked for clear and direct.
+- **`number: 3`** — three runs gives you a bit of variety in phrasing without burning budget.
+
+## A couple of tips 💡
+
+- If you want to **also check that the bot avoids unrelated services**, you could add a rule later using `only_talks_about` (a global rule) — but that's a Sensei-check concern, not a profile one.
+- If `money` isn't defined in your `types/` folder, let me know and I can show you the exact YAML to add it (it's a small regex + extraction schema).
+- You can validate the profile before running with:
+  ```bash
+  python validation_check.py --profile profiles/bike_shop_general_info_and_services.yml --output /abs/path/to/output --verbose
+  ```
+
+Want me to also draft a **Sensei-check rule** that verifies the bot never mentions appointments or warranties in this profile? That would pair really nicely with it 😊

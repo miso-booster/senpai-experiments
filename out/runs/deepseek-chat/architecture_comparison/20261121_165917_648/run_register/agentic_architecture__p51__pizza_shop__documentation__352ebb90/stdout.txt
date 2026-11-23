@@ -1,0 +1,45 @@
+conversation ID: agentic_architecture__p51__pizza_shop__documentation__352ebb90
+$$$
+# What connectors are for 🔌
+
+Connectors are the **transport layer** between the SENSEI simulator and your target chatbot. They let you hook up **any chatbot API without writing code** — you just describe the HTTP call in YAML, and the simulator uses it to send user messages and read back the bot's replies.
+
+In the big picture: **profiles** generate conversations, **connectors** send/receive messages from the real bot, and **rules** validate the resulting conversations.
+
+*(Sources: `custom-connector-guide.md`, `connector-examples.md`)*
+
+## The fields 📋
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | ✅ Yes |
+| `send_message.path` | API endpoint path (appended to `base_url`) | ✅ Yes |
+| `send_message.method` | HTTP method (POST, GET, PUT, DELETE) | No (default: `POST`) |
+| `send_message.headers` | Custom headers (e.g., `Authorization`, `Content-Type`) | No |
+| `send_message.payload_template` | JSON structure with the `{user_msg}` placeholder | ✅ Yes |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | ✅ Yes |
+
+## Two things worth highlighting ✨
+
+- **`{user_msg}`** is the placeholder in `payload_template` where the simulated user's message gets injected. It can be nested deep, e.g. `message.text: "{user_msg}"`.
+- **`response_path`** uses dot notation to navigate the JSON reply:
+  - `"message"` → `response["message"]`
+  - `"data.text"` → `response["data"]["text"]`
+  - `"results.0.content"` → `response["results"][0]["content"]`
+
+## Minimal example
+
+```yaml
+name: "My Custom Bot"
+base_url: "https://api.mychatbot.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+Want me to help you write a connector for a specific API? If you share the endpoint, the request body shape, and where the reply lives in the response JSON, I can draft it for you 😊
+$$$

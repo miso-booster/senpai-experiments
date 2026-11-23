@@ -1,0 +1,63 @@
+Hey there! 😊 Absolutely, I'd love to help you craft that rule — it's a great use case for Sensei-check!
+
+Before I write it out, let me make sure I understand your setup so the rule actually fits your project 👇
+
+### Quick questions to tailor the rule
+
+1. **What does your profile's `chatbot.output` expose?** For example, does it have fields like:
+   - `appointment_confirmed` (boolean)
+   - `appointment_date` / `appointment_time`
+   - `service_type`
+   - `confirmation_message`
+   
+   The rule needs to reference **real** `chatbot.output` fields — otherwise it won't work (see the "Profile-bound rules" section in the docs).
+
+2. **Is this a single-conversation check or a metamorphic one?**
+   - If you just want "when the user asks to schedule a bike service, the bot confirms it" → that's a **single-conversation oracle** (`conversations: 1`).
+   - If you want to compare *two* conversations (e.g., same service, different dates → both should confirm) → that's **metamorphic** (`conversations: 2`).
+
+3. **How is "confirmation" represented?** Is it a boolean slot, a specific phrase ("your appointment is confirmed"), or both?
+
+---
+
+### A solid starting point (single-conversation)
+
+Assuming your profile exposes something like `appointment_confirmed` and `service_type`, here's a clean rule you can adapt:
+
+```yaml
+name: bike_service_appointment_confirmed
+description: When the user requests a bike service appointment, the chatbot confirms it
+conversations: 1
+when: service_type == 'bike_service'
+if:   appointment_requested is True
+then: appointment_confirmed is True
+```
+
+Or, if you'd rather check the **dialogue text** (no dedicated boolean slot), you can lean on the `utterance_index` helper:
+
+```yaml
+name: bike_service_confirmation_phrase
+description: Chatbot must explicitly confirm the bike service appointment
+conversations: 1
+when: service_type == 'bike_service'
+oracle: utterance_index('assistant', 'appointment confirmed') > 0
+```
+
+---
+
+### If you want the metamorphic version 🚴
+
+Say you want to check that **regardless of the requested date**, the bot still confirms:
+
+```yaml
+name: bike_service_confirmed_across_dates
+description: Appointment is confirmed for any requested service date
+conversations: 2
+when: conv[0].service_type == conv[1].service_type == 'bike_service'
+if:   conv[0].appointment_date != conv[1].appointment_date
+then: conv[0].appointment_confirmed is True and conv[1].appointment_confirmed is True
+```
+
+---
+
+So — could you share your **actual `chatbot.output` field names** (or paste the profile)? Then I can rewrite the rule with the exact fields you have, no guessing 😄. And let me know whether you want the **single** or **metamorphic** flavor, and I'll polish it up for you!

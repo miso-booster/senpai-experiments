@@ -1,0 +1,67 @@
+conversation ID: one_node_architecture__p31__pizza_shop__profile__574e8342
+$$$
+I spotted the issue right away 👀 — your `chatbot:` block got swallowed into `user:` because it's indented under `goals` and missing its own top-level key. Also `export: 1` should be a boolean, and `type: str` should be `string` for consistency. Here's the fixed profile:
+
+```yaml
+test_name: general_information_seeker
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+    - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+    - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+    - Ask what types of questions the chatbot can answer.
+    - Ask what the daily opening hours are.
+    - Ask about the estimated order time, without specifying the number of pizzas.
+    - Ask what drink options are available and their prices.
+    - Ask about the pricing for a custom pizza.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - available_information:
+        type: string
+        description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+    - opening_hours:
+        type: string
+        description: The daily opening hours of the pizza shop, as stated by the chatbot.
+    - estimated_order_time:
+        type: string
+        description: The chatbot's explanation of the estimated order time, including factors that influence it.
+    - drink_options_and_prices:
+        type: string
+        description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+    - custom_pizza_pricing:
+        type: string
+        description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single question
+```
+
+What I fixed, in a nutshell 🛠️:
+
+- **`chatbot:` is now a proper top-level section** — before, `is_starter`, `fallback`, and `output` were indented under `user.goals`, so Sensei would have treated them as goal items (and likely failed).
+- **`export: 1` → `export: false`** — it's a boolean flag, not a number.
+- **`type: str` → `type: string`** — keep it consistent with the other outputs (and the documented primitive name).
+- **Added `conversation.number: 3`** — your original had no `number`, which is required to know how many conversations to run. I used `3` to match what your project context shows; adjust if you want more/fewer.
+- **Cleaned the fallback string** — removed the stray backtick and the LangChain troubleshooting URL, which was leaking into the bot's fallback message.
+
+One friendly heads-up 💡: since this profile exposes `opening_hours`, `drink_options_and_prices`, etc., any profile-bound rules you write later can reference them as `conv[i].opening_hours`, `conv[i].drink_options_and_prices`, and so on. Want me to draft a rule that checks those outputs? 😊
+$$$

@@ -1,0 +1,52 @@
+Hey there! 😊 Great question — connectors are basically the **bridge** between Sensei and your chatbot. They tell Sensei *where* to send the simulated user's messages and *how* to read the bot's reply back. Let me break it down for you 👇
+
+## What connectors are for
+
+A connector is a small YAML config that describes how to talk to a chatbot's API. Instead of writing code, you just declare:
+
+- the **base URL** of the bot,
+- the **endpoint** and **HTTP method** to send messages,
+- any **headers** (auth, content-type, etc.),
+- the **payload** structure (with a `{user_msg}` placeholder for the user's message),
+- and the **path** to extract the bot's reply from the JSON response.
+
+Sensei then uses that config to drive real conversations against your bot 🚀
+
+## The fields
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | ✅ Yes |
+| `send_message.path` | API endpoint path (appended to `base_url`) | ✅ Yes |
+| `send_message.method` | HTTP method (`POST`, `GET`, `PUT`, `DELETE`) | No (default: `POST`) |
+| `send_message.headers` | Custom headers (e.g., `Authorization`) | No |
+| `send_message.payload_template` | JSON structure with `{user_msg}` placeholder | ✅ Yes |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | ✅ Yes |
+
+## A quick example
+
+Here's a minimal one — your `postman.yaml` echo bot:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+## How `response_path` works
+
+It navigates the JSON response using dot notation:
+
+- `"message"` → `response["message"]`
+- `"data.text"` → `response["data"]["text"]`
+- `"results.0.content"` → `response["results"][0]["content"]`
+
+So in your `ada-uam.yaml`, `response_path: "response.0.text"` means: take the first element of the `response` array, then its `text` field 👌
+
+Want me to help you validate one of your connectors, or build a new one for a specific API? Just say the word! 🙌

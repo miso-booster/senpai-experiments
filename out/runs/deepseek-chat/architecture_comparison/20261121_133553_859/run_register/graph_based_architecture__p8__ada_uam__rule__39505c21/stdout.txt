@@ -1,0 +1,60 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__39505c21
+$$$
+# Let's check your rule together 🔍
+
+Great question! Let me walk you through what I see, because there's a subtle but important issue here. 😊
+
+## The core problem: `when` and `oracle` are identical
+
+Your rule currently says:
+
+- **`when`**: only select conversations where the CAU got the contact details *exactly right*
+- **`oracle`**: check that the CAU got the contact details *exactly right*
+
+Do you see the trap? 🪤 The `when` filter **pre-selects only the conversations that already pass**. So the oracle can never fail — it's checking a condition that was already guaranteed to be true by the filter. This rule will always pass (or be "not applicable" if no conversation matches), which means it **can't catch any bug**.
+
+Think of it like a bouncer who only lets in people wearing a red shirt, and then checks "is everyone here wearing a red shirt?" — of course they are! 😄
+
+## The fix
+
+You want the `when` to select the *relevant* conversations (e.g., those where the user asked about contact info), and the `oracle` to verify the answer. Since you're using `conversations: 1` and there's no meaningful input filter to narrow down, the cleanest fix is to **drop the `when`** and keep only the `oracle`:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details.
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+## Why this works ✅
+
+- **`conversations: 1`** → the rule runs on each single conversation.
+- **`oracle`** → asserts the three contact fields match the expected values. If the CAU hallucinates a wrong email, phone, or address, the rule **fails** and reports it. 🎯
+- **No `when`** → every conversation is checked, so nothing gets silently filtered out.
+
+## A couple of things to double-check on your side 👀
+
+1. **Field names must exist in `chatbot.output`.** Make sure your SENSEI Chat profile actually exposes `contact_email`, `contact_phone`, and `physical_address` as output slots. If they're named differently (e.g., `email`, `phone`, `address`), update the rule to match — otherwise the rule will error out.
+
+2. **Exact string matching is strict.** `'91 497 4029'` won't match `'914974029'` or `'91-497-4029'`. If the chatbot might format the phone differently, consider normalizing first (e.g., strip spaces) or use `semantic_content` for a more forgiving check:
+
+```yaml
+name: contact_and_address_check
+description: Checks that the contact email is cau@uam.es and the physical address matches the expected location
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and semantic_content(conv[0].physical_address, 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+3. **The address contains special characters** (`º`, accents). Make sure the YAML is saved as UTF-8 so nothing gets mangled. 📝
+
+## TL;DR
+
+| Aspect | Verdict |
+|---|---|
+| `when` == `oracle` | ❌ Makes the rule vacuous (always passes) |
+| Fix | ✅ Remove `when`, keep `oracle` |
+| Field names | ⚠️ Verify they match `chatbot.output` |
+| Exact matching | ⚠️ Consider normalization if formatting varies |
+
+Want me to help you adapt this into a metamorphic rule (e.g., "if the user asks about contact info in different ways, the answer stays consistent")? That would be a nice complement to this single-conversation oracle! 🚀
+$$$

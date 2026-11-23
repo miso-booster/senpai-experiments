@@ -1,0 +1,73 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__189c2791
+$$$
+I'd love to help, but I have to be upfront: **writing a general-purpose Python automation script that generates Sensei profiles via LLM calls falls outside what I can do here** 🙏. My scope is limited to Sensei **profiles**, **rules**, and **connectors** — meaning I can help you *design, validate, fix, and explain* the YAML artifacts themselves, but not build the surrounding Python tooling that orchestrates LLM calls to produce them.
+
+That said, I can absolutely help you with the *Sensei side* of that pipeline — which is usually the trickiest part. Here's what I can do for you:
+
+### ✅ What I can help with
+
+1. **Define a canonical profile template** your automation should emit (so the LLM has a strict target schema to fill).
+2. **Write the validation checklist** your script should enforce before accepting a generated profile (variable names match `{{…}}`, `function`/`type`/`data` are consistent, `conversation.number` is compatible with the declared functions, etc.).
+3. **Provide a "golden" example profile** for your pizza shop project that your automation can use as a few-shot reference.
+4. **Explain the profile contract** (`chatbot.output` ↔ rules) so your generator produces fields that your existing rules can actually consume.
+
+### 📋 A strict template your automation should target
+
+Here's a profile skeleton aligned with your `pizza_shop` project conventions — feed this to your LLM as the *output schema*:
+
+```yaml
+test_name: "<snake_case_name>"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "<one-sentence role>"
+  context:
+    - "<constraint or persona reference>"
+  goals:
+    - "<goal string using {{variable}}>"
+    - <variable_name>:
+        function: forward() | pairwise() | random() | another() | default()
+        type: string | int | float
+        data: [<values>] | {min: <int>, max: <int>, step: <int>}
+
+chatbot:
+  is_starter: false
+  fallback: "<real bot fallback>"
+  output:
+    - <field_name>:
+        type: string | int | float | money | currency | time | date | list[<type>]
+        description: "<what to extract>"
+
+conversation:
+  number: <int> | combinations | combinations(<fraction>, pairwise)
+  goal_style:
+    steps: <int>
+    # or: all_answered: {export: false, limit: <int>}
+  interaction_style:
+    - <reserved keyword from the list>
+```
+
+### 🔍 Validation rules your script should enforce
+
+Before accepting a generated profile, check:
+
+- Every `{{variable}}` in `goals` strings has a matching declaration in the same `goals` list (case-sensitive).
+- `conversation.number: combinations(...)` is only used if **≥2 `forward()` or ≥2 `pairwise()`** variables exist.
+- `random(n)` has `n ≤ len(data)`.
+- `interaction_style` values are only from the reserved set: `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, `random: [...]`.
+- `chatbot.output` field names are **stable and reusable** — especially if your rules reference them (e.g., `price`, `size`, `toppings`, `drink` in `more_toppings_cost_more.yaml`).
+- Custom types referenced in `type:` exist under `types/`.
+
+### 🎯 A concrete next step I *can* take
+
+If you tell me **what kind of profile** you want the automation to generate (e.g., "a pizza order profile with 3 variables and pairwise coverage"), I'll write the **exact target YAML** — and you can use that as the few-shot example / schema in your Python script. That keeps the LLM output constrained to something Sensei will actually accept.
+
+Want to go that route? Just describe the profile you want generated and I'll produce the reference YAML for your automation to imitate 😊.
+$$$

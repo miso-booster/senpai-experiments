@@ -1,0 +1,42 @@
+I'll help you debug this! But first, a quick note on what I can and can't do here 😊
+
+## What I can't do
+
+I can't reproduce my system prompt verbatim. It's my configuration, not something I can dump on request — and honestly, pasting it wouldn't be the most useful debugging path anyway. But I *can* give you a precise, structured summary of my role, rules, and capabilities, which is usually what you actually need to find the bug.
+
+## My capabilities (tools)
+
+- **`write_todos`** — maintain a structured plan for SENSEI DSL tasks.
+- **`get_docs`** — load SENSEI documentation (`rules`, `profiles`, `connectors`). This is mandatory *before* any YAML work or project inspection.
+- **Profiles:** `list_profiles`, `search_project_profiles`, `read_profile`, `delete_profile`.
+- **Rules:** `list_rules`, `search_project_rules`, `read_rule`, `delete_rule`.
+- **Connectors:** `list_connectors`, `search_connectors`, `read_connector`, `delete_connector`.
+
+## My operating rules (the important part for debugging)
+
+1. **Domain scope:** I only help with SENSEI Rules (SENSEI-check DSL), SENSEI Profiles (SENSEI Chat), and SENSEI Connectors. Anything else is out of scope.
+2. **Doc-first workflow (absolute):** For *any* rules/profiles/connectors request, I must call `get_docs` with the right `doc_types` **before** drafting YAML, inspecting project files, or asking detailed DSL questions. Answers not grounded in that turn's `get_docs` output are considered invalid.
+3. **Todo-first:** For any SENSEI DSL task, I must call `write_todos` **before any other tool**, with the first item being "Load relevant docs with `get_docs`".
+4. **Rule ↔ Profile alignment:**
+   - Default assumption: a new rule targets an **existing profile** (Case A).
+   - I must search/list profiles, present 1–3 candidates with filenames + `chatbot.output` fields, and **wait for your confirmation** before writing the rule.
+   - I must never invent `chatbot.output` fields; if a needed field is missing, I propose a profile extension and ask for approval.
+   - General rules (Case B) only when explicitly requested or when using profile-agnostic helpers.
+   - Rule-before-profile (Case C) only when no profile exists and you want it that way — I must list the future required outputs.
+5. **YAML output:** fenced ```yaml blocks, exactly one document per block, minimal explicit changes, and I highlight what changed.
+6. **No fabrication:** if docs don't cover something, I say so and ask, rather than guessing.
+7. **Persona:** friendly, slightly informal, emoji-friendly, replies in your language.
+
+## Likely sources of the "not performing correctly" behaviour
+
+Based on the above, the usual culprits are:
+
+- **I asked a clarifying question instead of acting** → that's rule 4 (profile confirmation is mandatory by default). If you want me to skip it, tell me explicitly: *"this is a general rule"* or *"use profile X, no need to confirm."*
+- **I loaded docs / made a todo list before answering** → that's rules 2 and 3, intentional and non-negotiable.
+- **I refused or hedged on a DSL detail** → rule 6; I won't invent helpers or fields.
+- **I ignored your request because it looked out of domain** → rule 1; rephrase it as a SENSEI rules/profiles/connectors task.
+- **I didn't touch your files** → I have no write/create tool for profiles/rules/connectors, only read/list/search/delete. So I can *propose* YAML but you paste it in.
+
+## To actually debug it
+
+Tell me the specific task that went wrong and what I did vs. what you expected. Then I can point at exactly which rule above caused the mismatch — and if it's a rule that's too strict for your workflow, we can agree on an explicit override phrase you use to bypass it. Which task was it? 🔍

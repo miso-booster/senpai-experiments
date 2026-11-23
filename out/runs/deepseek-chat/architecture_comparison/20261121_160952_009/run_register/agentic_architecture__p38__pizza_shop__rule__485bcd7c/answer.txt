@@ -1,0 +1,56 @@
+Here's how I'd approach it. Since `order_id` is the output name, the rule is a **profile-bound single-conversation oracle** that reads that field directly (no `conv[i]` prefix needed for `conversations: 1`).
+
+A few of your profiles already expose `order_id` in `chatbot.output`, so this rule will work against any of them:
+
+| Profile file | `chatbot.output` fields |
+|---|---|
+| `pizza_and_drink_order_placement.yaml` | pizza_options, drink_options, order_summary, total_cost, estimated_readiness_time, pickup_location, **order_id** |
+| `pizza_order_test_custom.yml` | price, time, **order_id** |
+| `user_sim_pizzaorder_predefined.yml` | price, time, **order_id** |
+
+## The rule
+
+The idea: assert that the extracted `order_id` is present and not empty. That's the cleanest way to say "the chatbot provided an order ID".
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide an order ID at the end of the conversation (checks the order_id output is present and non-empty)
+conversations: 1
+active: True
+oracle: |
+  order_id is not None and str(order_id).strip() != ''
+yields: |
+  f"The chatbot did not provide a valid order_id, got: {order_id}"
+```
+
+### Why this shape?
+- **`conversations: 1`** → it's a per-conversation check, not metamorphic.
+- **`order_id`** → matches the `chatbot.output` field name exactly (single-conversation rules reference the field directly, no `conv[i]` prefix).
+- **`str(order_id).strip() != ''`** → guards against the extractor returning an empty string, which isn't `None` but still means "no ID given".
+- **`yields`** → gives a helpful failure message showing what was extracted.
+
+### Optional stricter variant
+If you also want the ID to look like a real identifier (e.g., contain at least one digit), use this instead:
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide a non-empty order ID containing at least one digit
+conversations: 1
+active: True
+oracle: |
+  order_id is not None and any(ch.isdigit() for ch in str(order_id))
+yields: |
+  f"The chatbot did not provide a valid order_id, got: {order_id}"
+```
+
+---
+
+**One thing to confirm before finalising** 👇
+
+Which profile should this rule target? It works as-is for any of the three above since they all name the field `order_id`, but I want the `description` to reference the right scenario:
+
+- `pizza_and_drink_order_placement.yaml`
+- `pizza_order_test_custom.yml`
+- `user_sim_pizzaorder_predefined.yml`
+
+Tell me which one (or "any / all of them") and I'll lock in the final YAML with a matching description 😊

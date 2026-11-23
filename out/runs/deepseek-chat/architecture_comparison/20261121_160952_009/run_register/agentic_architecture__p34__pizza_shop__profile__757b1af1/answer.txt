@@ -1,0 +1,120 @@
+Here's a profile that captures exactly that scenario: the user starts building a **custom pizza** (choosing size + toppings), then partway through **changes their mind** and switches to a **predefined pizza** from the menu. 🍕
+
+```yaml
+test_name: "pizza_custom_then_predefined_switch"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza over the phone. You begin by asking
+    for a custom pizza, choosing your own size and toppings, but halfway
+    through the conversation you change your mind and decide to order a
+    predefined pizza from the menu instead.
+  context:
+    - personality: personalities/conversational-user.yml
+    - your name is Jon Doe
+    - you are indecisive and often change your mind
+  goals:
+    - "I want a {{size}} custom pizza with {{toppings}}"
+    - "Actually, forget the custom one — I'll take a {{pizza_type}} pizza instead"
+    - "{{cans}} cans of {{drink}}"
+    - how long is the pizza going to take to arrive
+    - how much will it cost
+
+    - size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - big
+          - extra large
+
+    - toppings:
+        function: pairwise()
+        type: string
+        data:
+          - cheese
+          - mushrooms
+          - pepperoni
+          - olives
+
+    - pizza_type:
+        function: forward()
+        type: string
+        data:
+          - Margherita
+          - Pepperoni
+          - Four Cheese
+          - Vegetarian
+
+    - cans:
+        function: forward(drink)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+    - drink:
+        function: forward()
+        type: string
+        data:
+          - Sprite
+          - Coca-Cola
+          - Orange Fanta
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my pizza shop, can you say that again?"
+  output:
+    - price:
+        type: currency
+        description: "The final price of the pizza order"
+    - time:
+        type: time("hh:mm:ss")
+        description: "Estimated time for the pizza to be ready"
+    - order_id:
+        type: string
+        description: "The order ID"
+    - final_pizza_type:
+        type: string
+        description: "The pizza the user finally ordered (predefined pizza name, or 'custom' if they kept the custom one)"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - change your mind
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### What this profile does & how it maps to the docs 📖
+
+Based on `sensei-chat-guide.md`:
+
+- **The "change of mind" behaviour** is driven by two things working together:
+  1. The **goals** explicitly encode the switch: first a custom pizza (`{{size}}` + `{{toppings}}`), then "Actually, forget the custom one — I'll take a `{{pizza_type}}` pizza instead."
+  2. The **`change your mind` interaction style** (a reserved keyword from §5) reinforces this so the simulator naturally flips mid-conversation.
+- **Variables** (`size`, `toppings`, `pizza_type`, `cans`, `drink`) are all declared in `user.goals` with matching `{{...}}` names, per §4.1. I used `pairwise()` for size/toppings and nested `forward()` for cans/drink, following the existing pizza profiles' conventions.
+- **`chatbot.output`** defines the extraction contract (§6). The `time` field uses the quoted format specifier `time("hh:mm:ss")`, which is the accepted form for time outputs. I added `final_pizza_type` so a future Sensei-check rule can verify the user actually ended up with a predefined pizza — e.g. `conv[0].final_pizza_type != "custom"`. The other fields (`price`, `order_id`) mirror your existing pizza profiles so rules can be reused.
+- **`conversation.goal_style.steps: 6`** gives enough turns for the custom → predefined switch to play out, and `max_cost` caps spend per §5.
+
+### A couple of things to confirm ✍️
+
+1. **Personality file**: I referenced `personalities/conversational-user.yml` (as in `user_sim_pizzaorder_predefined.yml`). If your project uses a different path (e.g. `conversational-user.yml` without the folder, as in `pizza_order_test_custom.yml`), let me know and I'll adjust.
+2. **Predefined menu names**: I used generic ones (Margherita, Pepperoni, Four Cheese, Vegetarian). If your bot has a specific menu, tell me the exact names so the simulator matches reality.
+3. **`final_pizza_type` field**: I added it for rule-friendliness — happy to remove it if you don't plan to write a rule around it.
+
+Want me to also draft a **Sensei-check rule** that asserts the user ended up with a predefined pizza (using `final_pizza_type`)? Just say the word and I'll load the rules docs and build it. 😊

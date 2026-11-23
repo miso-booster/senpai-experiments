@@ -1,0 +1,24 @@
+conversation ID: one_node_architecture__p19__alcampo__rule__ebc73e33
+$$$
+Hey there! 😊 Happy to help you build that rule.
+
+Since you want a **profile-agnostic global rule** (not tied to any specific `chatbot.output` schema), the cleanest approach is to use the LLM-backed `utterance_index` helper to check whether the assistant actually mentions promotions somewhere in the dialogue. That way it works across all your Alcampo profiles without depending on a particular field name.
+
+Here's a rule that checks the chatbot provided info about current promotions:
+
+```yaml
+name: chatbot_provides_promotions_info
+description: The chatbot provides information about current promotions when asked
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'current promotions or discounts') > 0
+yields: f"The chatbot did not provide information about current promotions"
+```
+
+A couple of quick notes so it behaves the way you expect 👀:
+
+- **`utterance_index('assistant', ...)`** returns the turn index where the assistant mentions the topic (LLM-backed), so `> 0` means it *did* talk about promotions. If you want to be stricter (e.g., require it to appear after the user asks), you can compare two calls, like `utterance_index('user','promotions') < utterance_index('assistant','current promotions')`.
+- Because this helper is **LLM-backed**, expect minor variability — it's great for style/scope checks like this one, but not for exact string matching.
+
+If instead you'd like a **profile-bound** version that reads an actual extracted field (e.g. `conv[0].current_promotions`), just tell me which profile's `chatbot.output` you want to target and I'll tailor it for you! 🙌
+$$$

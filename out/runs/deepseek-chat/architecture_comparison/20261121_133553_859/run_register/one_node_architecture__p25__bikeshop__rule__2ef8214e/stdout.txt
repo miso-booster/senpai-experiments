@@ -1,0 +1,31 @@
+conversation ID: one_node_architecture__p25__bikeshop__rule__2ef8214e
+$$$
+Hey there! 😊 Happy to help you build that rule for the `qa` profile.
+
+A quick heads-up before the YAML: your `opening_and_closing` field is a `str` (a time range like "10:00 - 20:00"), so a plain numeric comparison won't work on it. I'll use `extract_float` to pull the numbers out and check they fall within 10–20. Also, `seat_price` is typed as `str` in your profile — `extract_float` still works on it since it grabs the first number in the text. 👍
+
+Here's a single-conversation rule that checks all four price/time expectations:
+
+```yaml
+name: qa_prices_and_hours
+description: >
+  For the qa profile, verifies the shop opens/closes between 10 and 20,
+  a tune-up costs 50, a new seat costs 20, and a new tire costs 20.
+conversations: 1
+active: True
+oracle: |
+  extract_float(opening_and_closing) >= 10
+  and extract_float(opening_and_closing) <= 20
+  and extract_float(tune_up) == 50
+  and extract_float(seat_price) == 20
+  and extract_float(tire) == 20
+yields: |
+  f"Expected hours 10-20, tune-up 50, seat 20, tire 20 — got hours={opening_and_closing}, tune_up={tune_up}, seat={seat_price}, tire={tire}"
+```
+
+A couple of friendly notes 👀:
+
+- **`extract_float(opening_and_closing)`** only grabs the *first* number (the opening time). If you also want to validate the closing time, you'd need a helper that reads the second number — the built-in `extract_float` only returns the first match. Want me to sketch a stricter version for that?
+- If your bot sometimes returns prices with currency symbols (e.g. `"$50"`), `extract_float` handles that fine — it just pulls the `50`.
+- If you'd rather split these into separate rules (one per field) for clearer failure messages, I can do that too — just say the word! 🙌
+$$$

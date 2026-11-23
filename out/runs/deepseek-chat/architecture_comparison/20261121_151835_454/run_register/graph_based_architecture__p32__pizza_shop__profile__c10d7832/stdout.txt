@@ -1,0 +1,81 @@
+conversation ID: graph_based_architecture__p32__pizza_shop__profile__c10d7832
+$$$
+¡Claro que sí! 🍕 Me encanta ayudarte a montar un perfil para tu pizzería. Vamos a crear uno limpio y funcional que capture justo lo que necesitas: **tipo de pizza, bebida, ID del pedido y precio final en dólares**.
+
+## 📄 Perfil propuesto: `pizza_order_basic.yml`
+
+```yaml
+test_name: "pizza_order_basic"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza and a drink from a pizza shop for pickup.
+    Be friendly and clear about what you want.
+  context:
+    - "You are ordering dinner for yourself tonight."
+    - "You want to pick it up on your way home."
+  goals:
+    - "Order a {{pizza_type}} pizza."
+    - "Order a {{drink}} to go with it."
+    - "Ask for the total price in dollars."
+    - "Ask for your order ID."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Four cheese, Vegetarian]
+    - drink:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the customer ordered (e.g., Margarita, Pepperoni)."
+    - drink:
+        type: string
+        description: "The drink the customer ordered (e.g., Coke, Sprite)."
+    - order_id:
+        type: string
+        description: "The unique order identifier provided by the chatbot."
+    - final_price:
+        type: money
+        description: "The final total price of the order in dollars (USD)."
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 6
+  interaction_style:
+    - default
+```
+
+## 🔍 Qué hace cada parte (por si te sirve de guía)
+
+- **`user.goals`**: el usuario pide una pizza (`{{pizza_type}}`) y una bebida (`{{drink}}`), y luego pregunta por el precio y el ID. Las variables se recorren con `forward()` para cubrir todas las combinaciones.
+- **`chatbot.output`**: aquí está la clave de lo que pediste 👇
+  - `pizza_type` → tipo de pizza (string)
+  - `drink` → bebida (string)
+  - `order_id` → ID del pedido (string)
+  - `final_price` → precio final en dólares (tipo `money`)
+- **`conversation.number: 5`**: genera 5 conversaciones. Como tienes dos `forward()` anidados (5 pizzas × 4 bebidas = 20 combinaciones), podrías subirlo si quieres más cobertura — o usar `combinations` si prefieres que se calcule automáticamente.
+
+## 💡 Un par de consejos rápidos
+
+1. **Sobre el tipo `money`**: lo usé porque ya aparece en tus perfiles existentes (`pizza_and_drink_order_placement.yaml`). Si tu proyecto no lo tiene definido en `types/`, avísame y lo cambiamos por `currency` o `float` según lo que tengas. 😊
+2. **Si quieres forzar dólares explícitamente**, puedes ajustar la descripción del output a algo como: `"The final total price in USD, including the $ symbol."` — así el extractor se enfoca en esa moneda.
+3. **¿Quieres que el usuario cambie de opinión o cometa errores?** Solo agrega estilos en `interaction_style`, por ejemplo `change your mind` o `make spelling mistakes`.
+
+¿Quieres que te lo adapte para que también pruebe **pizzas personalizadas**, o que agregue el **tiempo estimado de preparación** al output? ¡Dime y lo afinamos juntos! 🚀
+$$$

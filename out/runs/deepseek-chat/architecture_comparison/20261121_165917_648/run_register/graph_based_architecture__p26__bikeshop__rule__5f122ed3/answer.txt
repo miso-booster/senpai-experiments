@@ -1,0 +1,49 @@
+Hey there! 😊 Great that you're writing a rule for this — let's take a look together.
+
+## What's off with your rule
+
+There are a few issues, and they all come from a small mix-up between **metamorphic rules** (comparing conversations) and **single-conversation oracles** (checking one conversation's outputs).
+
+1. **`conversations: 2` is unnecessary.** You're not comparing two conversations — you just want to check one value. This should be `conversations: 1`.
+
+2. **`when: conv[0].tune_up_price == 50` is a filter, not a check.** The `when:` clause *selects* which conversations the rule applies to. So you're saying "only run this rule on conversations where the price is already 50" — which makes the actual check meaningless (it can never fail!). The price check belongs in the `oracle` (or `then`), not in `when`.
+
+3. **`then: "The tune-up price is $50."` is a string, not a boolean expression.** Sensei-check expects a Python expression that evaluates to `True`/`False`. A plain string will always be truthy, so this never actually verifies anything.
+
+4. **`if: conv[0].tune_up_price is not None`** — this is fine as a guard, but it's redundant once you move the real check into the oracle. Also, in a single-conversation rule you can just use `tune_up_price` directly (no `conv[0].` prefix needed).
+
+5. **Numeric comparison on a currency field.** If `tune_up_price` is stored as something like `"50.00 USD"`, `== 50` will fail. Use `extract_float(...)` to be safe.
+
+## Fixed version ✅
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price equals $50.
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+```
+
+## What I changed
+
+| Before | After | Why |
+|---|---|---|
+| `conversations: 2` | `conversations: 1` | Single-conversation check, no comparison needed |
+| `when: conv[0].tune_up_price == 50` | *(removed)* | `when` filters conversations; it shouldn't contain the assertion |
+| `if: conv[0].tune_up_price is not None` | *(removed)* | Redundant once the oracle does the real check |
+| `then: "The tune-up price is $50."` | `oracle: extract_float(tune_up_price) == 50` | Must be a boolean expression, not a string |
+| `conv[0].tune_up_price` | `tune_up_price` | Single-conversation rules access fields directly |
+
+## One thing to double-check 👀
+
+Make sure your **SENSEI Chat profile** actually exposes a `tune_up_price` field in its `chatbot.output` — otherwise the rule won't find anything to check. If the field is named differently (e.g., `price`, `service_price`), update the rule to match.
+
+And if you *do* want a tolerance (say, prices can vary slightly), you could write:
+
+```yaml
+name: tune_up_price_exact
+description: The tune-up price is 50
+conversations: 1
+oracle: abs(extract_float(tune_up_price) - 50) < 0.01
+```
+
+Want me to help adapt this to a metamorphic version (e.g., "tune-up price stays the same regardless of car model")? Just say the word! 🚗✨

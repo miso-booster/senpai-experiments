@@ -1,0 +1,66 @@
+Hey there! 👋 Happy to help you get this rule working — but first, a heads-up: there are a couple of structural issues in the rule as written that will prevent it from running. Let me walk you through them 😊
+
+## 🔍 What's off
+
+**1. Typo in the header**
+```yaml
+name: conversation_lengths
+description: The number of turns of the user and the chatbot equal the conversation length
+conversations: 1
+active: false
+oracle: conversation_length() == conversation_length('assistant') + conversation_length('user')
+```
+Should be `description:`. Sensei-check expects the exact key name.
+
+**2. Missing `then:` clause**
+You have `if:` but no `then:`. In Sensei-check, an `if`/`then` relation needs **both** sides — the `if` is the precondition, the `then` is what must hold. Right now the rule has nothing to assert.
+
+**3. The `if:` is really a `when:` in disguise**
+Your `if:` checks that both fields are *not None* — but that's a **selection/filter** condition, not a metamorphic implication. If you want to only evaluate conversations where both fields are populated, that belongs in `when:`. Otherwise the rule will trivially fail whenever a field is missing, which isn't what you want.
+
+**4. Fields must exist in `chatbot.output`**
+`user_request`, `contact_options`, and `customer_service_number` must all be exposed by the target SENSEI Chat profile's `chatbot.output`. If any of them aren't there, the rule won't resolve. Please double-check the profile you're pointing at 🧐
+
+**5. `conversations: 2` + `when` referencing `conv[0]` and `conv[1]`**
+That's fine structurally — but note that with `conversations: 2`, Sensei-check pairs conversations. If you actually want to check *each* conversation independently (does this one conversation contain valid contact info?), `conversations: 1` is the right choice. Given the intent ("ensure the chatbot provides correct contact options"), a **single-conversation oracle** is probably what you want.
+
+## ✅ A working version (single-conversation oracle)
+
+This is the cleanest interpretation of your intent — check that whenever the user asks about contact info, the chatbot actually surfaces it:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries.
+conversations: 1
+when: user_request in ['contact options', 'customer service number']
+oracle: contact_options is not None or customer_service_number is not None
+```
+
+## ✅ If you really want a 2-conversation metamorphic version
+
+Then the relation should compare *across* the two conversations, and the `if`/`then` should express an implication, not a null-check:
+
+```yaml
+name: customer_service_contact_info
+description: Both contact-related requests yield populated contact info.
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+if: conv[0].contact_options is not None
+then: conv[1].customer_service_number is not None
+```
+
+## 💡 One more tip
+
+If you want to verify the *content* is actually correct (not just present), you can lean on the `semantic_content` helper — e.g.:
+
+```yaml
+name: contact_options_semantic
+description: The chatbot provides valid contact options (phone, email, or chat support)
+conversations: 1
+active: true
+oracle: semantic_content(contact_options, 'phone, email, or chat support options')
+```
+
+That gives you a much stronger check than `is not None` 🎯
+
+Want me to adapt this to the exact `chatbot.output` fields of your profile? Just paste the profile YAML and I'll tailor it precisely!

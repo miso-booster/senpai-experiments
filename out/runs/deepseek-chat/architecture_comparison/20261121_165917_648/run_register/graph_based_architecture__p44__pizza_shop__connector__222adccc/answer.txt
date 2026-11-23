@@ -1,0 +1,58 @@
+¡Claro que sí! 😊 Es un caso perfecto para adaptar el connector de Ada UAM. La estructura de MillionBot es idéntica, solo cambian los identificadores y la URL de referencia. Te dejo el YAML listo:
+
+```yaml
+name: "Gallo de Morón"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+  payload_template:
+    conversation: "67ea76f4e213b2dcbc146e2b"
+    sender_type: "User"
+    sender: "67ea76f40643a3dd27e59411"
+    bot: "65ca19e7dbbb4e26cbeadf24"
+    language: "es"
+    url: "https://www.morondelafrontera.es/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Qué he cambiado respecto al de Ada UAM 🔧
+
+| Campo | Ada UAM | Gallo de Morón |
+|-------|---------|----------------|
+| `name` | "Ada UAM" | "Gallo de Morón" |
+| `Authorization` | `60a3bee2...` | `65ca19e7dbbb4e26cbeadf28` |
+| `conversation` | `682ce1ce...` | `67ea76f4e213b2dcbc146e2b` |
+| `sender` | `682ce1ce...` | `67ea76f40643a3dd27e59411` |
+| `bot` | `60a3be81...` | `65ca19e7dbbb4e26cbeadf24` |
+| `url` | UAM | `https://www.morondelafrontera.es/` |
+
+### Lo que se mantiene igual ✅
+- `base_url`, `path`, `method` y `language` son idénticos (mismo proveedor, mismo endpoint).
+- El `response_path: "response.0.text"` también se mantiene, porque en la respuesta que me pasaste el texto viene exactamente en `response[0].text`. 👌
+
+### Un detalle a tener en cuenta 👀
+En los headers del navegador aparecen `Origin`, `Referer`, `User-Agent`, etc. **No son necesarios** para que funcione (el de Ada UAM tampoco los lleva y funciona), así que los he omitido para mantenerlo limpio. Si en algún momento el API empezara a rechazar peticiones sin ellos, bastaría con añadirlos en la sección `headers` así:
+
+```yaml
+name: "Morón de la Frontera"
+base_url: "https://www.morondelafrontera.es"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+    Origin: "https://www.morondelafrontera.es"
+    Referer: "https://www.morondelafrontera.es/"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+¿Quieres que te lo deje también con esos headers incluidos por si acaso, o lo probamos primero con la versión limpia? 🚀

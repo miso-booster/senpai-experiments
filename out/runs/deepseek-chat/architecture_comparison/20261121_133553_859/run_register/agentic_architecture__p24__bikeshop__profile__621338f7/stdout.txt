@@ -1,0 +1,87 @@
+conversation ID: agentic_architecture__p24__bikeshop__profile__621338f7
+$$$
+Here's your profile, following the structure in `sensei-chat-guide.md` and matching the conventions of your existing bike profiles (e.g. `bike_information_seeker.yaml`, `_customer_seeking_information_on_tires_.yaml`):
+
+```yaml
+test_name: bike_shop_general_info_customer
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a normal customer visiting a bike shop's virtual assistant. You are
+    looking for general information about the shop and its standard services.
+    You behave like a regular customer: you phrase your questions clearly and
+    directly, one topic at a time, and you do not try to negotiate, book
+    anything, or explore advanced topics.
+  context:
+    - "You are a casual cyclist who owns a standard bike and wants basic information before visiting the shop."
+    - "You only care about shop hours, basic prices, and general bike care advice."
+    - "You do NOT ask about appointments, specific bike models, custom or advanced repairs, warranties, delivery services, or anything outside basic pricing, shop hours, and general bike care."
+    - "You keep your questions short, clear, and direct, like a normal customer would."
+  goals:
+    - "Ask about the bike shop's opening and closing times."
+    - "Ask for the price of a new bike tire."
+    - "Ask for the price of a standard bike tune-up."
+    - "Ask for the price of a new bike seat."
+    - "Ask for general advice on how to properly take care of a bike, focusing on basic maintenance and good practices rather than advanced repairs."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_hours:
+        type: string
+        description: >
+          The shop's opening and closing times as stated by the chatbot
+          (e.g. days of the week and the corresponding open/close hours).
+    - tire_price:
+        type: currency
+        description: >
+          The price the chatbot states for a new bike tire. Should be a clear
+          price value with currency.
+    - tune_up_price:
+        type: currency
+        description: >
+          The price the chatbot states for a standard bike tune-up. Should be a
+          clear price value with currency.
+    - seat_price:
+        type: currency
+        description: >
+          The price the chatbot states for a new bike seat. Should be a clear
+          price value with currency.
+    - bike_care_advice:
+        type: string
+        description: >
+          The chatbot's general advice on how to properly take care of a bike,
+          focusing on basic maintenance and good practices (e.g. cleaning,
+          lubrication, tire pressure, storage) rather than advanced repairs.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+### What this profile does and why 🚲
+
+- **User behaviour** — The `role` + `context` make the simulated user a normal, direct customer who sticks strictly to shop hours, basic prices, and general bike care. The explicit "do NOT ask about…" line keeps the simulator from drifting into appointments, specific models, advanced repairs, warranties, or delivery.
+- **Goals** — Five clear, direct questions matching exactly what you asked for: opening/closing times, tire price, tune-up price, seat price, and general bike-care advice.
+- **`chatbot.output`** — This is the contract for later rules (per §2.1.1 of `sensei-chat-guide.md`). I used `currency` for the three prices so you can later write numeric rules (e.g. `extract_float(conv[0].tire_price) > 0`), and `string` for hours and advice. Field names are stable and descriptive so profile-bound rules can reference them as `conv[i].tire_price`, etc.
+- **Conversation controls** — `single questions` interaction style fits "one clear question at a time"; `all_answered` with a `limit` ensures the run stops once all five goals are covered; `max_cost` caps spend.
+
+### A note on the price fields ⚠️
+The docs list `currency` as a **custom type** (defined in `types/currency.yml`, as shown in §4.2). If your project doesn't already have `types/currency.yml`, you'll need to add it for the `currency` type to resolve — otherwise I can switch those three fields to `float` or `string`. Want me to adjust that?
+
+Also, if you plan to write rules about "no unrelated services / no unsolicited suggestions," that's best done as a **general rule** using helpers like `only_talks_about` — just say the word and I'll draft it (I'll load the rules docs first). 😊
+$$$

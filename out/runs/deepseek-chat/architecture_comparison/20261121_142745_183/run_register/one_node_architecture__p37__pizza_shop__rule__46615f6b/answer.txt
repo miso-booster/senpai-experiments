@@ -1,0 +1,22 @@
+¡Buena idea! 😊 Esa regla encaja perfecto como una comprobación de un solo diálogo usando `utterance_index`, que nos dice en qué turno el asistente menciona algo concreto.
+
+Un detalle importante: `utterance_index` es una función respaldada por LLM, así que conviene darle una descripción clara y específica de lo que queremos detectar (que el asistente **confirme haber añadido la bebida pedida**), no solo una palabra suelta.
+
+Aquí tienes la regla lista para tu proyecto:
+
+```yaml
+name: assistant_confirms_drink_added
+description: The assistant confirms that the drink requested by the user was added to the order
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'confirms that the drink requested by the user has been added to the order') > 0
+yields: f"The assistant did not confirm that the requested drink was added to the order"
+```
+
+Un par de notas rápidas 👀:
+
+- **`conversations: 1`** → es una regla de un solo diálogo (no metamórfica), perfecta para este tipo de verificación.
+- **`utterance_index(...) > 0`** → comprobamos que el turno existe (índice mayor que 0). Si el asistente nunca confirma, la función no lo encuentra y la regla falla.
+- **`yields`** → mensaje de error amigable para cuando la regla no se cumple.
+
+Si quieres afinarla más, dime cómo suele expresarse tu bot al confirmar (por ejemplo: *"I've added a Coke to your order"*, *"Your Sprite is included"*…) y ajusto la descripción del `utterance_index` para que la detección sea más fiable. ¿Te gustaría también una versión que verifique que la bebida confirmada coincide con la que pidió el usuario? 🍕🥤

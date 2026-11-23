@@ -1,0 +1,59 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__0fae8af9
+$$$
+Hey there! 👋 Happy to help you look at this rule. Let me break it down for you.
+
+## Quick verdict
+
+Your rule **will run**, but it's **not really testing anything meaningful** — it's essentially a tautology. Let me explain why, then show you a fix. 😊
+
+## What's happening
+
+Look closely at your `when` and `oracle`:
+
+```yaml
+name: contact_details_check
+description: The chatbot provides the correct contact email, phone and address
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == '...'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == '...'
+```
+
+They're **identical**. So the rule says:
+
+> "If the CAU gave the correct info, then the CAU gave the correct info."
+
+That's always true by construction. The rule can never fail — which means it can never catch a bug. 🚫
+
+Also, a couple of smaller issues:
+
+- **`when` is a filter, not a precondition.** In Sensei-check, `when:` selects *which* conversations the rule applies to. If no conversation matches, the rule is simply *not applicable* — it doesn't fail. So using `when` to assert correctness is a misuse.
+- **`conversations: 1` + `conv[0]`** is fine for a single-conversation oracle, but you don't need `conv[0]` inside a single-conversation rule — you can reference the fields directly (e.g., `contact_email`). Both work, but the direct form is cleaner.
+
+## The fix
+
+If your goal is: *"the CAU must report the correct contact details"*, then the correct info should be the **expected value** in the `oracle`, and the `when` should either be dropped or used to select the relevant conversations.
+
+```yaml
+name: check_cau_information
+description: The CAU must report the correct contact details (email, phone, address).
+conversations: 1
+oracle: >
+  contact_email == 'cau@uam.es'
+  and contact_phone == '91 497 4029'
+  and physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+That's it — a clean single-conversation oracle. It will **fail** whenever the chatbot reports a wrong email, phone, or address. ✅
+
+## Why this is better
+
+Think of it like a smoke detector 🚨: a rule that says *"if there's smoke, there's smoke"* never goes off. A rule that says *"there must be no smoke"* actually protects you. Your original rule was the first kind; the fixed one is the second.
+
+A few extra tips for this kind of rule:
+
+- **Normalize before comparing** if the chatbot might format things differently (e.g., `91-497-4029` vs `91 497 4029`, or accents in the address). You could use a helper or a looser check like `'cau@uam.es' in contact_email` if you only care about the essential part.
+- **If you want to test multiple CAU branches** (e.g., different offices), use `when:` to select the branch and `oracle:` to assert the expected details for that branch — that's where `when` shines.
+- **Consider `semantic_content`** if the address might be phrased differently but mean the same thing: `semantic_content(physical_address, 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')`. It's LLM-backed, so allow minor variability.
+
+Want me to adapt this into a metamorphic version (e.g., checking that the CAU gives *consistent* contact info across different phrasings of the same question)? Just say the word! 😄
+$$$

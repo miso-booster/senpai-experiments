@@ -1,0 +1,76 @@
+conversation ID: one_node_architecture__p13__alcampo__profile__4629faf9
+$$$
+¡Claro que sí! 😊 Le eché un ojo a tu perfil y encontré el problemilla: en la sección `chatbot.output` se perdió el nombre del primer campo (`label_focus`) y quedó un bloque suelto que rompe el YAML. Por eso no te deja ejecutarlo.
+
+Aquí te dejo el perfil corregido y listo para usar 👇
+
+```yaml
+test_name: Fresh and Organic Product Inquiry
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: Customer interested in purchasing fresh and organic products and learning about their benefits.
+  context:
+  - 'personality: personalities/formal-user'
+  - You are keen on incorporating fresh and organic products into your diet for a healthier lifestyle.
+  - With an interest in supporting local producers, you want to learn more about specific labels that emphasize quality and sustainability.
+  - Additionally, you're looking for options to enhance your smoothie recipes while ensuring you choose environmentally friendly products.
+  goals:
+  - Ask for the details of the 'Cultivamos lo Bueno' label to learn about its focus on quality and local sourcing.
+  - Inquire about the availability of organic fruits in the online store.
+  - Request recommendations for fresh fruits suitable for smoothies.
+  - Ask for the range of eco-friendly fresh products offered at Alcampo.
+  - Check what types of organic cheeses are currently available.
+chatbot:
+  is_starter: false
+  fallback: Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios.
+  output:
+  - label_focus:
+      type: string
+      description: Focus of the 'Cultivamos lo Bueno' label
+  - organic_fruit_availability:
+      type: string
+      description: Availability of organic fruits online
+  - smoothie_fruit_recommendations:
+      type: string
+      description: Recommended fresh fruits for smoothies
+  - eco_friendly_product_range:
+      type: string
+      description: Range of eco-friendly products at Alcampo
+  - organic_cheese_types:
+      type: string
+      description: Types of organic cheeses available
+  - banana_quality_guarantees:
+      type: string
+      description: Quality guarantees for Canary Island bananas
+  - red_banana_characteristics:
+      type: string
+      description: Unique characteristics of red bananas
+  - wine_types_available:
+      type: string
+      description: Types of wines offered at Alcampo
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 26
+  interaction_style:
+  - single questions
+```
+
+**Qué cambié (y por qué):** 🛠️
+
+1. **El campo `label_focus` faltaba.** En tu versión, el primer elemento de `output` empezaba directamente con `type: string` / `description: ...`, sin el nombre del campo. Eso deja un bloque huérfano que el parser no entiende. Lo restauré como `label_focus:` (que es justo el nombre que aparece en tu proyecto).
+2. **Indentación del primer campo.** Ahora sigue el mismo patrón que los demás: `- nombre_del_campo:` con `type` y `description` indentados debajo. Todo consistente. ✅
+
+Un par de cositas que noté y te dejo a ti decidir 👀:
+
+- Tu `context` tiene `'personality: personalities/formal-user'` como string entre comillas. En otros perfiles del proyecto aparece igual, así que lo dejé tal cual — pero si quieres que se cargue como personalidad real, la forma recomendada es `- personality: personalities/formal-user.yml` (sin comillas y con extensión). Solo si te da problemas al ejecutar.
+- Los campos `banana_quality_guarantees`, `red_banana_characteristics` y `wine_types_available` no están cubiertos por ningún `goal`. No rompen nada, pero si quieres que se rellenen, conviene añadir un goal que los pida. 😉
+
+¿Quieres que te ayude también a añadir esos goals o a revisar que el perfil encaje con alguna regla de Sensei-check? ¡Aquí estoy! 🙌
+$$$

@@ -1,0 +1,54 @@
+conversation ID: agentic_architecture__p15__alcampo__rule__a04d7c26
+$$$
+Great news — I found a profile that matches your rule almost perfectly! 🎯
+
+## Profile found: `customer_service_assistance.yaml`
+
+Its `chatbot.output` fields are:
+- `contact_options` — methods to reach customer service for payment issues
+- `customer_service_number` — contact number for general inquiries
+- `hours_of_operation` — operating hours for Club Alcampo card support
+- `online_form_instructions` — how to fill the online contact form
+- `required_fields` — mandatory form fields
+- `message_details` — details to include in the contact message
+
+So both `contact_options` and `customer_service_number` that your rule references **do exist** in this profile. 
+
+## What's broken in your rule
+
+Based on `sensei-check-doc.md` and `rules-examples.md`, there are several issues:
+
+1. **Typo in the key**: `descriptin` → should be `description` (otherwise it's an unknown field).
+2. **`when` uses fields that don't exist**: `conv[0].user_request` and `conv[1].user_request` are **not** in `chatbot.output`. Rules can only reference extracted output fields (or helpers) — `user_request` isn't one of them. This filter would fail.
+3. **`if`/`then` misuse**: You wrote `if:` with a condition but **no `then:`**. Per the docs, `if`/`then` is an implication pair — if you only have a single boolean condition to assert, you should use `oracle:` instead.
+4. **`is not None` on a 2-conversation rule**: This is fine syntactically, but the real intent seems to be "the bot provides these fields" — which is better expressed as a single-conversation check, or as a 2-conv check that both conversations expose the fields.
+
+## Proposed fix
+
+Since the profile's goals already drive the conversations toward these topics, the cleanest fix is a **2-conversation rule** that checks both conversations extracted the contact info (using `oracle` instead of a dangling `if`):
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries (profile customer_service_assistance).
+conversations: 2
+oracle: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+```
+
+**Before I finalize**, two quick questions:
+
+1. ✅ **Confirm the target profile** — is `customer_service_assistance.yaml` the one you want this rule bound to? (It's the only profile exposing `contact_options` and `customer_service_number`.)
+2. 🎯 **What's the real intent?** Do you want to:
+   - **(a)** Check that *each* conversation extracted the relevant contact info (simpler, more robust), or
+   - **(b)** Keep the "conv[0] = contact options, conv[1] = service number" split (which requires the conversations to actually be ordered that way — fragile, since the profile uses `single questions` with 3 conversations and no guaranteed ordering)?
+
+My recommendation is **(a)** — something like:
+
+```yaml
+name: customer_service_contact_info
+description: Both conversations must extract customer service contact information (profile customer_service_assistance).
+conversations: 2
+oracle: conv[0].contact_options is not None and conv[1].contact_options is not None and conv[0].customer_service_number is not None and conv[1].customer_service_number is not None
+```
+
+Let me know which direction you prefer and I'll lock in the final YAML! 😊
+$$$

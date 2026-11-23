@@ -1,0 +1,38 @@
+conversation ID: one_node_architecture__p6__ada_uam__rule__482d8b21
+$$$
+Here's a rule that checks the Ada UAM bot actually delivered the CAU contact details — email, phone, and physical address — for the `consultante_de_servicios_y_asistencia_del_cau` profile (the one that exposes those three fields) 😊
+
+```yaml
+name: cau_contact_info_complete
+description: >
+  The Ada UAM chatbot must provide complete CAU contact information:
+  an email address, a phone number, and a physical address.
+  Targets the consultante_de_servicios_y_asistencia_del_cau profile.
+conversations: 1
+active: true
+oracle: |
+  contact_email is not None and contact_email != ''
+  and contact_phone is not None and contact_phone != ''
+  and physical_address is not None and physical_address != ''
+yields: |
+  f"Missing CAU contact info -> email: {contact_email}, phone: {contact_phone}, address: {physical_address}"
+```
+
+A couple of quick notes so it behaves the way you expect 👀:
+
+- **Field names match your profile's `chatbot.output`** exactly (`contact_email`, `contact_phone`, `physical_address`), so no surprises there.
+- The `is not None and != ''` checks catch both "never extracted" and "extracted as empty string" cases.
+- If you'd rather get a *list of what's missing* instead of a single pass/fail, you can swap the oracle for the built-in helper:
+
+```yaml
+name: cau_contact_info_complete
+description: All CAU contact slots (email, phone, address) must be filled
+conversations: 1
+active: true
+oracle: data_collected() is True
+yields: |
+  f"Missing slots: {missing_slots()}"
+```
+
+The second version is handy because `missing_slots()` will tell you *which* of the three fields the bot failed to give — super useful when debugging the Ada UAM connector responses. Want me to also add a check that the email looks like an email or the phone has digits? Just say the word 🙌
+$$$

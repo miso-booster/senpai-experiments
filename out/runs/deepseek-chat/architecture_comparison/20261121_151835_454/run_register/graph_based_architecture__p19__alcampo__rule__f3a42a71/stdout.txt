@@ -1,0 +1,45 @@
+conversation ID: graph_based_architecture__p19__alcampo__rule__f3a42a71
+$$$
+Hey there! 😊 Great idea — a global, profile-agnostic rule is perfect for this kind of check, since "did the bot talk about promotions?" doesn't depend on any specific `chatbot.output` schema. Let me walk you through it 👇
+
+## The rule
+
+```yaml
+name: promotions_information_provided
+description: The chatbot must provide information about current promotions when asked
+conversations: 1
+oracle: utterance_index('assistant', 'current promotions') > 0
+```
+
+## Why this works 🧠
+
+- **`conversations: 1`** → this is a single-conversation oracle, not a metamorphic comparison. We just want to know whether the bot ever mentions promotions in the dialogue.
+- **`utterance_index('assistant', 'current promotions')`** → this LLM-backed helper returns the turn index where the assistant mentions the topic. If it returns `> 0`, the bot *did* bring up promotions somewhere in the conversation. If it returns `0` or a negative value, it never did → the rule fails. ✅
+- **No profile dependency** → we're not touching any `conv[i].field` or `chatbot.output` slots, so this rule is fully global and reusable across profiles. 🎯
+
+## A couple of variations you might like 👀
+
+**Stricter — require it to happen early (within the first few turns):**
+
+```yaml
+name: promotions_information_early
+description: The chatbot mentions current promotions within the first 3 assistant turns
+conversations: 1
+oracle: 0 < utterance_index('assistant', 'current promotions') <= 3
+```
+
+**Looser — accept either "promotions" or "offers/discounts" wording:**
+
+```yaml
+name: promotions_or_offers_mentioned
+description: The chatbot mentions promotions, offers, or discounts
+conversations: 1
+oracle: utterance_index('assistant', 'promotions, offers or discounts') > 0
+```
+
+## Small heads-up ⚠️
+
+`utterance_index` is **LLM-backed**, so it can have minor variability — it's doing a semantic check, not an exact string match. That's actually a plus here, since the bot might phrase it as "our latest deals" rather than literally "current promotions". Just keep that in mind when interpreting borderline results 😊
+
+Want me to adapt this into a metamorphic version (e.g., "if the user asks about promotions, the bot must respond with promotion info")? Just say the word! 🙌
+$$$

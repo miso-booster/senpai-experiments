@@ -1,0 +1,49 @@
+conversation ID: agentic_architecture__p42__pizza_shop__connector__f747cbcc
+$$$
+¡Hola! 😊 I checked the connector docs (`custom-connector-guide.md` and `connector-examples.md`) and compared them with your real request/response. I found **four problems** in your YAML:
+
+1. **`base_url` is wrong** → you have `https://api.bot.com`, but the real host is `https://api.1millionbot.com`.
+2. **`path` is wrong** → you have `/api/messages`, but the real endpoint is `/api/public/messages`.
+3. **Missing required payload fields** → the API needs `conversation`, `sender_type`, `sender`, `bot`, and `url`. Without them the request is rejected.
+4. **Missing `Authorization` header** → the API requires it (`64e5d1af081211d24e2cfecd`).
+5. **`response_path` is wrong** → the reply is inside an **array**: `response` is a list, so you need `response.0.text` (dot notation with index, as in the docs' MillionBot example). Your `request.text` just echoes back the user's own message 😅.
+
+Here's the fixed connector:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### What changed and why
+| Field | Before | After | Reason |
+|---|---|---|---|
+| `base_url` | `https://api.bot.com` | `https://api.1millionbot.com` | Real API host from your request |
+| `send_message.path` | `/api/messages` | `/api/public/messages` | Real endpoint |
+| `headers.Authorization` | ❌ missing | `64e5d1af081211d24e2cfecd` | Required by the API |
+| `payload_template` | only `language` + `message` | full body (`conversation`, `sender_type`, `sender`, `bot`, `url`, `message.text`) | Matches the API contract |
+| `response_path` | `request.text` | `response.0.text` | Reply lives in `response[0].text` (array index via dot notation) |
+
+### ⚠️ One thing to watch
+The `conversation` and `sender` IDs are **session-specific** — they were generated for that particular browser session. If the bot starts returning errors or empty replies, those IDs may have expired and you'll need to grab fresh ones from a new request in the browser (DevTools → Network).
+
+Also note the reply text comes wrapped in HTML (`<p>...</p><br>`), so if your rules compare exact strings, you may want to account for that.
+
+Want me to also create a SENSEI **profile** that pairs with this connector (e.g. a simulated user asking about SAIC services in Spanish)? Just say the word 🙌
+$$$

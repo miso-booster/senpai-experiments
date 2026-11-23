@@ -1,0 +1,52 @@
+¡Claro que sí! 😊 Revisé tu conector contra la guía de conectores (`custom-connector-guide.md` y `connector-examples.md`) y contra las muestras de request/response que pasaste.
+
+## 🔍 Qué encontré
+
+La estructura general está bien (name, base_url, send_message con path/method/headers/payload_template, response_path). El problema está en el **`response_path`**:
+
+- Tu response real es:
+  ```json
+  {
+    "status": "success",
+    "response": {
+      "text": "¡Hola! ¿Cómo puedo ayudarte hoy?"
+    }
+  }
+  ```
+- El texto del bot vive en `response.text`… **pero** `response` es la variable raíz del JSON en el conector. Según la doc, `response_path` navega **dentro** del JSON de respuesta, así que `"response.text"` intentaría buscar `response["response"]["text"]`, que no existe → devolvería `None`.
+
+La ruta correcta es simplemente **`response.text`** interpretada como `["response"]["text"]`… ojo, aquí el detalle: el campo raíz se llama `response`, y dentro hay `text`. Así que la ruta correcta es **`response.text`** ✅ (coincide con el ejemplo "Bot with Authentication" de la doc, donde el JSON tiene `{"response": {"text": ...}}`).
+
+Espera… entonces ¿cuál es el error real? 🤔 Déjame ser preciso: tu `response_path: "response.text"` **ya es correcto** para ese JSON. El único punto a vigilar es que el `payload_template` use exactamente `{user_msg}` como placeholder (lo tienes bien) y que el `Content-Type` esté presente (lo tienes bien).
+
+## ✅ Conector corregido / validado
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+## 📌 Resumen de la revisión
+
+| Campo | Estado | Nota |
+|-------|--------|------|
+| `name` | ✅ OK | Opcional, correcto |
+| `base_url` | ✅ OK | Requerido |
+| `send_message.path` | ✅ OK | `/api/chat` |
+| `send_message.method` | ✅ OK | POST |
+| `send_message.headers` | ✅ OK | `Content-Type: application/json` |
+| `send_message.payload_template` | ✅ OK | `message.text: "{user_msg}"` coincide con tu request |
+| `response_path` | ✅ OK | `response.text` → `response["response"]["text"]` ✅ |
+
+**Conclusión:** tu conector ya está bien alineado con la doc y con las muestras. Si al probarlo te devuelve `None`, el sospechoso sería que la API envuelva la respuesta de otra forma (p. ej. un array `response.0.text`, como en el ejemplo de Ada UAM). 
+
+¿Quieres que lo probemos con otra variante de `response_path`, o hay algún error concreto que estés viendo al ejecutarlo? 🙂

@@ -1,0 +1,127 @@
+conversation ID: agentic_architecture__p3__ada_uam__profile__9c46faa6
+$$$
+¡Hola! 😊 Claro que sí, te ayudo a arreglarlo. Ya cargué la documentación de perfiles (`sensei-chat-guide.md`) y detecté varios problemas en tu YAML. Te los explico y luego te dejo la versión corregida.
+
+## 🔍 Problemas encontrados
+
+1. **`goals` mal formado (el error principal).** En `user.goals` mezclaste strings de objetivos con declaraciones de variables, pero la variable `identificador_id_uam` quedó **sin nombre de clave** — solo pusiste `type`, `data`, etc. colgando. Además, `user_account` aparece declarada pero **no se usa en ningún goal** con `{{user_account}}`. Según la guía (§4.1), cada `{{variable}}` debe declararse con el **mismo nombre exacto**, y las variables declaradas deben usarse en los prompts.
+
+2. **Falta `user.role`.** Es opcional pero muy recomendable; lo añado para darle contexto al simulador.
+
+3. **`llm.model_prov` ausente.** No es obligatorio (hay defaults), pero conviene indicar el proveedor (`openai`) para que `gpt-4o-mini` se resuelva bien.
+
+4. **`conversation.goal_style.steps: 30`.** Es válido, pero 30 pasos es altísimo para 5 objetivos; suele generar conversaciones largas y caras. Te lo bajo a un valor razonable (p. ej. `8`) — ajústalo si quieres.
+
+5. **`chatbot.output` con campos duplicados/solapados.** Tienes `contact_info` y `contact_information` (dos campos para lo mismo) y `password_setup_link` vs `password_change_steps`. No rompe nada, pero para reglas futuras conviene no duplicar conceptos (§2.1.2). Los dejo pero te lo señalo.
+
+6. **`interaction_style` ausente.** Opcional; añado un ejemplo con `random` para que veas cómo se usa (puedes quitarlo).
+
+## ✅ Versión corregida
+
+```yaml
+test_name: Asistencia Técnica y Cuentas
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario de la universidad que necesita ayuda con el acceso a tus
+    plataformas virtuales y cuentas de usuario, y quieres resolver tus dudas
+    con el Centro de Atención a Usuarios (CAU).
+  context:
+    - Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad.
+    - Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias.
+    - Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento.
+  goals:
+    - Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU).
+    - Preguntar sobre los procedimientos para obtener una cuenta ID-UAM.
+    - Solicitar los pasos necesarios para establecer la contraseña por primera vez.
+    - Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado.
+    - Conseguir el código de activación necesario para cambiar la contraseña de {{user_account}}.
+    - identificador_id_uam:
+        function: random()
+        type: string
+        data:
+          - '123456789'
+          - '987654321'
+          - '112233445'
+          - '556677889'
+          - '998877665'
+    - user_account:
+        function: random()
+        type: string
+        data:
+          - usuario123
+          - maria.garcia
+          - juan_lopez_2023
+          - pedro.salas
+          - sara.martinez
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_info:
+        type: string
+        description: Detalles de contacto del CAU
+    - operational_hours:
+        type: string
+        description: Horarios operativos del CAU
+    - available_services_list:
+        type: string
+        description: Servicios disponibles para crear cuenta
+    - password_setup_link:
+        type: string
+        description: Enlace para establecer contraseña
+    - contact_information:
+        type: string
+        description: Opciones de asistencia para recuperación de ID-UAM
+    - recovery_steps:
+        type: string
+        description: Pasos para recuperar ID-UAM
+    - activation_code:
+        type: string
+        description: Código de activación para cambiar contraseña
+    - user_account:
+        type: string
+        description: Nombre de usuario para recuperación
+    - identificador_id_uam:
+        type: string
+        description: Identificador único de ID-UAM
+    - password_change_steps:
+        type: string
+        description: Pasos para cambiar la contraseña
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 8
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+## 📝 Resumen de cambios
+
+| Cambio | Motivo |
+|---|---|
+| Añadido `user.role` | Dar contexto al simulador (guía §3). |
+| `identificador_id_uam` ahora es una clave con nombre | Antes colgaba sin nombre → YAML inválido (§4.1). |
+| `user_account` ahora se usa en un goal (`{{user_account}}`) | Toda variable declarada debe usarse (§9). |
+| Añadido `function: random()` a ambas variables | Sin `function` la variable no sabe cómo elegir valor (§4.4). |
+| Añadido `llm.model_prov: openai` | Resolución correcta del modelo (§3). |
+| `steps: 30` → `steps: 8` | Evitar conversaciones innecesariamente largas/caras (§5). |
+| Añadido `interaction_style` de ejemplo | Opcional, para variedad (§5). |
+| Fallback en una sola línea | El `\n` literal no se interpreta; mejor texto plano. |
+
+⚠️ **Ojo con los campos duplicados** en `chatbot.output`: `contact_info` vs `contact_information` describen lo mismo. Si vas a escribir reglas (`conv[i].contact_info`), te recomiendo unificar en un solo campo para no confundirte. ¿Quieres que los unifique?
+
+¿Te dejo así el perfil o quieres que ajuste algo más (por ejemplo, el número de pasos, los `interaction_style`, o unificar los campos duplicados)? 🙌
+$$$

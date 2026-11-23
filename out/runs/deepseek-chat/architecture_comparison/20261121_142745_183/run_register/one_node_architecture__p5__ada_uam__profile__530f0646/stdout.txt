@@ -1,0 +1,63 @@
+conversation ID: one_node_architecture__p5__ada_uam__profile__530f0646
+$$$
+¡Claro que sí! 😊 Aquí tienes un perfil listo para probar el chatbot de la UAM, enfocado en un usuario que busca información de contacto y horarios del CAU.
+
+Un par de notas rápidas antes del YAML:
+- Los campos de `chatbot.output` (`contact_phone`, `contact_email`, `physical_location`, `service_hours`) están pensados para que puedas escribir reglas de Sensei-check que los referencien como `conv[i].contact_phone`, etc. 📋
+- Usé `single questions` como estilo de interacción para que el usuario vaya pidiendo cada dato por separado, lo cual encaja muy bien con este caso.
+
+```yaml
+test_name: "Soporte CAU - Datos de contacto y horarios"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita contactar con el Centro de Atención a Usuarios (CAU)
+    de la UAM para resolver una duda sobre los servicios de Tecnologías de la Información.
+    Buscas los datos de contacto y el horario de atención para saber cuándo y cómo dirigirte a ellos.
+  context:
+    - personality: personalities/formal-user
+    - "Tienes una incidencia con tu cuenta ID-UAM y prefieres hablar con una persona del CAU."
+    - "Quieres asegurarte de contactar por el canal adecuado y en el horario correcto."
+    - "Valoras la información clara y precisa sobre cómo llegar físicamente a la oficina."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico de contacto del CAU."
+    - "Preguntar por la ubicación física o dirección de la oficina del CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono de contacto del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - physical_location:
+        type: string
+        description: "Dirección física de la oficina del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+¿Quieres que te prepare también una regla de Sensei-check para validar que estos cuatro campos se rellenan correctamente en cada conversación? 🚀
+$$$

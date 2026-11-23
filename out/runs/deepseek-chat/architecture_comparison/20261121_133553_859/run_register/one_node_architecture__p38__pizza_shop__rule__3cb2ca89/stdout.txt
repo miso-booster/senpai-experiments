@@ -1,0 +1,27 @@
+conversation ID: one_node_architecture__p38__pizza_shop__rule__3cb2ca89
+$$$
+Great question! 😊 Let me walk you through it.
+
+To check that the chatbot actually **provided an order ID**, the cleanest approach is a **single-conversation rule** that verifies the `order_id` output was filled (i.e., not `None`). Since your profiles expose `order_id` in `chatbot.output` (e.g., `pizza_and_drink_order_placement.yaml`, `pizza_order_test_custom.yml`, `pizzaorder_ivan_test.yml`), the rule can reference it directly.
+
+Here's the rule:
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide an order ID at the end of the conversation
+conversations: 1
+active: true
+oracle: order_id is not None and order_id != ''
+yields: f"The chatbot did not provide an order ID (got: {order_id})"
+```
+
+A couple of notes to keep in mind 👀:
+
+- **`order_id` is a scalar slot** (not a list), so you reference it directly — no `[0]` indexing needed.
+- The `order_id != ''` guard catches the case where the extractor returns an empty string instead of `None`.
+- If you'd rather be stricter and also confirm it's non-trivial (e.g., not just whitespace), you could use `str(order_id).strip() != ''`.
+
+If you want a **global** version that checks *every* conversation in the batch has an order ID, you could instead lean on the `data_collected()` helper — but that would also require *all other* output slots to be filled, which may be too strict for your profiles. So for a focused check on just the order ID, the single-conversation rule above is the way to go. ✅
+
+Want me to also draft a companion rule that checks order IDs are **unique** across conversations? That pairs really nicely with this one! 🍕
+$$$

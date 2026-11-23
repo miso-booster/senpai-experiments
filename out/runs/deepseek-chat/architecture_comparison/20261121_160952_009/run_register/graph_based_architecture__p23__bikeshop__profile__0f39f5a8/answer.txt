@@ -1,0 +1,74 @@
+Hey there! 😊 Happy to help you get this profile working — I can see a few things that would trip Sensei up. Let me walk you through them one by one, then give you the fixed version. 🚴
+
+## What's broken 🔍
+
+**1. `llm.temperature: low`** — Temperature must be a **float** (e.g. `0.0`, `0.5`), not a word. `low` isn't a valid value.
+
+**2. `chatbot.output` types are wrong** ⚠️
+- `type: str` is **not** a valid type. The valid primitives are `int`, `float`, `string` (plus `time(...)`, `date(...)`, `list[...]`, and custom types).
+- `type: money` — unless you have a custom type called `money` defined in your `types/` folder, this will fail. The default types don't include `money`. If you don't have that custom type, use `float` (or `string` if you just want the raw text).
+- `seat_price` and `care_bike` are **missing the `type` field entirely** — every output field needs one.
+
+**3. `conversation` is missing `goal_style`** — Without it, Sensei doesn't know how/when to end the conversation. Since you have 5 goals and want them all covered, `all_answered` is the natural fit.
+
+**4. `conversation.number: 5`** — That's fine as a fixed integer, but note your goals don't use any variables, so every conversation will be identical. That's OK for a smoke test, just something to be aware of. 👍
+
+## The fixed profile ✅
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.0
+  model: gpt-4o-mini
+
+user:
+  language: English
+  role: you have to act as a user talking to a virtual assistant of a bike shop
+  context:
+    - You are interested in asking the items below.
+    - Just stick to asking opening times, prices of tire, price of tune-up, price of seat, and actions to the care of bike. Do not ask anything else.
+  goals:
+    - "opening and closing time of the bike shop"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: the opening and closing time of the shop
+    - tire:
+        type: float
+        description: the price of a new tire
+    - tune_up:
+        type: float
+        description: the price of a tune-up
+    - seat_price:
+        type: float
+        description: the price of a new seat
+    - care_bike:
+        type: string
+        description: actions to take care of the bike
+
+conversation:
+  number: 5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 9
+  interaction_style:
+    - default
+```
+
+## A couple of notes 💡
+
+- **If you *do* have a custom `money` type** in your `types/` folder, you can keep `type: money` for the price fields — just make sure the file exists and the `name` matches. Otherwise, `float` is the safe choice.
+- I set `goal_style.all_answered` with `export: true` so you get a CSV showing which outputs were satisfied — handy for a QA profile like this one. The `limit: 9` is a safety cap (default is 30 if omitted).
+- I kept `is_starter: false` — but your original had `True`. If your bot *doesn't* greet first, flip it back to `true` so the simulated user opens the conversation. 🙂
+
+Want me to also add some `interaction_style` variety (like `make spelling mistakes` or `long phrases`) to make the test more realistic? Just say the word! 🙌

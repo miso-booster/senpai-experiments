@@ -1,0 +1,94 @@
+conversation ID: one_node_architecture__p14__alcampo__profile__0e273f30
+$$$
+¡Buena idea! 🍳 Ya tienes un perfil parecido (`recipe_management_and_cooking_support.yaml`), pero ese se centra en las funcionalidades de "La Cocina de Alcampo". Este nuevo perfil pone el foco en que el chatbot **te recomiende recetas concretas y te ayude a planificar menús** (semanal, con ingredientes, lista de la compra, etc.).
+
+Aquí tienes un perfil listo para pegar en `profiles/`:
+
+```yaml
+test_name: "Recipe Recommendations and Menu Planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a busy home cook who wants the Alcampo chatbot to recommend recipes
+    and help you plan meals for the week, including building a shopping list
+    with the ingredients you'll need.
+  context:
+    - "You cook for a family of four and want varied, healthy meals during the week."
+    - "You prefer recipes that use seasonal and affordable ingredients available at Alcampo."
+    - "You have one vegetarian in the household, so at least a couple of meals should be meat-free."
+    - "You want to keep the weekly menu realistic: quick weekday dinners and one special weekend dish."
+  goals:
+    - "Ask the chatbot to recommend a {{meal_type}} recipe using {{main_ingredient}}."
+    - "Request a full weekly menu plan for {{number_of_days}} days that includes {{dietary_preference}} options."
+    - "Ask the chatbot to list the ingredients needed for the {{selected_recipe}} so you can add them to your shopping list."
+    - "Inquire whether the ingredients for the menu are currently in season or on promotion at Alcampo."
+    - "Ask the chatbot to suggest a dessert or side dish that pairs well with the {{selected_recipe}}."
+    - meal_type:
+        function: forward()
+        type: string
+        data: [quick weekday dinner, weekend special, light lunch]
+    - main_ingredient:
+        function: forward()
+        type: string
+        data: [chicken, salmon, chickpeas, pasta, seasonal vegetables]
+    - number_of_days:
+        function: random()
+        type: int
+        data: [3, 5, 7]
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data: [vegetarian, low-carb, family-friendly, budget-friendly]
+    - selected_recipe:
+        function: forward(meal_type)
+        type: string
+        data:
+          - any(3 realistic recipes matching the meal type and main ingredient)
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recommended_recipe:
+        type: string
+        description: Name of the recipe recommended by the chatbot
+    - recipe_ingredients:
+        type: list[string]
+        description: Ingredients listed for the recommended recipe
+    - weekly_menu_plan:
+        type: string
+        description: Overview of the proposed menu plan across the requested days
+    - seasonal_or_promotion_info:
+        type: string
+        description: Information about seasonal ingredients or current promotions mentioned
+    - dessert_or_side_suggestion:
+        type: string
+        description: Dessert or side dish suggested to pair with the recipe
+    - recipe_count:
+        type: int
+        description: Number of distinct recipes included in the menu plan
+
+conversation:
+  number: combinations(0.6, forward)
+  max_cost: 0.6
+  goal_style:
+    steps: 26
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👇
+
+- **Variables y funciones**: uso `forward()` en `meal_type` y `main_ingredient` para que se generen combinaciones deterministas, y `pairwise()` en `dietary_preference` para cubrir pares sin explotar el número de conversaciones. El `combinations(0.6, forward)` toma el 60% de la matriz de combinaciones de los `forward`.
+- **`chatbot.output` como contrato**: los campos que defino aquí (`recommended_recipe`, `recipe_ingredients`, `weekly_menu_plan`, etc.) son los que luego podrás usar en reglas Sensei-check como `conv[0].recommended_recipe` o `len(conv[0].recipe_ingredients)`.
+- **`selected_recipe` con `any(...)`**: genera recetas realistas vía LLM que encajen con el tipo de comida y el ingrediente principal. Si prefieres control total, cambia ese `data` por una lista fija.
+
+¿Quieres que te prepare también una **regla Sensei-check** que valide, por ejemplo, que el menú semanal incluye al menos tantas recetas como días pedidos, o que las recetas vegetarianas no contengan ingredientes cárnicos? 😊
+$$$

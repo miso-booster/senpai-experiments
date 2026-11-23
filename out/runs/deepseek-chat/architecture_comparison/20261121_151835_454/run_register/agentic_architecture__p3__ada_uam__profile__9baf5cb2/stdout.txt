@@ -1,0 +1,124 @@
+conversation ID: agentic_architecture__p3__ada_uam__profile__9baf5cb2
+$$$
+¡Hola! 😊 Claro que sí, te ayudo a arreglarlo. Revisé tu perfil contra la guía de perfiles (`sensei-chat-guide.md`) y encontré varios problemas estructurales. Te los explico y luego te dejo el YAML corregido.
+
+## 🔍 Problemas encontrados
+
+1. **`user.goals` mal formado (el error principal).** Las variables `identificador_id_uam` y `user_account` están declaradas **dentro** de la lista de goals, pero la declaración de `identificador_id_uam` está rota: le falta la clave del nombre de la variable y tiene los campos `type`/`data` "sueltos" justo después de un goal de texto. Según la guía (§4), cada variable debe declararse como un mapping con su nombre como clave, incluyendo `function`, `type` y `data`. Además, **falta la clave `function`** en ambas variables (la guía §4.4 la requiere: `default()`, `random()`, `another()`, etc.).
+
+2. **`user.role` ausente.** La guía (§3) recomienda definir `role` para describir al usuario simulado. No es obligatorio, pero mejora mucho el comportamiento. Te lo añado.
+
+3. **`llm.model_prov` ausente.** No es obligatorio (la guía §11 dice que si se omite se aplican defaults), pero como defines `model: gpt-4o-mini`, conviene indicar el proveedor (`openai`) para evitar ambigüedad.
+
+4. **`conversation.goal_style.steps: 30`.** Es válido, pero la guía (§5) advierte que para `random steps` el máximo es 20; con `steps` fijo no hay tope duro, aunque 30 pasos para 5 goals es excesivo y encarece la ejecución. Lo dejo pero te lo señalo (puedes bajarlo).
+
+5. **`chatbot.output` con campos redundantes.** Tienes `contact_info` y `contact_information` (¡casi idénticos!) y `user_account` / `identificador_id_uam` como outputs. Ojo: `user_account` e `identificador_id_uam` son **variables del usuario**, no necesariamente algo que el bot "extraiga". Si los quieres como outputs para reglas, está bien, pero conviene que los nombres sean claros y no duplicados. Te propongo consolidar `contact_info`/`contact_information`.
+
+6. **`fallback` con `\n` literales.** En YAML, dentro de una cadena entre comillas dobles los `\n` sí se interpretan como saltos de línea, pero como el texto tiene comas y saltos, es más limpio usar el bloque `>-` (folded) para evitar problemas de escapado.
+
+## ✅ Perfil corregido
+
+```yaml
+test_name: Asistencia Técnica y Cuentas
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita resolver problemas técnicos para acceder a tus
+    plataformas virtuales y cuentas de usuario, y que busca ayuda del Centro de
+    Atención a Usuarios (CAU) de forma clara y directa.
+  context:
+    - Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad.
+    - Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias.
+    - Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento.
+  goals:
+    - Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU).
+    - Preguntar sobre los procedimientos para obtener una cuenta ID-UAM.
+    - Solicitar los pasos necesarios para establecer la contraseña por primera vez.
+    - Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado.
+    - Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}.
+    - identificador_id_uam:
+        function: random()
+        type: string
+        data:
+          - '123456789'
+          - '987654321'
+          - '112233445'
+          - '556677889'
+          - '998877665'
+    - user_account:
+        function: random()
+        type: string
+        data:
+          - usuario123
+          - maria.garcia
+          - juan_lopez_2023
+          - pedro.salas
+          - sara.martinez
+
+chatbot:
+  is_starter: false
+  fallback: >-
+    ¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar
+    nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de
+    Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+    - contact_info:
+        type: string
+        description: Detalles de contacto del CAU
+    - operational_hours:
+        type: string
+        description: Horarios operativos del CAU
+    - available_services_list:
+        type: string
+        description: Servicios disponibles para crear cuenta
+    - password_setup_link:
+        type: string
+        description: Enlace para establecer contraseña
+    - recovery_steps:
+        type: string
+        description: Pasos para recuperar ID-UAM
+    - activation_code:
+        type: string
+        description: Código de activación para cambiar contraseña
+    - user_account:
+        type: string
+        description: Nombre de usuario para recuperación
+    - identificador_id_uam:
+        type: string
+        description: Identificador único de ID-UAM
+    - password_change_steps:
+        type: string
+        description: Pasos para cambiar la contraseña
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 30
+```
+
+## 📝 Resumen de cambios
+
+| Cambio | Motivo (según `sensei-chat-guide.md`) |
+|---|---|
+| Arreglada la declaración de `identificador_id_uam` (nombre como clave + `function`) | §4.1 y §4.4: cada variable debe declararse como mapping con su nombre y `function` |
+| Añadido `function: random()` a ambas variables | §4.4: la función de selección es necesaria |
+| Añadido `user.role` | §3: describe al usuario simulado |
+| Añadido `llm.model_prov: openai` | §3/§11: coherencia con `model: gpt-4o-mini` |
+| `fallback` convertido a bloque `>-` | Evita problemas de escapado con `\n` |
+| Eliminado `contact_information` (duplicado de `contact_info`) | §2.1.2: evitar duplicar el mismo concepto con nombres distintos |
+
+## ⚠️ Dos cosas que quiero confirmar contigo
+
+1. **`steps: 30`** — ¿lo dejamos así o lo bajamos (p. ej. `steps: 10`)? Con 5 goals, 30 pasos puede disparar el coste. También podrías usar `all_answered:` para terminar cuando se cubran los objetivos.
+2. **`contact_information`** — lo eliminé por ser casi idéntico a `contact_info`. Si en realidad querías dos campos distintos (p. ej. uno para "métodos de contacto" y otro para "opciones de asistencia en recuperación"), dime y los separo con nombres claros.
+
+¿Quieres que ajuste alguno de estos puntos o lo dejamos así? 🙌
+$$$

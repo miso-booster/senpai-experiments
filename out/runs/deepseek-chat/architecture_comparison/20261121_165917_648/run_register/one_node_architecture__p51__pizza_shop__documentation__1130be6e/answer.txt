@@ -1,0 +1,67 @@
+Hey there! 😊 Great question — connectors are basically the "bridge" between Sensei and your chatbot. They tell Sensei **how to actually talk to your bot's API** (where to send messages, how to format them, and where to read the reply from). No code needed — just a YAML file. 🔌
+
+Let me break it down for you 👇
+
+## What connectors are used for
+
+A connector lets Sensei send a user message to your chatbot and get the bot's reply back. You describe the API in YAML, and Sensei handles the rest. This is what makes it possible to run profiles against *any* chatbot — your own, a third-party widget, whatever — as long as you can describe its HTTP API.
+
+## The fields
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | ✅ Yes |
+| `send_message.path` | API endpoint path (appended to `base_url`) | ✅ Yes |
+| `send_message.method` | HTTP method (`POST`, `GET`, `PUT`, `DELETE`) | No (default: `POST`) |
+| `send_message.headers` | Custom headers (e.g. `Authorization`) | No |
+| `send_message.payload_template` | JSON structure with the `{user_msg}` placeholder | ✅ Yes |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | ✅ Yes |
+
+A couple of things worth highlighting ✨:
+
+- **`{user_msg}`** is the magic placeholder — that's where Sensei injects the simulated user's message.
+- **`response_path`** uses dot notation to dig into nested JSON:
+  - `"message"` → `response["message"]`
+  - `"data.text"` → `response["data"]["text"]`
+  - `"results.0.content"` → `response["results"][0]["content"]`
+
+Here's a minimal example so you can see it all together:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+And here's one of yours with auth headers and a nested response — the **Ada UAM** connector:
+
+```yaml
+name: "Ada UAM"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "60a3bee2e3987316fed3218f"
+  payload_template:
+    conversation: "682ce1ce271ce860cffde0fd"
+    sender_type: "User"
+    sender: "682ce1cefe831160cee700ed"
+    bot: "60a3be81f9a6b98f7659a6f9"
+    language: "es"
+    url: "https://www.uam.es/uam/tecnologias-informacion/servicios-ti/acceso-remoto-red"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Quick tip 💡: check your API docs for the exact response structure so you set `response_path` correctly — that's the most common spot where connectors trip up.
+
+Want me to help you build or validate a connector for a specific bot? Just tell me the API details and I'll draft it for you! 🙌

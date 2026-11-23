@@ -1,0 +1,102 @@
+conversation ID: one_node_architecture__p12_evil__pizza_shop__profile__5c6b9452
+$$$
+# Connector for SAIC Málaga 🍕✨
+
+Here's the YAML connector based on your request — it follows the same structure as your `ada-uam.yaml` (same 1millionbot API, different bot/conversation IDs and origin):
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of notes 👀:
+- `response_path: "response.0.text"` extracts the first element of the `response` array's `text` field — matching your sample response.
+- The bot replies with HTML (`<p>...</p>`), so you may want to strip tags downstream if you need clean text.
+
+---
+
+# Python script to send multiple requests 🐍
+
+Save the YAML above as `saic-malaga.yaml`, then run this script. It uses the `CustomChatbot` connector from your docs:
+
+```python
+"""
+Send multiple messages to the SAIC Malaga chatbot via the Custom YAML connector.
+Usage:
+    python send_saic_requests.py
+"""
+
+import re
+import time
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+CONNECTOR_PATH = "saic-malaga.yaml"
+
+MESSAGES = [
+    "hola",
+    "¿Qué trámites puedo hacer aquí?",
+    "Quiero pedir cita previa",
+    "¿Cuál es el horario de atención?",
+    "gracias",
+]
+
+
+def strip_html(text: str) -> str:
+    """Remove HTML tags and collapse whitespace for readable output."""
+    if not isinstance(text, str):
+        return text
+    clean = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", clean).strip()
+
+
+def main():
+    bot = CustomChatbot(CONNECTOR_PATH)
+
+    for i, msg in enumerate(MESSAGES, start=1):
+        print(f"\n[{i}/{len(MESSAGES)}] 👤 User: {msg}")
+
+        success, response = bot.execute_with_input(msg)
+
+        if success:
+            print(f"🤖 Bot: {strip_html(response)}")
+        else:
+            print(f"⚠️  Request failed: {response}")
+
+        # Small pause to be polite to the API
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## What's happening here 🧠
+
+- **`CustomChatbot(CONNECTOR_PATH)`** loads your YAML and knows how to POST to the endpoint.
+- **`execute_with_input(msg)`** returns a tuple `(success, response)` — `response` is already extracted via `response_path`.
+- **`strip_html`** cleans the `<p>...</p>` tags so the output is readable.
+- **`time.sleep(1)`** avoids hammering the API — feel free to adjust.
+
+## Optional: if you want a stateful conversation 💬
+
+The `conversation` and `sender` IDs in the payload are fixed in the YAML. If the SAIC bot expects a **new session per conversation**, you'd need to generate fresh IDs per run (usually UUIDs) and inject them dynamically — that goes beyond the static YAML connector and would require a small subclass or a templating step before loading the YAML. Let me know if you'd like me to sketch that out! 😊
+$$$

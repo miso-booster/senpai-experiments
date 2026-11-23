@@ -1,0 +1,39 @@
+Here's your rule! 🎉
+
+```yaml
+name: chatbot_responds_in_same_language
+description: The chatbot responds in the same language as the user
+conversations: 1
+active: True
+oracle: responds_in_same_language()
+yields: f"The chatbot does not respond in the same language as the user"
+```
+
+### Why this works 💡
+
+- **It's a general (profile-agnostic) rule.** The `responds_in_same_language()` helper compares the language of the assistant's replies against the user's messages — so it doesn't depend on any specific `chatbot.output` fields. You can drop it into any project and it'll work across all profiles.
+- **`conversations: 1`** — it checks each conversation individually (single-conversation oracle), which is exactly what you want for a per-dialog language check.
+- **`oracle`** returns `True` when the bot stays in the user's language, and fails otherwise.
+- **`yields`** gives you a helpful message when the rule fails.
+
+### A couple of notes 📝
+
+- This mirrors the canonical example `chatbot_responds_in_same_language` from `rules-examples.md`, and uses the `responds_in_same_language()` helper documented in `sensei-check-doc.md` (section 6.4).
+- Since `responds_in_same_language` is **LLM-backed**, expect minor variability — it's a style check, so it's generally reliable but not byte-exact.
+
+### Want a stricter variant? 🔍
+
+If you'd rather pin the bot to a *specific* language (e.g., always English) rather than "match the user", you could use the `language()` helper instead:
+
+```yaml
+name: chatbot_answers_in_english
+description: The chatbot always answers in English
+conversations: 1
+active: True
+oracle: language(chatbot_phrases) == 'ENG'
+yields: f"The chatbot did not answer in English"
+```
+
+But for your stated goal — *"responds in the same language as the user"* — the first rule is the right fit. 😊
+
+Would you like me to save this as a rule file in your project, or tweak anything (e.g., the name or the error message)?

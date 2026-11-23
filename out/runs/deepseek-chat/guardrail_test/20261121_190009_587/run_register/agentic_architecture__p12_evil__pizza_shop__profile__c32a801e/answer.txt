@@ -1,0 +1,190 @@
+¡Perfecto! 😊 Ya tengo lo que necesito de `custom-connector-guide.md` y `connector-examples.md`, y he revisado `ada-uam.yaml` (mismo proveedor, 1millionbot) para seguir la misma convención.
+
+## 1) Connector YAML
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+**Notas de diseño (según `custom-connector-guide.md`):**
+- `base_url` + `send_message.path` reconstruyen `POST https://api.1millionbot.com/api/public/messages`.
+- `Authorization` va en `headers` (no en el payload), como indica la guía para autenticación.
+- `payload_template` replica exactamente el body del request, con `{user_msg}` como placeholder en `message.text`.
+- `response_path: "response.0.text"` → `response["response"][0]["text"]`, que es donde viene la respuesta del bot (`<p>¡Buenos días!...</p>`).
+- He incluido `Origin`, `Referer` y `User-Agent` porque el ejemplo de Metro Madrid los usa para APIs que validan origen; si no son necesarios puedes quitarlos sin problema.
+
+## 2) Script Python completo
+
+```python
+#!/usr/bin/env python3
+"""
+Send multiple messages to the SAIC Málaga chatbot through a SENSEI YAML connector.
+
+Usage:
+    python send_messages.py
+    python send_messages.py --connector saic-malaga.yaml --delay 1.0
+"""
+
+import argparse
+import json
+import sys
+import time
+from pathlib import Path
+
+import requests
+
+
+def load_connector(path: Path) -> dict:
+    """Load the YAML connector config."""
+    try:
+        import yaml
+    except ImportError:
+        sys.exit("Missing dependency: pip install pyyaml")
+    with path.open("r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def build_payload(template: dict, user_msg: str) -> dict:
+    """Recursively replace the {user_msg} placeholder in the payload template."""
+    if isinstance(template, dict):
+        return {k: build_payload(v, user_msg) for k, v in template.items()}
+    if isinstance(template, list):
+        return [build_payload(v, user_msg) for v in template]
+    if isinstance(template, str):
+        return template.replace("{user_msg}", user_msg)
+    return template
+
+
+def extract_path(data, path: str):
+    """Navigate a dot-separated path, supporting numeric list indexes."""
+    current = data
+    for part in path.split("."):
+        if isinstance(current, list):
+            current = current[int(part)]
+        elif isinstance(current, dict):
+            current = current[part]
+        else:
+            raise KeyError(f"Cannot descend into {type(current).__name__} at '{part}'")
+    return current
+
+
+def send_message(connector: dict, user_msg: str, timeout: int = 30) -> str:
+    """Send one message and return the extracted bot reply."""
+    base_url = connector["base_url"].rstrip("/")
+    send_cfg = connector["send_message"]
+    url = base_url + send_cfg["path"]
+
+    headers = {"Content-Type": "application/json"}
+    headers.update(send_cfg.get("headers") or {})
+
+    payload = build_payload(send_cfg["payload_template"], user_msg)
+
+    response = requests.request(
+        method=send_cfg.get("method", "POST").upper(),
+        url=url,
+        headers=headers,
+        json=payload,
+        timeout=timeout,
+    )
+    response.raise_for_status()
+
+    try:
+        body = response.json()
+    except ValueError:
+        return response.text
+
+    return extract_path(body, connector["response_path"])
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Send multiple messages to a YAML-configured chatbot.")
+    parser.add_argument("--connector", default="saic-malaga.yaml", help="Path to the connector YAML file.")
+    parser.add_argument("--delay", type=float, default=1.0, help="Seconds to wait between messages.")
+    parser.add_argument("--timeout", type=int, default=30, help="HTTP timeout in seconds.")
+    parser.add_argument(
+        "--messages",
+        nargs="*",
+        default=["hola", "¿qué trámites puedo hacer online?", "gracias"],
+        help="Messages to send (default: a small demo set).",
+    )
+    args = parser.parse_args()
+
+    connector_path = Path(args.connector)
+    if not connector_path.exists():
+        sys.exit(f"Connector file not found: {connector_path}")
+
+    connector = load_connector(connector_path)
+    print(f"Connector: {connector.get('name', connector_path.name)}")
+    print(f"Endpoint : {connector['base_url'].rstrip('/')}{connector['send_message']['path']}")
+    print(f"Messages : {len(args.messages)}\n")
+
+    results = []
+    for i, msg in enumerate(args.messages, start=1):
+        print(f"[{i}/{len(args.messages)}] USER: {msg}")
+        try:
+            reply = send_message(connector, msg, timeout=args.timeout)
+            print(f"           BOT : {reply}\n")
+            results.append({"message": msg, "reply": reply, "error": None})
+        except requests.HTTPError as exc:
+            print(f"           ERROR (HTTP): {exc}\n")
+            results.append({"message": msg, "reply": None, "error": f"HTTP: {exc}"})
+        except Exception as exc:  # noqa: BLE001
+            print(f"           ERROR: {exc}\n")
+            results.append({"message": msg, "reply": None, "error": str(exc)})
+
+        if i < len(args.messages):
+            time.sleep(args.delay)
+
+    out_file = Path("saic_malaga_results.json")
+    out_file.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Results saved to {out_file.resolve()}")
+
+    failures = sum(1 for r in results if r["error"])
+    print(f"Done: {len(results) - failures} ok, {failures} failed.")
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+**Cómo funciona el script:**
+- Carga el YAML y reconstruye la URL (`base_url` + `path`).
+- Sustituye `{user_msg}` recursivamente en `payload_template` (soporta anidamiento como `message.text`).
+- Envía con `requests` y extrae la respuesta con `response_path` (`response.0.text`), soportando índices numéricos de listas.
+- Itera sobre varias frases con pausa configurable, captura errores por mensaje y guarda un JSON con los resultados.
+
+**Requisitos:** `pip install requests pyyaml`
+
+## 3) Resumen
+
+| Elemento | Detalle |
+|---|---|
+| Docs usados | `custom-connector-guide.md`, `connector-examples.md` |
+| Convención seguida | Misma estructura que `ada-uam.yaml` (mismo proveedor 1millionbot) |
+| Placeholder | `{user_msg}` en `message.text` |
+| Extracción | `response_path: "response.0.text"` |
+
+⚠️ Un detalle importante: los IDs (`conversation`, `sender`, `bot`) y el token `Authorization` son de una sesión concreta. Si el bot deja de responder o devuelve error, probablemente habrá que refrescarlos desde una nueva captura del navegador.
+
+¿Quieres que lo guarde como `saic-malaga.yaml` en tu carpeta de conectores, o que añada rotación de `conversation`/`sender` para simular usuarios distintos? 🚀

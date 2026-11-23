@@ -1,0 +1,32 @@
+conversation ID: one_node_architecture__p7__ada_uam__rule__7f731951
+$$$
+¡Claro! 😊 Vamos a crear una regla que verifique que el chatbot de Ada UAM devuelve correctamente los datos de contacto del CAU (email, teléfono y dirección física) tal como los has indicado.
+
+Como los campos `contact_email`, `contact_phone` y `physical_address` vienen del `chatbot.output` del perfil `consultante_de_servicios_y_asistencia_del_cau`, la regla es **profile-bound** y usa `semantic_content` para comprobar que el contenido extraído coincide con la información oficial (así toleramos variaciones de formato como "91 497 40 29" vs "914974029").
+
+```yaml
+name: cau_contact_info_correct
+description: >
+  Checks that the CAU contact information (email, phone and physical address)
+  extracted from the consultante_de_servicios_y_asistencia_del_cau profile
+  matches the official data: cau@uam.es, 91 497 4029 and the Higher Polytechnic
+  School address (C/ Francisco Tomás y Valiente nº 11, Building B, first floor,
+  office TI-107).
+conversations: 1
+active: true
+oracle: |
+  semantic_content(contact_email, 'cau@uam.es') and
+  semantic_content(contact_phone, '91 497 4029') and
+  semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+yields: |
+  f"CAU contact info mismatch -> email: {contact_email}, phone: {contact_phone}, address: {physical_address}"
+```
+
+Un par de notas rápidas 👀:
+
+- **`semantic_content`** es un helper respaldado por LLM, así que tolera pequeñas variaciones de redacción (por ejemplo, "Escuela Politécnica Superior" en lugar de "Higher Polytechnic School"). Si prefieres una comprobación más estricta, podrías usar comparaciones exactas con `in`, pero perderías esa flexibilidad.
+- Si en algún momento renombras los campos en el `chatbot.output` del perfil (por ejemplo, `contact_email` → `cau_email`), recuerda actualizar la regla para que siga apuntando a los nombres correctos.
+- Si quieres que la regla solo se aplique cuando el perfil realmente haya extraído esos campos, puedes añadir un `when:` como `when: contact_email is not None and contact_phone is not None and physical_address is not None`.
+
+¿Quieres que la haga más estricta (comparación literal) o la dejamos con `semantic_content` para mayor robustez? 😊
+$$$

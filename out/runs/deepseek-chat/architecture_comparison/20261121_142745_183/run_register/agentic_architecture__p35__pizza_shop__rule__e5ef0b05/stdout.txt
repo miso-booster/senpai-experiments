@@ -1,0 +1,49 @@
+conversation ID: agentic_architecture__p35__pizza_shop__rule__e5ef0b05
+$$$
+I found three pizza profiles, but there's an important catch: **none of them exposes a `size` field in `chatbot.output`** — which is exactly what a "small pizza price" rule needs. Let me lay out what I found so we can pick the right target.
+
+## Candidate profiles
+
+| Profile | `chatbot.output` fields | Has `size`? | Has `price`? |
+|---|---|---|---|
+| `pizza_order_test_custom.yml` | `price`, `time`, `order_id` | ❌ (size is only a *goal input*, not extracted) | ✅ `price` (currency) |
+| `user_sim_pizzaorder_predefined.yml` | `price`, `time`, `order_id` | ❌ (size is a goal input only) | ✅ `price` (money) |
+| `pizzaorder_ivan_test.yml` | `available_pizza_types`, `selected_pizza_type`, `pizza_size_options`, `selected_pizza_size`, `pizza_order_confirmation`, `drink_options_and_prices`, `drink_quantity_requested`, `selected_drink_type` | ✅ `selected_pizza_size` | ❌ (no price field) |
+
+## The problem 🤔
+
+A rule like *"small pizza costs $10"* needs **both** `size` and `price` in the same profile's `chatbot.output`. Right now:
+- `pizza_order_test_custom.yml` and `user_sim_pizzaorder_predefined.yml` have `price` but **don't extract `size`**.
+- `pizzaorder_ivan_test.yml` extracts `selected_pizza_size` but **has no price field**.
+
+So before I write the rule, I need your call on how to proceed. Here are the options:
+
+**Option A — Use `pizza_order_test_custom.yml` and add a `size` output field.**
+I'd add a `size` field to its `chatbot.output` (e.g. `size: {type: string, description: Pizza size}`), then write the rule against `conv[0].size` and `conv[0].price`. This is the cleanest, since the profile already asks for a `{{size}}` in its goals.
+
+**Option B — Use `user_sim_pizzaorder_predefined.yml` and add a `size` output field.**
+Same idea, but note its `price` type is `money` (not the documented `currency`), so I'd want to confirm that type works with the `currency()` helper.
+
+**Option C — Use `pizzaorder_ivan_test.yml` and add a `price` output field.**
+Then the rule would use `selected_pizza_size` and the new `price` field.
+
+**Option D — Rule-first (no profile change now).**
+I write the rule assuming a future profile exposes `size` + `price`, and I document exactly which fields are required.
+
+## My recommendation
+
+**Option A** with `pizza_order_test_custom.yml` — it already collects `size` as a goal and has a proper `currency` price field, so it's the smallest, most consistent change.
+
+Which option do you want? Once you confirm (and approve the small `chatbot.output` addition if needed), I'll generate the rule YAML — something like:
+
+```yaml
+name: small_pizza_price
+description: A small pizza should cost exactly $10 (profile pizza_order_test_custom)
+conversations: 1
+when: conv[0].size == 'small'
+oracle: extract_float(conv[0].price) == 10 and currency(conv[0].price) == 'USD'
+yields: f"Wrong price for a small pizza: expected $10, got {conv[0].price}"
+```
+
+Just tell me which profile to target and whether you're OK with the `chatbot.output` tweak, and I'll finalize it! 😊
+$$$

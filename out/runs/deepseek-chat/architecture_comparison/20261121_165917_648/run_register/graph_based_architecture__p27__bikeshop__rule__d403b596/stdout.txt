@@ -1,0 +1,97 @@
+conversation ID: graph_based_architecture__p27__bikeshop__rule__d403b596
+$$$
+¡Buena idea! 😊 Vamos a crear una regla para Sensei-check que verifique que, si el usuario propone **dos veces la misma fecha**, el asistente **rechace la segunda** (por ejemplo, porque ya está ocupada o porque no admite duplicados).
+
+Antes de escribirla, un par de aclaraciones importantes para que la regla funcione de verdad en tu proyecto:
+
+- Necesitas que el perfil de SENSEI Chat exponga en `chatbot.output` un campo con la **fecha propuesta/aceptada** (por ejemplo `date` o `appointment_date`) y, si quieres comprobar el rechazo, algo que indique si fue **aceptada o rechazada** (por ejemplo `accepted: bool` o un mensaje de rechazo).
+- Como la regla depende de esos campos, es una **regla ligada a un perfil** (profile-bound). Ajusta los nombres a los reales de tu `chatbot.output`.
+
+Aquí tienes la regla:
+
+```yaml
+name: same_date_rejected_second_time
+description: >
+  Si el usuario propone la misma fecha dos veces, el asistente debe rechazar
+  la segunda propuesta (no puede aceptar dos veces la misma fecha).
+conversations: 1
+if: >
+  len(set(conv[0].proposed_dates)) < len(conv[0].proposed_dates)
+then: >
+  conv[0].accepted is False
+on-error: >
+  El asistente aceptó la misma fecha dos veces: {conv[0].proposed_dates} / accepted={conv[0].accepted}
+```
+
+### Cómo leerla 👀
+
+- **`conversations: 1`** → es una regla de una sola conversación (un oráculo clásico), porque el "duplicado" ocurre dentro del mismo diálogo.
+- **`if`** → detecta que hay una fecha repetida comparando la lista de fechas propuestas con su versión sin duplicados (`set`). Si son distintas longitudes, hubo repetición.
+- **`then`** → exige que el asistente **no** haya aceptado (es decir, que rechace la segunda).
+- **`on-error`** → mensaje claro para depurar cuando falla.
+
+### Alternativa si tu perfil no expone `accepted`
+
+Si en lugar de un booleano el perfil expone el **texto de la respuesta** del asistente, puedes comprobar que aparece una negativa usando el helper `utterance_index`:
+
+```yaml
+name: same_date_rejected_second_time
+description: >
+  Si el usuario propone la misma fecha dos veces, el asistente debe rechazar
+  la segunda propuesta.
+conversations: 1
+if: >
+  len(set(conv[0].proposed_dates)) < len(conv[0].proposed_dates)
+then: >
+  utterance_index('assistant', 'not available') > 0
+on-error: >
+  No se detectó un rechazo tras repetir la fecha: {conv[0].proposed_dates}
+```
+
+> ⚠️ Ojo: `utterance_index` es un helper respaldado por LLM, así que puede tener pequeñas variaciones. Ajusta la frase (`'not available'`, `'already booked'`, `'no disponible'`…) al dominio real de tu asistente.
+
+### Lo que necesitas en el perfil 📋
+
+Para que cualquiera de las dos versiones funcione, el `chatbot.output` del perfil debería incluir algo como:
+
+```yaml
+test_name: "proposed_dates_acceptance"
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que propone varias fechas para una cita y espera
+    que el asistente confirme la última fecha propuesta.
+  context:
+    - "Propones fechas de forma progresiva hasta llegar a un acuerdo."
+  goals:
+    - "Propón {{proposed_dates}} como posibles fechas para la cita"
+    - proposed_dates:
+        function: random()
+        type: string
+        data:
+          - any(3 fechas dentro del próximo mes)
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, ¿puedes reformular eso?"
+  output:
+    - proposed_dates:
+        type: list[string]
+        description: Fechas que el usuario ha propuesto durante la conversación
+    - accepted:
+        type: bool
+        description: Si el asistente aceptó la última fecha propuesta
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+Si me dices **cómo se llaman realmente los campos** en tu perfil (o si prefieres que la regla sea global usando solo helpers genéricos), te la dejo lista para pegar sin tocar nada 🙌. ¿Quieres que la adaptemos a tu esquema concreto?
+$$$

@@ -1,0 +1,50 @@
+conversation ID: graph_based_architecture__p47__pizza_shop__documentation__227a35b9
+$$$
+Great question! 😊 Let me break down what a **metamorphic rule** means in the context of Sensei-check.
+
+## The short version
+
+A **metamorphic rule** is a rule that checks a *relationship* between **two or more conversations** — instead of checking one conversation's answer against a fixed expected value. 🎯
+
+## Why this matters
+
+Normally, testing a chatbot means asking: *"Did the bot give the right answer?"* But for LLM-based bots, there's often **no single correct answer** — phrasing varies, prices depend on context, and so on. This is the classic **oracle problem**.
+
+Metamorphic testing sidesteps that by checking **relations** instead of absolute answers. You don't need to know the exact price — you just need to know that *more toppings should cost more*. 💡
+
+## How it works in Sensei-check
+
+A metamorphic rule typically has three parts:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+- **`conversations: 2`** → this rule compares a *pair* of conversations
+- **`when`** → filters for *comparable* conversations (same size, same drink — so the only thing that changes is toppings)
+- **`if` / `then`** → the actual relation: *"If one has more toppings, then it must cost more"*
+
+## The mental model 🧠
+
+Think of it like a science experiment: you **hold everything constant** except one variable, then check that the output changes in the expected direction. That's exactly what `when:` does — it controls for confounders so your relation is meaningful.
+
+## A few common flavors
+
+| Type | Example |
+|------|---------|
+| **Monotonicity** | More toppings → higher price |
+| **Invariance** | Same order → same price |
+| **Uniqueness** | Order IDs are all different (`conversations: all`) |
+| **Consistency** | Bot always answers in the same language |
+
+## One important note ⚠️
+
+The fields you reference (`conv[0].toppings`, `conv[0].price`, etc.) must come from a **profile's `chatbot.output`** — they're not invented out of thin air. So metamorphic rules and profiles are tightly connected: the profile defines *what gets extracted*, and the rule checks *how those extracted values relate*.
+
+Want me to walk through a specific example from your project, or help you write a new metamorphic rule? 🚀
+$$$

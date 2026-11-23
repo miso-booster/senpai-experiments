@@ -1,0 +1,70 @@
+conversation ID: one_node_architecture__p32__pizza_shop__profile__e2980e3e
+$$$
+¡Claro que sí! 🍕 Vamos a crear un perfil para probar el chatbot de la pizzería, con un `chatbot.output` que capture exactamente lo que necesitas: tipo de pizza, bebida, ID del pedido y precio final en dólares.
+
+Aquí tienes el perfil listo para usar:
+
+```yaml
+test_name: "pizza_order_with_outputs"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza and a drink from a pizza shop.
+    You want to place a complete order and confirm the final price.
+  context:
+    - "You are ordering for pickup."
+    - "You want a single pizza and one drink."
+  goals:
+    - "Order a {{pizza_type}} pizza."
+    - "Order a {{drink}} to go with it."
+    - "Ask for the final price in dollars."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Four cheese, Vegetarian]
+    - drink:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the customer ordered (e.g. Margarita, Pepperoni)."
+    - drink:
+        type: string
+        description: "The drink the customer ordered (e.g. Coke, Sprite)."
+    - order_id:
+        type: string
+        description: "The unique identifier for the order, e.g. 'order number' or 'order ID'."
+    - total_price:
+        type: currency
+        description: "The final price of the order in USD, including currency symbol like '$'."
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 6
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que todo fluya bien 😊:
+
+- **`total_price`** usa el tipo `currency`, así que las reglas podrán leerlo con `extract_float(conv[0].total_price)` y verificar la moneda con `currency(...) == 'USD'`.
+- Los nombres de los campos (`pizza_type`, `drink`, `order_id`, `total_price`) son los que luego usarás en tus reglas Sensei-check como `conv[i].pizza_type`, etc. Si renombras alguno aquí, recuerda actualizar las reglas que lo referencien.
+- Ajusté `conversation.number: 2` y `steps: 6` como punto de partida; puedes subirlo si quieres más cobertura con `forward()`.
+
+¿Quieres que te prepare también una regla Sensei-check que valide, por ejemplo, que el `total_price` sea mayor que cero o que el `order_id` sea único entre conversaciones? 🚀
+$$$

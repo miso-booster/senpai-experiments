@@ -1,0 +1,73 @@
+conversation ID: one_node_architecture__p23__bikeshop__profile__20513ce4
+$$$
+Hey there! 👋 Happy to help you fix this profile — I can spot a few things that will definitely cause it to fail. Let me walk you through them and then give you a clean version 😊
+
+## What's broken 🔧
+
+1. **`llm.temperature: low`** → must be a **float** (e.g. `0.0`, `0.6`). `low` is not valid.
+2. **`type: str`** → the correct primitive is **`string`** (not `str`).
+3. **`type: money`** → `money` is **not a built-in type**. You'd need a custom type in `types/money.yml`, or use `currency` (also custom) — simplest is to use `float` or `string` unless you actually have that custom type defined.
+4. **`seat_price` and `care_bike` have no `type`** → every output field **requires** a `type`.
+5. **`conversation.goal_style` is missing** → you need to tell Sensei how/when the conversation ends (e.g. `steps` or `all_answered`).
+6. **`interaction_style: [default]`** → `default` is fine as a keyword, but combined with no `goal_style` the run has no stopping rule. I'll add `all_answered` which fits your "ask these 5 things" setup nicely.
+
+## Fixed version ✅
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.0
+  model: gpt-4o-mini
+
+user:
+  language: English
+  role: you have to act as a user talking to a virtual assistant of a bike shop
+  context:
+    - You are interested in asking the items below.
+    - Just stick to asking opening times, prices of tire, price of tune-up, price of seat, and actions to the care of bike. Do not ask anything else.
+  goals:
+    - "opening and closing time of the bike shop"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: the opening and closing time of the shop
+    - tire:
+        type: float
+        description: the price of a new tire
+    - tune_up:
+        type: float
+        description: the price of a tune-up
+    - seat_price:
+        type: float
+        description: the price of a new seat
+    - care_bike:
+        type: string
+        description: actions to take care of the bike
+
+conversation:
+  number: 5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 9
+  interaction_style:
+    - default
+```
+
+## A couple of notes 💡
+
+- I switched `money` → **`float`** for the price fields. If you *do* have a custom `money` type in your `types/` folder, feel free to put it back — just make sure the file exists and the name matches exactly.
+- I set `goal_style.all_answered` with `limit: 9` (a safety cap) since you have 5 goals and want them all covered. You can bump the limit if the bot is chatty.
+- `is_starter: false` — your original had `False` (capital F). YAML accepts both, but lowercase `false` is the conventional form.
+
+Want me to also draft a **Sensei-check rule** that verifies all these slots get filled (e.g. `data_collected() == True`)? That pairs really nicely with this profile 🚀
+$$$

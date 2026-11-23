@@ -1,0 +1,100 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__aa51b91f
+$$$
+I'd love to help, but I have to be upfront: writing a general-purpose Python automation script (LLM-driven profile generator) falls outside what I can do here — I'm scoped to **Sensei PROFILES, RULES, CONNECTORS, and their documentation** 😊.
+
+That said, I *can* help you in a way that's actually more useful for your pizza_shop project: I can give you a **clear, structured recipe** for what such an automation should produce, plus a **ready-to-use prompt template** you can feed to an LLM to generate valid Sensei profiles — and I can validate/fix the YAML it returns. That keeps everything inside the Sensei domain.
+
+Here's a practical approach 👇
+
+---
+
+### 🧭 What your automation should do (Sensei-side spec)
+
+1. **Collect inputs** (bot domain, goals, output fields you want to test).
+2. **Ask the LLM** to emit a profile YAML following the Sensei schema (sections: `test_name`, `llm`, `user`, `chatbot`, `conversation`).
+3. **Validate** the YAML with `validation_check.py` (Sensei's own validator).
+4. **Fix** any schema errors and re-validate.
+
+The LLM prompt is the critical piece — here's one tuned to the Sensei profile schema:
+
+---
+
+### 🧩 LLM prompt template (paste into your script)
+
+```
+You are a Sensei profile generator. Output ONLY a single valid YAML document
+(no markdown, no commentary) following this exact schema:
+
+test_name: <string>
+llm:
+  temperature: <float 0-1>
+  model: <string>
+  model_prov: <string>
+  format:
+    type: text
+user:
+  language: <string>
+  role: <string>
+  context:
+    - <string>
+  goals:
+    - <goal string with {{variables}}>
+    - <variable_name>:
+        function: default|random|random(n)|another|another(n)|forward|pairwise
+        type: string|int|float|<custom_type_name>
+        data: <list | {min,max,step} | any("<instruction>")>
+chatbot:
+  is_starter: true|false
+  fallback: <string>
+  output:
+    - <field_name>:
+        type: int|float|string|money|time|date|list[<type>]|<custom>
+        description: <string>
+conversation:
+  number: <int> | combinations | combinations(<fraction>, pairwise)
+  goal_style:
+    steps: <int> | random steps: <int> | all_answered: {export: bool, limit: int}
+  interaction_style:
+    - <style keyword>
+
+Rules:
+- Every {{variable}} in goals MUST be declared as a variable entry in goals.
+- Use only these interaction_style keywords: long phrases, change your mind,
+  change language: [<languages>], make spelling mistakes, single questions,
+  all questions, default, random: [<styles>].
+- Do NOT use list/time/date types in user.goals (only in chatbot.output).
+- Use pairwise() only if ≥2 variables use it; forward() nesting must reference
+  a declared variable.
+- chatbot.output fields should be stable, descriptive names suitable for
+  Sensei-check rules (e.g., total_price, order_id, opening_hours).
+
+Domain: <FILL IN>
+Goals the simulated user should pursue: <FILL IN>
+Outputs to extract: <FILL IN>
+```
+
+---
+
+### ✅ Then validate in your script
+
+```bash
+python validation_check.py \
+  --profile /abs/path/to/project/profiles/generated.yml \
+  --output  /abs/path/to/output \
+  --combined-matrix --verbose
+```
+
+If it fails, feed the JSON error back to the LLM with: *"Fix this Sensei profile to pass validation. Errors: <json>"*.
+
+---
+
+### 🍕 Quick note on your project
+
+Looking at your `pizza_shop` profiles, a few things worth flagging that your automation should respect:
+
+- `pizza_order_test_custom.yml` uses `pairwise()` on `size` and `toppings` — good, but `conversation.number: 2` is very low for pairwise coverage; consider `combinations(0.5, pairwise)`.
+- `pizzaorder_ivan_test.yml` uses `forward()` on 4 variables but `conversation.number: 1` — you'll only ever see one combination. Bump it or switch to `combinations`.
+- `user_experiencing_input_issues.yaml` uses `type: str` in `chatbot.output` — the schema expects `string`. That's a likely validation error.
+
+Want me to **generate a concrete profile YAML** for a new scenario, or **fix one of the existing ones** above? Just tell me which and I'll produce the corrected YAML 🚀
+$$$

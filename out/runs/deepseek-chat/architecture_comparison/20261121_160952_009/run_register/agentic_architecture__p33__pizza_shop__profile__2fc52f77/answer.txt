@@ -1,0 +1,69 @@
+Here's your completed profile 🍕 — I filled in the `chatbot` section (plus the `is_starter`/`fallback` fields, which the docs recommend):
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+chatbot:
+  is_starter: false
+  fallback: I'm sorry, I did not get what you said. I can help you with information about our pizzas, drinks, prices, opening hours, and delivery.
+  output:
+  - pizza_options:
+      type: string
+      description: The list of available pizza types the chatbot provides when asked. Look for phrases like "Our pizzas include" or "We offer the following pizzas".
+  - margarita_price:
+      type: string
+      description: The price of a Margarita pizza as stated by the chatbot. Look for phrases like "The Margarita costs" or a currency amount next to "Margarita".
+  - drink_options_and_prices:
+      type: string
+      description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+  - opening_hours:
+      type: string
+      description: The daily opening hours of the pizza shop, as stated by the chatbot.
+  - delivery_availability:
+      type: string
+      description: Whether the shop offers delivery and any related details (e.g., delivery area, fees, minimum order). Look for phrases like "Yes, we deliver" or "We offer delivery".
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single questions
+```
+
+### What I added and why
+
+- **`is_starter: false`** — the simulated user opens the conversation (matches your sibling profiles).
+- **`fallback`** — a realistic bot fallback message, per the docs' best practice ("Put real bot fallback text in `chatbot.fallback` to avoid endless loops"). Adjust it to your actual bot's wording if it differs.
+- **`output`** — one field per goal, so each goal has a corresponding extractable value:
+  - `pizza_options` → "Ask about the available pizza types."
+  - `margarita_price` → "Ask about the price of a Margarita pizza."
+  - `drink_options_and_prices` → "Ask about the available drinks and their prices."
+  - `opening_hours` → "Ask about the shop's operating hours."
+  - `delivery_availability` → "Ask if they deliver."
+
+### Notes on conventions (from `sensei-chat-guide.md`)
+
+- I reused the **exact field names and descriptions** from your existing `general_information_seeker.yaml` where the goals overlap (`opening_hours`, `drink_options_and_prices`), so any profile-bound rules you write can share the same `conv[i].<field>` references across both profiles. 👍
+- I kept these as `type: string` because the bot's answers are descriptive (lists, explanations). If you plan to write **numeric rules** on the Margarita price later, consider switching `margarita_price` to `type: currency` — the docs recommend using `currency` instead of raw `string` when a rule will do math on it. Want me to do that?
+- I set `interaction_style` to **`single questions`**, which is the exact reserved keyword from the docs, so the profile validates cleanly.

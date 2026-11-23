@@ -1,0 +1,25 @@
+Here's a rule that checks the CAU contact details are all present and non-empty for the `consultante_de_servicios_y_asistencia_del_cau` profile 👇
+
+```yaml
+name: cau_contact_info_complete
+description: >
+  The chatbot must provide complete CAU contact information: a non-empty
+  contact email, phone number, and physical address. Targets the
+  consultante_de_servicios_y_asistencia_del_cau profile outputs.
+conversations: 1
+active: true
+oracle: |
+  conv[0].contact_email is not None and conv[0].contact_email.strip() != ''
+  and conv[0].contact_phone is not None and conv[0].contact_phone.strip() != ''
+  and conv[0].physical_address is not None and conv[0].physical_address.strip() != ''
+yields: |
+  f"Missing CAU contact info -> email: {conv[0].contact_email}, phone: {conv[0].contact_phone}, address: {conv[0].physical_address}"
+```
+
+A couple of quick notes so it behaves the way you expect 😊
+
+- **Field names match your profile's `chatbot.output`** exactly (`contact_email`, `contact_phone`, `physical_address`), so no renaming surprises.
+- **`is not None` + `.strip() != ''`** catches both "never extracted" and "extracted but empty/whitespace" cases — that's usually what "gave us all the necessary information" really means.
+- If you'd rather treat a missing field as a *soft* signal and only fail on truly empty strings, you can drop the `is not None` checks — but I'd keep them for a strict completeness guard.
+
+Want me to also add a **format sanity check** (e.g. email contains `@`, phone has digits, address has some minimum length)? That would make the rule a bit stronger without needing extra profile fields 🚀

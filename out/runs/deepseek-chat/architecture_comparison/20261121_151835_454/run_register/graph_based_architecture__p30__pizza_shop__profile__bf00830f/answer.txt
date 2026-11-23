@@ -1,0 +1,106 @@
+Hey there! 😊 Happy to help you build that profile — a rude, fast-paced pizza customer is a fun one to simulate! Let me walk you through it.
+
+## Quick heads-up on your request
+
+You asked for **4 goals with 4 variables**, and **2 of them using `pairwise()`** so `conversation.number` can be derived from the pairwise matrix. That's totally doable ✅ — just remember the rule from the docs: **you need at least 2 pairwise-assigned variables** for `combinations(...)` to work, which you've got covered.
+
+One small note: the "rude" and "wants things done fast" traits are **personality/behavior**, not variables — so I'll bake those into `user.role` and `user.context` (and optionally a personality file), while the 4 variables live in `user.goals`.
+
+---
+
+## The profile
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer ordering pizza. You are in a hurry and
+    expect everything done fast. You speak bluntly, show irritation when the bot
+    is slow or asks too many questions, and push it to move things along quickly.
+    You still want your order placed correctly, but you make your impatience obvious.
+  context:
+    - "You are in a rush — you keep telling the bot to hurry up."
+    - "You are rude: short, blunt, and easily annoyed."
+    - "You still expect the bot to get your pizza and drink order right."
+  goals:
+    - "Demand a {{pizza_type}} pizza in {{pizza_size}} size, and tell them to be quick about it."
+    - "Order {{number_of_drinks}} {{drink_type}}, and snap at them if they hesitate."
+    - "Ask how long the order will take — you're in a hurry."
+    - "Ask for the total price and the order ID before you leave."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Vegetarian, Four cheese]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Fanta, Water]
+    - number_of_drinks:
+        function: forward(drink_type)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - order_summary:
+        type: string
+        description: "Summary of the pizza and drink order, including type, size, and drinks."
+    - total_price:
+        type: money
+        description: "Total cost of the order, including currency symbol."
+    - estimated_time:
+        type: time
+        description: "Estimated time until the order is ready."
+    - order_id:
+        type: string
+        description: "Unique order identifier."
+
+conversation:
+  number: combinations(1, pairwise)   # derived from the pairwise matrix (2 pairwise vars)
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+---
+
+## Why this works 🔍
+
+- **4 goals + 4 variables** — exactly as you asked. The goals use `{{pizza_type}}`, `{{pizza_size}}`, `{{drink_type}}`, `{{number_of_drinks}}`, and each is declared in the `goals` list with a matching name (case-sensitive!).
+- **2 pairwise variables** — `pizza_type` and `pizza_size` both use `pairwise()`, so `conversation.number: combinations(1, pairwise)` can compute the matrix. ✅
+- **Rude + fast** — captured in `user.role` and `user.context` (behavior, not variables). If you want it reusable, you could drop a `personalities/rude-impatient-user.yml` and reference it via `context: - personality: personalities/rude-impatient-user.yml`.
+- **`forward()` nesting** — `number_of_drinks` depends on `drink_type`, giving a nice grid without blowing up the case count.
+- **`chatbot.output`** — designed with stable names (`total_price`, `order_id`, etc.) so future Sensei-check rules can read them as `conv[i].total_price`, etc.
+
+---
+
+## A couple of tips 💡
+
+- If you want the pairwise matrix to drive the **whole** run, keep `number: combinations(1, pairwise)`. If you'd rather sample a fraction, use `combinations(0.6, pairwise)`.
+- The `money` type is used in `chatbot.output` — make sure you have a `types/money.yml` (or `currency.yml`) defined in your project's `types/` folder, otherwise validation will complain.
+- Want it even ruder? Add `change your mind` to `interaction_style` — an impatient customer who keeps flip-flopping is *chef's kiss* for stress-testing 😅.
+
+Want me to also draft the `personalities/rude-impatient-user.yml` snippet, or tweak the variables (e.g., swap `drink_type` to `pairwise()` too)? Just say the word! 🙌

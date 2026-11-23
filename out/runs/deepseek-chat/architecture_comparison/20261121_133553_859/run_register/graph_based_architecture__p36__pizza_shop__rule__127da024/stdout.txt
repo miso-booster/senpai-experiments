@@ -1,0 +1,38 @@
+conversation ID: graph_based_architecture__p36__pizza_shop__rule__127da024
+$$$
+Hey there! 😊 Great catch — let's fix this together. I can see exactly what's going on 👀
+
+## The problem
+
+Your rule is **missing the `if:` clause**. Right now it only has `when:` and `then:`, so Sensei-check has no precondition to trigger the implication. The `then:` is essentially orphaned — the rule can't evaluate the metamorphic relation because it never knows *when* the "more toppings" condition holds.
+
+Also, `then:` alone (without `if:`) isn't a valid relation form. You need either:
+- `oracle:` (a single boolean expression), **or**
+- `if:` + `then:` (an implication).
+
+## The fix
+
+Add the `if:` line that compares the number of toppings — this is the metamorphic dimension you're varying:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+## Why this works 🍕
+
+- **`when:`** filters for *comparable* conversations — same size and same drink (ceteris paribus ✅).
+- **`if:`** states the metamorphic variation — conversation 0 has *more toppings* than conversation 1.
+- **`then:`** asserts the expected relation — the price of the one with more toppings must be *higher*.
+
+That's the classic "hold confounders equal, vary one dimension, assert monotonicity" pattern from the guide.
+
+## One thing to double-check 🔍
+
+Make sure your SENSEI Chat profile's `chatbot.output` actually exposes these fields: `size`, `drink`, `toppings`, and `price`. If any of them is missing or named differently (e.g., `total_price` instead of `price`), the rule will fail to evaluate — not because of the logic, but because the field doesn't exist. Want me to help you verify the profile fields too? 😊
+$$$

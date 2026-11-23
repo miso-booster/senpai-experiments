@@ -1,0 +1,33 @@
+¡Buena idea! 😊 Esa regla encaja perfecto con el patrón de **oráculos de una sola conversación** que ya usas en tu proyecto (como `ordering_conversation_turns_assistant`), apoyándote en el helper `utterance_index`.
+
+## Cómo lo enfocaría
+
+Quieres verificar que, **después** de que el usuario pide una bebida, el asistente **confirma** que la añadió. La forma más limpia es comparar dos índices de turno:
+
+- el turno donde el **usuario** pide la bebida,
+- el turno donde el **asistente** confirma que la añadió.
+
+Y exigir que el segundo ocurra **después** del primero.
+
+## Regla propuesta
+
+```yaml
+name: assistant_confirms_drink_added
+description: The assistant confirms that the drink requested by the user was added to the order
+conversations: 1
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms the drink was added to the order')
+```
+
+## Por qué funciona así
+
+- `utterance_index('user', 'ordering a drink')` → localiza el turno en que el usuario pide la bebida 🥤
+- `utterance_index('assistant', 'confirms the drink was added to the order')` → localiza el turno en que el asistente confirma que la añadió ✅
+- La comparación `<` garantiza que la **confirmación llega después** del pedido, que es justo la relación temporal que quieres.
+
+## Un par de consejos 👀
+
+1. **Sé específico en las descripciones** que pasas a `utterance_index`. Cuanto más claro sea el texto (p. ej. *"confirms the drink was added to the order"*), mejor detectará el helper el turno correcto. Es un helper respaldado por LLM, así que la redacción importa.
+2. **Si quieres cubrir también el caso de que NO haya bebida**, podrías añadir una regla complementaria, pero para lo que pides esta basta.
+3. **Actívala** con `active: true` cuando la tengas lista (por defecto en tu ejemplo no lo incluí, pero recuerda que las reglas inactivas se ignoran).
+
+¿Quieres que te prepare también una variante que compruebe que la bebida confirmada **coincide con la que pidió** el usuario (por ejemplo, usando el campo `drink` de tu `chatbot.output`)? 🍕🥤

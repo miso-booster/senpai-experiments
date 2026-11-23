@@ -1,0 +1,140 @@
+Hey there! 😊 I'd love to help, but I have to be upfront with you: I'm Senpai, and I'm specifically focused on **SENSEI RULES, SENSEI PROFILES, and SENSEI CONNECTORS** — their docs, concepts, file paths, and explanations. Writing Python automation scripts (or any source code) falls outside what I'm allowed to do. 🙏
+
+That said, I *can* help you in a very practical way: I can walk you through **everything a valid profile needs**, so you (or your automation) know exactly what to generate and how to validate it. Here's a friendly breakdown 👇
+
+---
+
+## 🧩 What makes a profile "valid" (the checklist your automation should enforce)
+
+A profile is a YAML file living under `profiles/`. To be valid, it should respect these rules:
+
+### 1. Top-level sections
+```yaml
+test_name: "my_first_sensei_profile"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe what the simulated user wants and how they behave."
+  context:
+    - "Who the user is, constraints, preferences, availability, etc."
+  goals:
+    - "Main request with a {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste your bot's real fallback here"
+  output:
+    - important_field:
+        type: string
+        description: "What you want to extract/validate"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### 2. `user.goals` — the trickiest part ⚠️
+- Every `{{variable}}` used in a goal string **must be declared** in the same `goals` list, with an **exact, case-sensitive name match**.
+- Declared variables should actually be **used** in goal prompts (avoid orphans).
+- Each variable needs:
+  - `function:` one of `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `pairwise()`
+  - `type:` `int`, `float`, `string`, or a **custom type** from `types/`
+  - `data:` a list, a numeric range (`min`/`max`/`step` or `linspace`), `any(...)` LLM-generated items, or a custom list function
+- ⚠️ **Do not use `list`, `time`, or `date` in `user.goals`** — those are only valid in `chatbot.output`.
+
+### 3. `chatbot.output` — the contract for rules
+- Field names should be **stable and descriptive** (e.g., `total_price`, `order_id`).
+- Types allowed: `int`, `float`, `string`, `time(...)`, `date(...)`, `list[type]`, and custom types.
+- These fields become `conv[i].<field_name>` in Sensei-check rules — so design them with future rules in mind.
+
+### 4. `conversation.number`
+- A fixed int, **or** `combinations` / `combinations(p)` / `combinations(p, forward|pairwise)`.
+- ⚠️ `combinations` requires **at least two nested `forward()` or two `pairwise()`** variables.
+
+### 5. `conversation.goal_style`
+- One of: `steps: N`, `random steps: M` (M ≤ 20), or `all_answered:` (with optional `export`, `limit`).
+- Optional `max_cost` per conversation.
+
+### 6. `conversation.interaction_style`
+- Only these **reserved keywords** (never translate them!):
+  - `long phrases`, `change your mind`, `change language: [<languages>]`, `make spelling mistakes`, `single questions`, `all questions`, `default`
+- Can mix fixed styles with `random: [...]`.
+
+### 7. `chatbot.fallback`
+- Should contain the **real bot fallback text** to avoid endless loops.
+
+---
+
+## 🛠️ How to validate what your automation generates
+
+Sensei ships with a validator — your automation should call it after generating each profile:
+
+```bash
+python validation_check.py \
+  --profile /abs/path/to/project/profiles/my_generated_profile.yml \
+  --output /abs/path/to/output \
+  --combined-matrix \
+  --verbose
+```
+
+This returns JSON with format errors plus CSVs of the value-combination matrices — super handy for catching bad `forward`/`pairwise` setups. ✅
+
+---
+
+## 💡 A safe "generation contract" for your automation
+
+If you're building an LLM-driven generator, have it emit profiles that satisfy this skeleton, then run `validation_check.py` on the result:
+
+```yaml
+test_name: "<unique_name>"
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+user:
+  language: English
+  role: "<role>"
+  context:
+    - "<context>"
+  goals:
+    - "<goal using {{var}}>"
+    - var:
+        function: random()
+        type: string
+        data: [a, b, c]
+chatbot:
+  is_starter: false
+  fallback: "<real fallback>"
+  output:
+    - field_name:
+        type: string
+        description: "<what to extract>"
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+---
+
+If you'd like, I can help you **design the exact prompt/spec** your LLM should follow to produce valid profiles (that's still profile-authoring guidance, which is squarely in my lane 😄), or help you **debug a specific generated profile** that's failing validation. Just paste it in and I'll take a look! 🍕✨

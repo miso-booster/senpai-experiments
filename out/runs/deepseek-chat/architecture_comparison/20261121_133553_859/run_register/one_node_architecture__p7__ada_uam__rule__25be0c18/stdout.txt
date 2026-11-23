@@ -1,0 +1,33 @@
+conversation ID: one_node_architecture__p7__ada_uam__rule__25be0c18
+$$$
+Here's a rule that checks the CAU contact details against the expected values. Since these are exact facts (email, phone, address), I'll use `semantic_content` for the address (which is free-form text) and direct string checks for email and phone — plus a fallback for phone formatting variations.
+
+```yaml
+name: cau_contact_information_correct
+description: >
+  Checks that the CAU contact details (email, phone, physical address) match the
+  official values for the consultante_de_servicios_y_asistencia_del_cau profile.
+conversations: 1
+active: true
+oracle: |
+  contact_email is not None
+  and 'cau@uam.es' in contact_email.lower()
+  and contact_phone is not None
+  and '914974029' in contact_phone.replace(' ', '').replace('+34', '').replace('-', '')
+  and physical_address is not None
+  and semantic_content(
+        physical_address,
+        'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+      )
+yields: |
+  f"CAU contact mismatch — email: {contact_email}, phone: {contact_phone}, address: {physical_address}"
+```
+
+A few notes so you know *why* it's written this way 👇
+
+- **Email** → simple substring check on the lowercased value, so casing or surrounding text won't cause false failures.
+- **Phone** → I strip spaces, dashes, and the `+34` country prefix before checking for `914974029`, so `91 497 4029`, `914974029`, or `+34 91 497 4029` all pass.
+- **Address** → this is free-form, so exact string matching would be brittle. `semantic_content` lets the LLM judge whether the extracted address conveys the same place (building, floor, office). It's LLM-backed, so expect minor variability — that's the trade-off for robustness.
+
+If you'd rather have **three separate rules** (one per field) so failures are easier to pinpoint, just say the word and I'll split them for you 😊
+$$$

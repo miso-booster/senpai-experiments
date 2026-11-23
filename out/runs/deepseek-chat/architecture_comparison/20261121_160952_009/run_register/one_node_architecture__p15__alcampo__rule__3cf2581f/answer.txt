@@ -1,0 +1,55 @@
+Hey there! 👋 Happy to help you get this rule working — but there are a couple of things we need to fix first, both in the rule itself and in how it connects to your profiles. Let me walk you through it 😊
+
+## What's going wrong
+
+**1. The rule has no `then` clause.** You wrote `if:` but never closed the relation with a `then:`. A metamorphic rule needs both sides of the implication.
+
+**2. `user_request` doesn't exist in any profile.** Your rule references `conv[0].user_request` and `conv[1].user_request`, but no profile in your project exposes a `user_request` field in `chatbot.output`. Rules can only read fields that a profile actually extracts — otherwise the `when:` filter will never match anything.
+
+**3. The fields you *do* want exist — but in a specific profile.** Looking at your project, `customer_service_assistance.yaml` exposes exactly the fields you're after:
+- `contact_options`
+- `customer_service_number`
+- `hours_of_operation`
+- `online_form_instructions`
+- `required_fields`
+- `message_details`
+
+So the good news: the outputs are there. We just need to reference them correctly. 🎯
+
+## The fix
+
+Since `user_request` isn't a real output field, the cleanest approach is to drop it from `when:` and instead filter on the fields that *do* exist. Here's a working version:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and customer service number for customer service inquiries (targets the customer_service_assistance profile).
+conversations: 2
+when: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: len(conv[0].contact_options) > 0 and len(conv[1].customer_service_number) > 0
+```
+
+## A note on the design 🤔
+
+Honestly, this rule is a bit unusual as a *metamorphic* rule — it's really checking "did the bot fill these two slots?" across two conversations, which is closer to a **slot-completeness check** than a metamorphic relation. Two cleaner options depending on what you actually want:
+
+**Option A — If you just want to verify the fields get filled (single conversation):**
+
+```yaml
+name: customer_service_contact_info
+description: The chatbot provides contact options and a customer service number for customer service inquiries.
+conversations: 1
+oracle: data_collected() is True
+yields: f"Missing slots: {missing_slots()}"
+```
+
+**Option B — If you truly want a 2-conversation relation, tie it to a real varying input.** But note: your `customer_service_assistance.yaml` profile doesn't declare any `{{variables}}` in its goals, so there's no input dimension to vary across conversations. For a genuine metamorphic rule you'd first need to add a variable to the profile (e.g., a `{{request_type}}` goal variable), then filter on it.
+
+## Quick checklist ✅
+
+- [ ] Fix the typo `descriptin` → `description`
+- [ ] Add the missing `then:` clause
+- [ ] Remove `user_request` (not a real output field)
+- [ ] Make sure `contact_options` and `customer_service_number` match the profile's `chatbot.output` names exactly — they do in `customer_service_assistance.yaml` 👍
+
+Want me to help you add a `{{request_type}}` variable to the profile so you can build a *real* metamorphic version of this rule? Just say the word! 🚀

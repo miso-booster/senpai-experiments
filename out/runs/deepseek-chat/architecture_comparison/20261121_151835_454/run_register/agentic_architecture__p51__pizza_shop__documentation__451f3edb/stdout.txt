@@ -1,0 +1,48 @@
+conversation ID: agentic_architecture__p51__pizza_shop__documentation__451f3edb
+$$$
+# Connectors in a nutshell 🔌
+
+Based on `custom-connector-guide.md` and `connector-examples.md`, here's the deal:
+
+## What they're for
+
+A **Custom YAML Connector** lets you hook the Chatbot Dojo up to **any chatbot API without writing code**. You just describe, in YAML, *how* to talk to the bot's API:
+
+- Where to send the message (URL + path + method)
+- What JSON body to send (with the user's message injected)
+- Where in the JSON reply the bot's answer lives
+
+So the connector is the **transport layer** between the simulated user (from a profile) and the real target chatbot. Profiles generate the conversations, connectors deliver/receive the messages, and rules then validate what came back. 😊
+
+## The fields
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | ✅ Yes |
+| `send_message.path` | API endpoint path (appended to `base_url`) | ✅ Yes |
+| `send_message.method` | HTTP method (POST, GET, PUT, DELETE) | No (default: `POST`) |
+| `send_message.headers` | Custom headers (e.g., `Authorization`) | No |
+| `send_message.payload_template` | JSON structure with the `{user_msg}` placeholder | ✅ Yes |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | ✅ Yes |
+
+## Minimal example
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+## Two things worth remembering 💡
+
+- **`{user_msg}`** is the placeholder where the user's message gets injected into your payload — it can be nested deep (e.g., `message.text` or `data.content`).
+- **`response_path`** uses dot notation to walk the JSON: `"message"` → `response["message"]`, `"data.text"` → `response["data"]["text"]`, `"results.0.content"` → `response["results"][0]["content"]` (numbers index into arrays).
+
+Want me to help you write a connector for a specific chatbot API? Just share the endpoint details and a sample response JSON and I'll draft it for you 🚀
+$$$

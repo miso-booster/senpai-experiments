@@ -1,0 +1,57 @@
+conversation ID: agentic_architecture__p47__pizza_shop__documentation__a1583615
+$$$
+Great question! 😊 Here's the lowdown, straight from `sensei-check-doc.md` (with a peek at `rules-examples.md`).
+
+## What a metamorphic rule is
+
+In Sensei-check, a **rule** is a condition checked over generated conversations. Rules can target:
+- **one** conversation → a traditional *oracle*,
+- **several** conversations → this is **metamorphic testing**,
+- **all** conversations → *global* checks.
+
+A **metamorphic rule** compares **pairs or tuples of conversations** that meet a selection filter, and asserts **how outputs should change (or not) when inputs change**. Instead of checking an absolute expected answer (which is often hard to know), it checks a **relation** between conversations — this is exactly what solves the *oracle problem*.
+
+Think of it like: "I don't know the exact price of a pizza, but I *do* know that adding more toppings to the same pizza must not make it cheaper." 🍕
+
+## The key ingredients
+
+A metamorphic rule typically has:
+
+| Field | Role |
+|---|---|
+| `conversations: N` | Number of conversations to compare (`N ≥ 2` for metamorphic) |
+| `when:` | **Filter** selecting comparable conversations (controls confounders — *ceteris paribus*) |
+| `oracle:` | A boolean relation over `conv[*]` |
+| `if:` / `then:` | An implication form — reads like a "law" (clearer for metamorphic relations) |
+| `on-error:` | Optional helpful failure message |
+
+Inside these expressions you access conversations via the **`conv`** collection, e.g. `conv[0].price`, `conv[1].toppings`.
+
+## A canonical example
+
+> Same size, drink and quantity → the order with **more toppings** must cost **more**.
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Here `when:` builds a **comparable cohort**, and `if`/`then` states the **monotonic relation**.
+
+## Common metamorphic patterns
+
+- **Monotonicity** — more toppings ⇒ higher price; larger size ⇒ not cheaper.
+- **Invariance** — same configuration ⇒ same price.
+- **Style consistency** — comparable dialogs respond in the same language, no topic drift, no repeated answers.
+- **Global uniqueness** — `conversations: all` + `is_unique('order_id')`.
+
+## Important tie-in with profiles 🔗
+
+The fields you reference (`size`, `toppings`, `price`, …) should come from a **SENSEI Chat profile's `chatbot.output`**. The pizza names in the docs are just *illustrative* — in your real project you must use your actual `chatbot.output` field names. If a field doesn't exist in the profile, the rule won't work until you add it.
+
+Want me to help you write a metamorphic rule for one of your actual profiles? Just tell me the scenario and I'll look up the right profile and its outputs. 🚀
+$$$

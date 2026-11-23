@@ -1,0 +1,51 @@
+# Hey there! 👋 Happy to help you build that rule!
+
+Great news — your profile already exposes everything we need (`opening_and_closing`, `tire`, `tune_up`, `seat_price`, `care_bike`). So we can write a **profile-bound single-conversation oracle** that checks all the price/time constraints at once. 🎯
+
+## The rule
+
+```yaml
+name: bike_shop_price_and_hours_check
+description: >
+  Checks the bike_shop profile outputs: opening/closing time between 10 and 20,
+  tune-up = 50, seat = 20, and tyre = 20.
+conversations: 1
+oracle: >
+  extract_float(conv[0].opening_and_closing) >= 10
+  and extract_float(conv[0].opening_and_closing) <= 20
+  and extract_float(conv[0].tune_up) == 50
+  and extract_float(conv[0].seat_price) == 20
+  and extract_float(conv[0].tire) == 20
+on-error: >
+  Expected opening/closing in [10,20], tune_up=50, seat=20, tire=20 — got
+  opening_and_closing={conv[0].opening_and_closing},
+  tune_up={conv[0].tune_up}, seat_price={conv[0].seat_price}, tire={conv[0].tire}
+```
+
+## A couple of things to double-check ⚠️
+
+1. **`opening_and_closing` is a `str`** — so `extract_float` will grab the *first* number it finds. If the assistant says something like `"We open at 10 and close at 20"`, `extract_float` returns `10` and the `<= 20` check passes ✅. But if it says `"9 to 21"`, it'll return `9` and fail — which is actually what you want (out of range). Just be aware it only checks the **first** number, not both. If you need to verify *both* opening and closing are in range, you'd need to split the string first — let me know and I can help with that! 🔧
+
+2. **`seat_price` is typed as `str`** in your profile, but you're comparing it to `20`. `extract_float` handles that fine (it parses `"20"` or `"$20"` → `20.0`), so no problem there. Same for `tire` and `tune_up` (typed `money`).
+
+3. **`care_bike`** — you didn't specify a constraint for it, so I left it out. If you want to check it (e.g., that it's non-empty, or mentions something specific), just say the word and I'll add a `semantic_content(...)` or `data_collected()` check. 🚲
+
+## Want a stricter version? 👀
+
+If you want to make sure **both** the opening *and* closing numbers are within 10–20, here's a more robust variant:
+
+```yaml
+name: bike_shop_hours_and_prices_strict
+description: >
+  Opening AND closing both in [10,20]; tune_up=50, seat=20, tire=20.
+conversations: 1
+oracle: >
+  all(10 <= extract_float(x) <= 20 for x in conv[0].opening_and_closing.replace('-', ' ').replace('to', ' ').split() if any(c.isdigit() for c in x))
+  and extract_float(conv[0].tune_up) == 50
+  and extract_float(conv[0].seat_price) == 20
+  and extract_float(conv[0].tire) == 20
+```
+
+That one splits the hours string and checks every number it finds is in range. A bit more defensive, but it depends on how your assistant phrases the hours — so test it against a few real conversations first! 🧪
+
+Want me to also add a `care_bike` check or turn this into a metamorphic rule (e.g., comparing two conversations)? Just let me know 😊

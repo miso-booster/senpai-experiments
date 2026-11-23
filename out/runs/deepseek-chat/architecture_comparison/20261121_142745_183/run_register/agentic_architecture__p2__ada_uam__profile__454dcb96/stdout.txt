@@ -1,0 +1,91 @@
+conversation ID: agentic_architecture__p2__ada_uam__profile__454dcb96
+$$$
+¡Listo! Aquí tienes el perfil para simular a un estudiante Erasmus recién llegado que no sabe configurar Moodle, Sigma, etc. 🎓
+
+Me basé en `sensei-chat-guide.md` y en las convenciones de tus perfiles existentes (idioma español, contexto UAM/CAU, `gpt-4o-mini`, `single questions`, `steps: 28`, `max_cost: 0.5`).
+
+```yaml
+test_name: Estudiante Erasmus recién llegado sin configurar sus plataformas
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la universidad y no sabe
+    cómo configurar ni acceder a sus plataformas digitales (Moodle, Sigma, correo
+    institucional, etc.). Necesitas orientación paso a paso porque es tu primera
+    vez en el sistema y desconoces los procedimientos.
+  context:
+    - Eres un estudiante internacional de intercambio, recién incorporado, con poco o ningún conocimiento previo de los servicios digitales de la universidad.
+    - No tienes todavía configuradas tus cuentas ni sabes qué credenciales usar para entrar a Moodle o Sigma.
+    - Tu nivel de español es suficiente para comunicarte, pero puedes necesitar que te expliquen las cosas con claridad.
+    - Estás algo perdido y agradeces instrucciones concretas y enlaces o contactos de soporte.
+  goals:
+    - "Preguntar cómo acceder a Moodle por primera vez como estudiante Erasmus."
+    - "Pedir ayuda para configurar mi cuenta y acceder a Sigma."
+    - "Solicitar instrucciones para activar o recuperar mis credenciales institucionales."
+    - "Preguntar a quién o a dónde dirigirme si sigo teniendo problemas técnicos."
+    - plataforma:
+        function: random()
+        type: string
+        data: [Moodle, Sigma, correo institucional, ID-UAM]
+
+chatbot:
+  is_starter: false
+  fallback: Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+    - access_instructions:
+        type: string
+        description: Instrucciones paso a paso para acceder a la plataforma solicitada (Moodle, Sigma, etc.)
+    - account_setup_steps:
+        type: string
+        description: Pasos para configurar o activar la cuenta institucional del estudiante
+    - credentials_guidance:
+        type: string
+        description: Indicaciones sobre qué credenciales usar y cómo recuperarlas o activarlas
+    - platform_identified:
+        type: string
+        description: Plataforma concreta sobre la que el bot dio soporte (Moodle, Sigma, correo, ID-UAM)
+    - support_contact_details:
+        type: string
+        description: Datos de contacto o canal de soporte técnico (CAU u otro) proporcionados por el bot
+    - support_hours:
+        type: string
+        description: Horario de atención del soporte técnico, si se menciona
+    - additional_resources:
+        type: string
+        description: Enlaces, catálogo de servicios u otros recursos de ayuda ofrecidos
+    - request_confirmation:
+        type: string
+        description: Confirmación del bot de haber entendido y atendido la solicitud del estudiante
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 28
+  interaction_style:
+    - single questions
+```
+
+### Qué hace y cómo encaja 🧩
+
+- **Variables de entrada mínimas**: solo una variable (`plataforma`) que rota aleatoriamente entre Moodle, Sigma, correo institucional e ID-UAM. El resto de los objetivos son texto libre, así que no necesitas declarar más variables.
+- **`chatbot.output` pensado para validar soporte**: los campos están diseñados para que luego puedas escribir reglas SENSEI-check que comprueben cosas como:
+  - que el bot **dé instrucciones de acceso** (`access_instructions`) y **pasos de configuración** (`account_setup_steps`) cuando se le pide ayuda;
+  - que **identifique la plataforma** correcta (`platform_identified`);
+  - que **ofrezca un canal de soporte** (`support_contact_details`) y, si aplica, horarios (`support_hours`);
+  - que **confirme** que atendió la solicitud (`request_confirmation`).
+
+  Por ejemplo, una regla podría ser: *si el estudiante pide ayuda de acceso, entonces `conv[i].access_instructions` no debe estar vacío*.
+
+### Siguiente paso sugerido
+Si quieres, puedo crearte una **regla SENSEI-check** ligada a este perfil (p. ej. "el bot siempre debe proporcionar instrucciones de acceso y un contacto de soporte"). Para eso necesitaría cargar los docs de reglas y confirmar contigo el nombre del perfil objetivo. ¿Te lo preparo? 😊
+
+¿Quieres que ajuste algo (idioma, número de conversaciones, más plataformas, o añadir estilos de interacción como `make spelling mistakes`)?
+$$$

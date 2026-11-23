@@ -1,0 +1,65 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__1dd2f205
+$$$
+I'd love to help, but I have to be upfront: I can only work within **SENSEI PROFILES, RULES, and CONNECTORS** and their documentation — writing a standalone Python automation script (with LLM orchestration, file I/O, etc.) falls outside that scope 😅.
+
+That said, I *can* help you in a way that's actually more useful for your goal: **designing the profiles themselves** so that whatever automation you build has a clear, valid target to generate toward. A few directions I can take:
+
+1. **Give you a strict profile "template contract"** — a canonical YAML skeleton (with all required sections, valid `function`/`type` values, and `chatbot.output` conventions) that your LLM automation can be prompted to fill in. This is the single most effective way to keep generated profiles valid.
+2. **Write a validation-oriented checklist** derived from the profile docs (variable name matching, `random(n) ≤ len(data)`, `pairwise` needs ≥2 vars, `combinations` needs ≥2 nested `forward`/`pairwise`, custom types in `types/`, etc.) that your script can enforce *after* generation.
+3. **Draft a few example profiles** for your pizza shop project that your automation can use as few-shot examples.
+
+Here's a compact, valid profile skeleton you can feed your LLM as the target format 👇
+
+```yaml
+test_name: "generated_profile_example"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's intent and behavior."
+  context:
+    - "Relevant background, constraints, preferences."
+  goals:
+    - "Main request using {{variable}}"
+    - variable:
+        function: forward()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste the bot's real fallback message here"
+  output:
+    - important_field:
+        type: string
+        description: "What to extract at the end of the conversation"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+And a quick **validity checklist** your automation should verify on every generated profile:
+
+- ✅ Every `{{variable}}` in `goals` strings has a matching declaration (case-sensitive).
+- ✅ `function` is one of: `default`, `random`, `random(n)`, `random(rand)`, `another`, `another(n)`, `forward`, `pairwise`.
+- ✅ `random(n)` / `another(n)` → `n ≤ len(data)`.
+- ✅ `pairwise()` used on **≥2** variables if you rely on it for `conversation.number: combinations(...)`.
+- ✅ `combinations(...)` only when **≥2 nested `forward` or `pairwise`** exist.
+- ✅ `type` in `user.goals` is `int`, `float`, `string`, or a **custom type** defined in `types/` (no `list`, `time`, `date` here).
+- ✅ `type` in `chatbot.output` can be `int`, `float`, `string`, `time(...)`, `date(...)`, `list[...]`, or a custom type.
+- ✅ Custom types referenced by name exist as `types/<name>.yml` with `name`, `type_description`, `format`, `extraction`.
+- ✅ `interaction_style` uses only reserved keywords (`long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, `random: [...]`).
+- ✅ `goal_style` is exactly one of `steps: N`, `random steps: M` (M ≤ 20), or `all_answered:`.
+
+Want me to go deeper on any of these — e.g., expand the checklist into a full "profile linter" spec, or generate a batch of ready-to-use example profiles for your pizza shop that your automation can imitate? Just say the word 😊
+$$$

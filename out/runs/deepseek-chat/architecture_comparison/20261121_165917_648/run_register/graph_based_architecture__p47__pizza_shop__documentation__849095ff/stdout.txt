@@ -1,0 +1,63 @@
+conversation ID: graph_based_architecture__p47__pizza_shop__documentation__849095ff
+$$$
+Great question! 😊 Let me break it down for you in a friendly way.
+
+## What is a metamorphic rule in Sensei?
+
+In **Sensei-check**, a **metamorphic rule** is a rule that checks a *relationship* between **two or more conversations** — instead of checking one absolute answer. This is the heart of **metamorphic testing**, and it's super useful for chatbots because there's often no single "correct" answer to compare against (that's the classic *oracle problem*).
+
+So instead of asking *"Is this answer right?"*, a metamorphic rule asks:
+
+> *"If I change the input in a controlled way, does the output change the way it should?"*
+
+## The mental model 🧠
+
+Think of it like ordering pizza:
+
+- If two orders have the **same size, drink, and quantity**, but one has **more toppings**, then the one with more toppings should **cost more**. 🍕
+
+You're not checking an exact price — you're checking that the *relationship* holds. That's a metamorphic relation!
+
+## How it looks in YAML
+
+Here's a real example from your project (`more_toppings_cost_more.yaml`):
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Let's read it together:
+
+- **`conversations: 2`** → this rule compares a *pair* of conversations.
+- **`when:`** → the filter that picks *comparable* conversations (same size & drink — the "ceteris paribus" conditions).
+- **`if:` / `then:`** → the metamorphic relation: *if* one has more toppings, *then* it must cost more.
+
+## The three key ingredients ✨
+
+1. **A selection filter (`when`)** — keeps confounders equal so the comparison is fair.
+2. **A relation (`if`/`then` or `oracle`)** — the law you expect to hold.
+3. **The `conv[i].field` references** — these come from your profile's `chatbot.output` (e.g., `size`, `toppings`, `price`).
+
+## Why it's powerful 💪
+
+- It works even when the chatbot's exact wording varies (LLMs are unpredictable!).
+- It catches real bugs: e.g., if adding toppings *lowers* the price, the rule fails.
+- It can also check **invariance** (things that should stay the same) or **monotonicity** (things that should only go one direction).
+
+## Quick contrast
+
+| Type | Conversations | Example |
+|------|--------------|---------|
+| Single oracle | 1 | "Small pizza costs ≥ $10" |
+| **Metamorphic** | 2+ | "More toppings ⇒ higher price" |
+| Global | all | "All order IDs are unique" |
+
+So in short: a metamorphic rule is Sensei-check's way of testing *how outputs relate to inputs across conversations* — a clever, robust way to validate chatbots without needing a perfect oracle. 🎯
+
+Want me to help you write a new metamorphic rule, or walk through one of the existing ones in your project? 😊
+$$$

@@ -1,0 +1,20 @@
+Great question! 😊 Let me show you a clean rule for that.
+
+Since `order_id` is one of the fields your profiles expose in `chatbot.output` (e.g. `pizza_and_drink_order_placement.yaml` and `pizza_order_test_custom.yml`), a simple single-conversation oracle is the way to go. You just check that the extracted `order_id` is present and not empty.
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must provide an order ID at the end of the conversation
+conversations: 1
+active: true
+oracle: order_id is not None and str(order_id).strip() != ""
+yields: f"The chatbot did not provide an order ID, got: {order_id}"
+```
+
+A couple of notes to keep in mind 👀:
+
+- **`order_id` comes straight from `chatbot.output`** — so this rule only works on profiles that actually declare an `order_id` field (like `pizza_and_drink_order_placement` and `pizza_order_test_custom`). If a profile doesn't expose it, the rule won't have anything to check.
+- **`conversations: 1`** means it's a per-conversation oracle, not a metamorphic one — perfect for "did the bot give me an ID?" checks.
+- The `yields` message is optional but super handy for debugging when it fails 💡.
+
+If you'd rather make it a **global rule** (e.g. "every conversation must have an order ID"), you could bump it to `conversations: all` and use `data_collected()`, but that would also require *all* other output slots to be filled — so the targeted version above is usually the better fit for just `order_id`. Want me to adapt it into a global variant too? 🚀

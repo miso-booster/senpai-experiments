@@ -1,0 +1,31 @@
+Hey! 👋 I dug into your project and here's what I found — plus one important snag we need to sort out before I hand you the YAML.
+
+## What I checked (docs + project)
+Based on `sensei-check-doc.md` and `sensei-chat-guide.md`, a metamorphic rule reads fields from a profile's `chatbot.output` via `conv[i].<field>`. So I looked for a profile that exposes a **`drink`** output and a **price** output. Candidates:
+
+| Profile | Drink-related output | Price output |
+|---|---|---|
+| `pizza_and_drink_order_placement.yaml` | `drink_options`, `order_summary` (no clean `drink` field) | `total_cost` (type `money`) |
+| `pizza_order_test_custom.yml` | `drink` is a **goal variable**, not an output | `price` (type `currency`) |
+| `pizzaorder_ivan_test.yml` | `selected_drink_type` | ❌ no price output |
+
+## ⚠️ The snag
+None of your profiles currently exposes a field literally named **`drink`** in `chatbot.output`. The closest matches are:
+- `pizza_and_drink_order_placement.yaml` → has `total_cost` but no clean drink field.
+- `pizzaorder_ivan_test.yml` → has `selected_drink_type` but **no price/cost output at all**.
+
+A metamorphic rule comparing "with drink vs. without drink" needs **both** a drink indicator **and** a price field on the *same* profile. Right now no single profile gives us both cleanly.
+
+## How I'd like to proceed — your call 🙂
+The rule you want is essentially: *"Two comparable orders, one with a drink and one without → the one with the drink costs exactly $2 more."* To make it valid, I need to know which profile to target and how you want to handle the missing `drink` field.
+
+**Option A — Target `pizza_and_drink_order_placement.yaml`** (recommended, it has `total_cost`):
+- I'd add a `drink` output field to that profile (e.g. `type: string`, description: the drink ordered, or empty if none), then write the rule against `conv[i].drink` and `conv[i].total_cost`.
+- This means **editing the profile** — I'll show you the exact addition for approval first.
+
+**Option B — Target `pizzaorder_ivan_test.yml`**:
+- It has `selected_drink_type` but **no price field**, so I'd need to add a price/cost output too.
+
+**Option C — Rule-first**: I write the rule now assuming a future profile exposes `drink` and a price field, and you wire up the profile later.
+
+👉 **Which profile should this rule target, and are you OK with me adding a `drink` output field to it?** Once you confirm, I'll generate the exact YAML (rule + any profile tweak) for you.

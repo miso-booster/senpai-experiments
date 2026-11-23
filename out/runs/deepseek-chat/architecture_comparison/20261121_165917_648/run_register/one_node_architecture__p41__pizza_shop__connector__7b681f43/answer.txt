@@ -1,0 +1,40 @@
+Here's the connector for the Alcampo bot, based on the request/response you shared 👇
+
+```yaml
+name: "Alcampo"
+base_url: "https://alcampo.botslovers.com"
+send_message:
+  path: "/bot/web"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Origin: "https://alcampo.botslovers.com"
+    Referer: "https://alcampo.botslovers.com/Admin/Widget?mobile=0&user=0&lang=es"
+  payload_template:
+    data:
+      id_user: "377611"
+      idweb_user: "ea38fe92-ad92-4610-9d62-ef7fecb1679b"
+      session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+      message:
+        message:
+          message:
+            text: "{user_msg}"
+        iduser: "377611"
+        session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+        channel: "web"
+      widget_form: "TRUE"
+      contexto_extra: []
+      lang: "es"
+    accion: "response_bot"
+response_path: "messages.0.0.message.text"
+```
+
+A couple of quick notes so it behaves nicely 😊:
+
+- **`response_path`** → the reply lives at `messages[0][0].message.text`, so the dot path is `messages.0.0.message.text`. If the API ever returns multiple bubbles, you may want to check the other indexes too.
+- **Session / user IDs** are hardcoded from your sample. If the bot expects a fresh `session` per conversation, you'd need to generate one dynamically — the plain YAML connector can't do that on its own, so let me know if that's a requirement and we can look at options.
+- **`Content-Length`, `Host`, `Connection`, `Sec-Fetch-*`, `Priority`, `TE`, `Pragma`, `Cache-Control`** were intentionally left out — those are transport-level headers that the HTTP client sets automatically, and hardcoding them can actually break requests.
+
+Want me to also wire this into a `run.yml` example or pair it with one of your pizza profiles for a quick smoke test? 🍕

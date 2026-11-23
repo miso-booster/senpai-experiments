@@ -1,0 +1,52 @@
+Good question! A rule that checks `order_id` is **profile-bound** — it reads a field from the profile's `chatbot.output`. I checked which profiles in your project actually expose `order_id`, and here's what I found:
+
+| Profile file | `chatbot.output` fields (relevant) |
+|---|---|
+| `pizza_and_drink_order_placement.yaml` | `order_summary`, `total_cost`, `estimated_readiness_time`, `pickup_location`, **`order_id`** |
+| `pizza_order_test_custom.yml` | `price`, `time`, **`order_id`** |
+| `user_sim_pizzaorder_predefined.yml` | `price`, `time`, **`order_id`** |
+
+All three expose `order_id` (as `string`/`str`), so the rule will work with any of them. Before I finalize, **which profile should this rule target?** (Or is it meant to be a general rule that works regardless of profile?)
+
+---
+
+That said, here's how I'd write it — grounded in `sensei-check-doc.md` and `rules-examples.md`. The cleanest way to check "the chatbot provided an order ID" is a **single-conversation oracle** that asserts `order_id` is not `None`:
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide an order ID at the end of the conversation (checks order_id from chatbot.output)
+conversations: 1
+active: True
+oracle: order_id is not None
+yields: "The chatbot did not provide an order_id"
+```
+
+### Why this shape? 🧠
+- **`conversations: 1`** → it's a per-conversation check, not a metamorphic comparison (per the "single-conversation oracle" pattern in `sensei-check-doc.md` §11).
+- **`oracle: order_id is not None`** → `order_id` comes straight from the profile's `chatbot.output`, so the extractor fills it if the bot gave one; otherwise it stays `None`. This is the most direct "was it provided?" test.
+- **`yields`** → gives a helpful failure message (the docs use `yields` for this; note `on-error` is the metamorphic-style equivalent).
+
+### A couple of alternatives, depending on what you mean by "provided"
+- If you want to be stricter (non-empty string, not just non-null):
+  ```yaml
+  name: order_id_provided_strict
+  description: The chatbot must provide a non-empty order ID (checks order_id from chatbot.output)
+  conversations: 1
+  active: True
+  oracle: order_id is not None and str(order_id).strip() != ''
+  yields: "The chatbot did not provide a non-empty order_id"
+  ```
+- If you'd rather check it via the generic slot helper (works even if you later rename fields, as long as it's the only slot):
+  ```yaml
+  name: order_id_provided_via_slots
+  description: All extracted slots (including order_id) are filled
+  conversations: 1
+  active: True
+  oracle: data_collected() == True
+  yields: "Missing slots detected"
+  ```
+  (This is the `chatbot_fills_all_slots` pattern from `rules-examples.md`, but it checks *all* slots, not just `order_id`.)
+
+---
+
+👉 **Just confirm the target profile** (e.g., `pizza_and_drink_order_placement.yaml`) and whether you want the basic `is not None` check or the stricter non-empty version, and I'll lock in the final YAML for you! 😊

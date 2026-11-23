@@ -1,0 +1,73 @@
+Here's the profile, following the conventions of your existing profiles (Spanish, `gpt-4o-mini`, `is_starter: false`, same CAU fallback, `single questions` style) and grounded in `sensei-chat-guide.md`:
+
+```yaml
+test_name: Estudiante Erasmus recién llegado sin configurar sus servicios
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: Spanish
+  role: Estudiante Erasmus que acaba de llegar a la universidad y no sabe cómo configurar ni acceder a sus servicios digitales (Moodle, Sigma, correo institucional, etc.).
+  context:
+  - Acabas de llegar de intercambio y no conoces los sistemas de la universidad.
+  - No tienes configurada tu cuenta institucional ni sabes qué es el ID-UAM.
+  - Necesitas acceder a Moodle para tus asignaturas y a Sigma para tu gestión académica.
+  - No sabes a quién dirigirte cuando algo falla y prefieres instrucciones paso a paso.
+  goals:
+  - Pedir ayuda para configurar mi cuenta institucional por primera vez como estudiante Erasmus.
+  - Preguntar cómo acceder a Moodle y qué necesito para entrar.
+  - Solicitar instrucciones para acceder a Sigma y gestionar mis asignaturas.
+  - Preguntar cómo recuperar o activar mi ID-UAM si no lo tengo.
+  - Pedir los datos de contacto del CAU para recibir soporte adicional.
+chatbot:
+  is_starter: false
+  fallback: Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+  - account_setup_steps:
+      type: string
+      description: Pasos para configurar la cuenta institucional por primera vez
+  - moodle_access_instructions:
+      type: string
+      description: Instrucciones para acceder a Moodle
+  - sigma_access_instructions:
+      type: string
+      description: Instrucciones para acceder a Sigma
+  - id_uam_activation_help:
+      type: string
+      description: Ayuda para activar o recuperar el ID-UAM
+  - cau_contact_details:
+      type: string
+      description: Datos de contacto del CAU para soporte
+  - support_escalation_offered:
+      type: string
+      description: Indica si el bot ofrece derivar a soporte humano o canal adicional
+  - step_by_step_guidance_provided:
+      type: string
+      description: Indica si el bot proporciona instrucciones paso a paso
+  - unresolved_issue:
+      type: string
+      description: Problema del usuario que quedó sin resolver al final de la conversación
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 28
+  interaction_style:
+  - single questions
+```
+
+### Why these choices 🎓
+
+- **Few input variables**: I kept `user.goals` as plain goal strings (no declared variables), so there's nothing to fill in — the simulated user just asks for help. This matches your "we don't need many input variables" requirement.
+- **Outputs designed for support-checking**: The `chatbot.output` fields are the contract that rules will read as `conv[i].<field>`. I included:
+  - **Service-specific guidance** (`moodle_access_instructions`, `sigma_access_instructions`, `account_setup_steps`, `id_uam_activation_help`) → lets you check the bot actually explains each service.
+  - **Support quality signals** (`step_by_step_guidance_provided`, `support_escalation_offered`, `cau_contact_details`) → lets you verify the bot gives actionable, step-by-step help and offers escalation.
+  - **`unresolved_issue`** → lets you write a rule that flags conversations where the user's problem was never resolved.
+- **Conventions matched**: Same `fallback`, `is_starter: false`, `gpt-4o-mini`, `single questions`, and `max_cost`/`steps` pattern as your other profiles.
+
+### Next step — want a matching rule? 🔍
+Since you mentioned wanting to *check that we get proper support*, I can write a SENSEI rule bound to this profile (e.g., "every conversation must provide step-by-step guidance and offer escalation, and no unresolved issue remains"). Just say the word and I'll load the rules docs and draft it against these exact output fields.
+
+Want me to save this profile to the project, or adjust any of the outputs first?

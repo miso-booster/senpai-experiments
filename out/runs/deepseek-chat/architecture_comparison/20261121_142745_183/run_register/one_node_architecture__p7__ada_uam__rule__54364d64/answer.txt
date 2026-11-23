@@ -1,0 +1,25 @@
+Here's a rule that checks the Ada UAM chatbot returns the correct CAU contact details (email, phone, and address) across all conversations. It uses `semantic_content` so it tolerates phrasing variations while still verifying the actual values 👇
+
+```yaml
+name: cau_contact_information_correct
+description: >
+  Checks that the Ada UAM chatbot provides the correct CAU contact information:
+  email cau@uam.es, phone 91 497 4029, and the physical address at the Higher
+  Polytechnic School (C/ Francisco Tomás y Valiente nº 11, Building B, first
+  floor, office TI-107). Targets the CAU contact fields exposed in chatbot.output.
+conversations: all
+oracle: |
+  semantic_content(contact_email, 'cau@uam.es') and
+  semantic_content(contact_phone, '91 497 4029') and
+  semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+yields: |
+  f"CAU contact info mismatch -> email: {contact_email}, phone: {contact_phone}, address: {physical_address}"
+```
+
+A few notes so it behaves the way you expect 😊
+
+- **`conversations: all`** — this checks every generated conversation, since the CAU contact info should be consistent everywhere. If you'd rather check only conversations where the user actually asked for contact details, add a `when:` filter (e.g. `when: contact_email is not None`).
+- **`semantic_content`** is LLM-backed, so it's forgiving about wording ("our email is cau@uam.es" vs "cau@uam.es") but strict about the actual values. That's exactly what you want for a "correct information" check.
+- **Field names** (`contact_email`, `contact_phone`, `physical_address`) must match your profile's `chatbot.output` exactly — they do in the `Consultante de servicios y asistencia del CAU` profile you shared ✅.
+
+If you want a stricter, exact-match version (no LLM tolerance), I can swap `semantic_content` for direct string comparisons — just say the word!

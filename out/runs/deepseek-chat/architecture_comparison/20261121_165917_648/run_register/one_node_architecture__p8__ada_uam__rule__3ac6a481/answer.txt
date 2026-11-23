@@ -1,0 +1,54 @@
+¡Hola! 😊 Let's take a look at your rule together.
+
+## Quick verdict
+
+The rule is **structurally valid** (it parses fine and uses the right fields), but it has a **logical problem**: the `when` clause and the `oracle` are checking the *exact same thing*. That makes the rule almost useless — because `when` already filters to only the conversations where all three values match, so the `oracle` will *always* pass for those. You're essentially saying "if the info is correct, then the info is correct." 😅
+
+Also, a couple of field-name things to double-check against your profile `consultante_de_servicios_y_asistencia_del_cau.yaml`:
+
+- The profile exposes `contact_email`, `contact_phone`, and `physical_address` ✅ — good, those match.
+- But note the profile also has `contact_method` and `service_hours` — just mentioning in case you want to extend the check later.
+
+## Fixed version
+
+Here's a cleaner version. The idea: **don't filter on the thing you want to verify**. Instead, just assert the expected values directly in the oracle (or use `when` only for a genuinely different precondition).
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct contact details (email, phone, address).
+conversations: 1
+oracle: |
+  conv[0].contact_email == 'cau@uam.es'
+  and conv[0].contact_phone == '91 497 4029'
+  and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+yields: |
+  f"CAU contact mismatch: email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+## What changed and why
+
+1. **Removed the `when` clause.** In Sensei-check, `when` is a *filter* that selects which conversations the rule applies to. If you filter on `contact_email == 'cau@uam.es'`, you're pre-selecting only conversations that already have the right email — so the oracle can't fail on that dimension. The check becomes a tautology. 🎯
+
+2. **Kept the oracle as the actual assertion.** Now the rule genuinely verifies the values, and it will *fail* if the chatbot returns a wrong email, phone, or address — which is what you want.
+
+3. **Added a `yields` message.** This is optional but super helpful: when the rule fails, you'll see *which* field was wrong instead of just "failed." Much friendlier for debugging 💡
+
+## When *would* a `when` make sense here?
+
+Only if you had a **different precondition** that isn't the thing being checked. For example, if you only wanted to check the address *when* the user explicitly asked for a physical location:
+
+```yaml
+name: check_cau_address_when_asked
+description: If the user asked for a physical address, it must be the correct one.
+conversations: 1
+when: conv[0].physical_address is not None
+oracle: conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+Here `when` filters on *whether the field was filled at all* (a different concern), and the oracle checks *the value* — no overlap. ✅
+
+## One small heads-up ⚠️
+
+Your profile `consultante_de_servicios_y_asistencia_del_cau.yaml` uses `conversation.number: 3` and `interaction_style: [single questions]`. With `conversations: 1`, the rule will run once per conversation (3 times total), which is fine — but if the bot's answers vary across runs (temperature 0.4, so fairly stable), you might occasionally see flakiness. If you want to be strict, that's OK; if you want to tolerate a bit of variability, consider `conversations: all` with `num_exist(...)` — but for a fixed-fact check like this, the direct oracle is the right call. 👍
+
+Want me to also draft a companion rule that checks `service_hours` or `contact_method` from the same profile? Just say the word! 😊

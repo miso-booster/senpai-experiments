@@ -1,0 +1,51 @@
+conversation ID: agentic_architecture__p8__ada_uam__rule__4c366c49
+$$$
+¡Hola! 😊 Revisé tu regla contra la documentación (`sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`) y contra el perfil que parece ser el objetivo: `consultante_de_servicios_y_asistencia_del_cau.yaml`.
+
+## Veredicto: la regla es *casi* correcta, pero tiene un problema de diseño ⚠️
+
+Los campos que usas (`contact_email`, `contact_phone`, `physical_address`) **sí existen** en el `chatbot.output` del perfil, así que la parte de "profile-bound" está bien. El problema es **cómo** está construida la regla:
+
+1. **`when` y `oracle` son idénticos.** En `sensei-check-doc.md` (§4, §6.2) el `when` es un **filtro** para seleccionar conversaciones comparables, y el `oracle` es la **condición a verificar**. Si pones la misma condición en ambos, la regla solo se evalúa en conversaciones que *ya cumplen* la condición → **nunca puede fallar** (es una tautología). Es decir, la regla no detecta nada. 🚫
+
+2. **`conversations: 1` con un `when` restrictivo** hace que, si la única conversación no cumple el filtro, la regla quede como "not applicable" en lugar de fallar. Para una comprobación de un solo caso, lo correcto es **no filtrar** (o filtrar por algo trivial) y poner la condición en el `oracle`.
+
+3. **Falta `active`** (opcional, pero recomendable) y un `yields`/`on-error` para dar un mensaje útil cuando falle.
+
+## Versión corregida ✅
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details (profile consultante_de_servicios_y_asistencia_del_cau).
+active: true
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+yields: |
+  f"CAU contact info mismatch: email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+### Qué cambié y por qué
+- **Eliminé el `when`** (o, si prefieres mantenerlo, ponlo como filtro trivial tipo `when: conv[0].contact_email is not None`). Así el `oracle` se evalúa siempre y la regla **puede fallar** cuando la info es incorrecta. 🎯
+- **Añadí `active: true`** para dejarla explícitamente habilitada.
+- **Añadí `yields`** con un mensaje que muestra los valores reales extraídos, muy útil para depurar fallos (patrón visto en `rules-examples.md`). Lo puse en bloque `|` para que el f-string con comas y llaves se lea sin ambigüedad.
+
+## Cómo funciona (explicación) 📖
+- `conversations: 1` → regla de un solo diálogo (oráculo clásico, no metamórfica).
+- `oracle:` → expresión Python booleana que se evalúa sobre la conversación `conv[0]`. Compara los tres campos extraídos del `chatbot.output` del perfil contra los valores esperados del CAU.
+- Los campos `contact_email`, `contact_phone`, `physical_address` vienen **directamente** del `chatbot.output` del perfil `consultante_de_servicios_y_asistencia_del_cau.yaml`, así que el contrato perfil↔regla está alineado. 👍
+
+## Un detalle a tener en cuenta 🔍
+La comparación es **exacta** (`==`). Si el chatbot devuelve el teléfono con otro formato (p. ej. `914974029` o `+34 91 497 4029`) o la dirección con pequeñas variaciones de espaciado/mayúsculas, la regla fallará aunque la info sea "correcta". Si quieres tolerar eso, podrías normalizar, por ejemplo:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct information about contact details (profile consultante_de_servicios_y_asistencia_del_cau).
+active: true
+conversations: 1
+oracle: conv[0].contact_email.strip().lower() == 'cau@uam.es' and '914974029' in conv[0].contact_phone.replace(' ', '') and 'TI-107' in conv[0].physical_address
+yields: |
+  f"CAU contact info mismatch: email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+¿Quieres que la deje con comparación exacta (primera versión) o tolerante al formato (segunda)? Y si quieres, puedo guardarla en tu carpeta de reglas. 😊
+$$$

@@ -1,0 +1,48 @@
+conversation ID: agentic_architecture__p51__pizza_shop__documentation__98cfb915
+$$$
+# Connectors 101 🔌
+
+Based on `custom-connector-guide.md` and `connector-examples.md`, here's the quick tour.
+
+## What they're for
+
+A **Custom YAML Connector** lets you hook the Chatbot Dojo up to **any chatbot API without writing code**. You just describe, in YAML, how to talk to the bot's API:
+
+- where the API lives (`base_url`),
+- how to send a message (path, method, headers, payload),
+- and where to find the bot's reply in the JSON response (`response_path`).
+
+Think of it as the **transport layer** between the simulator and your target chatbot: profiles generate the conversations, the connector carries the messages back and forth, and rules validate the results.
+
+## The fields
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | **Yes** |
+| `send_message.path` | API endpoint path (appended to `base_url`) | **Yes** |
+| `send_message.method` | HTTP method (POST, GET, PUT, DELETE) | No (default: `POST`) |
+| `send_message.headers` | Custom headers (e.g., `Authorization`) | No |
+| `send_message.payload_template` | JSON structure with the `{user_msg}` placeholder | **Yes** |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | **Yes** |
+
+## Minimal example
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+## Two things worth remembering ✨
+
+- **`{user_msg}`** is the placeholder for the user's message inside `payload_template` — that's how the simulator's text gets injected.
+- **`response_path`** uses dot notation to walk the JSON, e.g. `"data.text"` → `response["data"]["text"]`, or `"results.0.content"` → `response["results"][0]["content"]` (numbers index into arrays).
+
+If you'd like, I can help you write a connector for a specific API — just share the endpoint and an example response, and we'll figure out the `payload_template` and `response_path` together 😊
+$$$

@@ -1,0 +1,58 @@
+¡Claro que sí! 😊 Vamos a revisar tu conector juntos. La buena noticia es que **tu YAML está casi perfecto** — de hecho, encaja con la request y el response que compartiste. Déjame mostrarte por qué y qué pequeñas cosas podrías ajustar.
+
+## ✅ Lo que ya está bien
+
+Comparando tu configuración con la documentación de conectores YAML:
+
+| Campo | Tu valor | ¿Correcto? |
+|-------|----------|------------|
+| `base_url` | `https://api.anotherexample.com` | ✅ |
+| `send_message.path` | `/api/chat` | ✅ |
+| `send_message.method` | `POST` | ✅ |
+| `send_message.headers` | `Content-Type: application/json` | ✅ |
+| `payload_template` | `message.text: "{user_msg}"` | ✅ Coincide con tu request |
+| `response_path` | `response.text` | ✅ Coincide con tu response |
+
+Tu `payload_template` genera exactamente esto:
+```json
+{ "message": { "text": "hola" } }
+```
+Y tu `response_path: "response.text"` navega así: `response["response"]["text"]` → `"¡Hola! ¿Cómo puedo ayudarte hoy?"` 🎯
+
+## 🔧 Único detalle a revisar
+
+El `name` que tienes es `"Test Connector 2"`. Si lo vas a guardar en tu carpeta de conectores, asegúrate de que el **nombre del archivo** sea coherente (por ejemplo `test-connector-2.yml`) y que no choque con los que ya tienes (`345634`, `Ada UAM`, `Metro Madrid`, `Echo Bot`).
+
+## 📄 Versión final lista para usar
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+## 🧪 Cómo probarlo
+
+Puedes validarlo rapidito así, igual que en los ejemplos de la guía:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("ruta/a/test-connector-2.yml")
+success, response = bot.execute_with_input("hola")
+print(response)
+```
+
+Si el endpoint responde con la estructura que me mostraste, deberías ver `¡Hola! ¿Cómo puedo ayudarte hoy?` en consola 🎉
+
+---
+
+¿Quieres que te ayude a **verificar el nombre del archivo** o a **probarlo con un mensaje real**? Si el endpoint requiere autenticación (API key, token, etc.), avísame y lo añadimos en `headers` 😊

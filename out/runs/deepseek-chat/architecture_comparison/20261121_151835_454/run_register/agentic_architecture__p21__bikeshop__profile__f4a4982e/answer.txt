@@ -1,0 +1,100 @@
+Nice scenario! 🚲 I checked your existing profiles (`bike_repair_and_maintenance_scheduler.yaml`, `appointment.yml`, etc.) so this new one follows the same conventions — same shop fallback line, `gpt-4o-mini`, and `all_answered` goal style.
+
+Here's the profile, based on `sensei-chat-guide.md` (sections 3–7):
+
+```yaml
+test_name: "bike_customization_setup"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike and wants the shop to
+    tailor it to your liking. You want to book a setup appointment where they
+    change the seat and the handlebar grips to ones you prefer.
+  context:
+    - "You bought the bike a couple of weeks ago and have been riding it as-is."
+    - "The stock seat is uncomfortable and the grips feel too thin for your hands."
+    - "You are not an expert: you don't know exact sizes or models, so you rely on the shop's advice."
+    - "You are flexible on timing but would like the work done soon."
+  goals:
+    - "Explain that you just bought a new bike and want it set up for you"
+    - "Ask to change the seat to a {{seat_type}} one"
+    - "Ask to change the handlebar grips to {{grip_type}} grips"
+    - "Ask whether the shop can do both changes in the same visit and how long it takes"
+    - "Ask for the total price of the setup"
+    - "Book an appointment for {{appointment_day}} at {{appointment_hour}}"
+    - seat_type:
+        function: random()
+        type: string
+        data:
+          - wider and more padded
+          - softer
+          - sportier and narrower
+    - grip_type:
+        function: random()
+        type: string
+        data:
+          - thicker ergonomic
+          - softer rubber
+          - lock-on
+    - appointment_day:
+        function: another()
+        type: string
+        data:
+          - tomorrow
+          - this Saturday
+          - next Monday
+    - appointment_hour:
+        function: another()
+        type: string
+        data:
+          - "10:00"
+          - "12:30"
+          - "16:00"
+          - "18:00"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_change_offered:
+        type: string
+        description: "Confirmation from the chatbot that the seat can be changed/replaced, including any seat options or recommendations it mentions."
+    - grip_change_offered:
+        type: string
+        description: "Confirmation from the chatbot that the handlebar grips can be changed, including any grip options or recommendations it mentions."
+    - setup_duration:
+        type: string
+        description: "Estimated time the chatbot says the seat and grip changes will take."
+    - setup_price:
+        type: float
+        description: "Total price quoted by the chatbot for the seat and grip changes, numeric value only."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation of the booked setup appointment, including date and time as stated by the chatbot."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - default
+```
+
+A few notes on the design choices 👇
+
+- **`chatbot.output` is the contract for rules**: `seat_change_offered`, `grip_change_offered`, `setup_duration`, `setup_price`, and `appointment_confirmation` are exactly the fields a profile-bound rule would read as `conv[i].<field>`. If you later want a rule like "price must be quoted before the appointment is confirmed", these fields already support it.
+- **`setup_price` as `float`** (not `currency`) because your project has no `types/currency.yml` — the existing profiles use `money`/`float`/`string`. If you'd rather have currency-aware extraction, we can add a custom type under `types/`.
+- **`is_starter: false`** matches `bike_repair_and_maintenance_scheduler.yaml` (the bot greets first). Flip it to `true` if your bikeshop bot waits for the user.
+- **`all_answered` + `limit: 20`** lets the conversation run until all goals are covered, same as your other bikeshop profiles.
+
+Want me to also create a matching rule (e.g., "the bot must confirm both seat and grip changes before giving an appointment")? Just say the word and I'll load the rules docs and align it with these output fields 😊

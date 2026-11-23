@@ -1,0 +1,37 @@
+conversation ID: one_node_architecture__p44__pizza_shop__connector__97be5139
+$$$
+¡Claro que sí! 😊 Es un caso muy parecido al de Ada UAM, así que la adaptación es directa. Solo hay que cambiar los identificadores (`Authorization`, `conversation`, `sender`, `bot`), el `language` (ya está en `es`, perfecto), la `url` y el `Referer`/`Origin` para que apunten al sitio del Ayuntamiento de Morón de la Frontera.
+
+El `response_path` sigue siendo `response.0.text` porque la respuesta tiene la misma estructura (`response` → índice `0` → `text`). 👌
+
+```yaml
+name: "Ayuntamiento de Morón de la Frontera"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+    Origin: "https://www.morondelafrontera.es"
+    Referer: "https://www.morondelafrontera.es/"
+  payload_template:
+    conversation: "67ea76f4e213b2dcbc146e2b"
+    sender_type: "User"
+    sender: "67ea76f40643a3dd27e59411"
+    bot: "65ca19e7dbbb4e26cbeadf24"
+    language: "es"
+    url: "https://www.morondelafrontera.es/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+Un par de cositas a tener en cuenta 👀:
+
+- **`conversation` y `sender`** son valores de sesión. En el ejemplo de Ada UAM se reutilizan fijos, así que aquí he hecho lo mismo. Si el bot del Ayuntamiento espera una sesión nueva por cada conversación, quizá convenga generar esos IDs dinámicamente (pero eso ya sería lógica extra, no solo YAML).
+- **`Authorization`** es la API key pública del bot (`65ca19e7dbbb4e26cbeadf28`), la he tomado tal cual del `curl` que me pasaste.
+- **`response_path`**: confirmado con tu respuesta de ejemplo → `response[0].text`. ✅
+
+¿Quieres que te lo deje también con un `name` más corto tipo `"Moron Bot"`, o lo dejamos así descriptivo? Y si quieres, puedo ayudarte a probarlo mentalmente con el mensaje `"hola"` para verificar que el path extrae bien el texto 🍕➡️🏛️.
+$$$

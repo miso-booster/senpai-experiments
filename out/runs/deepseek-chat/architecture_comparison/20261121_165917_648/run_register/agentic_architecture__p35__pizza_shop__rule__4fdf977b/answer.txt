@@ -1,0 +1,20 @@
+Here's a rule that checks a small pizza costs $10, written against the `pizza_order_test_custom.yml` profile (which exposes `price` as a `currency` output and uses `size` as a goal variable) 🍕
+
+```yaml
+name: small_pizza_price_is_10
+description: A small pizza costs exactly $10 (profile pizza_order_test_custom)
+active: True
+conversations: 1
+when: size[0] == 'small'
+oracle: extract_float(price) == 10 and currency(price) == 'USD'
+yields: "Wrong price for a small pizza: expected $10, got {price}"
+```
+
+A few notes on how this fits your project:
+
+- **Profile binding:** `price` and `size` come straight from `pizza_order_test_custom.yml`'s `chatbot.output` / goal variables, so no invented fields.
+- **`size[0]`:** the goal variable is stored as a list, hence the `[0]` index (same pattern as the `small_pizza_price` example in the docs).
+- **Exact vs. floor:** this asserts `== 10`. If you'd rather check a *minimum* of $10 (the docs' `small_pizza_price` example uses `>= 10`), just swap `==` for `>=`. Also keep in mind `price` here is the **whole order** (pizza + drinks), so an exact $10 only holds for a small pizza with no drinks — a floor check is more forgiving if drinks are included.
+- **Currency:** the `currency(price) == 'USD'` clause keeps the $10 comparison meaningful.
+
+If you'd prefer this rule to target `user_sim_pizzaorder_predefined.yml` (also has `price` + `size`) or `pizza_and_drink_order_placement.yaml` (field is `total_cost` instead of `price`), let me know and I'll adapt the field names accordingly 😊

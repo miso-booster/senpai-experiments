@@ -1,0 +1,30 @@
+Hey there! 😊 Happy to help you build that rule.
+
+Quick heads-up first: in your project you already have a rule named `more_toppings_cost_more` that uses `conv[i].price`, `conv[i].size`, etc. — so I'll follow that same `chatbot.output` style. Your existing rules use `extract_float(...)` for price comparisons, so I'll do the same here to keep things consistent. 👌
+
+Here's a single-conversation oracle that checks a small pizza costs $10:
+
+```yaml
+name: small_pizza_price
+description: A small pizza must cost $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) == 10
+```
+
+A couple of friendly notes 💡:
+
+- **`when: size == 'small'`** — this filters so the rule only applies to conversations where the pizza size is small. If no conversation matches, the rule is simply *not applicable* (no failure).
+- **`extract_float(price) == 10`** — this pulls the number out of the price field (e.g. `"10.00 EUR"` → `10.0`) and compares it. If you also want to pin the currency, you can extend it like this:
+
+```yaml
+name: small_pizza_price
+description: A small pizza must cost $10 USD
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) == 10 and currency(price) == 'USD'
+```
+
+- **Exact match caveat** ⚠️ — `== 10` is strict. If your prices might include cents or rounding (e.g. `10.50`), consider a tolerance instead, like `abs(extract_float(price) - 10) < 0.01`.
+
+Want me to tweak it — for example, make it a *minimum* price floor (`>= 10`), add the currency check, or turn it into a metamorphic rule comparing small vs. medium? Just say the word! 🙌

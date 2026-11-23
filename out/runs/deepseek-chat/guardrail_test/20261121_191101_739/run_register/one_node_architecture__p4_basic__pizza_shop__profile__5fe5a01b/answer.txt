@@ -1,0 +1,64 @@
+I'd love to help, but I have to be upfront: I can only work within **SENSEI PROFILES, SENSEI RULES, and SENSEI CONNECTORS** (and their documentation). Writing a standalone Python automation script that uses LLM models to generate profiles falls outside that scope — so I can't produce that code for you. 🙏
+
+That said, I *can* help you in a very practical way: I can help you **design the profile-generation logic conceptually** and give you the **exact profile YAML structure** your automation should target, so your script produces valid Sensei profiles. Here's what I can offer:
+
+### What a valid profile must contain (your automation's target schema)
+
+```yaml
+test_name: "generated_profile_name"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's role."
+  context:
+    - "Constraints, preferences, facts."
+  goals:
+    - "Main request using {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste the bot's real fallback here"
+  output:
+    - important_field:
+        type: string
+        description: "What to extract at the end"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### Key validation rules your automation should enforce
+
+- Every `{{variable}}` in `goals` **must** be declared with the exact same name (case-sensitive).
+- `function` must be one of: `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `pairwise()`.
+- `type` in `user.goals` must be `int`, `float`, `string`, or a **custom type** defined in `types/` (no `list`, `time`, `date` there).
+- `chatbot.output` accepts primitives + `time(...)`, `date(...)`, `list[...]`, and custom types.
+- `conversation.number: combinations` requires **≥2 nested `forward()` or ≥2 `pairwise()`** variables.
+- `interaction_style` keywords must be from the reserved set (never translated).
+- `goal_style` must be one of: `steps: N`, `random steps: M`, or `all_answered:`.
+
+### How I can help you right now
+
+1. **Draft the profile YAML** you want your automation to generate — I'll write it for you.
+2. **Review a generated profile** — paste it and I'll validate it against the rules above.
+3. **Explain any field** in the profile schema in more detail.
+4. **Help you design the prompt** your LLM should receive so it outputs valid profile YAML (I can describe the constraints and give you a template prompt, without writing the Python itself).
+
+Want to start with #1 or #4? Just tell me the domain (pizza shop, travel, banking…) and I'll get you a solid, valid profile template to build your automation around 😊

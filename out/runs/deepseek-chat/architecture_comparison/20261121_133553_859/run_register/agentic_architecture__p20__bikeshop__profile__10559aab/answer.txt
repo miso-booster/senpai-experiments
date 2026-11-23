@@ -1,0 +1,90 @@
+Here's a bike shop appointment profile that exercises the chatbot's date and time handling. It uses `forward()` and `pairwise()` in `user.goals` to vary the requested days and times, and a `chatbot.output` schema that captures the final agreed slot so you can validate it later.
+
+```yaml
+test_name: "bike_shop_wheel_change_appointment"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who wants to book an appointment at a bike shop to have
+    the wheels on your bike changed. You need to agree on a specific day and time
+    for the appointment, and you care about the shop's availability.
+  context:
+    - "You own a road bike and want both wheels replaced."
+    - "You are flexible but have some preferred days and times."
+    - "You want to confirm the final appointment date and time before finishing."
+  goals:
+    - "Ask to book an appointment to change the wheels on your bike"
+    - "Request an appointment on {{preferred_day}} at {{preferred_time}}"
+    - "If that slot is not available, ask for the nearest alternative on {{alternative_day}} at {{alternative_time}}"
+    - "Confirm the final appointment date and time with the shop"
+    - preferred_day:
+        function: forward()
+        type: string
+        data: [Monday, Wednesday, Friday, Saturday]
+    - preferred_time:
+        function: pairwise()
+        type: string
+        data: ["09:00", "12:30", "16:00", "18:30"]
+    - alternative_day:
+        function: forward(preferred_day)
+        type: string
+        data: [Tuesday, Thursday, Sunday]
+    - alternative_time:
+        function: pairwise()
+        type: string
+        data: ["10:00", "14:00", "17:00", "19:00"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase?"
+  output:
+    - appointment_date:
+        type: date("day-month-year")
+        description: "The final agreed appointment date"
+    - appointment_time:
+        type: time("hh:mm")
+        description: "The final agreed appointment time"
+    - service_type:
+        type: string
+        description: "The service booked (e.g. wheel change)"
+    - appointment_confirmed:
+        type: string
+        description: "Whether the appointment was confirmed (yes/no)"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - random:
+      - change your mind
+      - single questions
+      - long phrases
+```
+
+### How it works 🔧
+
+- **Date/time variables** (the core of your test):
+  - `preferred_day` → `forward()` over four weekdays, so each conversation tries a different day.
+  - `preferred_time` → `pairwise()` over four time slots, so all time pairs get covered efficiently.
+  - `alternative_day` → `forward(preferred_day)` nested on the preferred day, so if a slot is taken the user asks for a nearby alternative.
+  - `alternative_time` → a second `pairwise()` over four alternative time slots, giving the pairwise matrix a proper two-variable pairing (`preferred_time` × `alternative_time`).
+- **`conversation.number: combinations(0.6, pairwise)`** uses the combination matrix from the `forward`/`pairwise` variables (60% of it) — good coverage without running everything.
+- **`chatbot.output`** captures `appointment_date`, `appointment_time`, `service_type`, and `appointment_confirmed` — these are the fields you'll reference in SENSEI-check rules later (e.g., verifying the booked date matches what the user requested).
+- **`interaction_style`** includes `change your mind`, which is great for appointment flows where the user might switch days/times.
+
+### A couple of things to double-check ⚠️
+
+1. **Day lists**: I used explicit lists for `preferred_day` and `alternative_day` so the coverage is deterministic. If you'd rather have LLM-generated days, you can swap them for `any(...)` entries.
+2. **`appointment_confirmed` as string**: I kept it as `string` (yes/no). If you prefer a boolean-like check, you could instead rely on `appointment_date`/`appointment_time` being non-null in your rules.
+
+Want me to also draft a **SENSEI-check rule** that validates the booked date/time against the user's requested slot? If so, I'll load the rules docs and we can align it with these `chatbot.output` fields. 😊

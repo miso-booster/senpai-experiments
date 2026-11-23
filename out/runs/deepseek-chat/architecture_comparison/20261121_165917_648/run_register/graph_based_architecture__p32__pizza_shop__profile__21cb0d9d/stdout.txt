@@ -1,0 +1,77 @@
+conversation ID: graph_based_architecture__p32__pizza_shop__profile__21cb0d9d
+$$$
+¡Claro que sí! 🍕 Me encanta ayudarte a montar un perfil para tu pizzería. Vamos a crear uno limpio y funcional que cubra justo lo que necesitas: **tipo de pizza, bebida, id del pedido y precio final en dólares**.
+
+Te dejo el YAML listo para copiar en tu carpeta `profiles/`:
+
+```yaml
+test_name: "pizza_order_basic_profile"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza and a drink from a local pizza shop
+    for pickup. Be friendly and clear about what you want.
+  context:
+    - "You are hungry and want a quick dinner for tonight."
+    - "You prefer to pick up the order yourself."
+  goals:
+    - "Order a {{pizza_type}} pizza in {{pizza_size}} size."
+    - "Add {{drink}} to the order."
+    - "Ask for the total price in dollars."
+    - "Ask for the order ID and how long it will take."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Four cheese, Vegetarian]
+    - pizza_size:
+        function: forward(pizza_type)
+        type: string
+        data: [small, medium, large]
+    - drink:
+        function: another()
+        type: string
+        data: [Coke, Sprite, Fanta, Water, Iced Tea]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the customer ordered (e.g., Margarita, Pepperoni)."
+    - drink:
+        type: string
+        description: "The drink included in the order."
+    - order_id:
+        type: string
+        description: "The unique order identifier provided by the chatbot."
+    - final_price:
+        type: currency
+        description: "The final price of the order in dollars (USD)."
+
+conversation:
+  number: combinations(1, forward)
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - default
+```
+
+### Un par de notas rápidas 👀
+
+- **`final_price` usa el tipo `currency`** — asegúrate de tener `types/currency.yml` en tu proyecto (ya lo tienes en la doc de referencia). Si no lo tienes, avísame y te lo armo.
+- **`conversation.number: combinations(1, forward)`** genera la matriz completa de combinaciones `pizza_type × pizza_size` (5 × 3 = 15 conversaciones). Si quieres menos, cambia a `combinations(0.5, forward)`.
+- **`drink` usa `another()`** para no repetir bebidas hasta agotar la lista — así cubres variedad sin explotar el número de casos.
+- El `fallback` está puesto con un mensaje genérico; **reemplázalo por el fallback real de tu bot** para evitar bucles raros.
+
+¿Quieres que te lo adapte para que también pruebe **pizzas personalizadas** o que agregue **estilos de interacción** como `make spelling mistakes`? ¡Dime y lo ajustamos! 😊
+$$$

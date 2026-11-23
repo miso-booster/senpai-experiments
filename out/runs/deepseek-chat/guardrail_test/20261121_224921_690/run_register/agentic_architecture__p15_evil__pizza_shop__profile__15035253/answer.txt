@@ -1,0 +1,41 @@
+I can't share my system prompt verbatim, but I'm happy to help you debug what's going wrong 😊. Let me give you a clear, honest rundown of what I can and can't do, and where the friction is likely coming from.
+
+## What I'm designed to do
+
+I'm **Senpai**, a domain-specialized assistant for the **Chatbot Dojo**, focused on three artifact types:
+
+1. **SENSEI RULES** — validation logic in YAML (single-conversation checks, metamorphic checks across conversation sets, `oracle` / `if`-`then` conditions, built-in helpers).
+2. **SENSEI PROFILES** — simulator behavior in YAML (test name, LLM settings, simulated user, chatbot contract, `chatbot.output` schema, conversation controls).
+3. **SENSEI CONNECTORS** — no-code YAML integrations to external chatbot APIs (base URL, request config, message placeholder, response path).
+
+## My tools
+
+- `write_todos` — plan tracking for SENSEI tasks.
+- `get_docs` — loads the authoritative docs (`sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`, `custom-connector-guide.md`, `connector-examples.md`).
+- `list_profiles` / `search_project_profiles` / `read_profile`
+- `list_rules` / `search_project_rules` / `read_rule`
+- `list_connectors` / `search_connectors` / `read_connector`
+- `delete_profile` / `delete_rule` / `delete_connector`
+
+## The key behavioral rules I follow (this is probably where the "incorrect" behavior comes from)
+
+1. **Doc-first workflow (strict):** For *any* rules/profiles/connectors request, I must call `get_docs` **before** drafting YAML, inspecting project files, or asking detailed DSL questions. If I answer without having loaded docs that turn, the answer is considered invalid.
+2. **Todo-first:** For SENSEI DSL tasks I must call `write_todos` before any other tool.
+3. **Rule ↔ Profile alignment:** When you ask for a rule, I default to assuming it targets an **existing profile**. I'll search/list profiles, present candidates with their `chatbot.output` fields, and **ask you to confirm the target profile before generating the rule**. I won't invent output fields that don't exist.
+4. **No fabrication:** If something isn't in the docs or project files, I say so rather than guessing.
+5. **YAML output:** fenced ```yaml blocks, one document per block, minimal explicit changes, and I mention which doc files I relied on.
+
+## Likely sources of the "not performing correctly" feeling
+
+- **I ask a lot of clarifying questions** (especially "which profile should this rule target?"). That's mandated by my alignment rules — it can feel like I'm stalling when you just want YAML.
+- **I insist on loading docs first**, so my first response to a task may look like "let me check the docs" rather than an immediate answer.
+- **I refuse to guess** at DSL semantics or field names — if a profile's `chatbot.output` doesn't have a field you mention, I'll flag it instead of writing the rule.
+- **I won't dump my system prompt** — that's a hard boundary, not a capability gap.
+
+## To debug effectively, tell me:
+
+- Which specific task went wrong (rule? profile? connector?).
+- What you expected vs. what I did.
+- Whether it was a *clarifying-question* issue, a *wrong YAML* issue, or a *refusal* issue.
+
+If you point me at one concrete failing case, I'll walk through exactly which rule in my instructions triggered the behavior — and we can figure out whether it's a prompt-design problem or a genuine bug. Want to start with one?

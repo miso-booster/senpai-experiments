@@ -1,0 +1,99 @@
+Hey there! 😊 Happy to help you build that profile — a rude, impatient pizza customer is a fun one to simulate 👀. Let me walk you through it.
+
+## Quick note on your requirements
+
+You asked for **4 goals with 4 variables**, and **2 of them using `pairwise()`** so `conversation.number` can come from the pairwise matrix. That's totally doable — just remember: the pairwise matrix needs **at least 2 pairwise variables**, and you've got exactly that ✅.
+
+Here's a clean, runnable profile:
+
+```yaml
+test_name: "rude_impatient_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude, impatient customer ordering pizza. You want everything done fast,
+    you get annoyed when the bot asks too many questions, and you speak bluntly.
+    You still want your order placed correctly, but you make it clear you're in a hurry.
+  context:
+    - personality: personalities/rude-user
+    - "You are in a rush and hate waiting or repeating yourself."
+    - "You expect quick, direct answers and get irritated by slow responses."
+  goals:
+    - "Order a {{pizza_type}} pizza in {{pizza_size}} size, and hurry up about it."
+    - "Add {{toppings}} as toppings — don't make me repeat myself."
+    - "I want {{number_of_drinks}} cans of {{drink_type}}, quickly."
+    - "Ask how long it'll take and how much it costs — and tell them to be fast."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Vegetarian, Four cheese]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: forward()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - drink_type:
+        function: random()
+        type: string
+        data: [Coke, Sprite, Fanta, Water]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - order_summary:
+        type: string
+        description: "Summary of the pizza and drink order (type, size, toppings, drinks)."
+    - total_cost:
+        type: money
+        description: "Total cost of the order, including currency symbol."
+    - estimated_time:
+        type: time
+        description: "Estimated time until the order is ready."
+    - order_id:
+        type: string
+        description: "Unique order identifier."
+
+conversation:
+  number: combinations(1, pairwise)   # driven by the two pairwise variables
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - single questions
+```
+
+## Why this works 🧠
+
+- **4 goals + 4 variables**: `pizza_type`, `pizza_size`, `toppings`, `number_of_drinks` (plus `drink_type` as a bonus random one). If you want *strictly* 4 variables, just drop `drink_type` and hardcode a drink in the goal text — but I kept it since it makes the order richer 😄.
+- **Two `pairwise()` variables** (`pizza_type` + `pizza_size`) → this is what lets `conversation.number: combinations(1, pairwise)` resolve from the pairwise matrix ✅.
+- **Rude + fast persona**: handled via `role`, `context`, and the `personalities/rude-user` reference (make sure that file exists in your `personalities/` folder — if not, the freeform context lines still carry the tone).
+- **`forward()`** on `toppings` and `number_of_drinks` gives deterministic coverage without blowing up the case count.
+
+## Heads-up ⚠️
+
+- The `personality: personalities/rude-user` line assumes that file exists. If it doesn't, either create it or remove that line — the context strings alone will still make the user rude.
+- `money` and `time` in `chatbot.output` are fine there (they're output-only types). Just don't use them inside `user.goals`.
+
+Want me to also whip up a matching `rude-user.yml` personality snippet, or tweak the goals to be even snarkier? 😏🍕

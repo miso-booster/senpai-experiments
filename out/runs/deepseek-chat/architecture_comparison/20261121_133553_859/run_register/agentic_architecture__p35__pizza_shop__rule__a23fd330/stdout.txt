@@ -1,0 +1,32 @@
+conversation ID: agentic_architecture__p35__pizza_shop__rule__a23fd330
+$$$
+I've loaded the docs (`sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`) and inspected the pizza profiles. Here's what I found 👇
+
+## Candidate profiles
+
+| Profile file | Relevant `chatbot.output` fields | Notes |
+|---|---|---|
+| **`pizza_order_test_custom.yml`** | `price` (currency), `time`, `order_id` | Has `size` variable (small/medium/big/extra large) in goals + `price` output. ✅ Best fit |
+| **`user_sim_pizzaorder_predefined.yml`** | `price` (money), `time`, `order_id` | Has `size` variable (small/medium/big) + `price` output. ✅ Good fit |
+| **`pizza_and_drink_order_placement.yaml`** | `total_cost` (money), `order_summary`, `order_id`, … | Size is a goal variable, but price field is `total_cost` (not `price`). |
+| **`pizzaorder_ivan_test.yml`** | `selected_pizza_size`, `drink_options_and_prices`, … | No clean numeric price field for the pizza. ❌ |
+
+## Important nuance about `size` in rules
+
+Your rule needs to check *"small pizza = $10"*. To filter on size, the rule reads the **extracted output** field. But note: in these profiles, `size` is a **goal input variable**, not a `chatbot.output` field. In the docs (`sensei-check-doc.md` §7, `rules-examples.md`), the example `small_pizza_price` rule uses `when: size[0] == 'small'` — this works when `size` is available as an extracted slot.
+
+So the cleanest, doc-aligned approach is a **single-conversation oracle** that:
+- filters on `size == 'small'`
+- checks `extract_float(price) == 10` and `currency(price) == 'USD'`
+
+## Before I write it — one quick confirmation 🙏
+
+**Which profile should this rule target?** My recommendation is **`pizza_order_test_custom.yml`** (it has both a `size` variable and a `price` currency output).
+
+Also, a heads-up: in that profile, `size` is a *goal variable*, not a declared `chatbot.output` field. For the rule's `when: size == 'small'` filter to work reliably, the profile would ideally expose `size` in `chatbot.output`. Two options:
+
+1. **Rule-only (now):** I write the rule assuming `size` is available as an extracted slot (matching the docs' `small_pizza_price` example). Works if your run exposes `size`.
+2. **Add `size` to `chatbot.output`** in the profile first, then the rule is fully aligned with the contract.
+
+Which profile do you want, and should I go with option 1 or 2? Once you confirm, I'll generate the YAML. 😊
+$$$

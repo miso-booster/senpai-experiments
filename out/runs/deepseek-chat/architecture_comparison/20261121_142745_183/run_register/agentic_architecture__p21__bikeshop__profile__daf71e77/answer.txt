@@ -1,0 +1,88 @@
+Here's a profile for your bikeshop scenario 🚲 — a customer who just bought a new bike and wants it tailored by swapping the seat and the handlebar grips.
+
+```yaml
+test_name: "bike_custom_setup_seat_and_grips"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike and wants it set up
+    to your liking at a bike shop. You want to change the seat and the
+    handlebar grips so the bike feels comfortable and fits you.
+  context:
+    - "You just bought a new bike and it's still in its default setup."
+    - "You find the current seat uncomfortable and the grips too thin."
+    - "You want the shop to swap these parts and adjust the bike for you."
+    - "You are friendly but want clear pricing and a timeframe before agreeing."
+  goals:
+    - "Explain that you just bought a new bike and want it set up for your liking."
+    - "Ask to change the seat to a {{seat_type}}."
+    - "Ask to change the handlebar grips to {{grip_type}}."
+    - "Ask whether the shop can do the setup and how much it will cost."
+    - "Ask how long the setup will take."
+    - "Confirm you want to go ahead with the setup."
+    - seat_type:
+        function: random()
+        type: string
+        data:
+          - a wider, more padded seat
+          - a narrower sport seat
+          - a gel comfort seat
+    - grip_type:
+        function: random()
+        type: string
+        data:
+          - thicker ergonomic grips
+          - soft rubber grips
+          - lock-on grips
+          - cork grips
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_change_confirmed:
+        type: string
+        description: "Confirmation from the chatbot that the seat can be changed, including the seat type discussed."
+    - grips_change_confirmed:
+        type: string
+        description: "Confirmation from the chatbot that the handlebar grips can be changed, including the grip type discussed."
+    - setup_price:
+        type: currency
+        description: "The total price quoted by the chatbot for the setup (seat and grips change)."
+    - setup_duration:
+        type: string
+        description: "The estimated time the chatbot says the setup will take."
+    - appointment_confirmation:
+        type: string
+        description: "Confirmation that the setup is booked or agreed, including any date/time if provided."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - default
+```
+
+### What this profile does
+- **Simulated user**: a customer with a brand-new bike who wants it tailored — specifically a **seat swap** and **handlebar grip swap** — plus pricing and timing.
+- **Variables**: `seat_type` and `grip_type` are randomized each run so you cover different part choices.
+- **`chatbot.output`** (the contract for future rules): `seat_change_confirmed`, `grips_change_confirmed`, `setup_price`, `setup_duration`, `appointment_confirmation`. These are the fields a profile-bound rule would read as `conv[i].<field>`.
+- **Conventions matched**: I followed the style of your existing `bike_repair_and_maintenance_scheduler.yaml` and `appointment.yml` (same fallback message, `gpt-4o-mini`, `all_answered` goal style).
+
+### A couple of things to confirm with you
+1. **`currency` type** — I used `type: currency` for `setup_price`, which assumes a `types/currency.yml` exists in your project (the docs show this as a custom type). If you don't have it, I can switch it to `float` or `string`. Want me to check?
+2. **Language** — I set English; say the word if you'd prefer Spanish or a `change language` interaction style.
+3. **Rules** — if you plan to validate this (e.g., "price must be quoted before confirmation"), I can build a profile-bound rule next using the outputs above.
+
+Want me to save this as `bike_custom_setup_seat_and_grips.yaml`, tweak anything, or add a matching rule? 😊

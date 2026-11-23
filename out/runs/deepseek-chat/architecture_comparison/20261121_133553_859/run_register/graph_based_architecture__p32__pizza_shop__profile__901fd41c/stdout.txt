@@ -1,0 +1,127 @@
+conversation ID: graph_based_architecture__p32__pizza_shop__profile__901fd41c
+$$$
+¡Claro que sí! 🍕 Me encanta ayudarte a montar un perfil para probar tu chatbot de pizzería. Vamos a crear uno limpio y funcional, con los cuatro campos de salida que pediste: **tipo de pizza**, **bebida**, **id del pedido** y **precio final en dólares**.
+
+Aquí tienes el YAML completo, listo para guardar en `profiles/pizza_order_output_test.yml`:
+
+```yaml
+test_name: "pizza_order_output_test"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer placing a pizza order for pickup at a local pizzeria.
+    You want to choose a pizza, add a drink, and confirm the final price and order ID.
+  context:
+    - "You are ordering for a casual dinner with friends."
+    - "You prefer to pick up the order yourself."
+    - "You want to know the total price in US dollars before confirming."
+  goals:
+    - "Ask what pizzas are available."
+    - "Order a {{pizza_type}} pizza in {{size}} size."
+    - "Ask what drinks are available."
+    - "Order {{number_of_drinks}} {{drink_type}}."
+    - "Ask for the total price in dollars and the order ID."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Four cheese, Vegetarian]
+    - size:
+        function: forward(pizza_type)
+        type: string
+        data: [small, medium, large]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+    - number_of_drinks:
+        function: forward(drink_type)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the customer ordered (e.g., Margarita, Pepperoni)."
+    - drink:
+        type: string
+        description: "The drink the customer ordered (e.g., Coke, Sprite)."
+    - order_id:
+        type: string
+        description: "The unique order identifier provided by the chatbot."
+    - final_price:
+        type: currency
+        description: "The final total price of the order in US dollars (USD)."
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 6
+    max_cost: 0.2
+  interaction_style:
+    - default
+```
+
+### Un par de notas rápidas 👀
+
+- **`final_price` con `type: currency`**: esto asume que tienes un tipo personalizado `currency` en tu carpeta `types/` (como el del ejemplo de la documentación). Si no lo tienes, puedes crearlo así en `types/currency.yml`:
+
+  ```yaml
+test_name: "currency_type_definition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer providing a price with a currency."
+  context:
+    - "You are testing currency extraction."
+  goals:
+    - "State a price of {{price}}"
+    - price:
+        function: random()
+        type: string
+        data: ["18.50 EUR", "25 USD", "10.00 GBP"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - price:
+        type: currency
+        description: "A float number with a currency"
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 3
+  interaction_style:
+    - default
+```
+
+- **`order_id` como `string`**: perfecto para identificadores alfanuméricos. Si tu bot devuelve solo números, puedes cambiarlo a `int`.
+
+- **`conversation.number: 3`**: son solo 3 conversaciones para una prueba rápida. Si quieres cubrir más combinaciones, puedes subirlo o usar `combinations` con tus `forward()` anidados.
+
+- **`goal_style.steps: 6`**: da margen suficiente para pedir pizza, bebida, precio e ID. Si tu bot es más conversacional, súbelo un poco.
+
+¿Quieres que te lo adapte para que use `pairwise()` y cubra más combinaciones con menos conversaciones? ¡Dímelo y lo ajustamos! 😊
+$$$

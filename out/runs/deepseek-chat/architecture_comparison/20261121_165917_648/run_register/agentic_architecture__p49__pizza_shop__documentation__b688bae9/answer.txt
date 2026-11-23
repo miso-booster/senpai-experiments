@@ -1,0 +1,35 @@
+Hey there! 😊 Quick heads-up before I dive in: I checked the rules docs (`sensei-check-doc.md` and `rules-examples.md`), and there's **no function literally named `pairwise`** in the SENSEI-check helper library. So I want to make sure I answer the right question.
+
+Here's what I *can* tell you, and then a couple of guesses about what you might mean 👇
+
+## What the docs actually describe
+
+**Metamorphic (pairwise-style) rules** are the closest concept. Instead of a single-conversation oracle, you compare **pairs (or tuples) of conversations** that meet a selection filter, and assert how outputs should relate. The mechanism is:
+
+- `conversations: 2` (or more) → tells Sensei-check the rule needs N conversations.
+- `when: <expr>` → filters for *comparable* conversations (the "ceteris paribus" cohort), e.g. same size/drink/qty.
+- `if: <expr>` / `then: <expr>` → the relation to check across `conv[0]`, `conv[1]`, etc.
+- Or a single `oracle: <expr>` over `conv[*]`.
+
+Example from `sensei-check-doc.md`:
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Under the hood (section 8 of `sensei-check-doc.md`): Sensei-check selects conversations via `when:`, then applies the relation across the matching **tuple(s)** — i.e., it effectively evaluates the rule over the pairs/tuples of conversations that pass the filter.
+
+## So which "pairwise" do you mean? 🤔
+
+A few possibilities:
+
+1. **The pairwise comparison pattern** in metamorphic rules (the `conv[0]` / `conv[1]` + `when`/`if`/`then` approach above) — this is the documented way to do pairwise testing.
+2. **A helper you expected to exist** (like `pairwise(...)`) — I don't see it in the authoritative helper list (`extract_float`, `currency`, `language`, `is_unique`, `exists`, `num_exist`, etc.). If you saw it somewhere, tell me where and I'll dig in.
+3. **Something in a profile or connector context** — if it's not a rule thing, let me know and I'll load the right docs.
+
+Could you point me to where you saw `pairwise` (a rule file, a doc, an error message)? That way I can give you a precise answer instead of guessing. 🙏

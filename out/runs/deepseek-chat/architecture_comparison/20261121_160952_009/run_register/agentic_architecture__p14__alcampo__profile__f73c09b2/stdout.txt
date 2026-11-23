@@ -1,0 +1,104 @@
+conversation ID: agentic_architecture__p14__alcampo__profile__f73c09b2
+$$$
+¡Claro! Te preparo un perfil centrado en poner a prueba la **recomendación de recetas** y la **planificación de menús** del chatbot de Alcampo. Es un perfil distinto del existente `recipe_management_and_cooking_support.yaml` (que explora funcionalidades de "La Cocina de Alcampo"): aquí el usuario simulado pide recomendaciones concretas y un menú semanal, y se extraen los datos clave para poder validarlos después con reglas.
+
+```yaml
+test_name: "Alcampo Recipe Recommendation and Menu Planning"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente de Alcampo que quiere que el chatbot le recomiende recetas
+    y le ayude a planificar los menús de la semana, teniendo en cuenta sus
+    preferencias, número de comensales y presupuesto.
+  context:
+    - "Cocinas para una familia de {{diners}} personas y buscas ideas prácticas para el día a día."
+    - "Tienes preferencias alimentarias: {{dietary_preference}}."
+    - "Quieres aprovechar productos de temporada y ajustarte a un presupuesto semanal."
+    - "Valoras que las recetas incluyan ingredientes que puedas comprar en Alcampo."
+  goals:
+    - "Pide al chatbot que te recomiende una receta {{meal_type}} para {{diners}} personas con la preferencia {{dietary_preference}}."
+    - "Solicita un menú semanal equilibrado que incluya las comidas principales de la semana."
+    - "Pregunta qué ingredientes necesitas comprar para la receta recomendada y su coste aproximado."
+    - "Pide una alternativa a la receta si algún ingrediente no te convence o no está disponible."
+    - "Confirma si el menú propuesto respeta tu preferencia {{dietary_preference}} y tu presupuesto."
+    - meal_type:
+        function: forward()
+        type: string
+        data: [desayuno, comida, cena]
+    - diners:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 6
+          step: 1
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data: [sin restricciones, vegetariana, vegana, sin gluten, sin lactosa]
+    - budget_level:
+        function: pairwise()
+        type: string
+        data: [ajustado, medio, flexible]
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, no he entendido tu petición. ¿Puedes reformularla?"
+  output:
+    - recommended_recipe:
+        type: string
+        description: "Nombre de la receta recomendada por el chatbot"
+    - recipe_ingredients:
+        type: list[string]
+        description: "Lista de ingredientes necesarios para la receta recomendada"
+    - estimated_cost:
+        type: currency
+        description: "Coste aproximado de los ingredientes de la receta"
+    - weekly_menu:
+        type: list[string]
+        description: "Platos que componen el menú semanal propuesto"
+    - respects_dietary_preference:
+        type: string
+        description: "Indicación de si la recomendación respeta la preferencia alimentaria del usuario"
+    - alternative_recipe:
+        type: string
+        description: "Receta alternativa ofrecida por el chatbot"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.6
+  goal_style:
+    steps: 8
+    max_cost: 0.15
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - change your mind
+```
+
+### Qué hace y por qué 🔍
+
+- **`user.role` / `context`**: describe a un cliente real de Alcampo con preferencias y presupuesto, para que las peticiones suenen naturales.
+- **Variables con funciones** (según §4.4 de la guía):
+  - `meal_type` con `forward()` → recorre desayuno/comida/cena de forma determinista.
+  - `diners` con `random()` → número de comensales aleatorio entre 1 y 6.
+  - `dietary_preference` y `budget_level` con `pairwise()` → cubren combinaciones de preferencias alimentarias y niveles de presupuesto de forma eficiente. Al haber **dos** variables con `pairwise()`, la matriz de combinaciones es válida.
+- **`conversation.number: combinations(0.6, pairwise)`**: usa el 60% de la matriz de combinaciones generada por `pairwise`.
+- **`chatbot.output`**: define el *contrato* que luego podrán leer las reglas como `conv[i].<campo>` (por ejemplo, para validar que `recipe_ingredients` no esté vacío o que `estimated_cost` sea razonable). Usa tipos documentados: `string`, `list[string]`, `currency`.
+- **`interaction_style`**: incluye estilos variados (`long phrases`, `make spelling mistakes`, `change your mind`) para poner a prueba la robustez del bot.
+
+### Notas importantes ⚠️
+
+- El tipo `currency` es un **tipo personalizado**: para usarlo necesitas tener `types/currency.yml` en el proyecto (como se describe en §4.2). Si no lo tienes, dímelo y te lo preparo, o lo cambio a `string`.
+- Si quieres que este perfil se valide con reglas (por ejemplo, "la receta debe respetar la preferencia alimentaria"), puedo crearte una regla SENSEI que lea esos `chatbot.output`. Solo dime y lo montamos 😊.
+
+¿Quieres que ajuste algo (idioma, número de conversaciones, campos extraídos) o que te prepare el `types/currency.yml` y una regla asociada?
+$$$

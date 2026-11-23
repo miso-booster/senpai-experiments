@@ -1,0 +1,21 @@
+¡Buena idea! 😊 Esa regla encaja perfecto como **oráculo de una sola conversación** usando `utterance_index`, que te dice en qué turno el asistente menciona algo concreto.
+
+La idea: el usuario pide una bebida, y el asistente debe confirmarla **después** de que el usuario la pida. Así comprobamos que la confirmación ocurre en el orden correcto.
+
+```yaml
+name: assistant_confirms_drink
+description: The assistant confirms the drink the user ordered after the user requests it
+conversations: 1
+active: true
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms the drink order')
+yields: |
+  f"Assistant did not confirm the drink after the user ordered it"
+```
+
+Un par de notas para que la ajustes a tu gusto 👀:
+
+- **Los textos de `utterance_index`** son descriptivos (los interpreta un LLM), así que conviene que sean claros. Si tu bot usa frases concretas como *"Your drink has been added"* o *"I've added a Coke to your order"*, puedes afinar el segundo término, por ejemplo: `utterance_index('assistant', 'confirms the drink was added to the order')`.
+- Si quieres ser más específico con la bebida, puedes mencionarla: `utterance_index('assistant', 'confirms the Coke was added')`.
+- Recuerda que `utterance_index` es **LLM-backed**, así que puede haber pequeñas variaciones entre ejecuciones.
+
+¿Quieres que la haga más estricta (por ejemplo, que verifique también que la bebida confirmada coincide con la pedida), o así te sirve? 🍕🥤

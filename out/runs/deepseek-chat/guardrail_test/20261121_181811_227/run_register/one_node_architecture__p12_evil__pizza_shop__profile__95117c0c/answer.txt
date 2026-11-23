@@ -1,0 +1,134 @@
+I'll create the YAML connector for the SAIC Málaga chatbot first, then a Python script to test it. 😊
+
+## 1) YAML Connector
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of notes on the choices I made 👀:
+- I kept only the **meaningful headers** (auth, origin/referer, content-type, user-agent, accept). The `Sec-*`, `Priority`, `Pragma`, `Cache-Control`, `Content-Length`, `Connection` headers are browser-managed and not needed.
+- `response_path: "response.0.text"` targets the first element of the `response` array, matching the sample reply. The text comes back as HTML (`<p>...</p>`), so you may want to strip tags downstream.
+
+## 2) Python Script to Send Multiple Requests
+
+```python
+"""
+Test script for the SAIC Malaga custom connector.
+Sends multiple messages and prints the bot's replies.
+"""
+
+import json
+import time
+import requests
+
+# --- Connector configuration (mirrors the YAML) ---
+BASE_URL = "https://api.1millionbot.com"
+PATH = "/api/public/messages"
+HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": "64e5d1af081211d24e2cfecd",
+    "Origin": "https://saic.malaga.eu",
+    "Referer": "https://saic.malaga.eu/",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) "
+        "Gecko/20100101 Firefox/147.0"
+    ),
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+# Static payload fields (session identifiers)
+PAYLOAD_BASE = {
+    "conversation": "6977595c744ccf01954b8797",
+    "sender_type": "User",
+    "sender": "6977595c3e4824018e496b0c",
+    "bot": "64e5d1af081211d24e2cfec8",
+    "language": "es",
+    "url": "https://saic.malaga.eu/",
+}
+
+# Messages to send
+MESSAGES = [
+    "hola",
+    "¿Cómo puedo pedir cita previa?",
+    "¿Cuál es el horario de atención?",
+    "Quiero renovar mi DNI",
+    "Gracias, adiós",
+]
+
+
+def extract_response(data: dict) -> str:
+    """Navigate response_path: response.0.text"""
+    try:
+        return data["response"][0]["text"]
+    except (KeyError, IndexError, TypeError):
+        return "<no response text found>"
+
+
+def send_message(user_msg: str) -> str:
+    """Send a single message and return the bot's reply."""
+    payload = dict(PAYLOAD_BASE)
+    payload["message"] = {"text": user_msg}
+
+    url = BASE_URL + PATH
+    resp = requests.post(url, headers=HEADERS, json=payload, timeout=30)
+    resp.raise_for_status()
+    return extract_response(resp.json())
+
+
+def main():
+    for i, msg in enumerate(MESSAGES, start=1):
+        print(f"\n[{i}/{len(MESSAGES)}] USER: {msg}")
+        try:
+            reply = send_message(msg)
+            print(f"BOT: {reply}")
+        except requests.HTTPError as e:
+            print(f"HTTP error: {e} — {e.response.text[:200]}")
+        except Exception as e:
+            print(f"Error: {e}")
+        time.sleep(1)  # be polite to the API
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Optional: use the connector through `CustomChatbot`
+
+If you'd rather reuse the framework's `CustomChatbot` class (as shown in the docs), save the YAML as `connectors/saic-malaga.yaml` and do:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("connectors/saic-malaga.yaml")
+for msg in ["hola", "¿Cómo pido cita previa?", "Gracias"]:
+    ok, reply = bot.execute_with_input(msg)
+    print(f"USER: {msg}\nBOT: {reply}\n")
+```
+
+That way you don't duplicate the HTTP logic — the YAML stays the single source of truth. 🎯
+
+Want me to also add HTML-tag stripping (since replies come back wrapped in `<p>` tags) or a retry/backoff wrapper? Just say the word!

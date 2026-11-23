@@ -1,0 +1,81 @@
+¡Claro! 😊 Un perfil para un Erasmus recién llegado encaja perfecto con el dominio del CAU de la UAM. Te propongo un perfil sencillo (pocas variables, como pediste) pero con un `chatbot.output` bien pensado para que puedas validar que el bot da soporte real: requisitos de acceso, pasos de contraseña, contactos, enlaces, etc.
+
+La idea: el usuario Erasmus no conoce ni Moodle ni Sigma ni ID-UAM, así que sus metas giran en torno a "cómo empiezo", "qué necesito", "a quién escribo si me atasco". Y los outputs capturan justo lo que un buen soporte debería entregar.
+
+```yaml
+test_name: "Erasmus recién llegado - configuración inicial de Moodle y Sigma"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la UAM y no conoce
+    las plataformas digitales. Necesitas ayuda para empezar a usar Moodle,
+    Sigma y el resto de servicios con tu cuenta institucional.
+  context:
+    - personality: personalities/curious-user
+    - "Acabas de aterrizar y aún no tienes configurada tu cuenta ID-UAM."
+    - "No sabes qué es Sigma ni cómo se relaciona con Moodle."
+    - "Prefieres instrucciones paso a paso, claras y en español."
+  goals:
+    - "Preguntar cómo obtener y activar tu cuenta ID-UAM como estudiante Erasmus."
+    - "Pedir los pasos para establecer tu contraseña por primera vez."
+    - "Preguntar qué es Sigma y cómo acceder a él con tus credenciales."
+    - "Solicitar los requisitos para entrar a Moodle y los entornos disponibles."
+    - "Pedir la información de contacto del CAU por si te quedas atascado."
+    - "Preguntar cómo configurar la VPN para acceder desde fuera del campus."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - id_uam_account_steps:
+        type: string
+        description: "Pasos para obtener o activar la cuenta ID-UAM"
+    - password_setup_steps:
+        type: string
+        description: "Instrucciones para establecer la contraseña por primera vez"
+    - sigma_access_info:
+        type: string
+        description: "Qué es Sigma y cómo acceder a él"
+    - moodle_access_requirements:
+        type: string
+        description: "Requisitos para acceder a Moodle"
+    - moodle_environment_types:
+        type: string
+        description: "Entornos de Moodle disponibles (Grado, Postgrado, etc.)"
+    - cau_contact_info:
+        type: string
+        description: "Información de contacto del CAU (correo, teléfono, ubicación)"
+    - vpn_setup_info:
+        type: string
+        description: "Instrucciones o enlaces para instalar y configurar la VPN"
+    - services_catalog_link:
+        type: string
+        description: "Enlace al catálogo de servicios"
+    - support_confirmation:
+        type: string
+        description: "Confirmación o resumen de la ayuda ofrecida por el bot"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 25
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👇
+
+- **Pocas variables, sí** — no metí ninguna variable `{{...}}` porque para un Erasmus "recién llegado" el escenario es bastante fijo. Si luego quieres variar el idioma nativo o el grado, lo añadimos en un momento.
+- **Outputs pensados para reglas** — todos los campos (`moodle_access_requirements`, `cau_contact_info`, `vpn_setup_info`, etc.) son perfectos para reglas tipo `data_collected()` o `missing_slots()`, e incluso para comprobar con `semantic_content` que la respuesta menciona lo esperado.
+- **`single questions`** — encaja bien con un usuario que va preguntando una cosa a la vez mientras se orienta.
+
+¿Quieres que te prepare también una regla global (por ejemplo `data_collected()` o `responds_in_same_language()`) para acompañar este perfil? 😊

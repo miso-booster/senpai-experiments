@@ -1,0 +1,47 @@
+¡Listo! 🎉 Aquí tienes el connector YAML para el bot de Alcampo, basado en `custom-connector-guide.md` y `connector-examples.md`.
+
+```yaml
+name: "Alcampo"
+base_url: "https://alcampo.botslovers.com"
+send_message:
+  path: "/bot/web"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Accept: "*/*"
+    Origin: "https://alcampo.botslovers.com"
+    Referer: "https://alcampo.botslovers.com/Admin/Widget?mobile=0&user=0&lang=es"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    data:
+      id_user: "377611"
+      idweb_user: "ea38fe92-ad92-4610-9d62-ef7fecb1679b"
+      session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+      message:
+        message:
+          message:
+            text: "{user_msg}"
+        iduser: "377611"
+        session: "729745848fcf76b3a49c2e2c4e6f2d5e"
+        channel: "web"
+      widget_form: "TRUE"
+      contexto_extra: []
+      lang: "es"
+    accion: "response_bot"
+response_path: "messages.0.0.message.text"
+```
+
+### Cómo se mapea a la documentación 📚
+
+- **`base_url` + `send_message.path`** → `https://alcampo.botslovers.com` + `/bot/web` (el `POST //bot/web` del request).
+- **`headers`** → solo los relevantes para la API (`Content-Type`, `Origin`, `Referer`, `User-Agent`). Los headers de navegador tipo `Sec-Fetch-*`, `Priority`, `TE`, `Accept-Encoding` los gestiona el cliente HTTP, así que no hace falta replicarlos.
+- **`payload_template`** → reproduce la estructura anidada del body (`data.message.message.message.text`), con `{user_msg}` en el campo `text` (tal como indica la guía: *"Use `{user_msg}` as a placeholder for the user's message"*).
+- **`response_path`** → `messages.0.0.message.text` porque la respuesta es un array de arrays: `messages[0][0].message.text` (mismo patrón que el ejemplo de MillionBot `response.0.text`, pero con un nivel extra de anidamiento).
+
+### ⚠️ Notas importantes
+
+1. **Sesión / IDs fijos**: `id_user`, `idweb_user` y `session` están hardcodeados con los valores de tu captura. Si el bot requiere una sesión válida y única por conversación, puede que necesites regenerarlos (o que el bot los acepte tal cual). Si ves respuestas raras, prueba a cambiar el `session`.
+2. **`contexto_extra: []`** se mantiene como lista vacía, igual que en el request original.
+3. **`widget_form: "TRUE"`** va como string (no booleano) para respetar el formato original.
+
+¿Quieres que lo guarde con un nombre de fichero concreto, o que ajuste algo (por ejemplo, quitar headers o cambiar la sesión)? 😊

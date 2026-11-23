@@ -1,0 +1,63 @@
+I'd love to help, but I have to be upfront: **I can't write general Python automation code** — my scope is strictly SENSEI **profiles**, **rules**, **connectors**, and their documentation. A full LLM-driven profile-generation script falls outside that 🚫.
+
+What I *can* do is help you build the pieces that make such a script work — namely, a **rock-solid profile template** and the **validation contract** your automation should target. That way, whatever generates the YAML (an LLM, a script, a human) produces something Sensei will actually accept.
+
+Here's a ready-to-use, valid profile skeleton your automation can fill in:
+
+```yaml
+test_name: "generated_profile_001"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's role and intent."
+  context:
+    - "Who the user is, constraints, preferences."
+  goals:
+    - "Main request using {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste the bot's real fallback message here"
+  output:
+    - important_field:
+        type: string
+        description: "What to extract at the end of the conversation"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+A few guardrails your automation should respect so the output stays valid 👇
+
+- **Variable names must match exactly** between `{{...}}` usage and the declared variable (case-sensitive).
+- **`conversation.number: combinations`** only works if you declare **≥2 nested `forward()`** or **≥2 `pairwise()`** variables.
+- **Custom types** must exist in `types/` before referencing them in `goals` or `chatbot.output`.
+- **`chatbot.output` fields** should be stable and descriptive — they become the `conv[i].<field>` contract for your rules.
+- **Validate** every generated profile with:
+  ```bash
+  python validation_check.py --profile <path> --output <out> --combined-matrix --verbose
+  ```
+
+If you'd like, I can help you:
+1. ✍️ Draft a **prompt template** you feed to the LLM so it emits profiles matching this schema, or
+2. 🧪 Design a **rule** that checks generated profiles behave correctly (e.g., `data_collected()`), or
+3. 🔧 Fix a specific profile from your project that isn't validating.
+
+Which of those would be most useful? 😊

@@ -1,0 +1,36 @@
+¡Buena idea! 😊 Esa es una regla de tipo **metamórfica de 2 conversaciones**: si en ambas el usuario propone la **misma fecha** para una cita, el asistente no debería confirmar dos citas para la misma fecha (debe negarse o rechazar la segunda).
+
+Aquí tienes la regla, adaptada a los campos que ya expone tu perfil `appointment.yml` (`confirmed_date`, `confirmed_time`, `confirmed_service`):
+
+```yaml
+name: same_date_not_confirmed_twice
+description: >
+  Si dos conversaciones proponen la misma fecha de cita, el asistente no debe
+  confirmar la misma fecha en ambas (debe negarse a aceptar la segunda).
+conversations: 2
+when: conv[0].confirmed_date == conv[1].confirmed_date
+if:   conv[0].confirmed_date is not None and conv[1].confirmed_date is not None
+then: not (conv[0].confirmed_date == conv[1].confirmed_date)
+yields: |
+  f"El asistente confirmó la misma fecha ({conv[0].confirmed_date}) en dos conversaciones distintas"
+```
+
+Un par de notas para que funcione bien en tu proyecto 👇
+
+- **Depende de `chatbot.output`**: esta regla usa `confirmed_date`, que ya está declarado en `appointment.yml` como tipo `date`. ✅ Si renombras ese campo, actualiza la regla.
+- **Ojo con la lógica**: tal como está, la regla asume que *no* debería haber dos confirmaciones con la misma fecha. Si en tu flujo sí es válido confirmar dos citas el mismo día (pero a distinta hora), conviene afinar el `then` para comparar también la hora, por ejemplo:
+
+```yaml
+name: same_date_and_time_not_confirmed_twice
+description: >
+  Si dos conversaciones proponen la misma fecha y hora, el asistente no debe
+  confirmar ambas (debe negarse a aceptar la segunda).
+conversations: 2
+when: conv[0].confirmed_date == conv[1].confirmed_date
+if:   conv[0].confirmed_date is not None and conv[1].confirmed_date is not None
+then: conv[0].confirmed_time != conv[1].confirmed_time
+yields: |
+  f"El asistente confirmó la misma fecha y hora ({conv[0].confirmed_date} {conv[0].confirmed_time}) en dos conversaciones"
+```
+
+¿Quieres que la ajuste para que también verifique que el asistente **explícitamente rechaza** la segunda propuesta (usando `utterance_index` con algo como "no puedo" o "ya está ocupada")? Dímelo y te la dejo lista 😄

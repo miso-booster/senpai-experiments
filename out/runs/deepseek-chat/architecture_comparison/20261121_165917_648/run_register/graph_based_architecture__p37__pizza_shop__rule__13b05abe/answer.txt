@@ -1,0 +1,27 @@
+¡Buena idea! 😊 Esa regla encaja perfecto con el patrón de **oráculos de una sola conversación** usando `utterance_index`, igual que tu regla `ordering_conversation_turns_assistant`. Te propongo esto:
+
+```yaml
+name: assistant_confirms_drink_added
+description: The assistant confirms that the drink the user ordered was added to the order
+conversations: 1
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms the drink was added to the order')
+```
+
+### Por qué está escrita así 🧠
+
+- **`conversations: 1`** → es un oráculo simple, no una regla metamórfica (no compara pares).
+- **`utterance_index('user', 'ordering a drink')`** → localiza el turno en el que el usuario pide la bebida.
+- **`utterance_index('assistant', 'confirms the drink was added to the order')`** → localiza el turno en el que el asistente confirma que la añadió.
+- La comparación `<` garantiza que **la confirmación ocurre después** de que el usuario haga el pedido. Si el asistente nunca confirma, `utterance_index` devuelve un valor que rompe la condición y la regla falla. ✅
+
+### Un par de detalles a tener en cuenta 👀
+
+1. **`utterance_index` es LLM-backed**, así que la descripción en lenguaje natural (`'confirms the drink was added to the order'`) es lo que guía la detección. Cuanto más clara y específica sea, mejor. Si quieres ser más estricto con el matiz de "añadida", puedes afinar la frase, por ejemplo:
+   - `'confirms the drink has been added to the order'`
+   - `'acknowledges adding the requested drink'`
+
+2. **No depende de `chatbot.output`** → es una regla de estilo/diálogo pura, así que funciona aunque el perfil no exponga un campo `drink`. Si en tu perfil sí tienes `drink` en `chatbot.output`, podrías complementarla con una comprobación de que el slot se rellenó (`data_collected()`), pero eso ya sería otra regla.
+
+3. **Nombres de archivo sugeridos**: `assistant_confirms_drink_added.yaml` 📄
+
+¿Quieres que te la adapte también como **regla metamórfica** (por ejemplo, comparando dos conversaciones donde solo cambia la bebida pedida y verificando que en ambas se confirma)? ¡Dímelo y la montamos! 🚀

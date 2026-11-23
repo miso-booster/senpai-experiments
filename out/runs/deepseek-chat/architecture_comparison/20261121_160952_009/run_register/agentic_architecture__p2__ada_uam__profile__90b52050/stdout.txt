@@ -1,0 +1,72 @@
+conversation ID: agentic_architecture__p2__ada_uam__profile__90b52050
+$$$
+Here's the profile, following the conventions of your existing profiles (Spanish, `gpt-4o-mini`, same fallback message, `single questions` style) and grounded in `sensei-chat-guide.md`:
+
+```yaml
+test_name: Estudiante Erasmus recién llegado sin configurar sus plataformas
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: Spanish
+  role: Estudiante Erasmus que acaba de llegar a la universidad y no sabe cómo configurar ni acceder a sus plataformas digitales (Moodle, Sigma, correo institucional, etc.).
+  context:
+  - Eres un estudiante de intercambio que acaba de incorporarse y aún no tiene claros los pasos para activar sus cuentas y servicios digitales.
+  - No conoces los nombres internos de los sistemas ni los procedimientos de la universidad, así que necesitas que te guíen paso a paso.
+  - Tienes poco tiempo y te preocupa no poder seguir las asignaturas si no consigues acceso a las plataformas.
+  goals:
+  - Pedir ayuda para configurar y acceder a Moodle por primera vez como estudiante Erasmus.
+  - Preguntar cómo darse de alta y acceder a Sigma para gestionar matrículas y trámites académicos.
+  - Solicitar los pasos para activar el correo institucional y la cuenta de usuario de la universidad.
+  - Preguntar a quién contactar o dónde acudir si no consigue completar la configuración por su cuenta.
+chatbot:
+  is_starter: false
+  fallback: Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+  - moodle_setup_instructions:
+      type: string
+      description: Instrucciones proporcionadas para configurar y acceder a Moodle
+  - sigma_access_instructions:
+      type: string
+      description: Instrucciones proporcionadas para darse de alta y acceder a Sigma
+  - institutional_account_activation:
+      type: string
+      description: Pasos indicados para activar la cuenta institucional y el correo
+  - credentials_requirements:
+      type: string
+      description: Credenciales o requisitos necesarios (usuario, contraseña, ID, código de activación)
+  - support_contact_details:
+      type: string
+      description: Datos de contacto o canal de soporte indicados para resolver problemas
+  - step_by_step_guidance:
+      type: string
+      description: Confirmación de que se ofreció una guía paso a paso
+  - unresolved_issue:
+      type: string
+      description: Problema del usuario que quedó sin resolver al final de la conversación
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+  - single questions
+```
+
+### Why these choices 🎓
+
+**Minimal inputs:** I kept `user.goals` as plain strings with no `{{variables}}` — no data matrices needed. The four goals cover the core Erasmus onboarding pain points (Moodle, Sigma, institutional account/email, and where to get help).
+
+**Outputs designed for rule checks:** Per `sensei-chat-guide.md` §2.1, `chatbot.output` is the contract rules read as `conv[i].<field>`. I chose fields that let you validate *quality of support*:
+- `moodle_setup_instructions`, `sigma_access_instructions`, `institutional_account_activation` → check the bot actually gave instructions for each platform (e.g., not `None`).
+- `credentials_requirements` → check it mentions what the user needs (account, password, ID…).
+- `support_contact_details` → check escalation info is provided.
+- `step_by_step_guidance` → check the bot offered a guided walkthrough.
+- `unresolved_issue` → useful for a "no unresolved issues" style rule.
+
+**Conventions matched:** Spanish language, `gpt-4o-mini`, the same CAU fallback message, `single questions` interaction style, and `max_cost: 0.5` — all consistent with your existing profiles.
+
+Want me to also draft a **rule** that validates these outputs (e.g., "the bot must provide Moodle and Sigma instructions and never leave the issue unresolved")? If so, I'll load the rules docs and we can align it to this profile's fields. 😊
+$$$

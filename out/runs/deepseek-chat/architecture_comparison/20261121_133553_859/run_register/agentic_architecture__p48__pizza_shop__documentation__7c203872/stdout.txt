@@ -1,0 +1,28 @@
+conversation ID: agentic_architecture__p48__pizza_shop__documentation__7c203872
+$$$
+Hey! 😊 Based on `sensei-chat-guide.md`, here's the breakdown of what's optional in a profile.
+
+## Clearly optional (explicitly marked or defaulted in the docs)
+
+- **`llm`** — the whole block is optional. The FAQ says: *"Do I have to define `llm`? No. If omitted, defaults are applied (e.g., model and temperature) and the format defaults to text."* Add it only when you need overrides or `speech` mode.
+  - Within `llm`, `format.config` is only needed when `format.type: speech`.
+- **`user.context`** — optional. The `personality:` entry is explicitly marked optional, and freeform constraints are just extra context.
+- **`conversation.max_cost`** — explicitly marked *"optional: cap spend for the whole run"*.
+- **`conversation.goal_style.max_cost`** — explicitly marked *"optional: per-conversation cost cap"*.
+- **`goal_style.all_answered.export`** — optional (`true|false`).
+- **`goal_style.all_answered.limit`** — optional safety stop (*"default 30 if omitted"*).
+- **`chatbot.output`** — not strictly required to run a profile; it's the extraction schema. You only need it if you want extracted fields (and for profile-bound rules that read `conv[i].<field>`). If you have no rules depending on outputs, you can skip it.
+- **`conversation.interaction_style`** — the docs describe `default` as the natural behaviour, so you don't need to specify styles explicitly.
+
+## Required in practice (the docs don't mark them optional)
+
+- **`test_name`**
+- **`user.language`**, **`user.role`**, **`user.goals`** (each `{{variable}}` must be declared in `goals`)
+- **`chatbot.is_starter`**, **`chatbot.fallback`** (the docs strongly recommend the *real* bot fallback text to avoid endless loops)
+- **`conversation.number`** and **`conversation.goal_style`** (you must pick one of `steps: N`, `random steps: M`, or `all_answered:`)
+
+## ⚠️ One caveat
+The guide doesn't include a formal "required vs optional" schema table — the optionality above comes from explicit "optional" annotations and the FAQ. If you want to be 100% sure about a specific field (e.g., whether `chatbot.output` can be fully omitted at runtime), I'd recommend validating with `validation_check.py` as described in §8 of the guide.
+
+Want me to draft a minimal profile that omits everything optional, so you can see the smallest valid structure? 🚀
+$$$

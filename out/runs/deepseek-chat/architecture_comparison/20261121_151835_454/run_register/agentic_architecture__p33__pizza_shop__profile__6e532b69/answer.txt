@@ -1,0 +1,83 @@
+Here's how the `chatbot` section fits together for your profile 😊
+
+## What goes in the `chatbot` field
+
+Per the profiles guide (§3 and §6), the `chatbot` section has three parts:
+
+- **`is_starter`** → who opens the conversation. Your simulated user is a *customer seeking information*, so the **bot should greet first** → `is_starter: true`.
+- **`fallback`** → the bot's real fallback message (used to avoid endless loops). I've put a realistic placeholder — **swap in your bot's actual fallback text**.
+- **`output`** → the schema of fields extracted at the end of each conversation. This doubles as the **contract for rules** later (`conv[i].<field_name>`). I've mapped these directly to your user goals.
+
+## Mapping goals → output fields
+
+| User goal | Output field | Type |
+|---|---|---|
+| Available pizza types | `pizza_types` | `list[string]` |
+| Price of a Margarita pizza | `margarita_price` | `currency` |
+| Available drinks + prices | `drink_options` | `list[string]` |
+| Shop operating hours | `opening_hours` | `string` |
+| Do they deliver? | `delivery_available` | `string` |
+
+> ⚠️ Note: `currency` is a **custom type** (§4.2). If you don't already have `types/currency.yml` in your project, either add it or switch `margarita_price` to `float`.
+
+Here's your completed profile:
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+chatbot:
+  is_starter: true
+  fallback: "Sorry, I didn't quite catch that. Could you rephrase your question?"
+  output:
+    - pizza_types:
+        type: list[string]
+        description: "The pizza types/varieties the shop offers"
+    - margarita_price:
+        type: currency
+        description: "The price of a Margarita pizza"
+    - drink_options:
+        type: list[string]
+        description: "The available drinks and their prices"
+    - opening_hours:
+        type: string
+        description: "The shop's operating hours"
+    - delivery_available:
+        type: string
+        description: "Whether the shop offers delivery (yes/no and any details)"
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single questions
+```
+
+## A few things worth double-checking 🔍
+
+1. **`is_starter`** — set to `true` (bot greets first). If your bot actually waits for the user to speak first, flip it to `false`.
+2. **`fallback`** — paste your bot's **real** fallback message here (§9 recommends this to avoid loops).
+3. **`currency` type** — confirm you have `types/currency.yml`. If not, change `margarita_price` to `type: float` (and optionally add a `currency` field).
+4. **`interaction_style`** — the reserved keyword is **`single questions`** (plural), matching the allowed styles list in §5.
+
+Want me to also draft a **rule** that validates these extracted outputs (e.g., "margarita_price must be > 0" or "pizza_types must not be empty")? Just say the word and I'll load the rules docs and build it 🍕✨

@@ -1,0 +1,54 @@
+conversation ID: graph_based_architecture__p48__pizza_shop__documentation__6cac2c55
+$$$
+Great question! 😊 Let me walk you through which fields in a SENSEI profile are **not mandatory** — meaning you can safely omit them and Sensei will still run.
+
+## Optional fields in a profile
+
+### 1. `llm` section — fully optional
+If you omit it, Sensei applies defaults (model, temperature) and the format defaults to `text`. You only need it when you want to override the model, temperature, or switch to `speech` mode.
+
+```yaml
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+```
+
+### 2. `user.context` — optional
+The `context` list (personality references, freeform constraints, preferences) is helpful but not required. You can skip it entirely if your `role` and `goals` are enough.
+
+### 3. `chatbot.is_starter` — optional
+Whether the bot speaks first. If omitted, it defaults sensibly.
+
+### 4. `chatbot.fallback` — optional (but recommended!)
+Not strictly mandatory, but **strongly recommended** — putting your bot's real fallback text here helps avoid endless loops. So: optional, but you really want it. 😅
+
+### 5. `chatbot.output` — optional
+You can omit it if you don't need structured extraction. But remember: **if you want Sensei-check rules to read fields via `conv[i].field`, those fields must exist in `chatbot.output`.** So it's optional in the profile, but required for profile-bound rules.
+
+### 6. `conversation.max_cost` — optional
+A run-wide spend cap. Nice for safety, not required.
+
+### 7. `conversation.goal_style.max_cost` — optional
+Per-conversation cost cap. Same story — optional safety net.
+
+### 8. `conversation.goal_style.all_answered.export` and `.limit` — optional
+`export` defaults to `false`, and `limit` defaults to `30` if omitted.
+
+### 9. `conversation.interaction_style` — optional
+If you don't specify any interaction styles, the simulator behaves naturally (effectively `default`).
+
+---
+
+## Quick mental model 🧠
+
+Think of a profile like a recipe:
+- **Mandatory "ingredients"**: `test_name`, `user` (with `language`, `role`, `goals`), `chatbot`, and `conversation` (with `number` and `goal_style`).
+- **Optional "seasoning"**: `llm`, `context`, `is_starter`, `fallback`, `output`, cost caps, and interaction styles — these make it richer and safer, but the dish still cooks without them.
+
+---
+
+Want me to point to a concrete example from your project? For instance, `general_information_seeker.yaml` includes `llm`, `context`, and `output`, while a minimal profile could drop all three. Just say the word and I'll show a side-by-side! 👀
+$$$

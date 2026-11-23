@@ -1,0 +1,39 @@
+conversation ID: one_node_architecture__p18__alcampo__rule__6a2e6f53
+$$$
+¡Claro que sí! 😊 Vamos a crear una regla que compruebe que el chatbot ha devuelto una lista de juguetes eco-friendly durante la conversación.
+
+Antes de nada, un par de apuntes rápidos para que todo encaje bien:
+
+- En tu perfil `pet_products_inquiry.yaml` ya existe un output llamado **`eco_friendly_toys`** (tipo `string`). La regla se apoyará en ese campo, así que el nombre ya está alineado 👌.
+- Como el output es un `string`, la comprobación más robusta es verificar que **no esté vacío** y que **mencione juguetes**. Si quieres una validación semántica más fina, podemos usar `semantic_content(...)`.
+
+Aquí tienes la regla lista para pegar en `rules/`:
+
+```yaml
+name: eco_friendly_toys_returned
+description: The chatbot returns a list of eco-friendly toys (eco_friendly_toys output is present and non-empty)
+conversations: 1
+active: true
+oracle: eco_friendly_toys is not None and len(str(eco_friendly_toys)) > 0
+yields: f"Expected a list of eco-friendly toys, but got: {eco_friendly_toys}"
+```
+
+Y si prefieres una versión **semántica** (más estricta, usando el helper LLM-backed `semantic_content`), sería así:
+
+```yaml
+name: eco_friendly_toys_semantic
+description: The chatbot returns a list of eco-friendly toys matching the expected content
+conversations: 1
+active: true
+oracle: semantic_content(eco_friendly_toys, "a list of eco-friendly toys, including sustainable materials details")
+yields: f"Eco-friendly toys content mismatch: {eco_friendly_toys}"
+```
+
+Un par de cositas a tener en cuenta 💡:
+
+1. **Nombre del campo**: asegúrate de que en el perfil el output se llame exactamente `eco_friendly_toys` (así está ahora en `pet_products_inquiry.yaml`). Si lo renombras, hay que actualizar la regla.
+2. **Tipo `string` vs `list[string]`**: si quieres que la regla pueda comprobar *cuántos* juguetes se devolvieron (por ejemplo, `len(eco_friendly_toys) > 0` como lista real), te recomendaría cambiar el tipo del output en el perfil a `list[string]`. ¿Quieres que te proponga ese ajuste también? 😊
+3. **`conversations: 1`**: esta regla es de una sola conversación (oráculo clásico), no metamórfica, porque comprueba la presencia del output en cada conversación.
+
+¿Te gustaría que la adapte para que también verifique que se mencionan **materiales sostenibles** (que es otro output del mismo perfil, `sustainable_materials_details`)? ¡Dímelo y la afinamos juntos! 🚀
+$$$

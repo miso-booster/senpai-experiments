@@ -1,0 +1,25 @@
+conversation ID: one_node_architecture__p9__ada_uam__rule__07bd3769
+$$$
+¡Claro que sí! 😊 Vamos a crear una regla que valide que el horario de la biblioteca sea de 9 a 20.
+
+El perfil expone el campo `library_hours` (tipo `string`) en `chatbot.output`, así que la regla puede leerlo directamente como `library_hours`. Para comprobar el horario de forma robusta, uso `semantic_content`, que es un helper LLM-backed ideal para validar contenido en lenguaje natural (el bot puede responder "de 9:00 a 20:00", "9h-20h", "nueve de la mañana a ocho de la tarde", etc.).
+
+```yaml
+name: library_hours_9_to_20
+description: El horario de atención de la biblioteca debe ser de 9 a 20 (perfil Préstamos y Recursos de la Biblioteca)
+conversations: 1
+active: true
+oracle: |
+  library_hours is not None and semantic_content(library_hours, 'horario de atención de la biblioteca de 9:00 a 20:00')
+yields: |
+  f"Horario de biblioteca incorrecto o ausente: {library_hours}"
+```
+
+Un par de notas para que quede clarito 👀:
+
+- **`conversations: 1`** → es una regla de un solo diálogo (oráculo tradicional), no metamórfica.
+- **`library_hours`** viene directo de `chatbot.output` del perfil, así que si algún día renombras ese campo, recuerda actualizar la regla.
+- **`semantic_content`** es LLM-backed, así que puede tener pequeña variabilidad; si quieres algo más estricto y determinista, podrías combinar con `extract_float` para los números, pero perderías la flexibilidad de formatos como "9h-20h". Aquí prioricé la robustez semántica.
+
+¿Quieres que también te haga una variante más estricta basada en `extract_float` para comparar, o lo dejamos así? 🙌
+$$$

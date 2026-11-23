@@ -1,0 +1,83 @@
+# YAML Connector for SAIC Málaga 🚀
+
+Here's the YAML connector based on your request. I've kept the essential headers (the ones that actually matter for the API to work) and mapped the payload exactly as in your example:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Why these choices? 👀
+- **`response_path: "response.0.text"`** → the bot's reply lives at `response[0].text` in the JSON.
+- **Headers** → I kept `Content-Type`, `Authorization`, `Origin`, `Referer`, and `User-Agent` since those are the ones that typically matter for CORS/API gateways. The rest (`Sec-Fetch-*`, `Priority`, `Pragma`, etc.) are browser noise and not needed.
+- **`{user_msg}`** → placeholder that gets replaced with each message you send.
+
+Save it as something like `saic-malaga.yml` inside your `connectors` folder.
+
+---
+
+# Python Script to Send Multiple Requests 🐍
+
+This script loads the connector and fires several messages through it, printing each reply:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+# Path to your YAML connector
+CONNECTOR_PATH = "connectors/saic-malaga.yml"
+
+# Messages to send
+messages = [
+    "hola",
+    "¿Cómo puedo pedir cita previa?",
+    "¿Cuál es el horario de atención?",
+    "Gracias, ¡hasta luego!",
+]
+
+def main():
+    bot = CustomChatbot(CONNECTOR_PATH)
+
+    for i, msg in enumerate(messages, start=1):
+        print(f"\n[{i}/{len(messages)}] 👤 Usuario: {msg}")
+        success, response = bot.execute_with_input(msg)
+
+        if success:
+            print(f"🤖 Bot: {response}")
+        else:
+            print(f"⚠️ Error: {response}")
+
+if __name__ == "__main__":
+    main()
+```
+
+### What this does 🧠
+1. **Loads** the YAML connector via `CustomChatbot`.
+2. **Loops** through a list of messages.
+3. **Sends** each one with `execute_with_input()`.
+4. **Prints** the bot's reply (or the error if something goes wrong).
+
+### Handy tips 💡
+- If you want to **pause between requests** (to be gentle on the API), add `import time` and `time.sleep(1)` inside the loop.
+- If you want to **save the conversation** to a file, just open a file handle before the loop and write each `response` to it.
+- If the bot returns HTML (like `<p>¡Buenos días!...</p>`), you can strip tags with `re.sub(r"<[^>]+>", "", response)` for cleaner output.
+
+Want me to extend the script to log results to a file, or add a small CLI so you can type messages interactively? Just say the word 😊

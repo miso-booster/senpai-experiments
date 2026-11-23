@@ -1,0 +1,80 @@
+¡Claro que sí! 😊 Me encanta la idea, y además tengo buenas noticias: ya tienes un perfil en tu proyecto que cubre justo eso. Déjame mostrártelo y te propongo cómo adaptarlo a lo que necesitas.
+
+## 👀 Lo que ya tienes
+
+En tu proyecto `ada_uam` existe el perfil **"Consultante de servicios y asistencia del CAU"** (`consultante_de_servicios_y_asistencia_del_cau.yaml`), y su `chatbot.output` ya incluye exactamente los campos que buscas:
+
+- `contact_email` → correo electrónico del CAU
+- `contact_phone` → número de teléfono del CAU
+- `physical_address` → dirección física del CAU
+- `service_hours` → horas de servicio del CAU
+
+Así que podrías reutilizarlo tal cual, o crear uno nuevo más enfocado. Te dejo una propuesta limpia y lista para usar 👇
+
+## ✨ Perfil propuesto: `soporte_cau_contacto.yaml`
+
+```yaml
+test_name: "Soporte CAU - Datos de contacto"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario que necesita obtener los datos de contacto del Centro de Atención
+    a Usuarios (CAU) de la UAM para resolver una incidencia.
+  context:
+    - "Eres miembro de la comunidad universitaria y tienes una incidencia que quieres resolver cuanto antes."
+    - "Prefieres contactar por teléfono, pero también te interesa el correo y la ubicación física."
+    - "Quieres saber en qué horario puedes acudir o llamar."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir el correo electrónico de contacto del CAU."
+    - "Preguntar por la dirección física donde se encuentra el CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.3
+  interaction_style:
+    - single questions
+```
+
+## 🧠 Por qué está montado así
+
+- **`chatbot.output`** es el contrato con las reglas de Sensei-check: cada campo (`contact_phone`, `contact_email`, etc.) podrá leerse luego como `conv[i].contact_phone`, etc. Los nombres son estables y descriptivos 👍
+- **`goal_style.steps: 20`** es suficiente para 4 preguntas cortas, y el `max_cost` mantiene el gasto controlado.
+- **`interaction_style: single questions`** hace que el usuario pregunte de una en una, lo que encaja perfecto con "quiero conseguir estos 4 datos".
+- **`fallback`** usa el mensaje real del bot de la UAM para evitar bucles raros.
+
+## 🔧 Ajustes que quizá quieras hacer
+
+- Si quieres **más variedad de conversaciones**, sube `conversation.number` (por ejemplo a 5).
+- Si prefieres que el usuario **pregunte todo de golpe**, cambia `single questions` por `all questions`.
+- Si quieres **probar la robustez** del bot, añade estilos como `make spelling mistakes` o `long phrases` dentro de un `random:`.
+
+¿Quieres que te lo adapte con algún estilo de interacción concreto, o que te ayude a escribir una regla de Sensei-check que valide que los cuatro campos vienen informados? 😊

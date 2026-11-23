@@ -1,0 +1,60 @@
+I'd love to help, but I have to be upfront: writing a general-purpose Python automation script (LLM-driven profile generator) falls outside what I can do here — I'm scoped to Sensei **profiles**, **rules**, **connectors**, and their documentation 😊.
+
+That said, I *can* help you in a very practical way: I can give you a **ready-to-use Sensei profile template** that an LLM (or you) can fill in, plus a **validation checklist** so whatever the LLM produces is guaranteed to be structurally valid. That's usually the hard part of "automating profile creation" anyway — the LLM part is easy, the *validity* part is what breaks.
+
+Here's a solid, valid starter profile you can use as the target schema for your automation:
+
+```yaml
+test_name: "generated_profile_template"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's role and intent in one or two sentences."
+  context:
+    - "Relevant background, constraints, or preferences."
+  goals:
+    - "Main request using {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste the bot's real fallback message here"
+  output:
+    - extracted_field:
+        type: string
+        description: "What to extract at the end of the conversation"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+And here's the **validation checklist** your automation should enforce on any LLM-generated profile (this is the part that actually makes it "valid"):
+
+- ✅ Every `{{variable}}` in `goals` strings has a matching declaration in `goals` (exact, case-sensitive name).
+- ✅ Every declared variable has `function`, `type`, and `data`.
+- ✅ `function` is one of: `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `pairwise()`.
+- ✅ `type` in `user.goals` is only `int`, `float`, `string`, or a **custom type** defined in `types/` (no `list`, `time`, `date` here).
+- ✅ `type` in `chatbot.output` can be primitives, `time(...)`, `date(...)`, `list[...]`, or custom types.
+- ✅ `conversation.number` is an int, or `combinations(...)` **only if** ≥2 nested `forward()` or ≥2 `pairwise()` variables exist.
+- ✅ `interaction_style` entries are only from the reserved keywords (`long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, `random: [...]`).
+- ✅ `random(n)` / `another(n)` have `n ≤ len(data)`.
+- ✅ `chatbot.fallback` is the bot's real fallback text (prevents loops).
+- ✅ Run `validation_check.py --profile <file> --combined-matrix --verbose` after generation.
+
+If you want, I can help you **design the profile schema** your automation should target (e.g., a JSON schema mirroring the YAML above), or **review a specific generated profile** for validity — just paste it and I'll check it field by field 🔍.

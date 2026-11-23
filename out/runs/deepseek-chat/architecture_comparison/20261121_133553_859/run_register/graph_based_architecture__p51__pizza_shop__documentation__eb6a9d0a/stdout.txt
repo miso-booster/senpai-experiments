@@ -1,0 +1,56 @@
+conversation ID: graph_based_architecture__p51__pizza_shop__documentation__eb6a9d0a
+$$$
+Hey there! 😊 Great question — connectors are basically the **bridge** between Sensei and your chatbot. Let me walk you through it!
+
+## What connectors are for 🔌
+
+A **connector** is a small YAML file that tells Sensei *how to talk to your chatbot's API* — no code needed! It describes:
+
+- **Where** to send messages (the URL and endpoint)
+- **How** to send them (HTTP method, headers, payload structure)
+- **Where** to find the bot's reply in the response
+
+So when Sensei runs a profile, it uses the connector to actually send each simulated user message to your bot and read back the answer. Think of it like a phone book + dialing instructions for your bot 📞
+
+## The fields 📋
+
+Here's the full set of configuration fields:
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | **Yes** |
+| `send_message.path` | API endpoint path (appended to `base_url`) | **Yes** |
+| `send_message.method` | HTTP method (POST, GET, PUT, DELETE) | No (default: POST) |
+| `send_message.headers` | Custom headers (e.g., Authorization) | No |
+| `send_message.payload_template` | JSON structure with `{user_msg}` placeholder | **Yes** |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | **Yes** |
+
+## A quick example 🍕
+
+Here's one of your own connectors (`postman.yaml`) — nice and simple:
+
+```yaml
+name: Echo Bot
+base_url: "https://postman-echo.com"
+send_message:
+  method: POST
+  path: /post
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+A couple of things worth highlighting:
+
+- **`{user_msg}`** is the magic placeholder — that's where Sensei drops the simulated user's message each turn.
+- **`response_path`** uses dot notation to dig into the JSON. For example, `"response.0.text"` (like in your `ada-uam.yaml`) means `response[0]["text"]`, and `"messages.0.content"` (like in `metro-madrid.yml`) means `messages[0]["content"]`.
+
+## Handy tips 💡
+
+- Check your bot's API docs to get the exact `response_path` right — that's the most common thing to get wrong!
+- Add auth headers under `send_message.headers` if your bot needs them (your Ada UAM connector does this with an `Authorization` header).
+- You can test a connector quickly in a Python shell before running a full profile.
+
+Want me to help you build or fix a connector for a specific bot? Just tell me the API details and I'll help you shape it! 🙌
+$$$

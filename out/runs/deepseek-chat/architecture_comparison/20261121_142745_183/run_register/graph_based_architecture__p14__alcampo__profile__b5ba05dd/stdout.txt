@@ -1,0 +1,112 @@
+conversation ID: graph_based_architecture__p14__alcampo__profile__b5ba05dd
+$$$
+¡Hola! 😊 ¡Qué buena idea! Un perfil que ponga a prueba las recomendaciones de recetas y la planificación de menús es súper útil para un chatbot de supermercado como Alcampo. Vamos a ello.
+
+Antes de escribir el YAML, déjame contarte lo que he visto en tu proyecto: ya tienes un perfil llamado **`recipe_management_and_cooking_support`** que toca el tema de recetas (la función "La Cocina de Alcampo", búsqueda por temporada, añadir ingredientes a la lista de la compra…). Lo que tú quieres ahora va un pasito más allá: **recomendaciones concretas de recetas y planificación de menús** (por ejemplo, menús semanales, menús para una ocasión, ajustes por número de comensales, etc.).
+
+Así que te propongo un perfil nuevo, distinto y complementario. Aquí lo tienes 👇
+
+```yaml
+test_name: "recipe_recommendations_and_menu_planning"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a home cook planning meals for the week and looking for recipe
+    recommendations and help building a menu. You want dishes that fit your
+    schedule, your dietary preferences, and the ingredients available at Alcampo.
+  context:
+    - personality: personalities/conversational-user
+    - "You cook at home most days but have limited time on weekdays."
+    - "You prefer seasonal ingredients and want to keep the menu varied and balanced."
+    - "You are cooking for {{diners}} people and want portions to match."
+  goals:
+    - "Ask the chatbot to recommend {{recipe_count}} recipes for a {{meal_type}} using {{main_ingredient}}."
+    - "Request a weekly menu plan for {{diners}} people that includes {{dietary_preference}} options."
+    - "Ask which ingredients from the recommended recipes are available at Alcampo and how to add them to your shopping list."
+    - "Inquire about seasonal fruits and vegetables to include in the menu."
+    - "Ask for a lighter alternative to one of the suggested dishes."
+    - recipe_count:
+        function: random()
+        type: int
+        data: [2, 3, 4]
+    - meal_type:
+        function: forward()
+        type: string
+        data: [lunch, dinner]
+    - main_ingredient:
+        function: pairwise()
+        type: string
+        data: [chicken, salmon, chickpeas, pasta, vegetables]
+    - diners:
+        function: random()
+        type: int
+        data: [2, 4, 6]
+    - dietary_preference:
+        function: pairwise()
+        type: string
+        data: [vegetarian, lactose-free, low-calorie, high-protein]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recommended_recipes:
+        type: list[string]
+        description: "Names of the recipes recommended by the chatbot"
+    - weekly_menu:
+        type: string
+        description: "The proposed weekly menu plan"
+    - recipe_ingredients:
+        type: list[string]
+        description: "Ingredients listed for the recommended recipes"
+    - shopping_list_instructions:
+        type: string
+        description: "How to add recipe ingredients to the shopping list"
+    - seasonal_produce:
+        type: list[string]
+        description: "Seasonal fruits and vegetables mentioned"
+    - lighter_alternative:
+        type: string
+        description: "Lighter alternative dish suggested"
+    - dietary_options:
+        type: string
+        description: "Dietary-friendly options offered"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.5
+  goal_style:
+    steps: 25
+  interaction_style:
+    - single questions
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+### Un par de notas para que lo disfrutes al máximo 👀
+
+- **Variables con `{{...}}`**: cada variable declarada en `goals` se usa en los textos de los objetivos. Fíjate que `recipe_count`, `meal_type`, `main_ingredient`, `diners` y `dietary_preference` aparecen todos en las frases de arriba. ✅
+- **`pairwise()`**: lo usé en `main_ingredient` y `dietary_preference` para cubrir combinaciones de forma eficiente sin explotar el número de casos. Como hay dos funciones `pairwise()`, puedes usar `combinations(...)` en `conversation.number` (por eso puse `combinations(0.6, pairwise)`).
+- **`forward()`** en `meal_type` para iterar de forma determinista entre comida y cena.
+- **`chatbot.output`**: aquí definí campos pensados para que luego puedas escribir reglas de Sensei-check sobre ellos (por ejemplo, que `recommended_recipes` no esté vacío, o que `seasonal_produce` contenga algo). Recuerda que en las reglas los leerás como `conv[i].recommended_recipes`, etc.
+- **`fallback`**: copié el mensaje real de tu bot de Alcampo para evitar bucles raros.
+- **`interaction_style`**: dejé `single questions` fijo y un `random` con estilos suaves (faltas de ortografía y frases largas) para darle algo de variedad sin volverlo caótico.
+
+### ¿Quieres afinarlo? 🛠️
+
+Puedo ayudarte a:
+- Añadir **más variables** (por ejemplo, `budget`, `cooking_time`, `occasion` para cenas especiales).
+- Cambiar los **tipos de salida** (usar `money` para un presupuesto, `int` para número de comensales, etc.).
+- Ajustar el **número de conversaciones** o los **límites de coste**.
+- Revisar que **no choque** con tu perfil existente `recipe_management_and_cooking_support`.
+
+¿Te gustaría que lo adapte a algún caso concreto (menú semanal, menú para una ocasión especial, menú económico…)? ¡Dime y lo pulimos juntos! 😄
+$$$

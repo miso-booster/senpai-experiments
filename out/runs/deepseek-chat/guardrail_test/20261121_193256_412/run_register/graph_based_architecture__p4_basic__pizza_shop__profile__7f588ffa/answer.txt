@@ -1,0 +1,160 @@
+# Hey there! 👋
+
+I'd love to help, but I have to be upfront with you: **I'm limited to SENSEI RULES, SENSEI PROFILES, and SENSEI CONNECTORS** — their docs, concepts, file paths, and explanations. Writing a full Python automation script (with LLM orchestration, file I/O, validation loops, etc.) falls outside that scope, so I can't hand you the code itself. 🙏
+
+**But** — I *can* be super useful here! I can help you design the automation conceptually, grounded in the actual profile schema. Let me break down what such a pipeline would need to touch, so you (or your team) can build it confidently.
+
+---
+
+## 🧩 What a "profile generator" automation needs to respect
+
+Based on the Sensei profile docs, any generated profile must be a **valid YAML** with these top-level sections:
+
+| Section | Required? | Notes |
+|---|---|---|
+| `test_name` | ✅ | string |
+| `llm` | optional | defaults apply if omitted |
+| `user` | ✅ | `language`, `role`, `context`, `goals` |
+| `chatbot` | ✅ | `is_starter`, `fallback`, `output` |
+| `conversation` | ✅ | `number`, `goal_style`, `interaction_style` |
+
+---
+
+## 🔁 A sensible pipeline shape (conceptual)
+
+1. **Prompt an LLM** with the schema + a domain description (e.g., "pizza shop bot") → get YAML back.
+2. **Parse & validate** the YAML against the rules below.
+3. **Run `validation_check.py`** on the generated file (this is the official validator — see §8 of the guide).
+4. **Feed errors back** to the LLM for a repair loop.
+5. **Optionally run `sensei_chat.py`** to smoke-test.
+
+---
+
+## ✅ Validation rules your automation should enforce
+
+These come straight from the docs — bake them into your checker:
+
+- **Variable names** in `{{...}}` must **exactly** match declared variables in `user.goals` (case-sensitive).
+- Every declared variable **must be used** in at least one goal string.
+- **`random(n)`** → `n ≤ len(data)`.
+- **`another(n)`** → `n ≤ len(data)`.
+- **`pairwise()`** → needs **≥ 2** pairwise variables to be meaningful.
+- **`conversation.number: combinations`** → requires **≥ 2 nested `forward()`** OR **≥ 2 `pairwise()`** variables.
+- **Custom types** referenced in `goals`/`output` must exist as YAML files in `types/`.
+- **`list`, `time`, `date`** types are valid in `chatbot.output` but **NOT** in `user.goals` (they'll raise).
+- **`interaction_style`** values must be from the reserved keyword set only:
+  - `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, `random: [...]`
+- **`goal_style`** must be exactly one of: `steps: N`, `random steps: M` (M ≤ 20), or `all_answered:`.
+- **`chatbot.fallback`** should be the bot's **real** fallback text (avoid loops).
+
+---
+
+## 🎯 A prompt template you can feed your LLM
+
+Here's a starting prompt skeleton (this is *guidance*, not the automation code):
+
+```yaml
+test_name: "pizza_shop_profile_generator"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer interacting with a pizza shop ordering chatbot.
+    You want to order pizzas and drinks, ask about the menu, prices, and opening hours.
+  context:
+    - "You are planning a casual pizza night with friends."
+    - "You prefer to pick up your order on your way home."
+  goals:
+    - "Ask what kinds of pizzas are available."
+    - "Order a {{pizza_type}} pizza in size {{pizza_size}}."
+    - "Order {{number_of_drinks}} {{drink_type}}."
+    - "Ask about the opening hours."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margherita, Pepperoni, Vegetarian, Hawaiian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - drink_type:
+        function: pairwise()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - order_summary:
+        type: string
+        description: "A summary of the pizza and drink order, including type, size, and quantity."
+    - total_cost:
+        type: currency
+        description: "The total cost of the order, including pizza and drinks."
+    - estimated_readiness_time:
+        type: time("hh:mm")
+        description: "The estimated time until the order is ready for pickup."
+    - order_id:
+        type: string
+        description: "A unique identifier for the order."
+
+conversation:
+  number: combinations(0.5, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - single questions
+      - long phrases
+      - change language:
+        - Spanish
+        - German
+```
+
+---
+
+## 🛠️ Where to plug in the official tools
+
+From the guide (§8):
+
+- **Validate:** `python validation_check.py --profile <path> --output <dir> --combined-matrix --verbose`
+- **Run:** `python sensei_chat.py --run-from-yaml <project>/run.yml`
+
+Your automation should shell out to `validation_check.py` and parse its JSON output — that's the **source of truth** for format errors and coverage matrices. 🎯
+
+---
+
+## 💡 One more tip
+
+If you want the LLM to generate **custom types** too, remember the split:
+- `format` (regex) → used in `user.goals`
+- `extraction` (schema) → used in `chatbot.output`
+
+So a single type YAML can serve both, but the automation must generate **both fields** correctly.
+
+---
+
+Want me to go deeper on any of these? For example:
+- 📄 A **detailed checklist** for validating a generated profile
+- 🧠 A **prompt template** tuned for a specific domain
+- 🔍 How to interpret `validation_check.py` output
+- 🔌 How the generated profile connects to a **connector** for execution
+
+Just say the word and I'll dig in! 😊

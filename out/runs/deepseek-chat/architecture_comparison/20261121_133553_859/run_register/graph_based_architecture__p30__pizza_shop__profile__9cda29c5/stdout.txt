@@ -1,0 +1,113 @@
+conversation ID: graph_based_architecture__p30__pizza_shop__profile__9cda29c5
+$$$
+Hey there! 😊 Happy to help you build that profile — a rude, impatient pizza customer is a fun one to simulate! Let me walk you through it.
+
+## Quick heads-up on the pairwise requirement ⚠️
+
+You asked for **2 variables with `pairwise()`** so the conversation number can come from the pairwise matrix. That's exactly right — a minimum of **two pairwise functions** is needed to define `conversation.number: combinations(...)`. 
+
+One small thing to keep in mind: `pairwise()` needs **at least 2 items** in each variable's `data` list to generate meaningful combinations. I'll make sure both pairwise variables have enough options. 👍
+
+## The profile
+
+Here's a complete, runnable profile. Save it as `profiles/rude_fast_pizza_order.yml`:
+
+```yaml
+test_name: "rude_fast_pizza_order"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer ordering a pizza. You are in a hurry and
+    you make that very clear. You speak bluntly, interrupt, and show irritation if
+    things are not handled quickly. You still want your order placed correctly, but
+    you have zero patience for small talk or delays.
+  context:
+    - personality: personalities/rude-user
+    - "You are ordering on your lunch break and only have a few minutes."
+    - "You get annoyed if the bot asks too many questions or is slow to respond."
+  goals:
+    - "Demand a {{size}} {{pizza_type}} pizza, right now."
+    - "Tell them to add {{topping}} and make it quick."
+    - "Order {{quantity}} {{drink}} and don't waste my time."
+    - "Ask how long it will take and how much it costs."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Vegetarian, Four cheese]
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large, extra large]
+    - topping:
+        function: forward()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives]
+    - quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - drink:
+        function: another()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - order_summary:
+        type: string
+        description: "Summary of the pizza and drink order, including type, size, toppings, and drinks."
+    - total_cost:
+        type: money
+        description: "The total cost of the order, including currency symbol."
+    - estimated_time:
+        type: time
+        description: "The estimated time until the order is ready."
+    - order_id:
+        type: string
+        description: "The order identifier or confirmation number."
+
+conversation:
+  number: combinations(1, pairwise)   # driven by the two pairwise variables
+  goal_style:
+    steps: 6
+    max_cost: 0.15
+  interaction_style:
+    - long phrases
+    - random:
+        - make spelling mistakes
+        - change your mind
+```
+
+## What's going on here 👀
+
+- **4 goals with 4 variables** — `pizza_type`, `size`, `topping`, and `quantity` (plus `drink`, which is a bonus for the order). Each `{{variable}}` in the goal strings matches a declared variable exactly. ✅
+- **2 pairwise variables** — `pizza_type` and `size` both use `pairwise()`, so `conversation.number: combinations(1, pairwise)` will pull the full pairwise coverage matrix. 🎯
+- **Rude & fast persona** — the `role` and `context` set the tone, and I referenced `personalities/rude-user` (the same one your other profiles use). If that file doesn't exist in your `personalities/` folder, either create it or drop that line.
+- **`forward()` on `topping` and `quantity`** — deterministic iteration keeps things tidy without exploding the matrix.
+- **`another()` on `drink`** — cycles through options without repeats until exhausted.
+
+## A couple of things to double-check before running 🔍
+
+1. **`money` and `time` types** — your other profiles use `money` and `time` in `chatbot.output`, so I matched that convention. Just make sure those custom types exist in your `types/` folder (or swap to `currency` / `time("hh:mm")` if that's what you have).
+2. **`personalities/rude-user`** — confirm the file exists, otherwise remove that context line.
+3. **Validate it** with:
+   ```bash
+   python validation_check.py --profile profiles/rude_fast_pizza_order.yml --output /abs/path/to/output --combined-matrix --verbose
+   ```
+   This will show you the pairwise matrix so you can confirm the conversation count looks right. 😊
+
+Want me to tweak the tone (more aggressive? passive-aggressive?), adjust the number of goals, or swap any of the variables? Just say the word! 🍕
+$$$

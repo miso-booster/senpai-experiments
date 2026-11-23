@@ -1,0 +1,52 @@
+conversation ID: graph_based_architecture__p50__pizza_shop__documentation__673251ba
+$$$
+Great question! 😊 Let me break it down for you.
+
+## What is an oracle? 🔮
+
+In testing, an **oracle** is simply **the mechanism that tells you whether a test passed or failed** — it's the "source of truth" you compare your results against.
+
+Think of it like a referee in a football match ⚽: the players do their thing, but the referee decides whether a goal counts or not. In testing, the oracle is that referee.
+
+## How it works in Sensei-check 📋
+
+In Sensei-check rules, the `oracle:` field is a **Python expression** that evaluates to `True` (pass) or `False` (fail) for a conversation (or set of conversations).
+
+Here's a simple example from your own project:
+
+```yaml
+name: only_talks_about_pizzas
+description: The chatbot only talks about pizzas
+conversations: 1
+oracle: only_talks_about('pizza orders, drink orders, information on delivery of pizzas, information about the pizza shop')
+```
+
+Here, the oracle is `only_talks_about(...)` — if the chatbot stays on topic, it returns `True` ✅; if it drifts off-topic, it returns `False` ❌.
+
+## The "oracle problem" 🧩
+
+Here's the tricky part: for many chatbot behaviors, **there's no single "correct answer"** to compare against. A bot can phrase the same answer a hundred different ways and all be valid. That's called the **oracle problem**.
+
+That's exactly why Sensei-check supports **metamorphic rules** — instead of checking absolute answers, you check **relations** between conversations. For example, in your project:
+
+```yaml
+name: more_toppings_cost_more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+You don't need to know the *exact* price — you just know that **more toppings ⇒ higher price**. The relation itself is the oracle! 🎯
+
+## Two flavors in Sensei-check 🍦
+
+| Style | Field used | When to use |
+|-------|-----------|-------------|
+| **Simple oracle** | `oracle:` | Single-conversation checks (e.g., "price ≥ 10") |
+| **Metamorphic (`if`/`then`)** | `if:` + `then:` | Comparing conversations (e.g., "more toppings ⇒ more cost") |
+
+Both ultimately produce a pass/fail verdict — they're just different ways of expressing what "correct" means.
+
+Want me to help you write an oracle for a specific check you have in mind? 😊
+$$$

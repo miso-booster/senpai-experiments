@@ -1,0 +1,36 @@
+conversation ID: one_node_architecture__p38__pizza_shop__rule__f2b879d1
+$$$
+Great question! 😊 Since your `order_id` field lives in `chatbot.output` (I can see it in profiles like `pizza_and_drink_order_placement.yaml` and `pizza_order_test_custom.yml`), a rule checking that the chatbot actually provided an order ID is a **single-conversation oracle** — we just verify the extracted `order_id` is present and non-empty.
+
+Here's how I'd write it:
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must provide a non-empty order ID at the end of the conversation
+conversations: 1
+active: true
+oracle: order_id is not None and str(order_id).strip() != ''
+yields: f"The chatbot did not provide a valid order ID, got: {order_id}"
+```
+
+A few notes on the design 👇
+
+- **`conversations: 1`** — this is a per-conversation check, not a metamorphic one, so a single conversation is enough.
+- **`order_id is not None`** — guards against the extractor returning `None` when nothing was found.
+- **`str(order_id).strip() != ''`** — catches empty or whitespace-only strings, which would otherwise "pass" a naive truthiness check.
+- **`yields`** — gives you a friendly failure message showing exactly what was extracted, which makes debugging way easier 🔍
+
+If you'd rather keep it minimal and rely on the extractor's null handling, this shorter version also works:
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must provide an order ID
+conversations: 1
+active: true
+oracle: order_id is not None
+```
+
+One thing to double-check ✅: make sure the profile you're running this against actually declares `order_id` in its `chatbot.output` (both `pizza_and_drink_order_placement.yaml` and `pizza_order_test_custom.yml` do, so you're covered there). If a profile doesn't expose `order_id`, the rule won't have anything to read.
+
+Want me to also add a **global uniqueness** companion rule (e.g. `is_unique('order_id')` across all conversations)? That pairs really nicely with this one 😄
+$$$

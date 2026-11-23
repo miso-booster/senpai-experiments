@@ -1,0 +1,39 @@
+Hey there! 😊 Happy to help you write that rule. Let me walk you through it.
+
+## The rule
+
+```yaml
+name: small_pizza_price_floor
+description: A small pizza should cost at least $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+## Why it's built this way
+
+- **`conversations: 1`** — this is a simple single-conversation oracle (not metamorphic), since we're checking one absolute expectation.
+- **`when: size == 'small'`** — filters so the rule only applies to conversations where a small pizza was ordered. In single-conversation rules you can reference fields directly (no `conv[0].` prefix needed).
+- **`extract_float(price) >= 10`** — parses the numeric value out of the price string (e.g. `"10.50 EUR"` → `10.5`) instead of doing fragile substring checks.
+- **`currency(price) == 'USD'`** — makes sure the price is actually in dollars, so a `"9 GBP"` doesn't accidentally pass.
+
+## A quick heads-up 👀
+
+This rule assumes your SENSEI Chat profile exposes `size` and `price` in its `chatbot.output`. Looking at your existing rules (like `more_toppings_cost_more`), you already reference `conv[0].size` and `conv[0].price` — so those fields exist. 
+
+One thing to double-check: your `more_toppings_cost_more` rule uses `extract_float(conv[0].price)` but doesn't check currency. If your pizza shop prices in something other than USD, just swap `'USD'` for the right ISO code (e.g. `'EUR'`, `'GBP'`).
+
+## If you want "exactly $10" instead of "at least $10"
+
+Just change the comparison:
+
+```yaml
+name: small_pizza_price
+description: Small pizzas cost exactly 10 USD
+conversations: 1
+oracle: extract_float(price) == 10 and currency(price) == 'USD'
+```
+
+But I'd gently recommend the `>=` version — "at least $10" is usually the safer invariant for a base price floor, since toppings or extras could legitimately push a small pizza above $10. 😊
+
+Want me to also add a matching rule for medium/large sizes, or tweak this one to fit your exact pricing?

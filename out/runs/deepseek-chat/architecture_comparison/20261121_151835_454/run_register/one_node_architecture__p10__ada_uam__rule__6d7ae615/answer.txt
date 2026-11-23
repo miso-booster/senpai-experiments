@@ -1,0 +1,111 @@
+¡Claro que sí! 😊 Este perfil es ideal para probarlo con reglas que verifiquen que el chatbot realmente está entregando la información que el usuario pide (links, fechas, procedimientos, etc.).
+
+Antes de las reglas, un par de observaciones rápidas sobre tu perfil que conviene tener en cuenta 👀:
+
+- Tienes `application_fee` con `type: money`, pero **`money` no es un tipo por defecto** (los válidos son `int`, `float`, `string`, `time(...)`, `date(...)`, `list[...]` o un tipo custom en `types/`). Si no tienes un `types/money.yml`, esa extracción fallará. Te sugiero `currency` (custom) o `float`.
+- `welcome_day_time` con `type: time` sin formato está bien, pero si quieres algo más robusto puedes usar `time("hh:mm")`.
+- `conversation.number: 6` con dos `forward()` anidados genera una matriz de 6×6=36 combinaciones; con `number: 6` solo se ejecutan 6. Está bien para un smoke test, pero si quieres cubrir más, considera `combinations(0.5, forward)`.
+
+Ahora sí, aquí van reglas pensadas para este perfil 👇
+
+**1) Que el chatbot entregue los links clave que el usuario pide (admisión, lista de espera, futuros estudiantes, Welcome Day):**
+
+```yaml
+name: admisiones_links_presentes
+description: El chatbot entrega los enlaces clave de admisión, lista de espera, futuros estudiantes y Welcome Day
+conversations: 1
+active: true
+oracle: |
+  conv[0].admission_to_grados_link is not None
+  and conv[0].waitlist_info_link is not None
+  and conv[0].future_students_link is not None
+  and conv[0].welcome_day_link is not None
+yields: |
+  f"Faltan enlaces: admisión={conv[0].admission_to_grados_link}, lista_espera={conv[0].waitlist_info_link}, futuros={conv[0].future_students_link}, welcome={conv[0].welcome_day_link}"
+```
+
+**2) Que la fecha y hora del Welcome Day estén bien formadas (no vacías y con formato coherente):**
+
+```yaml
+name: welcome_day_fecha_hora_validas
+description: La fecha y hora del Welcome Day deben estar presentes y bien formadas
+conversations: 1
+active: true
+oracle: |
+  conv[0].welcome_day_date is not None
+  and conv[0].welcome_day_time is not None
+yields: |
+  f"Welcome Day incompleto: fecha={conv[0].welcome_day_date}, hora={conv[0].welcome_day_time}"
+```
+
+**3) Que el chatbot responda en español (consistencia de idioma, regla global):**
+
+```yaml
+name: responde_en_espanol
+description: El chatbot responde en español durante toda la conversación
+conversations: 1
+active: true
+oracle: language(chatbot_phrases) == 'ESP'
+yields: f"El chatbot no respondió en español: {language(chatbot_phrases)}"
+```
+
+**4) Que el chatbot no se salga del dominio (admisión, grados, cursos, Welcome Day, CAU):**
+
+```yaml
+name: solo_habla_de_admisiones
+description: El chatbot se mantiene dentro del dominio de admisiones, grados, cursos y Welcome Day
+conversations: 1
+active: true
+oracle: |
+  only_talks_about(
+    'proceso de admisión, grados y cursos ofrecidos, lista de espera, Welcome Day, información para futuros estudiantes, contacto de admisiones'
+  ) is True
+yields: f"Respuestas fuera de dominio: {only_talks_about('proceso de admisión, grados y cursos ofrecidos, lista de espera, Welcome Day, información para futuros estudiantes, contacto de admisiones')}"
+```
+
+**5) Que el chatbot no repita respuestas (calidad conversacional):**
+
+```yaml
+name: no_repite_respuestas
+description: El chatbot no repite respuestas idénticas durante la conversación
+conversations: 1
+active: true
+oracle: |
+  not repeated_answers(method='exact', threshold=1)
+yields: f"Respuestas repetidas: {repeated_answers(method='exact', threshold=1)}"
+```
+
+**6) Que el proceso de inscripción y los requisitos de admisión se recojan (cobertura de slots):**
+
+```yaml
+name: admision_slots_clave_cubiertos
+description: El chatbot cubre los slots clave de admisión (requisitos, proceso de inscripción, contacto)
+conversations: 1
+active: true
+oracle: |
+  conv[0].admission_requirements is not None
+  and conv[0].enrollment_process is not None
+  and conv[0].contact_admissions is not None
+yields: |
+  f"Slots de admisión faltantes: requisitos={conv[0].admission_requirements}, inscripción={conv[0].enrollment_process}, contacto={conv[0].contact_admissions}"
+```
+
+**7) (Metamórfica, opcional) Que el grado solicitado aparezca en la lista de grados disponibles:**
+
+```yaml
+name: grado_solicitado_en_lista
+description: El grado que el usuario pide aparece en la lista de grados disponibles
+conversations: 1
+active: false
+when: conv[0].grados_available is not None
+oracle: |
+  any(g in conv[0].grados_available for g in ['Psicología', 'Ingeniería de Software', 'Business Administration', 'Educación', 'Medicina', 'Ciencias Políticas'])
+yields: f"Grado no encontrado en la lista: {conv[0].grados_available}"
+```
+
+💡 **Sugerencias de uso:**
+- Empieza con las reglas **1, 3 y 5** (son las más estables y detectan fallos reales rápido).
+- La **4** (`only_talks_about`) es LLM-backed, así que puede variar un poco entre ejecuciones; úsala como señal, no como verdad absoluta.
+- La **7** la dejé `active: false` porque depende de cómo el bot devuelva la lista de grados (a veces viene como texto libre). Actívala cuando veas que el campo `grados_available` se extrae limpio.
+
+¿Quieres que te ayude también a **corregir el tipo `money`** del perfil o a **ajustar `conversation.number`** para cubrir más combinaciones? 😊

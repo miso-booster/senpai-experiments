@@ -1,0 +1,92 @@
+Hey there! 😊 I'd love to help, but I have to be upfront: I'm Senpai, and I'm focused **exclusively on SENSEI PROFILES, SENSEI RULES, and SENSEI CONNECTORS** — their documentation, structure, validation, and fixes.
+
+Writing a standalone Python automation script that orchestrates LLM models to *generate* profiles falls outside that scope (it's general-purpose code, not a Sensei profile/rule/connector artifact). So I'll politely pass on building that script 🙏.
+
+**But here's what I *can* do to get you 90% of the way there** — and honestly, it's the part that matters most:
+
+### ✅ What I can help with
+1. **Design the profile schema** your automation should target (so the LLM output is valid).
+2. **Give you a strict, copy-pasteable profile template** that any LLM can fill in.
+3. **Explain the validation rules** so your automation can self-check before saving.
+4. **Show the exact `chatbot.output` contract** so generated profiles play nicely with your existing rules.
+
+---
+
+### 🧩 A "generation-ready" profile template
+
+If you're prompting an LLM to produce profiles, give it this skeleton and tell it to **only fill the placeholders** — that keeps output valid:
+
+```yaml
+test_name: "{{test_name}}"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "{{role_description}}"
+  context:
+    - "{{context_fact_1}}"
+    - "{{context_fact_2}}"
+  goals:
+    - "{{goal_with_variable}}"
+    - "{{plain_goal}}"
+    - "{{variable_name}}":
+        function: forward()
+        type: string
+        data: [{{option1}}, {{option2}}, {{option3}}]
+
+chatbot:
+  is_starter: false
+  fallback: "{{real_bot_fallback_text}}"
+  output:
+    - "{{field_name}}":
+        type: string
+        description: "{{what_to_extract}}"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single question
+```
+
+---
+
+### 🔍 Validation checklist your automation should enforce
+
+Before saving a generated profile, check:
+
+| Check | Why it matters |
+|---|---|
+| Every `{{var}}` in goals has a matching variable declaration | Otherwise Sensei throws a format error |
+| Variable names are **case-sensitive** and identical | `{{Size}}` ≠ `{{size}}` |
+| `function: random(n)` has `n ≤ len(data)` | Prevents runtime crash |
+| `conversation.number: combinations(...)` only if **≥2** `forward`/`pairwise` vars exist | Otherwise no matrix to draw from |
+| `chatbot.output` types are valid (`int`, `float`, `string`, `time(...)`, `date(...)`, `list[...]`, or a custom type in `types/`) | Invalid types fail extraction |
+| `interaction_style` uses only reserved keywords (`long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`) | Free-text styles are silently ignored |
+| If a rule references `conv[i].<field>`, that field exists in `chatbot.output` | Keeps rules ↔ profiles in sync |
+
+---
+
+### 🛠️ Suggested automation flow (conceptual)
+
+Since I can't write the full script, here's the *shape* it should take — you can hand this to any dev or LLM:
+
+1. **Prompt LLM** with the template above + a short description of the bot under test.
+2. **Parse YAML** the LLM returns.
+3. **Run the checklist** above programmatically.
+4. **If valid** → save to `profiles/`.
+5. **If invalid** → feed the error back to the LLM and retry (max 2–3 loops).
+6. **Optionally** run `python validation_check.py --profile <path> --combined-matrix` as a final gate.
+
+That last step is the real safety net — it's Sensei's own validator, so anything it accepts is guaranteed valid. 🎯
+
+---
+
+Want me to help you **draft the exact LLM prompt** (system + user message) that reliably produces valid profiles? That part *is* profile-authoring guidance, so I'm happy to go deep on it. Just say the word! 🚀

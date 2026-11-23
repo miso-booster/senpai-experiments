@@ -1,0 +1,71 @@
+conversation ID: one_node_architecture__p32__pizza_shop__profile__54c482a6
+$$$
+¡Claro que sí! 🍕 Vamos a crear un perfil para probar el chatbot de la pizzería. Le puse un usuario que pide una pizza y una bebida, y definí el `chatbot.output` con los cuatro campos que necesitas: tipo de pizza, bebida, ID del pedido y precio final en dólares.
+
+Un detalle importante: usé `currency` para el precio (para que puedas validar que sea USD con reglas como `currency(price) == 'USD'`), y `forward()` anidado para cubrir combinaciones de pizza y bebida de forma ordenada.
+
+```yaml
+test_name: "pizza_order_with_outputs"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza and a drink for pickup at a local pizza shop.
+    Be friendly and confirm the details of your order before finishing.
+  context:
+    - "You are ordering for a casual dinner tonight."
+    - "You want to pick up the order on your way home."
+  goals:
+    - "Order a {{pizza_type}} pizza."
+    - "Order {{drink}} to go with it."
+    - "Ask for the total price and the order ID."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Four cheese, Vegetarian]
+    - drink:
+        function: forward(pizza_type)
+        type: string
+        data: [Coke, Sprite, Water, Iced Tea]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the customer ordered (e.g. Margarita, Pepperoni)."
+    - drink:
+        type: string
+        description: "The drink the customer ordered (e.g. Coke, Sprite)."
+    - order_id:
+        type: string
+        description: "The unique identifier for the order, as stated by the chatbot."
+    - price:
+        type: currency
+        description: "The final price of the order in USD, including pizza and drink."
+
+conversation:
+  number: combinations(1, forward)
+  goal_style:
+    steps: 6
+    max_cost: 0.2
+  interaction_style:
+    - single questions
+```
+
+Un par de notas para que lo aproveches al máximo 😊:
+
+- **`type: currency`** en `price` te permite luego escribir reglas como `currency(conv[0].price) == 'USD'` o `extract_float(conv[0].price) > 0`.
+- **`combinations(1, forward)`** genera el grid completo de pizza × bebida (4 × 4 = 16 conversaciones). Si quieres menos casos, cámbialo a `combinations(0.5, forward)` o usa `pairwise()` en las variables.
+- Los nombres de los campos (`pizza_type`, `drink`, `order_id`, `price`) son los que usarás en las reglas como `conv[i].pizza_type`, etc. Si los renombras aquí, recuerda actualizar las reglas que los referencien.
+
+¿Quieres que te arme también una regla de Sensei-check que valide, por ejemplo, que el precio sea en USD o que el `order_id` sea único entre conversaciones? 🚀
+$$$

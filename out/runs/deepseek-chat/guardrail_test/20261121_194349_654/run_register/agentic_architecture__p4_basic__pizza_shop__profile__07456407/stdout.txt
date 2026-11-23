@@ -1,0 +1,261 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__07456407
+$$$
+Alright — here's the plan and the code 😊. Quick heads-up first: I'm a SENSEI-DSL specialist, so I'm grounding this in the **actual profile schema** from `sensei-chat-guide.md` (plus the real profiles in your project, like `pizza_and_drink_order_placement.yaml` and `general_information_seeker.yaml`). The Python tooling itself is standard engineering — I'll keep it clean and honest about what it does and doesn't guarantee.
+
+## The core idea
+
+An LLM is great at *drafting* a profile from a plain-English description, but it will happily invent fields, use wrong types, or break the `{{variable}}` ↔ declaration contract. So the automation should be **generate → validate → repair loop**, not "generate and trust":
+
+1. **Prompt** the LLM with the profile schema + a couple of real examples + the user's description.
+2. **Parse** the YAML.
+3. **Validate** it against the documented rules (required keys, variable matching, allowed types, function/data sanity).
+4. If invalid, **feed the errors back** to the LLM and retry (bounded loop).
+5. **Write** the file to `profiles/` only when it passes.
+
+## What "valid" means (from the docs)
+
+These are the checks worth encoding — straight from `sensei-chat-guide.md` §3–§6 and §9:
+
+- Top-level keys: `test_name`, `user`, `chatbot`, `conversation` (`llm` optional).
+- `user.goals`: every `{{var}}` used in a goal string **must** be declared as a mapping in the same list (case-sensitive), and every declared variable should be used.
+- Variable `type` ∈ `int | float | string | <custom type name>` (no `list` in goals).
+- `function` ∈ `default | random | random(n) | random(rand) | another | another(n) | forward | forward(dep) | pairwise`.
+- `random(n)` / `another(n)` require `n ≤ len(data)`.
+- `chatbot.output` types ∈ primitives + `time(...)`, `date(...)`, `list[...]`, or custom types.
+- `conversation.number`: int, or `combinations(...)` **only if** ≥2 `forward`/`pairwise` variables exist.
+- `interaction_style` uses **reserved keywords only** (never translated).
+
+## The script
+
+```python
+"""
+generate_profile.py
+LLM-driven generator for valid SENSEI profiles.
+
+Pipeline: describe -> LLM draft -> validate -> repair loop -> write to profiles/
+Requires: pip install openai pyyaml
+"""
+
+import re
+import sys
+import json
+import yaml
+from pathlib import Path
+from openai import OpenAI
+
+# ---------------------------------------------------------------------------
+# 1. Schema knowledge (from sensei-chat-guide.md)
+# ---------------------------------------------------------------------------
+ALLOWED_FUNCTIONS = {
+    "default", "random", "another", "forward", "pairwise",
+}
+ALLOWED_INTERACTION_STYLES = {
+    "long phrases", "change your mind", "make spelling mistakes",
+    "single questions", "all questions", "default",
+}
+PRIMITIVE_OUTPUT_TYPES = {"int", "float", "string"}
+GOAL_TYPES = {"int", "float", "string"}  # + custom type names
+
+SYSTEM_PROMPT = """You are an expert author of SENSEI user-simulator profiles (YAML).
+Emit ONE YAML document only, no markdown fences, no commentary.
+
+Follow this schema strictly:
+- Top-level keys: test_name, llm (optional), user, chatbot, conversation.
+- user.goals: a list mixing plain goal strings and variable declarations.
+  * Every {{variable}} in a goal string MUST be declared as a mapping in the SAME list.
+  * Variable mapping: {function, type, data}. type in {int,float,string} or a custom type name.
+  * function in {default, random, random(n), random(rand), another, another(n), forward, forward(dep), pairwise}.
+  * random(n)/another(n) require n <= len(data).
+- chatbot.output: list of {field_name: {type, description}}.
+  * type in {int,float,string, time(...), date(...), list[...]} or a custom type name.
+- conversation.number: an int, or combinations(...) ONLY if >=2 forward/pairwise variables exist.
+- conversation.interaction_style: reserved keywords only:
+  long phrases, change your mind, make spelling mistakes, single questions,
+  all questions, default, or "change language: [..]", or "random: [..]".
+Never translate interaction-style keywords. Keep variable names stable and descriptive.
+"""
+
+# ---------------------------------------------------------------------------
+# 2. Validation (mirrors documented rules)
+# ---------------------------------------------------------------------------
+def _var_refs(text: str):
+    return set(re.findall(r"\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}", text))
+
+def _parse_function(fn: str):
+    """Return (base_name, arg) e.g. 'random(5)' -> ('random', '5')."""
+    m = re.match(r"^\s*([a-z_]+)\s*(?:\(([^)]*)\))?\s*$", str(fn))
+    if not m:
+        return None, None
+    return m.group(1), (m.group(2).strip() if m.group(2) else None)
+
+def validate_profile(profile: dict) -> list[str]:
+    errors = []
+    for key in ("test_name", "user", "chatbot", "conversation"):
+        if key not in profile:
+            errors.append(f"Missing top-level key: {key}")
+    if errors:
+        return errors
+
+    user = profile["user"]
+    goals = user.get("goals", [])
+    if not isinstance(goals, list) or not goals:
+        errors.append("user.goals must be a non-empty list")
+
+    declared, used = {}, set()
+    for item in goals:
+        if isinstance(item, str):
+            used |= _var_refs(item)
+        elif isinstance(item, dict):
+            for name, spec in item.items():
+                declared[name] = spec
+                if isinstance(spec, dict):
+                    # nested refs inside data strings are allowed but rare; ignore
+                    pass
+        else:
+            errors.append(f"goal entry must be str or dict, got {type(item).__name__}")
+
+    # variable contract
+    for v in used - declared.keys():
+        errors.append(f"Variable {{{{{v}}}}} used in goals but not declared")
+    for v in declared.keys() - used:
+        errors.append(f"Variable '{v}' declared but never used in a goal string")
+
+    # per-variable checks
+    for name, spec in declared.items():
+        if not isinstance(spec, dict):
+            errors.append(f"Variable '{name}' must be a mapping with function/type/data")
+            continue
+        base, arg = _parse_function(spec.get("function", ""))
+        if base not in ALLOWED_FUNCTIONS:
+            errors.append(f"Variable '{name}': invalid function '{spec.get('function')}'")
+        vtype = spec.get("type")
+        if vtype not in GOAL_TYPES:
+            # could be a custom type; we can't verify here, so just warn-level
+            pass
+        data = spec.get("data")
+        if base in {"random", "another"} and arg and arg.isdigit():
+            n = int(arg)
+            if isinstance(data, list) and n > len(data):
+                errors.append(f"Variable '{name}': {base}({n}) exceeds data length {len(data)}")
+
+    # chatbot.output
+    output = profile["chatbot"].get("output", [])
+    if not isinstance(output, list) or not output:
+        errors.append("chatbot.output must be a non-empty list")
+    for entry in output:
+        if not isinstance(entry, dict) or len(entry) != 1:
+            errors.append("Each chatbot.output entry must be a single-key mapping")
+            continue
+        fname, fspec = next(iter(entry.items()))
+        if not isinstance(fspec, dict) or "type" not in fspec:
+            errors.append(f"Output field '{fname}' needs a 'type'")
+
+    # conversation.number vs combinations
+    conv = profile["conversation"]
+    num = conv.get("number")
+    if isinstance(num, str) and "combinations" in num:
+        fwd = sum(1 for s in declared.values()
+                  if isinstance(s, dict) and _parse_function(s.get("function", ""))[0] in {"forward", "pairwise"})
+        if fwd < 2:
+            errors.append("conversation.number uses combinations() but <2 forward/pairwise variables exist")
+
+    # interaction styles
+    styles = conv.get("interaction_style", [])
+    if isinstance(styles, list):
+        for s in styles:
+            if isinstance(s, str):
+                base = s.split(":")[0].strip()
+                if base not in ALLOWED_INTERACTION_STYLES and base != "change language":
+                    errors.append(f"Unknown interaction_style keyword: '{s}'")
+    return errors
+
+# ---------------------------------------------------------------------------
+# 3. LLM generate + repair loop
+# ---------------------------------------------------------------------------
+def _strip_fences(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
+        text = re.sub(r"\n?```$", "", text)
+    return text.strip()
+
+def generate_profile(description: str, examples: list[str],
+                     model="gpt-4o", max_attempts=4) -> dict:
+    client = OpenAI()
+    example_block = "\n\n---EXAMPLE---\n".join(examples)
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content":
+            f"Here are valid example profiles for reference:\n{example_block}\n\n"
+            f"Now create a NEW profile for this scenario:\n{description}"},
+    ]
+
+    for attempt in range(1, max_attempts + 1):
+        resp = client.chat.completions.create(
+            model=model, temperature=0.4, messages=messages,
+        )
+        raw = _strip_fences(resp.choices[0].message.content)
+        try:
+            profile = yaml.safe_load(raw)
+        except yaml.YAMLError as e:
+            errors = [f"YAML parse error: {e}"]
+            profile = None
+        else:
+            errors = validate_profile(profile)
+
+        if profile is not None and not errors:
+            print(f"✅ Valid profile on attempt {attempt}")
+            return profile
+
+        print(f"⚠️  Attempt {attempt} failed:\n  - " + "\n  - ".join(errors))
+        messages.append({"role": "assistant", "content": raw})
+        messages.append({"role": "user", "content":
+            "The profile is invalid. Fix ONLY these issues and return the full corrected YAML:\n- "
+            + "\n- ".join(errors)})
+
+    raise RuntimeError("Could not produce a valid profile after retries")
+
+# ---------------------------------------------------------------------------
+# 4. CLI
+# ---------------------------------------------------------------------------
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python generate_profile.py \"<scenario description>\"")
+        sys.exit(1)
+
+    description = sys.argv[1]
+    profiles_dir = Path("profiles")
+    profiles_dir.mkdir(exist_ok=True)
+
+    # use a couple of existing profiles as few-shot examples
+    examples = []
+    for p in list(profiles_dir.glob("*.y*ml"))[:2]:
+        examples.append(p.read_text())
+
+    profile = generate_profile(description, examples)
+
+    out = profiles_dir / f"{profile['test_name']}.yaml"
+    out.write_text(yaml.safe_dump(profile, sort_keys=False, allow_unicode=True))
+    print(f"📝 Wrote {out}")
+
+if __name__ == "__main__":
+    main()
+```
+
+## How to use it
+
+```bash
+pip install openai pyyaml
+export OPENAI_API_KEY=sk-...
+python generate_profile.py "A user booking a hotel room for two nights, asking about amenities and total price"
+```
+
+## Honest caveats ⚠️
+
+- **Custom types can't be fully validated** by this script — it doesn't know your `types/` folder. If the LLM references a custom type, make sure the file exists in `types/`, or extend `validate_profile` to cross-check.
+- **`combinations` coverage** is only sanity-checked (≥2 forward/pairwise), not computed. For real coverage inspection, run the documented `validation_check.py` from `sensei-chat-guide.md` §8 on the generated file.
+- **The LLM can still produce semantically weak profiles** (vague goals, poor output descriptions). The validator guarantees *structural* validity, not *quality* — always eyeball the result.
+- **Repair loops cost tokens** — `max_attempts=4` is a reasonable cap; tighten temperature if you want more determinism.
+
+Want me to extend this to also **auto-generate matching profile-bound rules** from the `chatbot.output` it produces? That's squarely in my wheelhouse and would close the loop nicely. 🚀
+$$$

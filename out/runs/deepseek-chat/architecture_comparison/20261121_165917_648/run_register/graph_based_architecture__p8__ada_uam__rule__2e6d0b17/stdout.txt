@@ -1,0 +1,75 @@
+conversation ID: graph_based_architecture__p8__ada_uam__rule__2e6d0b17
+$$$
+Hey there! 👋 Happy to help you look at this rule. Let me break it down for you.
+
+## Quick verdict
+
+Your rule **will run**, but it's **not really testing anything meaningful** — it's essentially a tautology. Let me explain why, then show you a fix. 😊
+
+## What's happening
+
+Look closely at your `when` and your `oracle`:
+
+```yaml
+name: contact_info_check
+description: The chatbot provides the correct contact email, phone, and address
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == '...'
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == '...'
+```
+
+They're **identical**. So the rule says:
+
+> "If the contact details are correct, then the contact details are correct."
+
+That's always true whenever `when` matches — and when `when` *doesn't* match, the rule is simply **not applicable** (skipped). So the rule can never fail. It gives you a false sense of coverage. 🚩
+
+## The fix
+
+If your goal is *"the CAU chatbot must always provide the correct contact details"*, then you don't need a `when` filter at all — you just want a plain **single-conversation oracle**:
+
+```yaml
+name: check_cau_information
+description: The CAU chatbot must provide the correct contact details (email, phone, address).
+conversations: 1
+oracle: >
+  conv[0].contact_email == 'cau@uam.es'
+  and conv[0].contact_phone == '91 497 4029'
+  and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+Now the rule actually **checks** the output — if the chatbot gives a wrong email, wrong phone, or wrong address, the rule **fails**. ✅
+
+## Why this is better
+
+- **`when` is a filter, not a precondition to assert.** It selects *which* conversations the rule applies to. Using it to assert the same thing you're checking makes the check vacuous.
+- **`oracle` is the actual assertion.** This is where the "must be true" lives.
+- With no `when`, the rule applies to **every** conversation — which is exactly what you want for a "must always be correct" property.
+
+## A couple of extra tips 💡
+
+1. **Make sure the fields exist.** `contact_email`, `contact_phone`, and `physical_address` must be declared in the target profile's `chatbot.output`. If they're not, the rule won't have anything to read. Double-check the profile first!
+2. **Watch the exact strings.** `'91 497 4029'` vs `'914974029'` vs `'91-497-4029'` — if the chatbot formats the phone differently, the rule will fail even though the info is "correct". Consider normalizing (e.g., strip spaces) if formatting can vary.
+3. **If you *do* want a conditional check** (e.g., "only when the user asks about contact info"), then `when` should describe *that condition* — not the expected answer. For example:
+
+```yaml
+name: check_cau_information
+description: When the user asks for contact details, the CAU provides the correct ones.
+conversations: 1
+when: utterance_index('user', 'contact') > 0
+oracle: >
+  conv[0].contact_email == 'cau@uam.es'
+  and conv[0].contact_phone == '91 497 4029'
+  and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+That version only fires when the user actually asked about contact info — much more precise. 🎯
+
+## TL;DR
+
+- ❌ Original rule: `when` == `oracle` → tautology, never fails.
+- ✅ Fix: drop the `when` (or make it a real precondition), keep the assertion in `oracle`.
+- 🔍 Verify the three fields exist in your profile's `chatbot.output`.
+
+Want me to help you adapt it to a specific profile, or normalize the phone/address comparison? Just say the word! 🙌
+$$$

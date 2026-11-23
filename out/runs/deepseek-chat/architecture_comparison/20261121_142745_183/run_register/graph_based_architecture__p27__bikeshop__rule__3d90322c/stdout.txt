@@ -1,0 +1,43 @@
+conversation ID: graph_based_architecture__p27__bikeshop__rule__3d90322c
+$$$
+¡Buena idea! 😊 Esa es una regla de tipo **metamórfico** (2 conversaciones) donde mantenemos casi todo igual y cambiamos solo el hecho de que la fecha se repite. Te dejo la regla lista para pegar, con la explicación justo debajo 👇
+
+```yaml
+name: duplicate_date_rejected
+description: >
+  Si el usuario propone la misma fecha dos veces, el asistente debe rechazar
+  la segunda (no puede aceptar dos reservas/citas en la misma fecha).
+conversations: 2
+when: conv[0].date == conv[1].date
+if:   conv[0].date == conv[1].date
+then: utterance_index('assistant', 'not available') > 0 or utterance_index('assistant', 'already booked') > 0
+```
+
+### 🧠 Qué hace esta regla
+
+- **`conversations: 2`** → compara dos diálogos.
+- **`when`** → filtra solo los pares donde la fecha propuesta es la misma en ambos (así garantizamos que estamos comparando el caso "fecha repetida").
+- **`if` / `then`** → si la fecha es igual en las dos conversaciones, entonces el asistente debe haber dicho algo como *"not available"* o *"already booked"* en algún turno.
+- **`utterance_index('assistant', ...)`** → busca en qué turno el asistente menciona ese rechazo (devuelve `> 0` si lo encontró).
+
+### ⚠️ Cosas a ajustar según tu perfil
+
+1. **El campo `date`** debe existir en el `chatbot.output` de tu perfil SENSEI Chat. Si en tu perfil se llama distinto (por ejemplo `reservation_date` o `appointment_date`), cámbialo en `when` e `if`.
+2. **Las frases de rechazo** (`'not available'`, `'already booked'`) son ejemplos. Ajústalas al tono real de tu bot (por ejemplo `'ya está reservada'`, `'no puedo aceptar esa fecha'`, etc.). `utterance_index` es LLM-backed, así que tolera variaciones, pero cuanto más se acerque al texto real, mejor.
+3. Si tu bot responde en español, considera usar frases en español directamente.
+
+### 💡 Variante más estricta (opcional)
+
+Si quieres asegurarte de que **no** acepta la segunda fecha, puedes añadir una condición negativa:
+
+```yaml
+name: duplicate_date_rejected_strict
+description: La segunda fecha repetida nunca debe ser confirmada.
+conversations: 2
+when: conv[0].date == conv[1].date
+if:   conv[0].date == conv[1].date
+then: utterance_index('assistant', 'confirmed') == 0 and utterance_index('assistant', 'not available') > 0
+```
+
+¿Quieres que te ayude a adaptarla a los nombres reales de tu `chatbot.output`? Si me pasas el perfil, la dejo perfecta para tu proyecto 🙌
+$$$

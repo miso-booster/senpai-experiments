@@ -1,0 +1,49 @@
+Hey there! 😊 Happy to help you get this rule working — but there are a couple of things we need to fix before it can actually run. Let me walk you through them 👇
+
+## What's off with the current rule
+
+1. **Typo in the header** — `descriptin` should be `description`. Sensei-check expects the exact key.
+2. **Missing `then`** — you have an `if:` but no `then:`. An `if/then` relation needs both sides. Right now the rule has nothing to assert.
+3. **Fields that don't exist in your profile** — this is the big one. Your rule references:
+   - `conv[i].user_request`
+   - `conv[i].contact_options`
+   - `conv[i].customer_service_number`
+
+   Looking at `customer_service_assistance.yaml`, the `chatbot.output` exposes:
+   - `contact_options` ✅ (exists!)
+   - `customer_service_number` ✅ (exists!)
+   - `hours_of_operation`, `online_form_instructions`, `required_fields`, `message_details` ✅
+
+   But **`user_request` is not in `chatbot.output`** ❌ — so `conv[0].user_request` will fail. The `when:` filter can't select conversations by a field the profile never extracts.
+
+## The fix
+
+Since `user_request` isn't an output field, we can't filter on it. Instead, we check the fields that *do* exist and assert they're actually populated (which is what "provides correct contact info" really means here). We can also use `semantic_content` to verify the answer is meaningful, not just non-null.
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and customer service number for customer service inquiries.
+conversations: 2
+when: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: semantic_content(conv[0].contact_options, 'ways to contact customer service') and semantic_content(conv[1].customer_service_number, 'a phone number for customer service')
+```
+
+## Why this works now
+
+- ✅ `description` spelled correctly
+- ✅ `when:` only uses fields that exist in `chatbot.output` (`contact_options`, `customer_service_number`)
+- ✅ `if/then` is complete — the `then` actually asserts something meaningful via `semantic_content`
+- ✅ Both fields are real outputs of the `customer_service_assistance` profile
+
+## A quick tip 💡
+
+If you *really* want to filter by the kind of request (contact options vs. number), the clean way is to **add a field to the profile's `chatbot.output`** first, e.g.:
+
+```yaml
+- user_request:
+    type: string
+    description: The main customer service request the user made (e.g. contact options, customer service number)
+```
+
+Then your original `when:` filter would work as written. But as-is, the rule above is the safest version that runs against your current profile. Want me to draft that profile addition too? 😊

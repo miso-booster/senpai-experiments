@@ -1,0 +1,55 @@
+Hey there! 😊 Great question — `pairwise()` is one of the handiest tools in Sensei profiles when you want **good coverage without exploding your test count**.
+
+## What `pairwise()` does
+
+Instead of testing **every possible combination** of your variables (the full Cartesian product), `pairwise()` generates a set of cases where **every pair of values appears together at least once**.
+
+Think of it like this 👇
+
+- **Full combinations** for 3 variables with 3 values each = 3 × 3 × 3 = **27 conversations** 😵
+- **Pairwise** for the same setup = usually around **9 conversations** — and you still catch most 2-way interaction bugs 🎯
+
+## How to use it in a profile
+
+You assign `function: pairwise()` to **two or more** variables in `user.goals`. Sensei then builds the coverage matrix across them.
+
+Here's a small example based on your pizza project style:
+
+```yaml
+user:
+  goals:
+    - "Order a {{pizza_type}} pizza in size {{pizza_size}} with {{toppings}}"
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margarita, Carbonara, Hawaiian]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: pairwise()
+        type: string
+        data: [cheese, mushrooms, pepperoni]
+```
+
+With three pairwise variables, Sensei guarantees that **every pair** (e.g. `Margarita` + `large`, `Hawaiian` + `cheese`, `medium` + `pepperoni`) shows up together at least once — without running all 27 combinations.
+
+## Key rules to remember ⚠️
+
+1. **You need at least 2 pairwise variables** — otherwise there's nothing to pair up.
+2. **Don't mix `pairwise()` with `forward()` on the same variable** — pick one function per variable.
+3. **`conversation.number` can use the matrix** — e.g. `number: combinations` or `combinations(0.6, pairwise)` to run a fraction of the generated cases.
+
+## When to prefer `pairwise()` vs `forward()`
+
+| Use case | Best choice |
+|---|---|
+| You want **full grids** (every combo) | nested `forward()` |
+| You want **broad coverage, fewer runs** | `pairwise()` |
+| You want **deterministic iteration** | `forward()` |
+| You want **random sampling** | `random()` / `another()` |
+
+So in short: **`pairwise()` = smart coverage, fewer conversations, still catches most interaction bugs** 🚀
+
+Want me to help you adapt one of your existing profiles (like `pizza_and_drink_order_placement.yaml`) to use `pairwise()` more effectively? Just say the word! 🙌

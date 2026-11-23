@@ -1,0 +1,90 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__2eb30f17
+$$$
+Hey! 😊 Quick heads-up before we dive in: I'm Senpai, and my lane is the **SENSEI DSL itself** — rules, profiles, and connectors. Writing a standalone Python automation script (LLM orchestration, prompts, file I/O, etc.) is outside my domain, so I won't hand you a full Python program. But I *can* give you exactly what such a generator needs to produce **valid profiles**, grounded in `sensei-chat-guide.md`. Think of this as the spec your Python tool should target. 🎯
+
+---
+
+## What a "valid profile" must satisfy (the contract for your generator)
+
+Based on `sensei-chat-guide.md`, here's the checklist your automation should enforce:
+
+### 1. Top-level structure
+A profile is a single YAML doc with these sections:
+`test_name`, `llm` (optional), `user`, `chatbot`, `conversation`.
+
+### 2. `test_name`
+- A non-empty string.
+
+### 3. `llm` (optional — defaults apply if omitted)
+- `temperature`: float
+- `model`: provider-specific name
+- `model_prov`: langchain provider key
+- `format.type`: `text` | `speech` (if `speech`, needs `config` path)
+
+### 4. `user`
+- `language`: e.g. `English`, `Spanish`
+- `role`: prompt string describing the simulated user
+- `context`: list (optional `personality:` file refs + freeform strings)
+- `goals`: list of strings and/or variable declarations
+
+### 5. Variables in `user.goals` — the trickiest part for automation ⚠️
+This is where most generators break. Enforce these:
+- Every `{{variable}}` in a goal string **must** be declared in `goals` with the **exact same name** (case-sensitive).
+- Every declared variable **should** be used in a goal prompt.
+- Variable declaration shape:
+  ```yaml
+  - var_name:
+      function: default|random|random(n)|random(rand)|another|another(n)|forward|pairwise
+      type: int|float|string|<custom>
+      data: <list | {min,max,step} | {linspace} | any("...") | file/function>
+  ```
+- **Type constraints:**
+  - `user.goals` supports only `int`, `float`, `string`, or **custom** types.
+  - ❌ Do **not** use `list`, `time`, `date` in `user.goals` (they're valid only in `chatbot.output`).
+- **Function constraints:**
+  - `random(n)` → `n ≤ len(data)`.
+  - `pairwise()` → needs **≥ 2** pairwise variables.
+  - `forward(dep)` → dependency must be another declared variable.
+  - `combinations` in `conversation.number` → needs **≥ 2** nested `forward` or **≥ 2** `pairwise` variables.
+
+### 6. `chatbot`
+- `is_starter`: bool
+- `fallback`: the bot's **real** fallback text (avoid loops)
+- `output`: list of `field_name: {type, description}`
+  - Allowed types: `int`, `float`, `string`, `time(...)`, `date(...)`, `list[type]`, or custom.
+  - Field names should be **stable & descriptive** — these become `conv[i].field_name` in rules.
+
+### 7. `conversation`
+- `number`: int | `combinations` | `combinations(p)` | `combinations(p, fn)`
+- `max_cost`: optional float
+- `goal_style`: `steps: N` | `random steps: M` (M ≤ 20) | `all_answered: {export, limit}`
+- `interaction_style`: list of **reserved keywords only** (never translate!):
+  `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, or `random: [...]`
+
+---
+
+## How I'd suggest structuring your Python automation
+
+Since I can't write the script, here's the **design** you can implement (this is the part I *can* legitimately help you reason about):
+
+1. **LLM generates a draft** → ask the model to output YAML matching the schema above.
+2. **Validate with the official tool** — the docs mention:
+   ```bash
+   python validation_check.py --profile <path> --output <dir> --combined-matrix --verbose
+   ```
+   This returns JSON with format errors + CSVs of value-combination matrices. Your automation should call this and **feed errors back to the LLM** for a repair loop. 🔁
+3. **Enforce the hard rules above** in your own pre-check (variable↔goal matching, type restrictions, `random(n) ≤ len`, pairwise/combinations counts) so you fail fast before running the validator.
+
+---
+
+## Where I can go deeper 👇
+
+I'm happy to help with any of these (all in my lane):
+
+- ✍️ **Draft a concrete profile** for a specific chatbot you're targeting — then your Python tool can use it as a golden template / few-shot example.
+- 🧩 **Write custom `types/` YAMLs** your generated profiles might reference.
+- 📐 **Spec out the exact validation checklist** as a structured list you can turn into Python assertions.
+- 🔗 **Design the `chatbot.output` schema** so the profiles you generate are rule-ready.
+
+Want me to start by drafting a **golden reference profile** for your target bot? If so, tell me: what does the chatbot do, what language, and what outputs do you want extracted? 🚀
+$$$

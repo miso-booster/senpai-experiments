@@ -1,0 +1,148 @@
+I'll create the YAML connector for the SAIC Málaga chatbot, then a Python script to test it with multiple messages 😊
+
+## 1) YAML Connector
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of notes on the choices 👀:
+- `response_path: "response.0.text"` extracts the first element of the `response` array and grabs its `text` field — exactly matching the response you shared.
+- I kept only the headers that actually matter for the API call (auth, content-type, origin/referer, user-agent). The rest (`Accept-Encoding`, `Sec-Fetch-*`, `Priority`, etc.) are browser noise and not needed.
+- The `conversation`, `sender`, and `bot` IDs are hardcoded from your request. If you want a fresh session per run, you'd need to generate them dynamically — but for a static connector, this works.
+
+## 2) Python Script to Send Multiple Requests
+
+```python
+"""
+Test script for the SAIC Malaga custom connector.
+Sends multiple messages and prints each response.
+"""
+
+import json
+import time
+import requests
+
+CONNECTOR_PATH = "connectors/saic-malaga.yaml"
+
+
+def load_connector(path: str) -> dict:
+    """Load the YAML connector configuration."""
+    import yaml  # pip install pyyaml
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def build_url(config: dict) -> str:
+    return config["base_url"].rstrip("/") + config["send_message"]["path"]
+
+
+def build_payload(config: dict, user_msg: str) -> dict:
+    """Deep-copy the payload template and inject the user message."""
+    template = json.loads(json.dumps(config["send_message"]["payload_template"]))
+    # Recursively replace {user_msg} placeholders
+    def replace(obj):
+        if isinstance(obj, dict):
+            return {k: replace(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [replace(v) for v in obj]
+        if isinstance(obj, str):
+            return obj.replace("{user_msg}", user_msg)
+        return obj
+    return replace(template)
+
+
+def extract_response(config: dict, data: dict):
+    """Follow the dot-separated response_path into the JSON response."""
+    path = config["response_path"]
+    current = data
+    for key in path.split("."):
+        if isinstance(current, list):
+            current = current[int(key)]
+        else:
+            current = current[key]
+    return current
+
+
+def send_message(config: dict, user_msg: str) -> str:
+    url = build_url(config)
+    headers = config["send_message"].get("headers", {})
+    payload = build_payload(config, user_msg)
+
+    resp = requests.post(url, headers=headers, json=payload, timeout=30)
+    resp.raise_for_status()
+    return extract_response(config, resp.json())
+
+
+def main():
+    config = load_connector(CONNECTOR_PATH)
+
+    messages = [
+        "hola",
+        "¿Cómo puedo solicitar cita previa?",
+        "¿Qué documentación necesito para empadronarme?",
+        "¿Cuál es el horario de atención al público?",
+        "Gracias, eso es todo.",
+    ]
+
+    for i, msg in enumerate(messages, start=1):
+        print(f"\n[{i}] 👤 User: {msg}")
+        try:
+            reply = send_message(config, msg)
+            print(f"[{i}] 🤖 Bot : {reply}")
+        except Exception as e:
+            print(f"[{i}] ❌ Error: {e}")
+        time.sleep(1)  # be polite to the API
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### How it works 🚀
+1. **Loads** the YAML connector (so the config stays the single source of truth).
+2. **Builds** the URL and payload, replacing `{user_msg}` in the nested `message.text` field.
+3. **Sends** each message via `requests.post`.
+4. **Extracts** the reply by walking `response_path` (`response.0.text`).
+5. **Loops** over a list of test messages with a small delay between calls.
+
+### Requirements
+```bash
+pip install requests pyyaml
+```
+
+### Optional: use the Sensei `CustomChatbot` class instead
+If you'd rather reuse the official connector implementation:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("connectors/saic-malaga.yaml")
+for msg in ["hola", "¿Cómo pido cita previa?", "gracias"]:
+    success, response = bot.execute_with_input(msg)
+    print(f"👤 {msg}\n🤖 {response}\n")
+```
+
+That version handles the payload templating and `response_path` resolution for you — handy if you're already inside the Sensei ecosystem 😊
+
+Want me to adapt the script to also save the conversation to a JSON file, or to loop through a list of messages loaded from a file?

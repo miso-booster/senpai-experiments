@@ -1,0 +1,84 @@
+¡Claro que sí! 😊 Vamos a crear un perfil para un usuario Erasmus recién llegado que necesita ayuda configurando Moodle, Sigma y demás servicios. Mantendré las variables de entrada simples (solo un par para dar variedad) y me enfocaré en outputs claros que te permitan verificar que el bot da un soporte adecuado.
+
+```yaml
+test_name: "Erasmus recién llegado - configuración de servicios"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la UAM y no conoce
+    los servicios digitales. Necesitas ayuda para configurar tu acceso a
+    Moodle, Sigma y el resto de plataformas, y no sabes por dónde empezar.
+  context:
+    - personality: personalities/curious-user
+    - "Acabas de recibir tu carta de admisión Erasmus y tienes tu NIA, pero no sabes qué hacer con él."
+    - "No tienes claro qué es ID-UAM ni cómo se relaciona con Moodle o Sigma."
+    - "Tu nivel de español es bueno, pero la terminología técnica universitaria te resulta confusa."
+    - "Prefieres instrucciones paso a paso y claras."
+  goals:
+    - "Preguntar cómo crear tu contraseña por primera vez usando tu NIA para acceder a los servicios."
+    - "Solicitar información sobre qué es ID-UAM y qué servicios incluye (Moodle, Sigma, etc.)."
+    - "Pedir los pasos para acceder a Moodle como estudiante Erasmus recién incorporado."
+    - "Consultar cómo acceder a Sigma para gestionar tu matrícula."
+    - "Preguntar a quién contactar si algo falla durante la configuración inicial."
+    - nia:
+        function: forward()
+        type: string
+        data: ["E1234567", "E7654321", "E1122334"]
+    - servicio:
+        function: forward()
+        type: string
+        data: [Moodle, Sigma]
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - password_creation_steps:
+        type: string
+        description: "Pasos para crear la contraseña por primera vez con el NIA"
+    - id_uam_explanation:
+        type: string
+        description: "Explicación de qué es ID-UAM y qué servicios integra"
+    - moodle_access_steps:
+        type: string
+        description: "Pasos para acceder a Moodle como estudiante Erasmus"
+    - sigma_access_info:
+        type: string
+        description: "Información sobre cómo acceder a Sigma para la matrícula"
+    - support_contact:
+        type: string
+        description: "Contacto del CAU (correo, teléfono o ubicación) para incidencias"
+    - activation_code_info:
+        type: string
+        description: "Información sobre el código de activación si se menciona"
+    - services_list:
+        type: list[string]
+        description: "Servicios digitales mencionados por el bot (Moodle, Sigma, VPN, etc.)"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 25
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+    - random:
+      - make spelling mistakes
+      - long phrases
+```
+
+Un par de notas rápidas para que le saques todo el jugo 👀:
+
+- **Variables mínimas**: solo `nia` y `servicio` con `forward()`, así generas combinaciones limpias sin explotar el número de conversaciones.
+- **Outputs pensados para validar soporte**: `password_creation_steps`, `moodle_access_steps`, `sigma_access_info` y `support_contact` te dejan escribir reglas tipo "el bot debe explicar los pasos" o "debe dar un contacto del CAU".
+- **`services_list` como `list[string]`**: útil si luego quieres comprobar con una regla que el bot menciona tanto Moodle como Sigma.
+
+¿Quieres que te prepare también una regla de Sensei-check que valide que el bot efectivamente cubre los pasos de configuración y ofrece un contacto de soporte? 😊

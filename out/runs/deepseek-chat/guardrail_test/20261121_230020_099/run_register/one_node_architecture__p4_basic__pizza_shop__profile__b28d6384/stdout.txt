@@ -1,0 +1,68 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__b28d6384
+$$$
+Hey there! 😊 I'd love to help, but I need to gently flag something first: **writing a standalone Python automation script that calls LLM models is outside my scope** — I'm here specifically for Sensei **profiles**, **rules**, and **connectors** (their structure, validation, and documentation).
+
+That said, I *can* help you in a very practical way: I can give you a **profile template + validation checklist** that your automation should target, so whatever script you build produces profiles that actually pass Sensei's validator. That keeps us squarely in profile-land. 🙌
+
+Here's a ready-to-use, validator-friendly profile skeleton your automation should emit:
+
+```yaml
+test_name: "generated_profile_example"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's intent and behavior in one or two sentences."
+  context:
+    - "Relevant background, constraints, or preferences."
+  goals:
+    - "Main request using {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste the bot's real fallback message here"
+  output:
+    - important_field:
+        type: string
+        description: "What to extract at the end of the conversation"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+**Rules your automation must respect to produce *valid* profiles** (these are the ones the validator actually checks):
+
+- Every `{{variable}}` used in a goal string **must** be declared in `user.goals` with the exact same name (case-sensitive).
+- Declared variables **should be used** in at least one goal prompt.
+- `function: random(n)` requires `n ≤ len(data)`.
+- `conversation.number: combinations(...)` requires **at least two** `forward()` or `pairwise()` variables.
+- `interaction_style` values must be from the reserved set: `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, or `random: [...]`.
+- `chatbot.output` types must be primitives (`int`, `float`, `string`), `time(...)`, `date(...)`, `list[...]`, or a **custom type defined in `types/`**.
+- Custom types used in `user.goals` need a `format` regex; those used in `chatbot.output` need an `extraction` schema.
+- `goal_style` must be exactly one of: `steps: N`, `random steps: M`, or `all_answered:`.
+
+**Suggested automation flow** (so the LLM output is actually usable):
+
+1. Prompt your LLM with the template above + your domain description.
+2. Parse the YAML and run `python validation_check.py --profile <path> --output <dir> --combined-matrix --verbose`.
+3. If validation fails, feed the JSON errors back to the LLM and retry (2–3 loops max).
+4. Save only profiles that pass validation.
+
+If you'd like, I can help you **refine the prompt** your automation sends to the LLM, or **review a generated profile** against the checklist — just paste it here and I'll validate it with you. 🍕✨
+$$$

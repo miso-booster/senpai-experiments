@@ -1,0 +1,103 @@
+I'd love to help, but I have to be upfront with you: I'm limited to **SENSEI RULES, SENSEI PROFILES, and SENSEI CONNECTORS** — their docs, concepts, file paths, and explanations. Writing a Python automation script (or any source code) falls outside that scope, so I can't build that for you 😅.
+
+That said, I *can* help you in a way that gets you 90% there — by giving you a **clear spec of what a "valid profile" must satisfy**, so your LLM automation has a solid target to generate against. Here's what your generator should enforce:
+
+---
+
+### ✅ What a valid Sensei profile must contain
+
+**1. Top-level structure**
+```yaml
+test_name: "my_first_sensei_profile"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe what the simulated user wants and how they behave."
+  context:
+    - "Who the user is, constraints, preferences, availability, etc."
+  goals:
+    - "Main request with a {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste your bot's real fallback here"
+  output:
+    - important_field:
+        type: string
+        description: "What you want to extract/validate"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+**2. `user` section rules**
+- `language` — a real language name (e.g., `English`, `Spanish`).
+- `role` — a freeform prompt describing the simulated user.
+- `context` — list of strings and/or `personality: personalities/<file>.yml` references.
+- `goals` — list of strings (with `{{variables}}`) **and** variable declarations.
+  - Every `{{variable}}` used in a goal string **must** be declared in the same `goals` list (case-sensitive match).
+  - Every declared variable **should** be used in at least one goal string.
+  - Variable `type` must be `int`, `float`, `string`, or a **custom type** defined in `types/` (no `list`, `time`, `date` here — those are output-only).
+  - `function` must be one of: `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `forward(var)`, `pairwise()`.
+  - `data` must match the type (list, `{min,max,step}`, `any(...)`, or a `file`/`function_name`/`args` block).
+  - `random(n)` / `another(n)` → `n ≤ len(data)`.
+
+**3. `chatbot` section rules**
+- `is_starter: true|false`
+- `fallback` — the bot's real fallback text (avoid endless loops).
+- `output` — list of `{field_name: {type, description}}`.
+  - `type` may be primitives (`int`, `float`, `string`), `time(...)`, `date(...)`, `list[...]`, or a custom type.
+  - Field names should be **stable and descriptive** (they become `conv[i].<field_name>` in rules).
+
+**4. `conversation` section rules**
+- `number` — int, `combinations`, `combinations(p)`, or `combinations(p, forward|pairwise)`.
+  - ⚠️ `combinations` requires **≥2 nested `forward()`** or **≥2 `pairwise()`** variables.
+- `goal_style` — one of `steps: N`, `random steps: M` (M ≤ 20), or `all_answered: {export, limit}` (default limit 30).
+- `interaction_style` — only these reserved keywords: `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, or `random: [...]`.
+
+---
+
+### 🔍 How to validate generated profiles
+
+Sensei ships with a validator you can call from your automation (this is the *supported* way, not custom code):
+
+```bash
+python validation_check.py \
+  --profile /abs/path/to/project/profiles/generated.yml \
+  --output  /abs/path/to/output \
+  --combined-matrix \
+  --verbose
+```
+
+It returns a JSON with format errors + CSVs of the value-combination matrices — perfect as a **feedback loop** for your LLM (generate → validate → fix → repeat).
+
+---
+
+### 💡 Suggested LLM-automation flow (concept only)
+
+1. Prompt the LLM with the schema above + a domain description (e.g., "pizza shop").
+2. Parse the YAML output.
+3. Run `validation_check.py`.
+4. If errors → feed them back to the LLM and regenerate.
+5. On success → save to `profiles/`.
+
+---
+
+If you'd like, I can help you **draft the exact prompt** to give your LLM so it produces valid profiles, or **review a profile** you've generated and point out what's off. Just paste it here and I'll take a look 😊.

@@ -1,0 +1,79 @@
+¡Hola! 😊 ¡Qué buena idea montar un perfil para un Erasmus recién llegado! Es un caso súper realista y muy útil para probar que el bot da un soporte claro y completo. Te preparo un perfil listo para copiar en tu carpeta `profiles/`.
+
+Como dices, mantengo pocas variables de entrada (solo un par para dar variedad) y me centro en un `chatbot.output` rico para que puedas validar con reglas que el bot realmente cubre el soporte esperado.
+
+```yaml
+test_name: "Erasmus recién llegado - configuración de Moodle y Sigma"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la UAM y no sabe cómo
+    configurar sus accesos digitales (Moodle, Sigma, ID-UAM, VPN). Hablas
+    español con soltura pero no conoces los procedimientos internos de la
+    universidad y necesitas que te guíen paso a paso.
+  context:
+    - personality: personalities/curious-user
+    - "Acabas de matricularte como estudiante de intercambio y aún no tienes tu cuenta institucional configurada."
+    - "No sabes qué es Sigma ni cómo se relaciona con Moodle o el ID-UAM."
+    - "Necesitas acceder a Moodle para ver tus asignaturas y a Sigma para gestionar tu matrícula."
+    - "Estás fuera del campus a veces y te han dicho que necesitas una VPN para algunos recursos."
+  goals:
+    - "Explicar que soy un estudiante Erasmus recién llegado y pedir ayuda para configurar mi cuenta institucional desde cero."
+    - "Preguntar cómo acceder a Moodle y qué necesito para entrar por primera vez."
+    - "Preguntar qué es {{plataforma}} y cómo se usa para mi matrícula."
+    - "Pedir los pasos para establecer mi contraseña por primera vez con mi NIA."
+    - "Preguntar cómo configurar la VPN para acceder a los recursos desde fuera del campus."
+    - "Solicitar los datos de contacto del CAU por si me quedo atascado."
+    - plataforma:
+        function: random()
+        type: string
+        data: [Sigma, ID-UAM, la VPN]
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - institutional_account_steps:
+        type: string
+        description: "Pasos para configurar/activar la cuenta institucional (ID-UAM)"
+    - moodle_access_requirements:
+        type: string
+        description: "Requisitos para acceder a Moodle por primera vez"
+    - sigma_info:
+        type: string
+        description: "Qué es Sigma y cómo se usa para la matrícula"
+    - first_password_steps:
+        type: string
+        description: "Pasos para establecer la contraseña por primera vez con el NIA"
+    - vpn_setup_steps:
+        type: string
+        description: "Pasos para instalar y configurar la VPN"
+    - cau_contact_info:
+        type: string
+        description: "Datos de contacto del CAU (correo, teléfono, ubicación u horario)"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 25
+    max_cost: 0.4
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👀:
+
+- **Pocas variables, como pediste**: solo `plataforma` con `random()`, así cada conversación pregunta por una distinta (Sigma, ID-UAM o la VPN) sin explotar el número de casos.
+- **`chatbot.output` pensado para reglas**: los campos son estables y descriptivos, así que luego puedes escribir reglas tipo `conv[i].moodle_access_requirements is not None` o comprobar que `vpn_setup_steps` no venga vacío. 💪
+- **`single questions`** encaja genial aquí porque simula a alguien que va preguntando una cosa a la vez, muy natural para un recién llegado.
+- Si quieres que el perfil sea aún más "Erasmus", puedes añadir `change language` en `interaction_style` para probar que el bot aguanta cambios de idioma.
+
+¿Quieres que te ayude también a redactar un par de **reglas de Sensei-check** que validen estos outputs (por ejemplo, que el bot siempre dé pasos de contraseña y contacto del CAU)? ¡Lo montamos en un momento! 😄

@@ -1,0 +1,82 @@
+conversation ID: graph_based_architecture__p49__pizza_shop__documentation__031113fb
+$$$
+Great question! 😊 The `pairwise()` function is one of the handiest tools in SENSEI Profiles — it lets you cover **every pair of values at least once** across your variables, without exploding into a full Cartesian product. Let me break it down 👇
+
+## 🎯 What `pairwise()` does
+
+Instead of testing **all** combinations (which grows fast), `pairwise()` generates a **reduced set of combinations** where **every pair of values from two (or more) variables appears together at least once**.
+
+This is based on *pairwise testing* (a.k.a. all-pairs testing) — a classic technique that catches most 2-way defects while keeping the number of runs manageable.
+
+## 🍕 A quick analogy
+
+Imagine you're testing pizza orders with:
+- **Size**: small, medium, large
+- **Drink**: coke, sprite, fanta
+
+A **full Cartesian product** would be 3 × 3 = **9 combinations**. With `pairwise()`, you'd get a much smaller set (around 3–4) that still guarantees every size appears with every drink at least once. 🎉
+
+## ⚙️ How to use it
+
+You assign `pairwise()` as the `function` of a variable in `user.goals`:
+
+```yaml
+goals:
+  - "Order a {{size}} pizza with {{toppings}}"
+  - size:
+      function: pairwise()
+      type: string
+      data: [small, medium, large]
+  - toppings:
+      function: pairwise()
+      type: string
+      data: [cheese, mushrooms, pepperoni]
+```
+
+## 📌 Key rules to remember
+
+1. **You need at least 2 variables using `pairwise()`** — otherwise there's nothing to pair! ⚠️
+2. It works across **2 or more variables** — the more you add, the more valuable it becomes (it covers every *pair*, not every *triple*).
+3. It's great for **reducing total runs** while still catching most 2-way interactions.
+
+## 🔗 Combining with `conversation.number`
+
+You can pair it with `combinations` to control how many runs you get:
+
+```yaml
+conversation:
+  number: combinations(0.5, pairwise)   # 50% of the pairwise matrix
+```
+
+Or just `combinations` to use the **largest** matrix produced by `forward`/`pairwise`.
+
+## 🧠 `pairwise()` vs `forward()`
+
+| Function | Behavior |
+|----------|----------|
+| `forward()` | Deterministic iteration; supports **nesting** (e.g., `forward(drink)`) to build full grids |
+| `pairwise()` | Covers **every pair at least once** — much smaller than a full grid |
+
+So: use `forward()` when you *want* the full grid, and `pairwise()` when you want **smart coverage with fewer runs**. 🚀
+
+## 👀 A real example from your project
+
+In your `pizza_order_test_custom.yml` profile, you already use it:
+
+```yaml
+- size:
+    data: [small, medium, big, extra large]
+    function: pairwise()
+    type: string
+- toppings:
+    data: [cheese, mushrooms, pepperoni]
+    function: pairwise()
+    type: string
+```
+
+Here, `size` (4 values) and `toppings` (3 values) would naively give 12 combos — but `pairwise()` trims that down while still ensuring every size meets every topping at least once. ✅
+
+---
+
+Want me to help you **add `pairwise()` to another profile**, or **check whether your current pairwise setup is valid**? Just say the word! 🙌
+$$$

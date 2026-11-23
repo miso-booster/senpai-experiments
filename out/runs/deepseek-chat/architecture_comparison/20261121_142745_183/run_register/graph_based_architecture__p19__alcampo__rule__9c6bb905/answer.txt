@@ -1,0 +1,35 @@
+Hey there! 😊 Happy to help you craft that rule.
+
+Since you want a **profile-agnostic global rule** (not tied to any `chatbot.output`), the cleanest way is to use the LLM-backed helper `utterance_index` — it lets us check whether the assistant actually mentioned promotions *somewhere* in the dialogue, without needing any extracted slot.
+
+Here's a rule you can drop right in:
+
+```yaml
+name: promotions_mentioned
+description: The chatbot must provide information about current promotions during the conversation
+conversations: 1
+oracle: utterance_index('assistant', 'current promotions or special offers') > 0
+```
+
+### Why this works 👀
+
+- **`conversations: 1`** → it's a single-conversation oracle, so no `when:` filter is needed.
+- **`utterance_index('assistant', 'current promotions or special offers')`** → returns the turn index where the assistant mentions promotions. If it never does, it returns `0` (or a non-positive value), so `> 0` fails the rule. ✅
+- **No profile dependency** → we're not referencing any `conv[i].field`, so it works across any profile. 🎯
+
+### A couple of tweaks you might consider
+
+If you want to be **stricter** and require *actual* promotion content (not just the word "promotion"), you could combine it with `only_talks_about` or `semantic_content` — but those need a value to inspect, which we don't have here without a profile. So `utterance_index` is the sweet spot for a global rule. 🙌
+
+If you'd rather check that the bot **doesn't dodge** the topic across *multiple* conversations, you could bump `conversations: all` and use `num_exist`:
+
+```yaml
+name: promotions_mentioned_globally
+description: Across the batch, the chatbot mentions current promotions in every conversation
+conversations: all
+oracle: num_exist("utterance_index('assistant', 'current promotions or special offers') > 0") == len(conv)
+```
+
+Just keep in mind `utterance_index` is LLM-backed, so allow for a little variability in edge cases. 😊
+
+Want me to adapt this to a specific phrasing (e.g., "discounts", "sales", "loyalty offers") or turn it into a metamorphic rule? Just say the word! 🚀

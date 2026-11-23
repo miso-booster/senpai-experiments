@@ -1,0 +1,112 @@
+conversation ID: graph_based_architecture__p12_evil__pizza_shop__profile__d26a312f
+$$$
+# YAML Connector for SAIC Málaga 🚀
+
+Here's the YAML connector based on your request. I've mapped the headers, payload, and response path from the HTTP trace you shared:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Why these values? 🤔
+- **`base_url` + `path`** → `https://api.1millionbot.com` + `/api/public/messages` (matches the `Host` and request line).
+- **`headers`** → I kept the ones that matter for the API to accept the call: `Content-Type`, `Authorization`, `Origin`, `Referer`, and `User-Agent`. The rest (`Accept-Encoding`, `Sec-Fetch-*`, `Priority`, etc.) are browser noise and not needed.
+- **`payload_template`** → mirrors your JSON body exactly, with `{user_msg}` as the placeholder for the user's message.
+- **`response_path`** → `response.0.text` extracts the first element's `text` field from the JSON response (which is `"<p>¡Buenos días!...` in your example).
+
+Save it as something like `saic-malaga.yml` in your connectors folder. ✅
+
+---
+
+# Python Script to Send Multiple Requests 🐍
+
+Here's a complete script that loads the YAML connector and sends multiple messages through it:
+
+```python
+"""
+Send multiple messages to the SAIC Malaga chatbot connector.
+
+Usage:
+    python send_multiple.py
+
+Make sure the YAML file (saic-malaga.yml) is in the same folder,
+or update CONFIG_PATH below.
+"""
+
+import os
+import time
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+# --- Configuration ---------------------------------------------------------
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "saic-malaga.yml")
+
+MESSAGES = [
+    "hola",
+    "¿Cómo puedo pedir cita previa?",
+    "¿Dónde está la oficina más cercana?",
+    "Gracias, hasta luego",
+]
+
+DELAY_BETWEEN_REQUESTS = 1.0  # seconds, be nice to the API 🙂
+
+
+def main():
+    # 1. Load the connector from the YAML file
+    bot = CustomChatbot(CONFIG_PATH)
+    print(f"✅ Loaded connector: {getattr(bot, 'name', 'SAIC Malaga')}\n")
+
+    # 2. Loop through the messages
+    for i, user_msg in enumerate(MESSAGES, start=1):
+        print(f"[{i}/{len(MESSAGES)}] 👤 User: {user_msg}")
+
+        success, response = bot.execute_with_input(user_msg)
+
+        if success:
+            print(f"🤖 Bot : {response}\n")
+        else:
+            print(f"❌ Error: {response}\n")
+
+        # Small pause between requests
+        if i < len(MESSAGES):
+            time.sleep(DELAY_BETWEEN_REQUESTS)
+
+    print("🏁 Done sending all messages.")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### What this script does 📝
+1. **Loads the YAML connector** via `CustomChatbot(CONFIG_PATH)` — no code changes needed if you tweak the YAML later.
+2. **Iterates over a list of messages** (`MESSAGES`) and sends each one with `execute_with_input()`.
+3. **Prints the bot's reply** (or an error) for each request.
+4. **Waits 1 second** between calls to avoid hammering the API.
+
+### Quick tips 💡
+- If you want to test with a **single message** first, just trim `MESSAGES` to `["hola"]`.
+- If you get an `ImportError`, make sure the `chatbot_connectors` package is installed/available in your Python environment.
+- If the API starts complaining about the `conversation`/`sender` IDs being reused, you may need to generate fresh ones per session — let me know and I can extend the script to do that 😊
+
+Want me to also add **logging to a file** or **saving responses to JSON** for later analysis? Just say the word!
+$$$

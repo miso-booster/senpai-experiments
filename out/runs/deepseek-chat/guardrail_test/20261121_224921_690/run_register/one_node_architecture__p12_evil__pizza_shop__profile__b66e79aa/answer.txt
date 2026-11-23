@@ -1,0 +1,154 @@
+# YAML Connector for SAIC Málaga 🍕
+
+Here's the connector based on your request. I've kept the essential headers (the ones that actually matter for the API to accept the request) and mapped the response path to the first element of the `response` array's `text` field:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of notes 👀:
+- `response_path: "response.0.text"` extracts the first reply's `text` field — which in your sample contains HTML (`<p>...</p>`). You may want to strip tags downstream if you need clean text.
+- The `conversation`, `sender`, and `bot` IDs are hardcoded from your sample. If the API expects a fresh `conversation`/`sender` per session, you'd need to generate them dynamically (the YAML connector doesn't support that out of the box — you'd need a custom Python connector for that).
+
+---
+
+# Python Script to Send Multiple Requests 🐍
+
+This script uses `requests` directly (mirroring what the YAML connector does under the hood), so you can send a batch of messages and inspect the responses:
+
+```python
+"""
+Send multiple messages to the SAIC Malaga chatbot connector.
+
+Mirrors the YAML connector configuration:
+  - POST https://api.1millionbot.com/api/public/messages
+  - Extracts response[0].text from the JSON reply
+"""
+
+import json
+import time
+import requests
+
+
+# --- Connector configuration (from the YAML) ---
+BASE_URL = "https://api.1millionbot.com"
+PATH = "/api/public/messages"
+HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": "64e5d1af081211d24e2cfecd",
+    "Origin": "https://saic.malaga.eu",
+    "Referer": "https://saic.malaga.eu/",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) "
+        "Gecko/20100101 Firefox/147.0"
+    ),
+}
+PAYLOAD_TEMPLATE = {
+    "conversation": "6977595c744ccf01954b8797",
+    "sender_type": "User",
+    "sender": "6977595c3e4824018e496b0c",
+    "bot": "64e5d1af081211d24e2cfec8",
+    "language": "es",
+    "url": "https://saic.malaga.eu/",
+    "message": {"text": "{user_msg}"},
+}
+RESPONSE_PATH = ["response", 0, "text"]  # equivalent to "response.0.text"
+
+
+def build_payload(user_msg: str) -> dict:
+    """Deep-copy the template and inject the user message."""
+    payload = json.loads(json.dumps(PAYLOAD_TEMPLATE))  # safe deep copy
+    payload["message"]["text"] = user_msg
+    return payload
+
+
+def extract_by_path(data, path):
+    """Navigate a nested dict/list using a path like ['response', 0, 'text']."""
+    current = data
+    for key in path:
+        current = current[key]
+    return current
+
+
+def send_message(user_msg: str, timeout: int = 30) -> str:
+    """Send one message and return the extracted bot reply."""
+    url = BASE_URL + PATH
+    payload = build_payload(user_msg)
+
+    response = requests.post(url, headers=HEADERS, json=payload, timeout=timeout)
+    response.raise_for_status()
+
+    data = response.json()
+    try:
+        return extract_by_path(data, RESPONSE_PATH)
+    except (KeyError, IndexError, TypeError):
+        # Fallback: return the raw JSON so you can inspect what went wrong
+        return f"[UNPARSED RESPONSE] {json.dumps(data, ensure_ascii=False)}"
+
+
+def main():
+    # Messages to send — edit this list as you like
+    messages = [
+        "hola",
+        "¿Cuáles son los horarios de atención?",
+        "Necesito información sobre el acceso remoto",
+        "¿Cómo puedo contactar con soporte?",
+    ]
+
+    results = []
+    for i, msg in enumerate(messages, start=1):
+        print(f"\n[{i}/{len(messages)}] User: {msg}")
+        try:
+            reply = send_message(msg)
+            print(f"Bot: {reply}")
+            results.append({"user": msg, "bot": reply, "ok": True})
+        except requests.HTTPError as e:
+            print(f"HTTP error: {e}")
+            results.append({"user": msg, "bot": None, "ok": False, "error": str(e)})
+        except requests.RequestException as e:
+            print(f"Request error: {e}")
+            results.append({"user": msg, "bot": None, "ok": False, "error": str(e)})
+
+        time.sleep(1)  # be polite to the API
+
+    # Save results to a JSON file for later inspection
+    with open("saic_malaga_results.json", "w", encoding="utf-8") as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
+    print("\n✅ Results saved to saic_malaga_results.json")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### What this script does 🚀
+1. **Replicates the YAML connector** — same URL, headers, payload, and `response.0.text` extraction.
+2. **Sends multiple messages** in a loop (edit the `messages` list to your needs).
+3. **Handles errors gracefully** — HTTP errors, network errors, and unexpected response shapes are all caught.
+4. **Saves results** to `saic_malaga_results.json` so you can review them later.
+
+### Heads-up ⚠️
+- The `conversation` and `sender` IDs are **reused across all messages**, so the bot will treat them as one continuous session. If you want each message to be a fresh conversation, you'd need to generate new IDs per request (the API likely returns them on a first call — check the docs).
+- The bot's replies contain **HTML** (`<p>...</p>`). If you need plain text, add a quick `re.sub(r"<[^>]+>", "", reply)` cleanup step.
+
+Want me to also wrap this as a proper `CustomChatbot` subclass so it plugs into the Sensei pipeline? Just say the word 😊

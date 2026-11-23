@@ -1,0 +1,42 @@
+Here's your connector, based on `custom-connector-guide.md` and `connector-examples.md`:
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### What I did and why
+
+- **Minimal headers** ✅ — I kept only `Content-Type: application/json` and `Authorization`. I dropped `Host`, `Origin`, `Referer`, and any browser-specific headers (like `Sec-Fetch-*`), since those aren't needed for the API call to work.
+- **Request mapping** — The `payload_template` mirrors your request body exactly, with `message.text` set to `{user_msg}` so the simulator's user message is injected there.
+- **Response extraction** — `response_path: "response.0.text"` navigates to `response[0]["text"]`, which is where the bot's reply lives in your sample response.
+
+### ⚠️ One thing to flag about "HTML tags removed"
+
+The connector DSL (per `custom-connector-guide.md`) only supports extracting a **path** from the JSON response via `response_path` — it does **not** have a documented field for stripping HTML tags or transforming the extracted text. So the raw value returned would be:
+
+```
+<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>
+```
+
+The connector will faithfully pull `response.0.text`, but the `<p>`/`<br>` tags will remain. To get plain text with tags removed, you'd need either:
+1. A post-processing step in the code that consumes the connector (outside the YAML), or
+2. A documented connector feature for text transformation — which I don't see in the current docs.
+
+Would you like me to double-check whether there's any text-cleaning option available, or is the raw extraction above fine for now? 😊

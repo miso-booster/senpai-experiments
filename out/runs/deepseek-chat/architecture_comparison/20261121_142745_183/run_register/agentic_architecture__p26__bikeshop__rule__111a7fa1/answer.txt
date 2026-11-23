@@ -1,0 +1,44 @@
+# Nope, it's not correct — here's why and the fix 😊
+
+I checked it against `sensei-check-doc.md` and `rules-examples.md`, and cross-referenced the field with your project profiles.
+
+## What's wrong
+
+1. **`when:` is being used as the assertion.** In SENSEI-check, `when:` is only a *filter* that selects which conversations the rule applies to. The actual check must live in `oracle:` (or in `if`/`then`). Your `when: conv[0].tune_up_price == 50` would just filter conversations, not validate anything.
+2. **`then:` is a string, not an expression.** `then:` must be a Python expression that evaluates to a boolean. `"The tune-up price is $50."` is a message, not a condition — it would always be truthy and never fail. Human-readable messages belong in `yields:` (or `on-error:`).
+3. **`conversations: 2` is unnecessary.** You're checking a single conversation's output, so it should be `conversations: 1`. With `2` you'd be doing a metamorphic comparison you don't need.
+4. **`if:`/`then:` is the wrong shape here.** `if`/`then` is for implications ("if X then Y"). A plain absolute check is a single-conversation `oracle`.
+5. **Raw `== 50` on a `money` field.** Per the docs' best practice ("prefer numeric comparisons on parsed values"), `tune_up_price` is typed `money` (e.g. `"$50"`), so you should use `extract_float(...)`. Optionally also assert `currency(...) == 'USD'` like the `session_price_exact` example.
+
+## Field check ✅
+
+`tune_up_price` **does exist** in your project's `chatbot.output`, in two profiles:
+- `bike_service_and_repair_inquirer.yaml` → `tune_up_price` (`type: money`)
+- `bike_repair_and_maintenance_scheduler.yaml` → `tune_up_price` (`type: money`)
+
+So the field name is fine — no profile changes needed. (Note: the rule is profile-agnostic in practice since both profiles expose the same field name.)
+
+## Fixed rule
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price is $50 (uses tune_up_price from the bike service profiles).
+conversations: 1
+active: true
+oracle: extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'
+yields: f"Expected a $50 tune-up price, but got {tune_up_price}"
+```
+
+## What I changed
+
+| Before | After | Why |
+|---|---|---|
+| `when: conv[0].tune_up_price == 50` | `oracle: extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'` | `when` is a filter; the assertion goes in `oracle`. Numeric parse + currency check per docs. |
+| `if: conv[0].tune_up_price is not None` | removed | Not needed for a single-conversation oracle; `extract_float` on a null would just fail the check. |
+| `then: "The tune-up price is $50."` | `yields: f"..."` | `then` must be a boolean expression; messages go in `yields`. |
+| `conversations: 2` | `conversations: 1` | Single-conversation check. |
+| — | `active: true` | Explicit activation. |
+
+**One thing to confirm:** I used `tune_up_price` directly (no `conv[0].` prefix) because single-conversation rules in the docs reference slots directly (e.g. `extract_float(price)`, `size[0]`). If your Sensei-check version requires `conv[0].tune_up_price` even for `conversations: 1`, just swap the prefix in — the logic stays identical.
+
+Want me to also add a companion metamorphic rule (e.g. "tune-up price is consistent across both bike profiles")? 🚲

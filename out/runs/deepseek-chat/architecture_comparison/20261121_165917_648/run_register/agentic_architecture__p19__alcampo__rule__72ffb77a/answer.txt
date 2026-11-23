@@ -1,0 +1,25 @@
+Here's your rule! 🎉 It's a **profile-agnostic global rule** (Case B), so it doesn't depend on any `chatbot.output` fields — it only uses generic helpers from the docs (`sensei-check-doc.md` and `rules-examples.md`).
+
+```yaml
+name: chatbot_provides_promotions
+description: The chatbot provides information about current promotions when asked
+conversations: 1
+active: True
+when: utterance_index('user', 'asking about current promotions or discounts') > 0
+oracle: utterance_index('assistant', 'informing about current promotions, discounts or special offers') > 0
+yields: f"The chatbot did not provide information about current promotions"
+```
+
+### How it works 🔍
+- **`when`** — filters to conversations where the user actually asked about promotions/discounts. This keeps the rule meaningful (no false positives when promotions were never requested). It uses the LLM-backed `utterance_index` helper, which returns the turn index where a role mentions a topic (or `0`/falsy if not found).
+- **`oracle`** — asserts the assistant mentioned promotions/discounts/special offers at some point in the dialogue.
+- **`yields`** — a friendly failure message shown when the rule fails.
+
+### Why it's profile-agnostic ✅
+As described in `sensei-check-doc.md` §3.2 (pattern 2 — *General / global rules*), this rule relies only on generic helpers (`utterance_index`) and does **not** reference any `conv[i].<field>` from a profile's `chatbot.output`. So it works across any profile.
+
+### A couple of notes 💡
+- `utterance_index` is **LLM-backed**, so expect minor variability — the topic descriptions are intentionally descriptive to help the model match reliably.
+- If you'd rather make it stricter (e.g., require the bot to actually list a concrete promotion), we could combine it with `semantic_content` — but that would need a profile field to check against, which would make it profile-bound. Let me know if you want that variant!
+
+Want me to tweak the topic wording, or add a companion rule (e.g., "bot must not invent promotions")? 😊

@@ -1,0 +1,22 @@
+¡Buena idea! 😊 Esa regla encaja perfecto como una regla de **una sola conversación** (tipo oráculo), usando el helper `utterance_index` para verificar que el asistente confirma la bebida *después* de que el usuario la pide.
+
+Aquí tienes una propuesta lista para pegar en `rules/`:
+
+```yaml
+name: assistant_confirms_drink_added
+description: The assistant confirms that the requested drink was added to the order
+conversations: 1
+active: true
+oracle: |
+  utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms the drink was added to the order')
+yields: |
+  f"Assistant did not confirm the drink was added after the user ordered it"
+```
+
+Un par de notas para que la ajustes a tu gusto 👇
+
+- **`utterance_index`** es un helper respaldado por LLM, así que devuelve el índice del turno donde aparece el tema. La comparación `<` asegura que la confirmación ocurre **después** del pedido.
+- Puedes afinar las frases de búsqueda según cómo hable tu bot. Por ejemplo, si tu asistente dice cosas como *"I've added a Coke to your order"*, podrías usar `'confirms the drink was added'` o algo más específico como `'added the drink to the order'`.
+- Si quieres que la regla sea más estricta (que la bebida confirmada coincida con la pedida), podrías combinarla con un chequeo de `semantic_content` sobre un campo de `chatbot.output` — pero eso ya requeriría que el perfil exponga la bebida seleccionada.
+
+¿Quieres que la haga más específica (por ejemplo, que verifique también el *tipo* de bebida), o así está bien? 🍹

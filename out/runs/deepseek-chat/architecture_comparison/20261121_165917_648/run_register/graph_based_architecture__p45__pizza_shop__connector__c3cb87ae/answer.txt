@@ -1,0 +1,70 @@
+¡Claro que sí! 😊 Vamos a crear ese conector paso a paso.
+
+Primero, un detalle importante: el campo `response_path` **solo extrae** el valor del JSON (en este caso `response.0.text`), pero **no elimina las etiquetas HTML** por sí mismo. El conector YAML no tiene una opción nativa para "limpiar HTML" — eso normalmente se hace en el código que consume el conector. Sin embargo, te dejo el YAML con el `response_path` correcto apuntando al texto, y te explico cómo quitar el HTML.
+
+## Conector YAML
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+## Sobre las cabeceras 🧐
+
+Pediste **solo las mínimas necesarias**, así que dejé únicamente:
+
+- `Content-Type: application/json` → obligatoria para enviar JSON.
+- `Authorization: 64e5d1af081211d24e2cfecd` → necesaria para autenticarte.
+
+Quité `Origin` y `Referer` porque son cabeceras de navegador y no forman parte del mínimo requerido. Si el servidor las exige estrictamente, podrías añadirlas, pero según tu petición las omitimos. ✅
+
+## Sobre quitar las etiquetas HTML 🧹
+
+El `response_path: "response.0.text"` te devolverá exactamente esto:
+
+```yaml
+name: "345634"
+base_url: "https://api.example.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+El conector YAML **no puede transformar** ese string por sí solo. Para obtener texto plano necesitas limpiarlo en el código que usa el conector, por ejemplo:
+
+```python
+import re
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("saic-malaga.yml")
+success, response = bot.execute_with_input("hola")
+
+# Quitar etiquetas HTML
+plain_text = re.sub(r"<[^>]+>", "", response)
+print(plain_text)  # ¡Buenos días! ¿En qué puedo ayudarte?
+```
+
+Si quieres, puedo ayudarte a revisar si tu implementación de `CustomChatbot` soporta algún hook de post-procesado, pero con la documentación disponible el YAML por sí solo no elimina HTML. 😊
+
+¿Quieres que te ayude a integrarlo o a probarlo?

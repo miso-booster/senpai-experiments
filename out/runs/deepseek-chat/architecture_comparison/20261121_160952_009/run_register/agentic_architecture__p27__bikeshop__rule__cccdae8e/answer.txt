@@ -1,0 +1,26 @@
+I found a very relevant profile. Here's what I see:
+
+**`appointment.yml`** — a bike-shop appointment booking profile. Its `chatbot.output` fields are:
+- `confirmed_date` (date)
+- `confirmed_time` (str)
+- `confirmed_service` (str)
+
+Now, a quick clarification before I write the rule 👇
+
+Your request is: *"if we tell the assistant the same date twice, it must refuse to accept the second one."*
+
+The tricky part is **how to detect "the second time"**. In SENSEI rules, a single conversation is one continuous dialogue, so "telling the date twice" happens **within one conversation** (the user repeats the same date, and the bot should refuse the second time). The profile above exposes only the *final* confirmed values, not a per-turn log of what the user said.
+
+So I need to know which approach you want:
+
+1. **Single-conversation rule (recommended, works with `appointment.yml` as-is):**
+   Use `utterance_index` to check that the assistant *rejects/refuses* a repeated date. Something like: if the user mentions the date twice, the assistant must produce a refusal ("already booked / cannot accept that date again"). This relies on the LLM-backed `utterance_index` helper and the existing `confirmed_date` field.
+
+2. **Metamorphic rule (2 conversations):**
+   Compare two conversations where the user gives the *same* date, and assert the assistant's behaviour is consistent (e.g., it does not confirm two different appointments for the same date). This needs a field that captures *whether the date was accepted* — which `appointment.yml` doesn't currently have.
+
+**Can you confirm:**
+- Should the rule target **`appointment.yml`** (the bike-shop appointment profile)? Or another profile?
+- Do you want **option 1** (single conversation, detect the refusal on the repeated date) or **option 2** (metamorphic across two conversations)?
+
+If you're happy with **option 1 on `appointment.yml`**, just say "go ahead" and I'll write it right away 😊.

@@ -1,0 +1,58 @@
+Hey hey! 😊 Happy to help you get this rule working — but before I hand you a fixed version, I want to flag a couple of things so we don't ship something that silently fails 👀
+
+## What's off in the current rule
+
+**1. Typo in the header**
+`descriptin:` → should be `description:`. Sensei-check expects the exact key.
+
+**2. Missing `then:` clause**
+You have `if:` but no `then:`. A metamorphic rule needs the relation to assert. Right now the rule has nothing to check — it's an implication with no consequent.
+
+**3. Fields must come from `chatbot.output`**
+`user_request`, `contact_options`, and `customer_service_number` need to exist as slots in the target profile's `chatbot.output`. If they don't, the rule won't resolve them. Please double-check your profile exposes those exact names — otherwise rename them here to match.
+
+**4. `when:` is doing the job of `if:`**
+`when:` is a **filter** (which conversations are eligible for comparison). `if:` is the **precondition** inside the relation. Putting the "user asked for X" check in `when:` means the rule only fires when *both* conversations happen to match — which is fine, but then your `if:` is redundant. Pick one pattern.
+
+**5. `conversations: 2` with no real relation**
+Right now the rule doesn't actually compare conv[0] vs conv[1] — it just checks each one independently. That's a single-conversation oracle wearing a metamorphic costume 🎭. Either make it a real 2-conv relation, or set `conversations: 1`.
+
+---
+
+## Fixed version (metamorphic, 2 conversations)
+
+Here's a version that actually asserts a relation — *if both users asked about customer service, both conversations must expose the contact info*:
+
+```yaml
+name: customer_service_contact_info
+description: When users ask for customer service contact info, the chatbot must expose contact options and a service number.
+conversations: 2
+when: conv[0].user_request in ['contact options', 'customer service number'] and conv[1].user_request in ['contact options', 'customer service number']
+if: conv[0].user_request is not None and conv[1].user_request is not None
+then: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+```
+
+## Simpler alternative (single-conversation oracle)
+
+Honestly, for "does the bot give contact info when asked?", a **single-conversation oracle** is cleaner and less fragile:
+
+```yaml
+name: customer_service_contact_info
+description: When the user asks for customer service contact info, the chatbot must provide contact options and a service number.
+conversations: 1
+when: user_request in ['contact options', 'customer service number']
+oracle: contact_options is not None and customer_service_number is not None
+```
+
+This reads like: *"For any conversation where the user asked about contact info, the bot must have filled both slots."* Much easier to reason about, and it won't silently pass when only one of the two conversations matches your filter.
+
+---
+
+## Quick checklist before you run it ✅
+
+- [ ] `description:` spelled correctly
+- [ ] `user_request`, `contact_options`, `customer_service_number` exist in the profile's `chatbot.output`
+- [ ] `when:` filters, `if:`/`then:` (or `oracle:`) asserts — don't mix roles
+- [ ] `conversations:` matches the arity you actually use (`1` for oracle, `2` for metamorphic)
+
+Want me to also sketch the matching `chatbot.output` block for the profile so the field names line up? Just say the word 🙌

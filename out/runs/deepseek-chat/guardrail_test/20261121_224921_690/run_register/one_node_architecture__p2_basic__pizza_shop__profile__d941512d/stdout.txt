@@ -1,0 +1,73 @@
+conversation ID: one_node_architecture__p2_basic__pizza_shop__profile__d941512d
+$$$
+I'd love to help, but that request is outside what I can do here 🙏 — I'm Senpai, and I'm focused exclusively on **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (plus their documentation). A standalone C program for a bike shop scheduler isn't part of that scope.
+
+That said, if you're building a **Sensei project** around a bike shop appointment scheduler, I can absolutely help with the pieces that *are* in scope! For example:
+
+- 🧑‍💻 **A Sensei profile** that simulates a user booking a bike repair appointment (with `date`/`time` variables, goals, and `chatbot.output` fields like `appointment_date`, `appointment_time`, `service_type`).
+- ✅ **Sensei rules** that validate the scheduler's behavior — e.g., "appointments must be in the future", "same service + same duration ⇒ same price", or "no duplicate appointment slots".
+- 🔌 **A custom connector** (YAML) to hook Sensei up to your bike shop chatbot's API.
+
+Here's a quick taste of what a profile for that scenario could look like:
+
+```yaml
+test_name: "bike_shop_appointment_booking"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer booking a bike repair appointment at a local bike shop.
+    Ask about available services, choose a service, and book a date and time.
+  context:
+    - "You need your bike fixed before a weekend ride."
+    - "You prefer morning appointments."
+  goals:
+    - "Book a {{service_type}} appointment on {{appointment_date}} at {{appointment_time}}"
+    - service_type:
+        function: forward()
+        type: string
+        data: [tune-up, brake repair, wheel truing, full service]
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - any(3 dates within the next 14 days)
+    - appointment_time:
+        function: random()
+        type: string
+        data: ["09:00", "11:00", "14:00", "16:00"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - appointment_date:
+        type: date(mm/dd/yyyy)
+        description: "The confirmed appointment date"
+    - appointment_time:
+        type: time(hh:mm)
+        description: "The confirmed appointment time"
+    - service_type:
+        type: string
+        description: "The booked service"
+    - booking_id:
+        type: string
+        description: "Appointment confirmation reference"
+
+conversation:
+  number: 4
+  goal_style:
+    steps: 6
+  interaction_style:
+    - single questions
+```
+
+Want me to go further — say, add a **rule** that checks appointments are always in the future, or draft a **connector** for your scheduler's API? Just tell me a bit about your chatbot's endpoint and I'll tailor it 😊
+$$$

@@ -1,0 +1,91 @@
+Here's a profile that has the simulated user ask the chatbot to add items to their shopping cart. I matched the conventions of your existing profiles (Alcampo-style fallback, `gpt-4o-mini`, `single questions`, `chatbot.output` schema) and grounded everything in `sensei-chat-guide.md`.
+
+```yaml
+test_name: Shopping Cart Item Addition
+
+llm:
+  temperature: 0.9
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    Customer shopping online who wants to add a set of products to their
+    shopping cart and confirm the cart contents before checkout.
+  context:
+    - You are building your weekly grocery basket and want the chatbot to add each item to your cart.
+    - You prefer to add items one at a time and confirm each addition before moving on.
+    - You care about the quantity and the running total of your cart.
+  goals:
+    - Ask the chatbot to add {{quantity}} of {{product}} to your shopping cart.
+    - Confirm that the item was added and ask for the current cart total.
+    - Ask the chatbot to add another product, {{second_product}}, to the cart.
+    - Request a summary of everything currently in your cart.
+    - product:
+        function: forward()
+        type: string
+        data:
+          - whole milk
+          - free-range eggs
+          - whole wheat bread
+          - olive oil
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+    - second_product:
+        function: another()
+        type: string
+        data:
+          - bananas
+          - coffee beans
+          - pasta
+          - tomato sauce
+
+chatbot:
+  is_starter: false
+  fallback: Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios.
+  output:
+    - added_items:
+        type: list[string]
+        description: Products the chatbot confirmed were added to the cart
+    - item_quantities:
+        type: list[int]
+        description: Quantities added for each product
+    - cart_item_count:
+        type: int
+        description: Total number of items currently in the shopping cart
+    - cart_total:
+        type: money
+        description: Current total cost of the shopping cart
+    - cart_summary:
+        type: string
+        description: Summary of everything currently in the cart
+    - addition_confirmation:
+        type: string
+        description: The chatbot's confirmation message for the last added item
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+### What it does & how it maps to the docs 📚
+- **`user.goals` with variables** — `{{product}}`, `{{quantity}}`, and `{{second_product}}` are declared in the same `goals` list with matching names, exactly as required by `sensei-chat-guide.md` (§4.1). I used `forward()`, `random()`, and `another()` fill functions (§4.4) to vary coverage across conversations.
+- **`chatbot.output` as the rules contract** — the extracted fields (`added_items`, `cart_item_count`, `cart_total`, etc.) are designed so future Sensei-check rules can reference them as `conv[i].<field>` (§2.1.1). I used `list[string]`, `list[int]`, and `money` types, which are valid in `output` per §6.
+- **Conversation controls** — `number: 3`, `goal_style.steps: 20`, and `single questions` interaction style keep the run focused and cheap, with a `max_cost` cap (§5).
+
+A couple of things worth flagging:
+- I used `money` for `cart_total` to match your existing profiles (e.g., `online_ordering_process.yaml`). If you don't have a `money` custom type in `types/`, let me know and I'll switch it to `currency` or `float`.
+- The fallback text is copied from your Alcampo profiles — swap it if this bot has a different real fallback.
+
+Want me to also create a **rule** that validates the cart (e.g., that `cart_item_count` matches the number of `added_items`)? If so, I'll confirm the target profile and its output fields with you first. 😊

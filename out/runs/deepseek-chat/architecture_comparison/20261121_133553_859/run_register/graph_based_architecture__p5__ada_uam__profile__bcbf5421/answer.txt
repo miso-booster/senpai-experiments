@@ -1,0 +1,65 @@
+¡Hola! 😊 Encantado de ayudarte a crear ese perfil. He revisado tu proyecto y veo que ya tienes perfiles muy parecidos (como *Consultante de servicios y asistencia del CAU*), así que te propongo uno nuevo y enfocado **exclusivamente** en los cuatro datos que quieres validar: teléfono, email, ubicación física y horario del CAU.
+
+Aquí tienes el YAML listo para copiar en `profiles/`:
+
+```yaml
+test_name: "Contacto del CAU - Datos básicos"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario que necesita localizar y contactar al Centro de Atención a Usuarios (CAU)
+    de la UAM. Quiere reunir los datos de contacto esenciales para poder comunicarse
+    con ellos por distintos canales.
+  context:
+    - personality: personalities/formal-user
+    - "Tienes una duda administrativa y no sabes a qué canal del CAU dirigirte."
+    - "Prefieres tener todos los datos de contacto a mano antes de escribir o llamar."
+    - "Te interesa saber también cuándo están disponibles para atenderte."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico del CAU."
+    - "Preguntar por la ubicación física o dirección de la oficina del CAU."
+    - "Consultar el horario de apertura y atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - cau_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - cau_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - cau_location:
+        type: string
+        description: "Dirección física o ubicación de la oficina del CAU"
+    - cau_hours:
+        type: string
+        description: "Horario de apertura y atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.3
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👀:
+
+- **`chatbot.output`** define exactamente los cuatro campos que quieres extraer y validar. Si más adelante escribes reglas de Sensei-check, podrás referenciarlos como `conv[i].cau_phone`, `conv[i].cau_email`, etc. 🙌
+- **`single questions`** hace que el usuario simulado pregunte de una en una, lo que encaja perfecto para verificar cada dato por separado.
+- **`goal_style.steps: 20`** es más que suficiente para cuatro preguntas; si quieres conversaciones más cortas, baja a `10`.
+- El **`fallback`** lo he copiado del resto de tus perfiles para mantener coherencia con el bot real.
+
+¿Quieres que te lo adapte para que también pruebe variantes (por ejemplo, pedir los datos en distinto orden, o añadir `make spelling mistakes`)? ¡Dímelo y lo ajustamos! 😄

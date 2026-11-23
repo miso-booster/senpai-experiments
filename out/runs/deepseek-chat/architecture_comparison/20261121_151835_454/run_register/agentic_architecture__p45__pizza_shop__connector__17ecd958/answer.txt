@@ -1,0 +1,44 @@
+Here's your connector, based on `custom-connector-guide.md` and `connector-examples.md` 👇
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### What I did and why
+
+- **Minimal headers** ✅ — only `Content-Type: application/json` and `Authorization` are kept. I dropped `Host` (set automatically), and the browser-specific `Origin`, `Referer`, and any `Sec-Fetch-*` headers, per your request.
+- **Request mapping** — the payload mirrors your sample request exactly, with `message.text` bound to the `{user_msg}` placeholder as required by the connector DSL.
+- **Response extraction** — `response_path: "response.0.text"` navigates to the first element of the `response` array and pulls its `text` field, matching your sample response structure (`response[0].text`).
+
+### ⚠️ One thing to flag: HTML stripping
+
+The docs (`custom-connector-guide.md`) define `response_path` as a **pure dot-notation JSON path extractor** — there is **no documented option** in the connector DSL to post-process the extracted value (e.g., strip HTML tags). So the connector as specified will return the raw string:
+
+```
+<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>
+```
+
+I don't want to invent an undocumented field like `strip_html: true` or a transform block, since that would silently fail. A few honest options:
+
+1. **Handle it downstream** — strip HTML in the rule/validation layer or wherever you consume the reply (most reliable with the current DSL).
+2. **Check if your Chatbot Dojo version supports a transform** — if you have a newer connector schema than the docs I loaded, tell me the field name and I'll add it.
+3. **Point me at a plain-text endpoint** — if the MillionBot API offers a variant that returns plain text, we can switch `path`/`response_path` accordingly.
+
+Want me to keep the connector as-is (raw HTML) and instead write a **rule** that normalises/validates the text, or do you have a documented transform option I should use? 😊

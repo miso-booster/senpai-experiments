@@ -1,0 +1,67 @@
+¡Hola! 😊 Claro que sí, te ayudo con esa regla encantado.
+
+Antes de escribirla, un detalle importante para que quede bien atada a tu perfil: la regla va a referirse a un campo `eco_friendly_toys` que debe existir en el `chatbot.output` del perfil correspondiente. Si el perfil aún no lo expone, la regla no funcionará hasta que lo añadas. Te dejo también el snippet del perfil para que quede todo coherente 👇
+
+## 1) Regla Sensei-check
+
+```yaml
+name: eco_friendly_toys_returned
+description: El chatbot devuelve una lista no vacía de juguetes eco-friendly (campo eco_friendly_toys del perfil)
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) > 0
+on-error: "El chatbot no devolvió una lista de juguetes eco-friendly (eco_friendly_toys={conv[0].eco_friendly_toys})"
+```
+
+Qué hace exactamente:
+- `conversations: 1` → es un oráculo de una sola conversación (no metamórfico).
+- `conv[0].eco_friendly_toys is not None` → el slot se ha rellenado (no ha quedado vacío).
+- `len(conv[0].eco_friendly_toys) > 0` → la lista tiene al menos un juguete.
+- `on-error` → mensaje claro cuando falla, mostrando el valor recibido.
+
+## 2) Snippet del perfil (para que el campo exista)
+
+```yaml
+test_name: "eco_friendly_toys_profile"
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente interesado en juguetes ecológicos y quieres recibir
+    recomendaciones de productos eco-friendly.
+  context:
+    - "Te preocupa el medio ambiente y prefieres productos sostenibles."
+  goals:
+    - "Pide recomendaciones de juguetes eco-friendly"
+
+chatbot:
+  is_starter: false
+  fallback: "Lo siento, ¿puedes reformular tu pregunta?"
+  output:
+    - eco_friendly_toys:
+        type: list[string]
+        description: Lista de juguetes eco-friendly recomendados durante la conversación
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+Así la regla y el perfil "hablan el mismo idioma" 🧩. Si prefieres que el campo sea `list[object]` (con nombre, precio, material…), dímelo y ajustamos tanto el tipo como la comprobación.
+
+## 3) Variante opcional (más estricta)
+
+Si quieres asegurarte de que además el bot lo menciona explícitamente en el diálogo, podrías añadir una segunda regla de estilo:
+
+```yaml
+name: eco_friendly_toys_mentioned
+description: El asistente menciona juguetes eco-friendly en la conversación
+conversations: 1
+oracle: utterance_index('assistant', 'eco-friendly toys') > 0
+```
+
+⚠️ Ojo: `utterance_index` es LLM-backed, así que puede tener pequeña variabilidad. La regla principal (la del punto 1) es determinista y más fiable.
+
+¿Quieres que te la deje también en versión "global" (sin depender del perfil, usando solo helpers genéricos) o con validación semántica del contenido de la lista? Dímelo y la afinamos juntos 😄

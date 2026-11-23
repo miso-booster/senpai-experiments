@@ -1,0 +1,34 @@
+¡Perfecto! 😊 Ya tengo cargada la documentación (`sensei-check-doc.md`, `rules-examples.md` y `sensei-chat-guide.md`) y he revisado el perfil que me pasaste.
+
+## Lo que he identificado
+
+Tu perfil expone en `chatbot.output` el campo **`library_hours`** (tipo `string`, "Horarios de atención de la biblioteca"). Ese es justo el campo que la regla debe inspeccionar, así que es una **regla ligada al perfil** (profile-bound), tal como recomienda `sensei-check-doc.md` §3.3.
+
+## Cómo compruebo "de 9 a 20"
+
+El campo `library_hours` es texto libre (p. ej. *"de 9:00 a 20:00"*, *"9 a 20 h"*, *"9am–8pm"*…). Para validarlo de forma robusta uso el helper **`semantic_content(value, desc)`**, que hace una comprobación semántica con LLM — ideal para texto en lenguaje natural como horarios. Es más fiable que intentar parsear números con `extract_float`, que solo cogería el primer número.
+
+Aquí tienes la regla:
+
+```yaml
+name: library_hours_9_to_20
+description: >
+  El horario de atención de la biblioteca debe ser de 9:00 a 20:00.
+  Regla ligada al perfil "Préstamos y Recursos de la Biblioteca"
+  (campo chatbot.output: library_hours).
+conversations: 1
+active: true
+when: conv[0].library_hours is not None
+oracle: |
+  semantic_content(conv[0].library_hours, "El horario de atención de la biblioteca es de 9:00 a 20:00") is True
+yields: |
+  f"Horario de biblioteca incorrecto: se esperaba de 9:00 a 20:00 pero se obtuvo '{conv[0].library_hours}'"
+```
+
+## Notas importantes ⚠️
+
+- **`when: conv[0].library_hours is not None`**: solo evalúa conversaciones donde el bot realmente dio un horario. Si prefieres que **también falle** cuando no se proporciona el horario, quita esa línea (o cámbiala por `data_collected()` si quieres exigir que *todos* los slots estén rellenos).
+- **`semantic_content` es LLM-backed**: admite cierta variabilidad, así que tolera formatos como "9 a 20", "9:00–20:00" o "9am a 8pm", pero conviene revisar los resultados en la primera ejecución.
+- Si en tu proyecto el horario se devuelve siempre en un formato fijo (p. ej. siempre "9:00-20:00"), podríamos hacer una comprobación más estricta con `extract_float`, pero necesitaría saber el formato exacto.
+
+¿Quieres que la haga más estricta (que falle si no hay horario) o la dejamos así? Y si te parece bien, puedo guardarla como `library_hours_9_to_20.yaml` en tu carpeta de reglas. 🚀

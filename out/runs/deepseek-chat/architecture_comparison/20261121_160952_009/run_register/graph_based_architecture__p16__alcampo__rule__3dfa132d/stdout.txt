@@ -1,0 +1,86 @@
+conversation ID: graph_based_architecture__p16__alcampo__rule__3dfa132d
+$$$
+Hey there! 😊 Great question — let's build that rule together.
+
+Since there's **no profile yet**, this falls into the **"rule-first design"** pattern from the Sensei-check guide. That means we design the rule now, but we should clearly document which `chatbot.output` fields a future profile must expose for it to work. I'll pick sensible field names and call that out explicitly. 👍
+
+## The rule
+
+```yaml
+name: lactose_free_availability
+description: >
+  Rule-first design (no profile yet). Checks that when a user asks about a
+  lactose-free product, the assistant confirms availability and exposes a
+  matching availability flag. A future profile must expose chatbot.output
+  fields: product_name (string), lactose_free (bool), available (bool).
+conversations: 1
+if:   conv[0].lactose_free is True
+then: conv[0].available is True and utterance_index('assistant', 'available') > 0
+on-error: f"Lactose-free product '{conv[0].product_name}' was not confirmed as available."
+```
+
+## Why it's written this way
+
+- **`conversations: 1`** — this is a single-conversation oracle (not metamorphic), since we're checking one dialog's outcome. ✅
+- **`if` / `then`** — reads like a law: *"If the product is lactose-free, then it must be marked available and the assistant must actually say so."* That's the metamorphic mindset applied cleanly. 🎯
+- **`utterance_index('assistant', 'available') > 0`** — this is the LLM-backed helper that confirms the assistant *mentioned* availability somewhere in the dialogue, not just in the extracted output. Nice safety net for UX regressions.
+- **`on-error`** — gives a friendly, specific failure message using `conv[0].product_name`.
+
+## ⚠️ Important: the fields are assumptions
+
+Since there's no profile yet, the fields `product_name`, `lactose_free`, and `available` are **placeholders I invented**. Per the guide's rule-first guidance:
+
+> *"The rule still assumes that a future profile will expose certain outputs. You should clearly document which `chatbot.output` fields a profile must provide for the rule to work."*
+
+So when you create the profile later, its `chatbot.output` **must** include something like:
+
+```yaml
+test_name: "product_info_profile"
+
+user:
+  language: English
+  role: "You are a customer asking about a product's details, including whether it is lactose-free and currently available."
+  context:
+    - "You care about lactose content due to dietary preferences."
+    - "You want to know if the product is in stock before deciding."
+  goals:
+    - "Ask about the {{product_name}}"
+    - "Ask whether the {{product_name}} is lactose-free"
+    - "Ask whether the {{product_name}} is currently available"
+    - product_name:
+        function: random()
+        type: string
+        data: [milk, cheese, yogurt, butter]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - product_name:
+        type: string
+        description: Name of the product being discussed
+    - lactose_free:
+        type: bool
+        description: Whether the product is lactose-free
+    - available:
+        type: bool
+        description: Whether the product is currently in stock
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+If you rename any of these later (e.g. `in_stock` instead of `available`), just remember to update the rule to match. 🔄
+
+## Want a metamorphic version too?
+
+If you'd like to compare **two conversations** — e.g. *"same product, one lactose-free and one not, availability should be reported consistently"* — I can draft that as a 2-conversation rule as well. Just say the word! 🙌
+
+Would you like me to also sketch the matching profile so the rule has real fields to bind to?
+$$$

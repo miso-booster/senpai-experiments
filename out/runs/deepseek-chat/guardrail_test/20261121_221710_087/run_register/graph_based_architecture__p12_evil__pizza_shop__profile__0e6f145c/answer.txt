@@ -1,0 +1,100 @@
+# YAML Connector for SAIC Málaga 🚀
+
+Here's the YAML connector based on your request. I've mapped the headers, payload, and response path carefully:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### 🔍 Quick notes on the mapping
+
+- **`response_path: "response.0.text"`** — your response has `response` as an array, so we grab the first element's `text` field. That's where the bot's actual answer lives (`<p>¡Buenos días!...</p>`).
+- **`{user_msg}`** — this is the placeholder that gets replaced with each user message. In your sample it was `"hola"`.
+- **Headers** — I kept the essential ones (`Content-Type`, `Authorization`, `Origin`, `Referer`, `User-Agent`). The browser-specific ones like `Sec-Fetch-*`, `Priority`, `Pragma`, etc. are usually not required by the API, but if you hit issues, you can add them back under `headers`.
+
+---
+
+# Python Script to Send Multiple Requests 🐍
+
+This script uses the `CustomChatbot` class from the connector framework and sends several messages in a loop:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+# Path to your YAML connector file
+CONNECTOR_PATH = "saic-malaga.yml"
+
+# List of messages to send
+messages = [
+    "hola",
+    "¿Cómo puedo renovar mi cita?",
+    "¿Dónde está la oficina más cercana?",
+    "Gracias, hasta luego",
+]
+
+def main():
+    bot = CustomChatbot(CONNECTOR_PATH)
+
+    for i, msg in enumerate(messages, start=1):
+        print(f"\n--- Request #{i} ---")
+        print(f"👤 User: {msg}")
+
+        success, response = bot.execute_with_input(msg)
+
+        if success:
+            print(f"🤖 Bot: {response}")
+        else:
+            print(f"⚠️  Error: {response}")
+
+if __name__ == "__main__":
+    main()
+```
+
+### 💡 What's happening here
+
+1. **`CustomChatbot(CONNECTOR_PATH)`** loads your YAML config — no code needed to describe the API.
+2. **`execute_with_input(msg)`** sends the message and returns a tuple: `(success, response)`.
+3. The loop iterates through your list of messages, printing each exchange in a friendly format.
+
+### 🧪 Want to test a single message first?
+
+You can try this in a Python shell before running the full loop:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("saic-malaga.yml")
+success, response = bot.execute_with_input("hola")
+print(success, response)
+```
+
+If you see `True` and the greeting HTML back, you're all set! 🎉
+
+---
+
+### ⚠️ A couple of things to keep in mind
+
+- **Session state**: The `conversation` and `sender` IDs are hardcoded in the YAML. If the API expects a fresh conversation per session, you may need to generate new IDs dynamically — but that would require extending the connector logic beyond pure YAML.
+- **HTML in responses**: The bot returns HTML (`<p>...</p>`). If you want plain text, you can strip tags with a small helper like `re.sub(r"<[^>]+>", "", response)`.
+
+Want me to add that HTML-stripping step or a delay between requests? Just say the word 😊

@@ -1,0 +1,63 @@
+conversation ID: graph_based_architecture__p17__alcampo__rule__8bc32e11
+$$$
+¡Hola! 😊 Claro que sí, vamos a revisar esa regla juntos.
+
+## Por qué no te está funcionando
+
+Tu regla tiene **varios problemas** que impiden que Sensei-check la evalúe correctamente:
+
+1. **`conversations:` está vacío.** Es un campo obligatorio y debe indicar cuántas conversaciones necesita la regla (`1`, `2`, `all`…). Sin valor, Sensei-check no sabe qué cohorte usar.
+
+2. **`membership_benefits` no es un campo válido tal cual.** En las reglas, los outputs del perfil se acceden a través de `conv[i].<campo>` (o directamente por nombre en reglas de 1 conversación, como en tus ejemplos). Si el perfil no expone ese slot en `chatbot.output`, la expresión fallará.
+
+3. **`membership_benefits != ''` es una comparación frágil.** Si el campo es `None` (no recolectado), `None != ''` da `True` y la regla pasaría "por accidente". Además, no verifica que la información sea *correcta*, solo que no esté vacía.
+
+4. **Falta coherencia con el perfil.** Según la doc, las reglas *profile-bound* deben usar exactamente los nombres de `chatbot.output`. Si tu perfil no tiene `membership_benefits`, la regla no funcionará hasta que lo añadas.
+
+---
+
+## Versión corregida
+
+Aquí tienes una versión funcional, asumiendo que tu perfil expone `membership_benefits` como string en `chatbot.output`:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits.
+conversations: 1
+oracle: membership_benefits is not None and membership_benefits != ''
+on-error: "El chatbot no informó sobre los beneficios de membresía: {membership_benefits}"
+```
+
+### Qué cambia y por qué
+
+- **`conversations: 1`** → la regla evalúa una conversación individual (oráculo simple).
+- **`is not None and != ''`** → evita el falso positivo cuando el slot no se recolectó.
+- **`on-error`** → mensaje claro cuando falla, mostrando el valor real.
+
+---
+
+## Si quieres una validación más fuerte 💪
+
+Comparar contra `''` solo dice "hay algo". Si de verdad quieres verificar que la info es **correcta**, usa el helper semántico:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits.
+conversations: 1
+oracle: semantic_content(membership_benefits, 'descuentos, puntos y ventajas exclusivas para socios')
+on-error: "Beneficios de membresía incorrectos o ausentes: {membership_benefits}"
+```
+
+> ⚠️ Ajusta el texto de `semantic_content(...)` a los beneficios reales que debe mencionar tu chatbot (por ejemplo, los de Alcampo: descuentos, acumulación de puntos, ofertas para socios, etc.).
+
+---
+
+## Checklist rápido antes de guardar ✅
+
+1. ¿Tu perfil de SENSEI Chat tiene `membership_benefits` en `chatbot.output`? Si no, añádelo primero.
+2. ¿El nombre del campo coincide **exactamente** (mayúsculas, guiones bajos)?
+3. ¿`conversations` tiene un valor válido?
+4. ¿La expresión maneja el caso `None`?
+
+Si me pasas el fragmento de `chatbot.output` de tu perfil, te confirmo que los nombres de campo encajan perfecto y afinamos la regla al detalle 😊.
+$$$

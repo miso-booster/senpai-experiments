@@ -1,0 +1,79 @@
+Great question! 😊 Let me walk you through it — and I'll keep it aligned with your existing pizza shop rules.
+
+## The idea
+
+You want a **single-conversation oracle** that checks the chatbot actually provided an `order_id` in its output. Since your profile exposes `order_id` as a `chatbot.output` field, the cleanest check is:
+
+- The field exists and is **not empty / not null**.
+
+## The rule
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide a non-empty order_id in its output
+conversations: 1
+oracle: conv[0].order_id is not None and len(str(conv[0].order_id).strip()) > 0
+```
+
+## Why this works 👀
+
+- `conv[0].order_id` reads the `order_id` slot from your profile's `chatbot.output`.
+- `is not None` catches the case where the slot was never filled.
+- `len(str(...).strip()) > 0` catches empty strings or whitespace-only values (and safely handles non-string types by casting to `str`).
+
+## A couple of variations depending on your intent
+
+**If you also want to enforce a format** (e.g., IDs like `ORD-12345`), you could add a pattern check:
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide a well-formed order_id (e.g. ORD-12345)
+conversations: 1
+oracle: conv[0].order_id is not None and str(conv[0].order_id).startswith('ORD-')
+```
+
+**If you'd rather use the built-in slot helper** (checks that *all* extracted outputs are non-null — handy if `order_id` is the only slot you care about, or you want a stricter "everything filled" check):
+
+```yaml
+name: order_id_provided
+description: All extracted outputs (including order_id) are non-null
+conversations: 1
+oracle: data_collected() is True
+```
+
+⚠️ Just a heads-up: `data_collected()` checks **all** slots, not only `order_id`. If your profile has other optional fields, the first version (targeting `conv[0].order_id` directly) is more precise.
+
+## One thing to double-check ✅
+
+Make sure your profile's `chatbot.output` actually declares `order_id` — otherwise the rule can't read it. Something like:
+
+```yaml
+test_name: "pizza_order_summary"
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza from a pizza shop.
+    Provide your order details and confirm the final summary.
+  context:
+    - "You want a clear summary of your order."
+  goals:
+    - "Order a pizza and ask for the order summary"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - order_id:
+        type: string
+        description: Unique order identifier provided to the customer
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+Want me to also draft a **global uniqueness** companion rule (like your `unique_order_ids` example) so no two conversations share the same `order_id`? That pairs really nicely with this one 😄

@@ -1,0 +1,88 @@
+¡Hola! 😊 Encantado de ayudarte con esto. Vamos a crear un perfil para un usuario Erasmus recién llegado que necesita configurar sus accesos (Moodle, Sigma, etc.). Como bien dices, mantendremos las variables de entrada al mínimo y nos centraremos en unos `chatbot.output` bien pensados para poder validar que el soporte es el adecuado. 🙌
+
+Aquí tienes una propuesta lista para copiar en `profiles/erasmus_newcomer_setup.yaml`:
+
+```yaml
+test_name: "Erasmus recién llegado - configuración de accesos"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la UAM y no sabe cómo
+    configurar sus accesos digitales (Moodle, Sigma, ID-UAM, VPN...).
+    Pides ayuda paso a paso porque es tu primera vez y estás algo perdido.
+  context:
+    - personality: personalities/impatient-user
+    - "Acabas de aterrizar en la universidad y aún no tienes tu cuenta institucional configurada."
+    - "No conoces los nombres internos de los sistemas (ID-UAM, Sigma, CAU), así que preguntas de forma natural."
+    - "Necesitas acceder a Moodle para tus asignaturas y a Sigma para trámites académicos."
+    - "Trabajas desde casa a veces, así que también te interesa la VPN."
+  goals:
+    - "Preguntar cómo obtener y activar tu cuenta institucional (ID-UAM) siendo Erasmus."
+    - "Pedir los pasos para establecer la contraseña por primera vez."
+    - "Solicitar cómo acceder a Moodle y qué entornos existen (grado, postgrado)."
+    - "Preguntar cómo entrar en Sigma para gestionar trámites académicos."
+    - "Pedir información para instalar y configurar la VPN."
+    - "Solicitar los datos de contacto del CAU por si necesitas más ayuda."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - account_activation_steps:
+        type: string
+        description: "Pasos para activar/obtener la cuenta ID-UAM para un Erasmus"
+    - first_password_steps:
+        type: string
+        description: "Pasos para establecer la contraseña por primera vez"
+    - moodle_access_info:
+        type: string
+        description: "Cómo acceder a Moodle y requisitos"
+    - moodle_environments:
+        type: string
+        description: "Entornos de Moodle disponibles (grado, postgrado)"
+    - sigma_access_info:
+        type: string
+        description: "Cómo acceder a Sigma para trámites académicos"
+    - vpn_setup_info:
+        type: string
+        description: "Enlaces/pasos para instalar y configurar la VPN"
+    - cau_contact_info:
+        type: string
+        description: "Datos de contacto del CAU (correo, teléfono, ubicación, horario)"
+    - support_hours:
+        type: string
+        description: "Horario de atención del soporte"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 25
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+### Por qué está montado así 👀
+
+- **Variables de entrada mínimas**: no declaramos ninguna variable en `user.goals`, tal como pediste. Todo son peticiones en lenguaje natural. Si más adelante quieres variar algo (por ejemplo, el idioma o el sistema operativo para la VPN), lo añadimos fácilmente.
+- **`chatbot.output` orientado a validación**: cada campo representa algo que el bot *debería* entregar para dar un soporte correcto. Así podrás escribir reglas de Sensei-check del tipo `conv[0].moodle_access_info is not None` o comprobar que `cau_contact_info` contiene un correo y un teléfono.
+- **Nombres estables y reutilizables**: usé nombres descriptivos (`first_password_steps`, `vpn_setup_info`, `cau_contact_info`...) que puedes reutilizar en otros perfiles para escribir reglas globales o comparativas.
+- **`single questions`**: encaja muy bien con un usuario que va preguntando una cosa a la vez, algo típico de alguien perdido. Si prefieres un tono más caótico, podrías añadir `random: [long phrases, make spelling mistakes]`.
+
+### Un par de ideas para las reglas 🔍
+
+Con estos outputs podrías comprobar cosas como:
+
+- Que el bot siempre da **pasos de contraseña** antes de hablar de Moodle (`conv[0].first_password_steps is not None`).
+- Que la **info de contacto del CAU** no está vacía y contiene un correo (`"@" in conv[0].cau_contact_info`).
+- Que si se pregunta por Sigma, se devuelve `sigma_access_info` no nulo.
+
+¿Quieres que te ayude a escribir alguna **regla de Sensei-check** concreta para estos outputs, o prefieres que ajustemos el perfil (por ejemplo, añadir un `interaction_style` con cambio de idioma o un `personalities/` distinto)? ¡Dime y lo afinamos juntos! 😄

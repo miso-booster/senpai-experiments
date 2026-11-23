@@ -1,0 +1,23 @@
+Absolutely, happy to help! 😊 This is a classic **global rule** — it doesn't depend on any specific profile's `chatbot.output`, so it works across all your conversations. Perfect for catching language-drift regressions in LLM-based bots.
+
+Here's the rule you can drop right into your rules folder:
+
+```yaml
+name: responds_in_same_language
+description: The assistant always replies in the same language as the user
+conversations: 1
+oracle: responds_in_same_language() is True
+```
+
+### Why this works 🧠
+
+- **`conversations: 1`** — this is a single-conversation oracle, so it checks each conversation independently (no need for pairs).
+- **`responds_in_same_language()`** — a built-in helper that compares the language of the user's utterances with the assistant's replies. It returns `True` if they match, or the mismatching responses otherwise.
+- **`is True`** — makes the check strict, so any drift fails the rule.
+
+### A couple of things to keep in mind 👀
+
+- This helper is **LLM-backed**, so allow for minor variability on very short or ambiguous utterances (e.g., a single word like "ok" or a product name).
+- If you want to be extra safe, you can pair it with a language-consistency check across comparable conversations — but for a straightforward "same language as the user" guarantee, the rule above is exactly what you need. ✅
+
+Want me to also sketch a **metamorphic variant** (e.g., "if the user switches language mid-conversation, the bot follows")? Just say the word! 🙌

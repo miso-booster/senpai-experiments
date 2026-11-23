@@ -1,0 +1,91 @@
+conversation ID: one_node_architecture__p1__ada_uam__profile__2242e607
+$$$
+¡Claro que sí! 😊 Aquí tienes un perfil listo para usar, enfocado en un usuario que intenta configurar eduroam en su dispositivo y no lo consigue. He usado variables para cubrir las distintas formas de intentarlo (sistema operativo, tipo de dispositivo y método de configuración), así puedes generar combinaciones interesantes para tus pruebas.
+
+```yaml
+test_name: "Configuración de eduroam en el dispositivo"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un miembro de la comunidad universitaria que intenta conectarse a la red
+    inalámbrica eduroam desde tu dispositivo, pero no lo consigues. Necesitas ayuda
+    paso a paso para completar la configuración y poder navegar.
+  context:
+    - personality: personalities/impatient-user
+    - "Tienes una cuenta institucional (ID-UAM) válida, pero no sabes si la estás usando correctamente."
+    - "Ya has intentado conectarte varias veces sin éxito y empiezas a frustrarte."
+    - "No estás seguro de si el problema es tu dispositivo, tus credenciales o el método de configuración."
+  goals:
+    - "Explicar que no consigues conectarte a eduroam desde tu {{dispositivo}} con {{sistema_operativo}}."
+    - "Pedir ayuda para configurar eduroam usando el método de {{metodo_configuracion}}."
+    - "Preguntar qué credenciales debes introducir (usuario y contraseña) para eduroam."
+    - "Consultar si necesitas instalar algún certificado o perfil de configuración."
+    - "Solicitar los pasos concretos para tu {{sistema_operativo}} y confirmar que la conexión funciona."
+    - dispositivo:
+        function: forward()
+        type: string
+        data: [portátil, móvil, tablet]
+    - sistema_operativo:
+        function: forward(dispositivo)
+        type: string
+        data: [Windows, macOS, Android, iOS, Linux]
+    - metodo_configuracion:
+        function: pairwise()
+        type: string
+        data:
+          - asistente de configuración automática (eduroam CAT)
+          - configuración manual de la red
+          - perfil de configuración descargado
+          - aplicación oficial de eduroam
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - eduroam_credentials:
+        type: string
+        description: "Usuario y contraseña necesarios para eduroam"
+    - configuration_method:
+        type: string
+        description: "Método de configuración recomendado (CAT, manual, perfil, app)"
+    - certificate_required:
+        type: string
+        description: "Indica si se necesita instalar un certificado o perfil"
+    - configuration_steps:
+        type: string
+        description: "Pasos de configuración para el sistema operativo del usuario"
+    - connection_status:
+        type: string
+        description: "Confirmación de que la conexión a eduroam funciona"
+    - support_contact:
+        type: string
+        description: "Contacto de soporte del CAU si el problema persiste"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - random:
+      - single questions
+      - make spelling mistakes
+      - long phrases
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👀:
+
+- **Variables bien conectadas:** `dispositivo` se usa con `forward()`, y `sistema_operativo` depende de él con `forward(dispositivo)`, así generas combinaciones coherentes (por ejemplo, iOS con móvil/tablet). `metodo_configuracion` va con `pairwise()` para cubrir los pares de métodos sin explotar el número total de casos.
+- **`conversation.number`:** como tienes dos funciones `forward` anidadas y una `pairwise`, `combinations(0.6, pairwise)` toma el 60% de la matriz pairwise. Si prefieres cubrir todo, cambia a `combinations(1, pairwise)`.
+- **Salidas (`chatbot.output`):** están pensadas para que luego puedas escribir reglas Sensei-check que lean `conv[i].connection_status`, `conv[i].certificate_required`, etc. Si renombras algún campo, recuerda actualizar las reglas que lo usen.
+
+¿Quieres que te prepare también una regla Sensei-check para validar, por ejemplo, que el bot siempre indique si se necesita certificado o que confirme la conexión? 😊
+$$$

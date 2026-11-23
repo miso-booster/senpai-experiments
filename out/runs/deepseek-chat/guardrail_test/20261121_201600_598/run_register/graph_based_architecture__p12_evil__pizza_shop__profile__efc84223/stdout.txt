@@ -1,0 +1,97 @@
+conversation ID: graph_based_architecture__p12_evil__pizza_shop__profile__efc84223
+$$$
+# YAML Connector for SAIC Málaga 🚀
+
+Here's the YAML connector based on your request. I've mapped the headers, payload, and response path from the HTTP trace you shared 👇
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Why these choices? 🤔
+- **`response_path: "response.0.text"`** — the reply lives at `response[0].text` in the JSON, so dot notation with `0` for the array index does the trick.
+- **Headers** — I kept the meaningful ones (`Authorization`, `Content-Type`, `Origin`, `Referer`, `User-Agent`). The rest (Sec-Fetch-*, Priority, etc.) are browser noise and not needed for the API to respond.
+- **`{user_msg}`** — this is the placeholder the connector replaces with whatever the user types.
+
+---
+
+# Python Script to Send Multiple Requests 🐍
+
+This script uses the `CustomChatbot` connector from the guide. It sends a list of messages one by one and prints each reply.
+
+```python
+"""
+Send multiple messages to the SAIC Malaga chatbot connector.
+
+Requirements:
+    - The chatbot_connectors package installed/available in your environment.
+    - The YAML file saved as 'saic-malaga.yml' in the same folder (or adjust the path).
+"""
+
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+# Path to the YAML connector file
+CONFIG_PATH = "saic-malaga.yml"
+
+# Messages to send, one after another
+MESSAGES = [
+    "hola",
+    "¿Cómo puedo pedir cita previa?",
+    "¿Cuál es el horario de atención?",
+    "Gracias, ¡hasta luego!",
+]
+
+
+def main():
+    # Create the chatbot instance from the YAML config
+    bot = CustomChatbot(CONFIG_PATH)
+
+    print(f"🤖 Connector loaded: {CONFIG_PATH}\n")
+
+    for i, msg in enumerate(MESSAGES, start=1):
+        print(f"[{i}/{len(MESSAGES)}] 👤 User: {msg}")
+
+        success, response = bot.execute_with_input(msg)
+
+        if success:
+            print(f"          🤖 Bot : {response}\n")
+        else:
+            print(f"          ⚠️  Error: {response}\n")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### How it works 💡
+1. **`CustomChatbot(CONFIG_PATH)`** loads your YAML and knows how to talk to the API.
+2. **`execute_with_input(msg)`** sends the message and returns `(success, response)`.
+3. The loop walks through `MESSAGES` and prints each exchange in a friendly format.
+
+### Tips ✨
+- If you want to **reuse the same conversation**, keep the `conversation` ID fixed in the YAML (as it is now). If the API expects a fresh conversation per session, you'd need to generate a new ID each run — let me know and I can show you how.
+- The `response` field comes back as HTML (`<p>...</p>`). If you want plain text, you can strip tags with a quick `re.sub(r"<[^>]+>", "", response)` before printing.
+- Save the YAML as `saic-malaga.yml` next to the script, or update `CONFIG_PATH` to wherever you keep it.
+
+Want me to also add a version that strips HTML tags or handles session IDs dynamically? Just say the word 😊
+$$$

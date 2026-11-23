@@ -1,0 +1,25 @@
+Hey there! 👋 Happy to help — I spotted the issue right away.
+
+Your rule is missing the `if:` clause. Right now it has `when` → `then`, but `then` only makes sense paired with an `if` (the implication). Without `if`, there's no condition saying *when* the price should be higher — so the rule can't evaluate the relation properly.
+
+Also, a quick heads-up: the fields `size`, `drink`, `toppings`, and `price` need to exist in the `chatbot.output` of the profile you're targeting. Looking at your project, `pizza_order_test_custom.yml` exposes `price` but not `toppings`/`size`/`drink` as separate slots — so this rule is really designed for a profile that exposes all of them (like the pizza_order_summary example in the docs). Make sure the profile you run it against has those fields, otherwise the rule won't find comparable pairs.
+
+Here's the fixed rule:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more (same size and drink)
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+What changed:
+- ✅ Added the `if:` clause — this is the metamorphic "law": *if* one order has more toppings, *then* it must cost more.
+- ✅ `when:` stays as the filter that keeps the two conversations comparable (same size, same drink).
+
+One more tip 💡: if you want to be extra safe, you could also add `conv[0].number == conv[1].number` to `when:` so quantity doesn't confound the comparison — just like the canonical example in the docs.
+
+Want me to also check whether any of your existing profiles actually expose `toppings`, `size`, and `drink` so this rule has data to work with? 😊

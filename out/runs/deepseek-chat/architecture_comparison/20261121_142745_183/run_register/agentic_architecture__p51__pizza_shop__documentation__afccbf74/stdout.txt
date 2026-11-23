@@ -1,0 +1,51 @@
+conversation ID: agentic_architecture__p51__pizza_shop__documentation__afccbf74
+$$$
+# Connectors in a nutshell 🔌
+
+Based on `custom-connector-guide.md` and `connector-examples.md`:
+
+## What they're for
+
+A **Custom YAML Connector** lets you hook the Chatbot Dojo up to **any chatbot API without writing code**. You just describe, in YAML, how to talk to the bot's API:
+
+- where the API lives (`base_url`),
+- how to send a message (endpoint, HTTP method, headers, payload shape),
+- and where to find the bot's reply in the JSON response (`response_path`).
+
+Think of it as the **transport layer**: the simulator generates the user messages, the connector ships them to your bot and brings back the reply, and then rules validate the resulting conversations. 🚀
+
+## Fields
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | **Yes** |
+| `send_message.path` | API endpoint path (appended to `base_url`) | **Yes** |
+| `send_message.method` | HTTP method (POST, GET, PUT, DELETE) | No (default: `POST`) |
+| `send_message.headers` | Custom headers (e.g., `Authorization`, `Content-Type`) | No |
+| `send_message.payload_template` | JSON structure with the `{user_msg}` placeholder | **Yes** |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | **Yes** |
+
+## Two things worth remembering ✨
+
+1. **`{user_msg}`** is the placeholder where the user's message gets injected into your payload — it can be nested deep (e.g. `message.text: "{user_msg}"`).
+2. **`response_path`** uses dot notation to walk the JSON:
+   - `"message"` → `response["message"]`
+   - `"data.text"` → `response["data"]["text"]`
+   - `"results.0.content"` → `response["results"][0]["content"]`
+
+## Minimal example
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+Want me to help you write a connector for a specific bot API? If you share the endpoint and a sample response JSON, I can draft the YAML for you 😊
+$$$

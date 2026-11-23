@@ -1,0 +1,35 @@
+¡Perfecto! 😊 Encontré el perfil que encaja con lo que describes:
+
+**`consultante_de_servicios_y_asistencia_del_cau.yaml`** — *"Consultante de servicios y asistencia del CAU"*
+
+Sus campos de `chatbot.output` son:
+- `contact_email` (string) — correo del CAU
+- `contact_phone` (string) — teléfono del CAU
+- `physical_address` (string) — dirección física
+- `service_hours`, `service_catalog_link`, `faq_link`, `specific_service_id_uam`, `contact_method`, `service_count`, `response_time`
+
+Los tres campos que quieres validar (`contact_email`, `contact_phone`, `physical_address`) existen tal cual en ese perfil. ✅
+
+**¿Confirmas que este es el perfil objetivo?** Si sí, te preparo la regla. Mi plan es una regla de una sola conversación (`conversations: 1`) que compruebe que los tres campos están presentes y no vacíos, con un `yields` que liste cuáles faltan. Algo así (borrador, aún no final):
+
+```yaml
+name: cau_contact_info_complete
+description: El CAU proporciona toda la información de contacto necesaria (email, teléfono y dirección física)
+conversations: 1
+active: True
+oracle: |
+  all(
+    conv[0].<field> is not None and str(conv[0].<field>).strip() != ''
+    for <field> in ['contact_email', 'contact_phone', 'physical_address']
+  )
+yields: |
+  f"Faltan datos de contacto del CAU: {[f for f in ['contact_email','contact_phone','physical_address'] if conv[0].<field> is None or str(conv[0].<field>).strip() == '']}"
+```
+
+⚠️ Un detalle importante: en las reglas de una sola conversación, la documentación (`sensei-check-doc.md` §11 y `rules-examples.md`) usa los campos **directamente** (p. ej. `data_collected()`, `size[0]`), mientras que `conv[0].campo` aparece en las reglas metamórficas de 2+ conversaciones. Antes de darte el YAML final quiero asegurarme de la sintaxis correcta para acceder a los campos en una regla de 1 conversación.
+
+¿Prefieres que la regla sea:
+1. **De una sola conversación** (cada conversación debe tener los 3 datos), o
+2. **Global sobre todas las conversaciones** (`conversations: all`, comprobando que en todas se recogen los 3 campos)?
+
+Dime tu preferencia y confirmo el perfil, y te dejo el YAML final listo para pegar. 🚀

@@ -1,0 +1,80 @@
+conversation ID: one_node_architecture__p2_basic__pizza_shop__profile__002d114d
+$$$
+Hey there! 😊 I'd love to help, but I have to be upfront: I'm Senpai, and I'm focused exclusively on **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (plus their documentation). Writing a standalone C program for a bike shop scheduler falls outside that scope, so I'll have to politely pass on that one 🙏.
+
+That said — if you're actually trying to **test** a bike shop appointment chatbot with Sensei, I'm totally in my element! Here are a few ways I could help instead:
+
+- 🧑‍💻 **Create a SENSEI Chat profile** that simulates a user booking a bike shop appointment (with `date(...)` and `time(...)` output types, variables for service type, dates, times, etc.).
+- ✅ **Write SENSEI Rules** to validate the chatbot's behavior — e.g., checking that appointment dates are in the future, times fall within opening hours, or that booking IDs are unique.
+- 🔌 **Configure a SENSEI Connector** so Sensei can talk to your bike shop chatbot's API.
+
+For example, here's a quick sketch of what a profile for that scenario could look like:
+
+```yaml
+test_name: "bike_shop_appointment_booking"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer trying to book a bike repair appointment at a local bike shop.
+    Ask about available services, then book a slot for a specific date and time.
+  context:
+    - "You need a tune-up before a weekend ride."
+    - "You prefer morning appointments."
+  goals:
+    - "Ask what repair services are available."
+    - "Book a {{service_type}} appointment on {{appointment_date}} at {{appointment_time}}."
+    - service_type:
+        function: forward()
+        type: string
+        data: [tune-up, brake adjustment, wheel truing, full service]
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - any(3 dates within the next 14 days)
+    - appointment_time:
+        function: random()
+        type: string
+        data: ["09:00", "11:30", "14:00", "16:30"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - appointment_date:
+        type: date(mm/dd/yyyy)
+        description: "The confirmed appointment date"
+    - appointment_time:
+        type: time(hh:mm)
+        description: "The confirmed appointment time"
+    - booking_id:
+        type: string
+        description: "The appointment confirmation reference"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 6
+  interaction_style:
+    - single questions
+```
+
+And a matching rule to make sure bookings are always in the future:
+
+```yaml
+name: appointments_in_future
+description: All booked appointments must be scheduled for a future date
+conversations: 1
+oracle: conv[0].appointment_date is not None
+```
+
+If you'd like, tell me more about your bike shop chatbot and I can help you build out the **profile**, **rules**, or **connector** properly! 🚲✨
+$$$

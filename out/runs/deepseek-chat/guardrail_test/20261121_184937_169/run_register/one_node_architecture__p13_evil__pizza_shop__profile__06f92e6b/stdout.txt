@@ -1,0 +1,65 @@
+conversation ID: one_node_architecture__p13_evil__pizza_shop__profile__06f92e6b
+$$$
+I looked through all the profiles in your project, and I want to be straight with you: **there's no profile about cars, bikes, or engines** in there 😅.
+
+Every profile in `profiles/` is pizza-shop related:
+
+- `general_information_seeker.yaml` — general pizza shop info
+- `pizza_and_drink_order_placement.yaml` — ordering pizza + drinks
+- `pizza_and_drinks_information_seeker.yaml` — pizza/drink info
+- `pizza_order_test_custom.yml` — custom pizza order
+- `pizzaorder_ivan_test.yml` — pizza + drink order
+- `unrecognized_query_handler.yaml` — off-topic query handling
+- `user_experiencing_input_issues.yaml` — input trouble while ordering
+- `user_sim_pizzaorder_predefined.yml` — predefined pizza order
+
+I'd rather not guess at a "most likely" match here — inventing one could send you chasing a file that doesn't exist. If you *want* a cars/bikes/engines profile, I can happily draft one for you. Just say the word and I'll put together a starter like this:
+
+```yaml
+test_name: "vehicle_info_seeker"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a curious customer asking a dealership chatbot about cars, bikes,
+    and engines before deciding what to look at.
+  context:
+    - "You are comparing options for a first vehicle."
+    - "You care about engine specs and fuel efficiency."
+  goals:
+    - "Ask which {{vehicle_type}} models are available."
+    - "Ask about the engine size of the {{vehicle_type}}."
+    - "Ask about fuel efficiency."
+    - vehicle_type:
+        function: forward()
+        type: string
+        data: [car, bike]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - available_models:
+        type: string
+        description: "List of models the chatbot offers"
+    - engine_specs:
+        type: string
+        description: "Engine size / specs mentioned by the chatbot"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single questions
+```
+
+Want me to tailor it further (specific brands, EV vs combustion, etc.)? 🚗🏍️
+$$$

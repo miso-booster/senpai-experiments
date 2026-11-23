@@ -1,0 +1,25 @@
+conversation ID: graph_based_architecture__p35__pizza_shop__rule__faa526a3
+$$$
+Hey there! 😊 Happy to help you build that rule.
+
+Quick heads-up before we dive in: your project already has a rule called `more_toppings_cost_more` that uses `conv[0].price`, `conv[0].size`, etc. — so I'll assume your profile's `chatbot.output` exposes a `price` field (as a currency string like `"10.00 USD"`) and a `size` field. If those names differ in your profile, just swap them in 👇
+
+Here's a clean single-conversation oracle for your request:
+
+```yaml
+name: small_pizza_price_is_ten
+description: A small pizza costs exactly $10 (USD)
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) == 10 and currency(price) == 'USD'
+```
+
+### A few notes 💡
+
+- **`when: size == 'small'`** — this filters so the rule only applies to conversations where a small pizza was ordered. In single-conversation rules you can reference fields directly (`size`, `price`) without the `conv[0].` prefix.
+- **`extract_float(price) == 10`** — parses the numeric value out of the price string, so `"10.00 USD"` → `10.0`. ✅
+- **`currency(price) == 'USD'`** — makes sure we're not accidentally passing on `"10.00 EUR"`. If your shop uses a different currency, change `'USD'` accordingly.
+- **Exact equality** — if you'd rather allow a tiny tolerance (e.g. rounding), you could write `abs(extract_float(price) - 10) < 0.01`. Just a thought!
+
+Want me to also add a companion rule for medium/large prices, or a metamorphic version that checks small ≤ medium ≤ large? Just say the word 🙌
+$$$

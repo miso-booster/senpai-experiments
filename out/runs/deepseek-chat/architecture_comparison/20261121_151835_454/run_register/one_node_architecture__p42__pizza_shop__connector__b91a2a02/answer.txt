@@ -1,0 +1,42 @@
+¡Claro que sí! 😊 I can see exactly what's going on — let's fix it together.
+
+Looking at your request/response, there are **three things** off in your connector:
+
+1. **`base_url`** — the real host is `api.1millionbot.com`, not `api.bot.com`.
+2. **`path`** — the endpoint is `/api/public/messages`, not `/api/messages`.
+3. **`response_path`** — the bot's reply lives at `response.0.text`, **not** `request.text`. That `request.text` is just an echo of what you sent (`"hola"`), which is why it looks like it "works" but returns your own message back. 😅
+
+Also, the API expects a few extra fields in the payload (`conversation`, `sender_type`, `sender`, `bot`, `url`) and an `Authorization` header — without them the request will likely be rejected.
+
+Here's the corrected connector:
+
+```yaml
+name: "Connector"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of friendly notes 👀:
+
+- The `conversation`, `sender`, and `bot` IDs look like **session-specific** values. If the bot starts a fresh conversation each time, you may need to generate/rotate those per session — otherwise you might get stale context.
+- The response text comes wrapped in HTML (`<p>...</p>`), so if you're comparing outputs downstream you may want to strip tags.
+- `Origin`/`Referer` aren't strictly required by the API, but they match the browser request and can help avoid CORS-style rejections on some setups.
+
+Want me to also adapt this into a **Sensei profile** that targets this connector, or help you test it with a quick `execute_with_input` call? 🍕

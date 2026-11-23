@@ -1,0 +1,86 @@
+Hey there! 😊 Happy to help you build a new profile for adding items to a shopping cart — that's a great scenario to test! 🛒
+
+Before I write it, here's a quick heads-up 👀: I noticed that one of your existing profiles (`customer_service_assistance.yaml`) has a **YAML syntax error** — the `user` and `goals` keys are missing their colons (`user` should be `user:`, `goals` should be `goals:`). That's why it failed to parse. I'll flag that again at the end so you don't forget! 🙌
+
+Now, let's get to your new profile. Here's a clean, runnable one that simulates a user asking the chatbot to add items to their cart:
+
+```yaml
+test_name: "add_items_to_cart"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a shopper doing your weekly grocery run on Alcampo's online store.
+    You want to build up your shopping cart by asking the chatbot to add specific
+    products, adjust quantities, and confirm what's already in your cart.
+  context:
+    - "You are planning meals for the week and want to stock up on essentials."
+    - "You prefer to add items one at a time and confirm each addition."
+    - "You care about getting the right quantities so you don't overbuy."
+  goals:
+    - "Ask the chatbot to add {{quantity}} of {{product}} to your shopping cart."
+    - "Ask the chatbot to add {{product}} to your cart."
+    - "Request to increase the quantity of {{product}} in your cart to {{quantity}}."
+    - "Ask the chatbot to show you what items are currently in your cart."
+    - "Confirm the total number of items in your cart."
+    - product:
+        function: forward()
+        type: string
+        data: [milk, eggs, whole wheat bread, olive oil, bananas]
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 6
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - added_product:
+        type: string
+        description: "The product that was added to the cart"
+    - added_quantity:
+        type: int
+        description: "The quantity of the product added"
+    - cart_contents:
+        type: list[string]
+        description: "List of items currently in the shopping cart"
+    - cart_item_count:
+        type: int
+        description: "Total number of items in the cart"
+    - cart_total:
+        type: currency
+        description: "Total price of items in the cart"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+### A few notes on the choices I made 💡
+
+- **`forward()` on `product`** — cycles deterministically through the product list so you get good coverage across conversations.
+- **`random()` on `quantity`** — picks a single random quantity between 1 and 6 each run, keeping things varied but realistic.
+- **`chatbot.output`** — I included `cart_contents` as `list[string]` and `cart_total` as `currency` so you can later write **Sensei-check rules** against them (e.g., verifying the cart count matches the items, or that the total is positive). 🎯
+- **`single questions`** interaction style — keeps each turn focused on one cart action, which mirrors how a real shopper adds items.
+
+### ⚠️ One thing to double-check
+I used `currency` as a type in `chatbot.output`. Make sure you have a `types/currency.yml` in your project (your docs show one, but confirm it exists in `alcampo/types/`). If it's missing, either add it or swap `cart_total` to `type: float`. 👍
+
+### 🐛 Don't forget the broken profile!
+Your `customer_service_assistance.yaml` still needs fixing — the `user:` and `goals:` keys are missing colons. Want me to help you repair that one too? Just say the word and I'll walk you through it! 😄
+
+Anything you'd like to tweak in the new profile — different products, more goals, or a different interaction style?

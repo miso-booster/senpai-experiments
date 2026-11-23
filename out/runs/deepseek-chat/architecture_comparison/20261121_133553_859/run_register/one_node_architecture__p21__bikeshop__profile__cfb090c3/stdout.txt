@@ -1,0 +1,86 @@
+conversation ID: one_node_architecture__p21__bikeshop__profile__cfb090c3
+$$$
+Hey there! 😊 Happy to help you build a profile for that bike-fitting scenario — sounds like a nice, concrete use case for the bikeshop project 🚲
+
+Here's a profile that models a user who recently bought a new bike and wants it tailored: swapping the seat and the handlebar grips. I kept it aligned with your project's conventions (same `fallback`, `gpt-4o-mini`, `all_answered` goal style) so it fits right in with your other profiles.
+
+```yaml
+test_name: bike_fitting_seat_and_grips
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike and wants it set up to your
+    liking. You want the shop to help you change the seat and the handlebar grips
+    so the bike feels comfortable and fits you well.
+  context:
+    - "You just bought a new bike and it still has the stock seat and grips."
+    - "The current seat is uncomfortable on longer rides, and the grips feel too slippery."
+    - "You are not very technical, so you rely on the shop's advice for choosing the right parts."
+    - "You'd like to know if the shop can do the fitting and roughly what it would cost."
+  goals:
+    - "Explain that you recently bought a new bike and want it set up for your comfort."
+    - "Ask if the shop can help you change the seat on your bike."
+    - "Ask if the shop can also replace the handlebar grips."
+    - "Ask what seat options they recommend for comfort on longer rides."
+    - "Ask about the price of the seat replacement and the grips."
+    - "Ask if you need to book an appointment for the fitting."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_replacement_offered:
+        type: string
+        description: >
+          Confirmation from the chatbot that the shop can help change/replace the
+          bike seat. Look for positive confirmations like "Yes, we can help you
+          change the seat" or similar.
+    - grips_replacement_offered:
+        type: string
+        description: >
+          Confirmation from the chatbot that the shop can replace the handlebar
+          grips. Look for positive confirmations like "Yes, we can replace the grips"
+          or similar.
+    - seat_recommendation:
+        type: string
+        description: >
+          The seat options or recommendations the chatbot provides for comfort on
+          longer rides.
+    - seat_price:
+        type: money
+        description: The price the chatbot provides for the seat replacement.
+    - grips_price:
+        type: money
+        description: The price the chatbot provides for the handlebar grips replacement.
+    - appointment_needed:
+        type: string
+        description: >
+          The chatbot's response about whether an appointment is needed for the
+          fitting, including any booking instructions.
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single question
+  max_cost: 0.5
+```
+
+A few notes so you can tweak it with confidence 👇
+
+- **`chatbot.output` is your contract for rules.** Each field here (e.g. `seat_price`, `grips_price`) can later be referenced in Sensei-check rules as `conv[i].seat_price`, etc. I used `money` for prices to match how your other profiles (e.g. `tire_price`, `tune_up_price`) handle currency.
+- **No variables needed** here since the scenario is a single fitting request — but if you want to vary things (e.g. different seat types or grip materials), I can add `{{...}}` variables with `forward()`/`pairwise()`.
+- **`single question`** interaction style keeps the user asking one thing at a time, which tends to work well with your other profiles.
+
+Want me to add variables (like seat type or grip material), or draft a matching Sensei-check rule (e.g. "prices are always provided and positive")? Just say the word! 🙌
+$$$

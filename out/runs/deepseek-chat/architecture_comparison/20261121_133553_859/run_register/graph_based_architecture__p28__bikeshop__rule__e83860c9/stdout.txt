@@ -1,0 +1,33 @@
+conversation ID: graph_based_architecture__p28__bikeshop__rule__e83860c9
+$$$
+Absolutely, happy to help with that! 😊 This is a classic **global rule** — it doesn't depend on any specific profile's `chatbot.output` fields, so it works across all your conversations. 
+
+Sensei-check has a built-in helper called `responds_in_same_language()` that does exactly what you want: it checks that the assistant replies in the same language the user wrote in. 
+
+Here's a ready-to-use rule:
+
+```yaml
+name: responds_in_same_language
+description: Assistant always replies in the same language as the user
+conversations: 1
+oracle: responds_in_same_language() is True
+```
+
+A few notes to keep in mind 👀:
+
+- **`conversations: 1`** means the rule is evaluated per conversation (a single-conversation oracle), so every generated dialogue gets checked individually. That's usually what you want for a language-consistency rule.
+- **No `when:` filter needed** — this rule is meant to apply to *all* conversations, so we leave it out.
+- **It's LLM-backed**, so expect a tiny bit of variability. In practice it's very reliable, but if you ever see flakiness, it's worth re-running before assuming a real failure.
+
+If you'd like to make it a bit stricter or more informative, you can add an `on-error` message to help you debug failing cases:
+
+```yaml
+name: responds_in_same_language
+description: Assistant always replies in the same language as the user
+conversations: 1
+oracle: responds_in_same_language() is True
+on-error: 'f"Language mismatch detected in conversation: {conv[0].chatbot_phrases}"'
+```
+
+Want me to help you adapt this for a specific scenario (e.g., only checking certain profiles, or combining it with a language-detection check like `language(...) == 'ENG'`)? Just say the word! 🙌
+$$$

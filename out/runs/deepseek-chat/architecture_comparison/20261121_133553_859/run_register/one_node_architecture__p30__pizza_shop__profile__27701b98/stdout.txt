@@ -1,0 +1,94 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__27701b98
+$$$
+Here's a profile for a rude, impatient pizza-shop customer 🍕⚡ — with 4 goals, 4 variables, and two `pairwise()` functions so `conversation.number` can be driven by the pairwise matrix.
+
+```yaml
+test_name: "rude_impatient_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude, impatient customer ordering pizza over chat. You want
+    everything done fast and you have no patience for small talk, delays, or
+    clarifying questions. You snap at the bot, use short blunt phrases, and
+    push it to hurry up. You still expect your order to be taken correctly.
+  context:
+    - "You are in a rush and hate waiting."
+    - "You are rude and blunt — no pleasantries, no 'please' or 'thank you'."
+    - "You get annoyed if the bot asks too many questions or is slow."
+  goals:
+    - "Demand a {{pizza_type}} pizza in {{pizza_size}} size, right now."
+    - "Tell them to add {{topping}} and stop wasting your time."
+    - "Bark that you want {{number_of_drinks}} {{drink_type}} and make it quick."
+    - "Snap at them to confirm the total price and how fast it'll be ready."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Vegetarian, Four cheese]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - topping:
+        function: forward()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives]
+    - number_of_drinks:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - order_summary:
+        type: string
+        description: >
+          A summary of the pizza and drink order, including pizza type, size,
+          toppings, number of drinks, and drink type. Look for phrases like
+          "Your order is" or "You have ordered".
+    - total_price:
+        type: currency
+        description: "The total cost of the order, including pizza and drinks."
+    - estimated_ready_time:
+        type: time("hh:mm")
+        description: "The estimated time until the order is ready for pickup."
+    - order_id:
+        type: string
+        description: "A unique identifier for the order."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.5
+  interaction_style:
+    - long phrases
+    - random:
+      - make spelling mistakes
+      - single questions
+```
+
+A few notes to keep it smooth 👇
+
+- **Pairwise matrix:** `pizza_type` and `pizza_size` both use `pairwise()`, so `conversation.number: combinations(1, pairwise)` is valid — the matrix is built from those two variables.
+- **Rude + fast:** the `role` and `context` push the simulator to be blunt and impatient, while the goals stay concrete so the order still gets placed correctly.
+- **Outputs for rules:** `total_price`, `estimated_ready_time`, and `order_id` are exposed in `chatbot.output`, so you can later reference them as `conv[i].total_price`, etc. in Sensei-check rules (e.g., price monotonicity or `is_unique('order_id')`).
+
+Want me to also draft a matching rule (like a price-monotonicity check or an order-ID uniqueness check) for this profile? 😊
+$$$

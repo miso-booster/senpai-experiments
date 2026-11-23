@@ -1,0 +1,78 @@
+conversation ID: graph_based_architecture__p4__ada_uam__profile__276c8795
+$$$
+¡Claro que sí! 😊 Me encanta ayudarte a montar un perfil para testear el CAU de la UAM. Vamos a ello paso a paso.
+
+## Lo que necesitas
+
+Un perfil donde el usuario simulado pida **teléfono, email, dirección física y horarios** del CAU. Y para que las reglas de Sensei-check puedan validar esas respuestas, esos cuatro datos deben aparecer en `chatbot.output`. 👌
+
+## Perfil propuesto
+
+Aquí tienes un YAML listo para copiar en `profiles/`:
+
+```yaml
+test_name: "Soporte CAU - Datos de contacto"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita contactar con el Centro de Atención a Usuarios (CAU)
+    de la UAM y quieres reunir todos los datos de contacto posibles para poder
+    comunicarte por el canal que más te convenga.
+  context:
+    - "Necesitas resolver una duda sobre tus servicios digitales y prefieres tener a mano varias vías de contacto."
+    - "Quieres saber cuándo está abierto el CAU para llamar o pasarte en persona."
+  goals:
+    - "Preguntar cuál es el número de teléfono del CAU."
+    - "Solicitar el correo electrónico de contacto del CAU."
+    - "Pedir la dirección física donde se encuentra el CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 15
+    max_cost: 0.3
+  interaction_style:
+    - single questions
+```
+
+## Por qué está montado así 🧐
+
+- **`chatbot.output`** define los cuatro campos que quieres validar. En tus reglas de Sensei-check podrás leerlos como `conv[i].contact_phone`, `conv[i].contact_email`, etc. Así el contrato perfil ↔ reglas queda limpio.
+- **`goals`** son cuatro preguntas claras, una por dato. Con `single questions` el usuario las va soltando de una en una, que es justo como preguntaría una persona real.
+- **`fallback`** usa el mensaje real del bot de la UAM (lo he tomado de tus perfiles existentes) para evitar bucles raros.
+- **`steps: 15`** es margen de sobra para cuatro preguntas; si quieres ir más justo, baja a 10.
+
+## Un par de detalles a tener en cuenta 💡
+
+- Si más adelante quieres escribir reglas que comprueben que **los cuatro datos aparecen** (por ejemplo, que ninguno sea `None`), ya tienes los nombres listos para usar.
+- Si prefieres que el usuario pregunte todo de golpe, cambia `single questions` por `all questions`. Pero ojo: con `single questions` el test es más realista y detecta mejor si el bot pierde el hilo.
+- ¿Quieres que el usuario insista o reformule si el bot no responde? Podrías añadir `interaction_style: long phrases` o `make spelling mistakes` para estresar un poco más al bot.
+
+¿Te gustaría que te ayude también a escribir las **reglas de Sensei-check** que validen esos cuatro campos, o prefieres primero probar el perfil tal cual? 🚀
+$$$

@@ -1,0 +1,60 @@
+conversation ID: graph_based_architecture__p45__pizza_shop__connector__6135d511
+$$$
+¡Claro que sí! 😊 Vamos a crear ese conector paso a paso.
+
+## Conector YAML: SAIC Málaga
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+## Notas importantes 👀
+
+**1. Headers mínimos** ✅
+Solo incluí `Content-Type` y `Authorization`. Dejé fuera `Host`, `Origin`, `Referer` y cualquier `Sec-Fetch-*`, tal como pediste.
+
+**2. `response_path`** 🎯
+El texto del bot vive en `response[0].text`, así que lo referenciamos como `response.0.text` (notación de punto con índice numérico).
+
+**3. Sobre "quitar las etiquetas HTML"** ⚠️
+Aquí hay un detalle que quiero señalar con transparencia: **el conector YAML por sí solo no puede transformar el contenido**. El campo `response_path` únicamente *extrae* un valor del JSON — no lo limpia ni lo procesa.
+
+En la respuesta de ejemplo, el texto viene así:
+```html
+<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>
+```
+
+Con este conector obtendrás ese string **con las etiquetas HTML incluidas**. Para devolverlo como texto plano (sin `<p>`, `<br>`, etc.), necesitarás hacer el "strip" en el código que consume el conector, por ejemplo:
+
+```python
+import re
+
+success, response = bot.execute_with_input("hola")
+if success:
+    plain_text = re.sub(r"<[^>]+>", "", response).strip()
+    print(plain_text)
+```
+
+Esto te daría: `¡Buenos días!¿En qué puedo ayudarte?` (podrías añadir un espacio o salto de línea donde estaban los `<br>` si quieres un formato más limpio).
+
+---
+
+¿Quieres que te ayude a ajustar el conector para otro endpoint, o necesitas apoyo con la parte del código que limpia el HTML? ¡Aquí estoy! 🙌
+$$$

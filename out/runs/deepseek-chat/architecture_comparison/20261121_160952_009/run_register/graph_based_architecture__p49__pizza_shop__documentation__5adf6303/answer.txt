@@ -1,0 +1,75 @@
+Hey there! 😊 Great question — `pairwise()` is one of the handiest tools in Sensei Profiles when you want **good coverage without exploding the number of conversations**. Let me walk you through it 👇
+
+## What `pairwise()` does
+
+`pairwise()` generates combinations so that **every pair of values across your variables is covered at least once** — instead of testing the full Cartesian product (which grows *fast*).
+
+Think of it like this: if you have 3 pizza sizes × 4 toppings × 3 drinks, the full grid is 36 combos. Pairwise coverage usually gets you the same 2-way defect detection in far fewer cases. 🎯
+
+## How to use it
+
+You declare it as the `function` on a variable inside `user.goals`:
+
+```yaml
+goals:
+  - "Order a {{size}} pizza with {{toppings}} and {{drink}}"
+  - size:
+      function: pairwise()
+      type: string
+      data: [small, medium, large]
+  - toppings:
+      function: pairwise()
+      type: string
+      data: [cheese, mushrooms, pepperoni]
+  - drink:
+      function: pairwise()
+      type: string
+      data: [coke, sprite, water]
+```
+
+## Key rules to remember ⚠️
+
+- **You need at least 2 variables assigned to `pairwise()`** — otherwise it can't build pairs and will raise an error.
+- It works across **2+ variables**, covering every pair of values at least once.
+- It's great for reducing total cases while still catching most 2-way defects.
+
+## Pairing it with `conversation.number`
+
+This is where it gets really nice. You can let Sensei use the pairwise matrix to decide how many conversations to run:
+
+```yaml
+conversation:
+  number: combinations(0.5, pairwise)
+```
+
+That means: *use 50% of the pairwise combination matrix*. You can also use `combinations` (full matrix) or `combinations(1, pairwise)`.
+
+> 💡 A minimum of **two pairwise functions** must be declared in your `goals` variables for `conversation.number` to be derived from a combination matrix.
+
+## A real example from your project 👀
+
+Your `pizza_order_test_custom.yml` profile uses it like this:
+
+```yaml
+- size:
+    data: [small, medium, big, extra large]
+    function: pairwise()
+    type: string
+- toppings:
+    data: [cheese, mushrooms, pepperoni]
+    function: pairwise()
+    type: string
+```
+
+Here `size` and `toppings` are both pairwise — so Sensei will cover every size × topping pair at least once, without running all 12 combinations. 🍕
+
+## Quick comparison with `forward()`
+
+| Function | Behavior |
+|---|---|
+| `forward()` | Deterministic iteration; supports **nesting by dependency** (e.g., `forward(drink)`) |
+| `pairwise()` | Covers **every pair at least once** across 2+ variables — efficient coverage |
+
+So: use `forward()` when you want a full grid or dependent nesting, and `pairwise()` when you want **broad coverage cheaply**. 🚀
+
+Want me to help you design a pairwise setup for a specific profile, or show how it interacts with `conversation.number` in more detail? Just say the word! 😊

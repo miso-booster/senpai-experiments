@@ -1,0 +1,57 @@
+conversation ID: agentic_architecture__p47__pizza_shop__documentation__d8e010fe
+$$$
+# Metamorphic rules in Sensei-check 🧪
+
+Grounded in `sensei-check-doc.md` (mainly §1, §2, §4, §6) and `rules-examples.md`.
+
+## The core idea
+
+A **metamorphic rule** is a Sensei-check rule that operates over **pairs (or tuples) of conversations** instead of a single one. Rather than asserting an absolute expected answer ("the price must be 18.50"), it asserts a **relation** between conversations: *"if the inputs differ in this controlled way, the outputs should differ in that predictable way"* (or stay the same).
+
+This is exactly what the docs call out as the way Sensei-check **alleviates the oracle problem** — you often can't say what the "right" answer is, but you *can* say how answers should relate.
+
+## The three scopes of a rule
+
+| Scope | `conversations:` | Meaning |
+|---|---|---|
+| Single conversation | `1` | Traditional oracle |
+| **Metamorphic** | `2` (or more) | Compare conversations via `conv[0]`, `conv[1]`, … |
+| Global | `all` | Check across the whole batch (e.g. `is_unique('order_id')`) |
+
+## Anatomy of a metamorphic rule
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+- **`when`** → the *filter*: builds a **comparable cohort**. It holds confounders equal (*ceteris paribus*), so the relation is meaningful. This is the heart of metamorphic testing — without it you'd get false positives.
+- **`if` / `then`** → the *relation*: reads like a law — "if X changes this way, then Y should change that way". The docs recommend this form for clarity (§6.3).
+- **`oracle`** → alternative to `if`/`then`, a plain boolean over `conv[*]` (e.g. `language(conv[0].chatbot_phrases) == 'ENG' and language(conv[1].chatbot_phrases) == 'ENG'`).
+- **`conv[i].field`** → fields come from the target profile's **`chatbot.output`** (§3.1). Don't invent fields the profile doesn't expose.
+
+## Two flavours of metamorphic relation
+
+1. **Monotonic / invariance relations** — vary one input dimension, assert the output moves (or doesn't) in the expected direction:
+   - more toppings ⇒ higher price
+   - small ≤ medium ≤ large
+   - same number of photos ⇒ same cost
+2. **Style / semantic invariance** — keep inputs comparable, assert the *behaviour* stays consistent:
+   - same language across comparable dialogs
+   - no topic drift (`only_talks_about`)
+   - no repeated answers
+
+## Why it matters
+
+The docs (§8) explain that each conversation is recorded with the **inputs** the simulator chose and the **outputs** the LLM extracted. Metamorphic rules exploit that: they select conversations via `when:`, then apply the relation across the matching tuples, reporting failures with counts and optional messages.
+
+A practical consequence (§9): **design profiles for coverage** — if your profile's generators don't produce enough comparable pairs, your `when:` filter will find nothing to compare and the rule becomes "not applicable".
+
+---
+
+Want me to help you write a metamorphic rule for one of your project profiles? If so, tell me the scenario — I'll look up the candidate profiles and their `chatbot.output` fields first so the `conv[i].field` references are real 😊
+$$$

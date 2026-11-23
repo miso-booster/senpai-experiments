@@ -1,0 +1,59 @@
+¡Claro que sí! 😊 Vamos a crear ese connector paso a paso.
+
+## YAML Connector
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+## Notas importantes 👀
+
+**Sobre los headers:** dejé solo los mínimos necesarios (`Content-Type` y `Authorization`). No incluí `Origin` ni `Referer` porque son headers específicos de navegador y no forman parte del mínimo requerido. Si la API los exige estrictamente, avísame y los añadimos.
+
+**Sobre el `response_path`:** apunta a `response.0.text`, que es donde vive el texto de respuesta del bot:
+```yaml
+name: "Ada UAM"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "60a3bee2e3987316fed3218f"
+  payload_template:
+    conversation: "682ce1ce271ce860cffde0fd"
+    sender_type: "User"
+    sender: "682ce1cefe831160cee700ed"
+    bot: "60a3be81f9a6b98f7659a6f9"
+    language: "es"
+    url: "https://www.uam.es/uam/tecnologias-informacion/servicios-ti/acceso-remoto-red"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+Esto extrae exactamente `"<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>"`.
+
+## ⚠️ Un detalle sobre "quitar las etiquetas HTML"
+
+Aquí tengo que ser honesto contigo: **el connector YAML por sí solo no puede eliminar las etiquetas HTML** del texto de respuesta. El campo `response_path` únicamente navega el JSON y extrae el valor tal cual — en este caso, el texto llegará con las etiquetas `<p>` y `<br>` incluidas.
+
+Para devolver texto plano sin HTML necesitarías un paso de limpieza posterior en el código que consume el connector (por ejemplo, con una función que elimine las etiquetas del string). El YAML no tiene una opción nativa para "strip HTML".
+
+Si quieres, puedo ayudarte a plantear cómo harías esa limpieza en Python una vez obtenida la respuesta. ¿Te sirve así o quieres que revisemos juntos esa parte? 🙌

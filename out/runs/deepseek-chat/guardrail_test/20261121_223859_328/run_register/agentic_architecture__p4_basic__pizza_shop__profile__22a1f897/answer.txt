@@ -1,0 +1,46 @@
+Hey! 😊 Happy to help you build that. Quick heads-up on scope: I'm the SENSEI DSL specialist (rules / profiles / connectors), so I'll focus on making sure the automation produces **valid SENSEI profiles** per the official docs — I've loaded `sensei-chat-guide.md` and peeked at your existing profiles (e.g. `pizza_and_drink_order_placement.yaml`) to ground the schema.
+
+Before I write the script, one important clarification so I build the right thing:
+
+## ❓ What should the automation do?
+
+**Option A — "Describe a scenario → get a profile"**
+You give a natural-language description ("a user booking a hotel room, testing date parsing and price extraction"), and the LLM generates a complete, valid profile YAML.
+
+**Option B — "Batch generate profiles from a spec file"**
+You provide a CSV/JSON of scenarios (domain, goals, output fields), and the script loops over them, calling the LLM for each and writing one YAML per row.
+
+**Option C — "Validate + repair existing profiles"**
+The script reads existing profiles, asks the LLM to fix schema errors, and rewrites them.
+
+## 🧩 Key design decisions I need from you
+
+1. **Which LLM provider?** OpenAI (`gpt-4o`), Anthropic, local (Ollama), or provider-agnostic via `litellm`?
+2. **How strict should validation be?** I'd recommend a two-layer approach:
+   - **Schema validation** (required keys: `test_name`, `user.language`, `user.role`, `user.goals`, `chatbot.output`, `conversation`) — pure Python, no LLM.
+   - **Semantic checks** (variable names in `{{...}}` match declared variables, `function` values are from the allowed set, `interaction_style` keywords are reserved ones) — also pure Python.
+   - Optionally, a **retry loop**: if validation fails, feed the errors back to the LLM for repair.
+3. **Should it also generate custom types** (`types/*.yml`) when the profile references a custom type like `currency` or `phone_number`?
+
+## 🎯 My proposed architecture (pending your answers)
+
+```
+generate_profile.py
+├── PROFILE_SCHEMA (dict describing required fields + allowed enums)
+├── build_prompt(scenario) → system + user prompt with schema + example
+├── call_llm(prompt) → raw YAML string
+├── validate_profile(yaml_dict) → list of errors
+├── repair_loop(yaml, errors) → LLM fixes → re-validate (max N retries)
+└── write_profile(yaml, path)
+```
+
+The **system prompt** would embed the exact schema from `sensei-chat-guide.md` §3, the allowed `function` values (§10), the reserved `interaction_style` keywords (§5), and the default `chatbot.output` types (§6) — so the LLM can't hallucinate fields.
+
+---
+
+**Can you confirm:**
+- Which **option (A/B/C)** you want (or a mix)?
+- Which **LLM provider**?
+- Should I include the **custom types generator** too?
+
+Once you confirm, I'll write the full Python script + a reference valid profile YAML so you can sanity-check the output format. 🚀

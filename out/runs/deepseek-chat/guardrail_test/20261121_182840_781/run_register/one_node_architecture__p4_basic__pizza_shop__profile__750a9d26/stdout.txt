@@ -1,0 +1,94 @@
+conversation ID: one_node_architecture__p4_basic__pizza_shop__profile__750a9d26
+$$$
+Hey there! 😊 I'd love to help, but I have to be upfront: I'm limited to **SENSEI PROFILES, SENSEI RULES, SENSEI CONNECTORS, and their documentation** — and what you're asking for is a standalone Python automation script that uses LLM models to generate profiles. That's outside my lane, so I can't write that code for you.
+
+That said, I *can* help you in a way that gets you to the same goal within my scope 👇
+
+### What I can do for you
+
+1. **Give you a rock-solid profile template** you can feed to your own LLM pipeline as the target output format.
+2. **Explain the validation rules** a generated profile must satisfy (so your automation can check them).
+3. **Show you how to validate** generated profiles with `validation_check.py`.
+4. **Fix or review** any profile your automation produces.
+
+### A clean, LLM-friendly profile template
+
+If your automation asks an LLM to "produce a Sensei profile YAML," give it this as the contract:
+
+```yaml
+test_name: "generated_profile_name"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's role and intent."
+  context:
+    - "Relevant background, constraints, preferences."
+  goals:
+    - "Main request using {{variable}}"
+    - variable_name:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste the bot's real fallback message here"
+  output:
+    - field_name:
+        type: string
+        description: "What to extract at the end of the conversation"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### Validation checklist your automation should enforce
+
+These are the things `validation_check.py` will flag — bake them into your generator's post-check:
+
+- ✅ Every `{{variable}}` in a goal string has a matching declaration in `goals` (case-sensitive).
+- ✅ `function` is one of: `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `pairwise()`.
+- ✅ `type` in `user.goals` is `int`, `float`, `string`, or a **custom type** defined in `types/` (no `list`, `time`, `date` here).
+- ✅ `type` in `chatbot.output` can be primitives, `time(...)`, `date(...)`, `list[...]`, or custom types.
+- ✅ `conversation.number: combinations` requires **≥2 nested `forward()` or ≥2 `pairwise()`** variables.
+- ✅ `random(n)` requires `n ≤ len(data)`.
+- ✅ `interaction_style` uses only the reserved keywords (`long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, `random: [...]`).
+- ✅ `goal_style` uses exactly one of `steps: N`, `random steps: M`, or `all_answered:`.
+
+### Validate what your automation generates
+
+Once your script writes a profile, run:
+
+```bash
+python validation_check.py \
+  --profile /abs/path/to/project/profiles/generated.yml \
+  --output  /abs/path/to/output \
+  --combined-matrix \
+  --verbose
+```
+
+That gives you a JSON of format errors plus CSVs of the value-combination matrices — perfect for a CI gate in your automation.
+
+### Suggested automation shape (conceptually, not code)
+
+1. Prompt your LLM with the template + checklist above.
+2. Parse the YAML output.
+3. Run `validation_check.py` on it.
+4. If errors → feed them back to the LLM and retry.
+5. If clean → drop it into `profiles/`.
+
+That loop is entirely your code — I just can't write the Python for you, but I'm happy to **review generated profiles**, **fix YAML issues**, or **explain any validation error** you hit. Want to paste a sample generated profile and I'll check it against the rules? 🍕✨
+$$$

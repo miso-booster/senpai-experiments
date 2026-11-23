@@ -1,0 +1,88 @@
+Here's your profile! 🚲 I based it on `sensei-chat-guide.md` and matched the conventions of your existing `appointment.yml` / `bike_repair_and_maintenance_scheduler.yaml` profiles.
+
+```yaml
+test_name: "bike_shop_wheel_change_appointment"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer of a bike shop who wants to book an appointment to have
+    the wheels of your bike changed. You are friendly but a bit picky about
+    timing, and you want to make sure the shop can fit you in on a specific day
+    and time.
+  context:
+    - "You commute by bike every day, so you need the wheel change done quickly."
+    - "You want to know whether the shop has the wheels in stock before booking."
+    - "You care about the exact date and time of the appointment and will confirm them explicitly."
+    - "If the shop offers a different slot than the one you asked for, you are willing to negotiate."
+  goals:
+    - "Ask to book an appointment to have the wheels of your bike changed"
+    - "Request the appointment for {{ap_date}} at {{ap_time}}"
+    - "Confirm the appointment date and time the shop proposes"
+    - "Ask whether the new wheels are included in the price"
+    - ap_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - next Monday
+          - next Saturday
+          - the 15th of next month
+    - ap_time:
+        function: forward(ap_date)
+        type: string
+        data:
+          - "09:00"
+          - "11:30"
+          - "14:00"
+          - "17:45"
+
+chatbot:
+  is_starter: true
+  fallback: "I'm sorry, it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmed_date:
+        type: date
+        description: "The appointment date confirmed by the assistant"
+    - confirmed_time:
+        type: time("hh:mm")
+        description: "The appointment time confirmed by the assistant"
+    - service:
+        type: string
+        description: "The service booked, e.g. wheel change"
+    - wheels_included:
+        type: string
+        description: "Whether the new wheels are included in the price or must be paid separately"
+    - appointment_confirmation:
+        type: string
+        description: "The full confirmation message from the assistant, including date and time"
+
+conversation:
+  number: combinations
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+### What it does & how it maps to the docs 📚
+
+- **Date/time variables** — `ap_date` and `ap_time` are declared in `user.goals` and used via `{{ap_date}}` / `{{ap_time}}` (per §4.1). I used nested `forward()` so every date gets paired with every time, giving a full grid of day × time combinations to stress-test how the bot handles dates.
+- **`conversation.number: combinations`** — since two nested `forward()` variables are declared, this uses the largest combination matrix (4 dates × 4 times = 16 conversations). You can switch to `combinations(0.5, forward)` if you want a smaller sample.
+- **`chatbot.output`** — `confirmed_date` uses `date`, `confirmed_time` uses `time("hh:mm")` (both documented output types in §6), so later SENSEI-check rules can read `conv[i].confirmed_date` / `conv[i].confirmed_time` to validate the bot's date/time handling.
+- **`interaction_style`** — `change your mind` is explicitly recommended in the docs for appointment-date scenarios, plus a random pick of typos/long phrases to make it realistic.
+- **`all_answered` with `export: true`** — gives you a CSV showing which outputs were satisfied, handy for spotting date/time failures.
+
+Want me to also create a **SENSEI-check rule** that validates the confirmed date/time against the requested ones? If so, I'll load the rules docs and we can align it to this profile's `chatbot.output` fields. 😊

@@ -1,0 +1,36 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__943b3e6f
+$$$
+Hey! 😊 Quick heads-up before we dive in: I'm Senpai, and my focus is the SENSEI DSL itself — **rules, profiles, and connectors** (the YAML). Writing a standalone Python automation script that calls LLM APIs to *generate* profiles is outside what I can build for you. But I can absolutely help you make that automation produce **valid** profiles, which is the hard part anyway.
+
+Here's what I can offer, grounded in `sensei-chat-guide.md`.
+
+## What "valid profile" means (your automation's target spec)
+
+A profile is a single YAML file under `profiles/`. To be valid, it must satisfy these structural rules:
+
+**Top-level sections**
+- `test_name` — string
+- `llm` — *optional* (defaults apply if omitted). If present: `temperature`, `model`, `model_prov`, and `format.type` (`text` or `speech`).
+- `user` — required: `language`, `role`, `context` (list), `goals` (list)
+- `chatbot` — `is_starter` (bool), `fallback` (string), `output` (list of field schemas)
+- `conversation` — `number`, `goal_style`, `interaction_style`
+
+**The tricky validation points your script must enforce** (these are where LLM-generated profiles usually break):
+
+1. **Variable ↔ goal matching** — every `{{variable}}` used in a goal string must be declared *exactly* (case-sensitive) as a mapping in `goals`, and vice versa.
+2. **No `list` type in `user.goals`** — only `int`, `float`, `string`, or a custom type. `list[...]`, `time`, `date` are valid in `chatbot.output` but **raise exceptions** in `user.goals`.
+3. **Function constraints** — `random(n)` needs `n ≤ list length`; `pairwise()` needs ≥2 pairwise variables; `combinations` as `conversation.number` needs ≥2 nested `forward()` or ≥2 `pairwise()` variables.
+4. **`interaction_style` keywords are reserved** — must be exact strings (`long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, `random: [...]`). Never translate them.
+5. **Custom types** must exist as YAML in `types/` with matching `name`, `format` (regex), and `extraction` schema.
+6. **`chatbot.output` field names** should be stable/descriptive — they become the `conv[i].<field>` contract that rules read.
+
+## How I'd suggest we proceed
+
+Rather than me writing the Python (out of scope), I can:
+
+- **A)** Give you a precise **validation checklist / JSON-schema-style spec** you hand to your LLM prompt + a post-generation validator, or
+- **B)** Help you **hand-craft a few reference profiles** (with custom types) that your automation can use as few-shot examples — this dramatically improves LLM output quality, or
+- **C)** Review profiles your automation generates and tell you exactly what's invalid and how to fix it.
+
+Which of those would be most useful? And if you go with B, tell me the **domain** (e.g., pizza ordering, flight booking, banking support) and I'll build a solid reference profile for you. 🚀
+$$$

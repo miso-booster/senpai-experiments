@@ -1,0 +1,97 @@
+conversation ID: agentic_architecture__p30__pizza_shop__profile__fded0c24
+$$$
+Here's your pizza shop profile! 🍕 Based on the `sensei-chat-guide.md` docs, I've set up a rude, impatient user with 4 goals, 4 variables, and 2 `pairwise()` functions so the conversation count is driven by the pairwise matrix.
+
+```yaml
+test_name: "pizza_shop_rude_fast"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude, impatient customer ordering pizza. You are in a hurry and
+    expect everything done fast. You speak bluntly, show irritation when the bot
+    is slow or asks too many questions, and push it to move quickly. You still
+    want your order placed correctly.
+  context:
+    - "You are extremely impatient and dislike waiting or small talk."
+    - "You are rude and blunt, but you still want a correct order."
+    - "You expect the bot to be fast and to the point."
+  goals:
+    - "Order a {{size}} {{crust}} pizza with {{topping}} and a {{drink}} — hurry up!"
+    - "Ask how long it will take and demand it be fast."
+    - "Ask for the total price."
+    - "Ask for an order confirmation or order number."
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - crust:
+        function: pairwise()
+        type: string
+        data: [thin, thick, stuffed]
+    - topping:
+        function: random()
+        type: string
+        data:
+          - any(4 pizza toppings)
+    - drink:
+        function: random()
+        type: string
+        data: [Coke, Fanta, Sprite, water]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - size:
+        type: string
+        description: "Pizza size ordered"
+    - crust:
+        type: string
+        description: "Pizza crust type ordered"
+    - topping:
+        type: string
+        description: "Pizza topping ordered"
+    - drink:
+        type: string
+        description: "Drink ordered"
+    - total_price:
+        type: currency
+        description: "Final price of the order"
+    - order_id:
+        type: string
+        description: "Order confirmation / order number"
+
+conversation:
+  number: combinations(1, pairwise)   # driven by the pairwise matrix (size x crust)
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - single questions
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+### What's going on here 🧠
+
+- **Rude & fast user** → captured in `user.role` and `user.context`. The `interaction_style` also pushes short, impatient turns (`single questions`) plus some random variation.
+- **4 goals** → order the pizza, ask about timing, ask for the price, ask for the order confirmation.
+- **4 variables** → `size`, `crust`, `topping`, `drink`.
+- **2 pairwise functions** → `size` and `crust` both use `pairwise()`. Per the docs, a minimum of **two pairwise variables** is required to derive `conversation.number` from the combination matrix, so I set `number: combinations(1, pairwise)` to use the full pairwise coverage of `size × crust`.
+- **`chatbot.output`** → mirrors the 4 variables plus `total_price` and `order_id`, so you can later write profile-bound rules that read `conv[i].size`, `conv[i].total_price`, etc.
+
+A couple of things you might want to tweak:
+- If you'd rather have **all four variables** participate in the pairwise matrix, just switch `topping` and `drink` to `pairwise()` too (the docs allow 2+ pairwise variables).
+- The `fallback` is a placeholder — swap in your bot's **real** fallback message to avoid loops.
+
+Want me to also create a matching **rule** (e.g., checking that `total_price > 0` or that all order fields are present)? Just say the word and I'll align it with this profile's `chatbot.output` 😊.
+$$$

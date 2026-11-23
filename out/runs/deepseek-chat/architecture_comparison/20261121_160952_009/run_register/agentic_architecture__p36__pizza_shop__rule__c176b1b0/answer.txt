@@ -1,0 +1,36 @@
+Happy to dig in. Two things are going on: a structural gap in the rule itself, and a field-name mismatch with your profiles.
+
+## Why it's not working
+
+Your rule has `when` and `then`, but no `if`. In the metamorphic DSL, `when` only selects comparable conversations — it doesn't say *what varies*. The "more toppings" condition needs to live in `if`, otherwise the relation has nothing to gate on and gets applied to every pair that passes `when`.
+
+The canonical shape (from the rules guide, §5.1 and §6.3) is:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more (same size/drink)
+active: True
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+## The bigger issue: those fields don't exist in your profiles
+
+`conv[i].size`, `conv[i].drink`, `conv[i].toppings`, and `conv[i].price` must map to real `chatbot.output` fields (§3.1/§3.3). None of your three pizza profiles expose all of them:
+
+| Profile | `chatbot.output` fields |
+|---|---|
+| `pizza_order_test_custom.yml` | `price`, `time`, `order_id` — no `size`, `drink`, `toppings` |
+| `pizza_and_drink_order_placement.yaml` | `pizza_options`, `drink_options`, `order_summary`, `total_cost`, `estimated_readiness_time`, `pickup_location`, `order_id` |
+| `pizzaorder_ivan_test.yml` | `available_pizza_types`, `selected_pizza_type`, `pizza_size_options`, `selected_pizza_size`, `pizza_order_confirmation`, `drink_options_and_prices`, `drink_quantity_requested`, `selected_drink_type` |
+
+So even with `if:` added, the rule will error out on missing attributes.
+
+## Two ways forward
+
+1. **Target `pizza_order_test_custom.yml`** (closest fit — it already has `price` and a `toppings` variable in `user.goals`). I'd extend its `chatbot.output` with `size`, `toppings` (`list[string]`), `drink`, and `cans`, then the rule above works as-is.
+2. **Target `pizza_and_drink_order_placement.yaml`** — rework the rule around `total_cost` + `order_summary`. Weaker, since toppings aren't a structured field there.
+
+Which profile should this rule bind to? If it's `pizza_order_test_custom.yml`, say the word and I'll hand you the profile patch plus the final rule. 😊

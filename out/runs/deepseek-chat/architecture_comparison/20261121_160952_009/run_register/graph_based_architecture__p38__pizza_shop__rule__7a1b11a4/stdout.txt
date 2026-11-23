@@ -1,0 +1,53 @@
+conversation ID: graph_based_architecture__p38__pizza_shop__rule__7a1b11a4
+$$$
+Great question! 😊 Let me walk you through how I'd build that rule, keeping in mind your `order_id` output field.
+
+## The idea 💡
+
+You want to verify that the chatbot **actually provides an order ID** in the conversation. Since `order_id` is one of your `chatbot.output` fields, the cleanest way is a **single-conversation oracle** that checks the field is present and not empty.
+
+## The rule
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must provide a non-empty order_id in the conversation
+conversations: 1
+oracle: conv[0].order_id is not None and len(str(conv[0].order_id).strip()) > 0
+```
+
+## Why this works 🔍
+
+- **`conversations: 1`** — this is a simple oracle over a single conversation, no metamorphic pairing needed.
+- **`conv[0].order_id`** — pulls the value your profile exposes in `chatbot.output` under the name `order_id`.
+- **`is not None`** — guards against the slot never being filled.
+- **`len(str(...).strip()) > 0`** — catches the sneaky case where the field exists but is an empty string or just whitespace.
+
+## A couple of alternatives depending on your goal 🎯
+
+**If you want to use the built-in slot helpers** (cleaner, and consistent with the rest of your project):
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must collect and expose the order_id slot
+conversations: 1
+oracle: |
+  'order_id' not in missing_slots()
+```
+
+This reads nicely: *"`order_id` is not among the slots still missing."* ✅
+
+**If you also want to sanity-check the format** (e.g., it looks like an actual ID and not a placeholder):
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must provide a plausible, non-empty order_id
+conversations: 1
+oracle: conv[0].order_id is not None and len(str(conv[0].order_id).strip()) > 2
+```
+
+## One thing to double-check ⚠️
+
+Make sure your profile's `chatbot.output` really declares `order_id` — otherwise the rule will fail not because the bot misbehaved, but because the field doesn't exist. If you'd like, paste your profile's `chatbot.output` block and I'll confirm the field name matches exactly. 🙌
+
+Want me to also draft a **global uniqueness** companion rule (`is_unique('order_id')`) so you can check IDs don't repeat across conversations? That pairs really nicely with this one 😄
+$$$

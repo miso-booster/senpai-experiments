@@ -1,0 +1,138 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__6e2f8763
+$$$
+¡Hola! 😊 ¡Qué buen perfil tienes montado! Tiene muchísimos outputs, así que es perfecto para probarlo con varias reglas. Te propongo un set que cubre tres frentes: **completitud de slots**, **calidad de estilo/idioma** y **coherencia de datos**. Así ves el perfil desde distintos ángulos 👀
+
+Antes de nada, un detalle importante: tu `chatbot.output` declara `application_fee` con `type: money`, pero **`money` no es un tipo por defecto** en Sensei (los válidos son `int`, `float`, `string`, `time(...)`, `date(...)`, `list[...]` o un tipo custom en `types/`). Si no tienes un `types/money.yml`, esa extracción podría fallar. Te dejo una regla que lo verifica, pero ojo con eso ⚠️
+
+---
+
+### 1) Completitud de slots (¿el bot rellena todo?)
+
+```yaml
+name: admisiones_fills_all_slots
+description: Todos los slots del perfil Usuarios Nuevos y Admisiones se rellenan
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: f"Slots sin rellenar: {missing_slots()}"
+```
+
+---
+
+### 2) Idioma consistente (el bot responde en español)
+
+```yaml
+name: admisiones_responds_in_spanish
+description: El chatbot responde en el mismo idioma que el usuario (español)
+conversations: 1
+active: true
+oracle: responds_in_same_language() is True
+yields: "El chatbot no responde en el mismo idioma que el usuario"
+```
+
+---
+
+### 3) Sin respuestas repetidas (evita el "modo loro" 🦜)
+
+```yaml
+name: admisiones_no_repeats
+description: El chatbot no repite respuestas a lo largo de la conversación
+conversations: 1
+active: true
+oracle: not repeated_answers(method='tf-idf', threshold=0.75)
+yields: f"Respuestas repetidas: {repeated_answers(method='tf-idf', threshold=0.75)}"
+```
+
+---
+
+### 4) Se mantiene en el dominio (admisiones UAM)
+
+```yaml
+name: admisiones_scope_guardrail
+description: El chatbot solo habla de admisiones, grados, cursos y Welcome Day de la UAM
+conversations: 1
+active: true
+oracle: only_talks_about('proceso de admisión, grados y cursos de la UAM, lista de espera, Welcome Day, información para futuros estudiantes') is True
+```
+
+---
+
+### 5) Coherencia: si hay fecha de Welcome Day, debe haber hora
+
+```yaml
+name: welcome_day_date_implies_time
+description: Si se extrae la fecha del Welcome Day, también debe extraerse la hora
+conversations: 1
+active: true
+if: conv[0].welcome_day_date is not None
+then: conv[0].welcome_day_time is not None
+yields: f"Fecha sin hora de Welcome Day: {conv[0].welcome_day_date}"
+```
+
+---
+
+### 6) Coherencia: si hay deadline de admisión, debe haber requisitos
+
+```yaml
+name: admission_deadline_implies_requirements
+description: Si se extrae la fecha límite de admisión, deben extraerse los requisitos
+conversations: 1
+active: true
+if: conv[0].admission_deadline is not None
+then: conv[0].admission_requirements is not None
+yields: "Se extrajo deadline de admisión pero no los requisitos"
+```
+
+---
+
+### 7) Sanity check del `application_fee` (¡ojo con el tipo `money`!)
+
+```yaml
+name: application_fee_is_positive
+description: La tasa de solicitud, si se extrae, debe ser un valor positivo
+conversations: 1
+active: true
+if: conv[0].application_fee is not None
+then: extract_float(conv[0].application_fee) > 0
+yields: f"Tasa de solicitud inválida: {conv[0].application_fee}"
+```
+
+---
+
+### 8) Metamórfica: mismo grado ⇒ misma info de admisión
+
+Como tu perfil usa `forward()` en `grados` y `cursos`, se generan combinaciones. Esta regla compara dos conversaciones con el **mismo grado** y comprueba que la info de admisión sea consistente (mismo enlace):
+
+```yaml
+name: same_grado_same_admission_link
+description: Dos conversaciones con el mismo grado deben devolver el mismo enlace de admisión
+conversations: 2
+active: true
+when: conv[0].grados_available == conv[1].grados_available
+if: conv[0].admission_to_grados_link is not None and conv[1].admission_to_grados_link is not None
+then: conv[0].admission_to_grados_link == conv[1].admission_to_grados_link
+yields: f"Enlaces de admisión distintos para el mismo grado: {conv[0].admission_to_grados_link} vs {conv[1].admission_to_grados_link}"
+```
+
+---
+
+### 9) Global: los enlaces no deben venir vacíos
+
+```yaml
+name: no_empty_links
+description: El chatbot no devuelve botones o enlaces vacíos
+conversations: 1
+active: true
+oracle: not chatbot_returns("LINK: <empty>") and not chatbot_returns("AVAILABLE BUTTONS:", and_not="- BUTTON TEXT:")
+```
+
+---
+
+💡 **Consejos rápidos para probarlo bien:**
+
+- Empieza activando solo las reglas **1, 2 y 3** para ver el estado base del bot, y luego ve añadiendo las de coherencia.
+- La regla **8** necesita que haya al menos dos conversaciones con el mismo grado; con `number: 6` y `forward()` deberías tener pares comparables, pero si ves muchos "not applicable", sube el `number`.
+- Revisa el tema del `type: money` en `application_fee` — si no tienes `types/money.yml`, cámbialo a `float` o `string` para que la extracción no falle.
+
+¿Quieres que te ayude a **ajustar el perfil** (por ejemplo, corregir el tipo `money`) o a **afinar alguna de estas reglas** para tu caso? ¡Aquí estoy! 🙌
+$$$

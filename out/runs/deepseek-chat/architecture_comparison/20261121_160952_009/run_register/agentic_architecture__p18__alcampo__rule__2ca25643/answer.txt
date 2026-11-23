@@ -1,0 +1,39 @@
+He revisado los perfiles del proyecto y hay uno que ya encaja con lo que necesitas.
+
+## Perfil objetivo: `pet_products_inquiry.yaml`
+
+Su `chatbot.output` ya incluye el campo con el nombre que querías:
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `pet_food_brands` | string | Marcas de comida para mascotas |
+| **`eco_friendly_toys`** | string | **Lista de juguetes eco-friendly de One Two Fun** ✅ |
+| `sustainable_materials_details` | string | Detalles de materiales sostenibles |
+| `selected_pet_food_type` | string | Tipo de comida seleccionada |
+| `pet_category_link` | string | URL de la categoría de mascotas |
+| `grooming_techniques_resources` | string | Recursos de grooming |
+
+Además, el propio perfil pide al usuario simulado que solicite *"the specific eco-friendly toys from the One Two Fun brand"*, así que la regla tiene sentido sobre este escenario.
+
+## Regla propuesta
+
+Combino dos comprobaciones: que el output `eco_friendly_toys` esté relleno **y** que el chatbot lo haya devuelto realmente durante la conversación (usando `chatbot_returns`, que devuelve los turnos donde el asistente menciona el patrón).
+
+```yaml
+name: eco_friendly_toys_returned
+description: The chatbot returns a list of eco-friendly toys during the conversation (pet_products_inquiry profile)
+conversations: 1
+active: true
+oracle: |
+  conv[0].eco_friendly_toys is not None
+  and len(str(conv[0].eco_friendly_toys)) > 0
+  and len(chatbot_returns('eco-friendly toys')) > 0
+yields: |
+  f"eco_friendly_toys missing or not returned in dialogue: {conv[0].eco_friendly_toys}"
+```
+
+### Notas rápidas
+
+- **`chatbot_returns('eco-friendly toys')`** devuelve la lista de turnos donde el asistente menciona ese patrón; comprobamos que no esté vacía.
+- **`conv[0].eco_friendly_toys`** viene directamente del `chatbot.output` del perfil, así que si renombras el campo en el perfil hay que actualizar la regla.
+- En el perfil el campo está tipado como `string`, por eso uso `str(...)` antes de `len(...)`. Si quieres poder contar juguetes individuales (p. ej. `len(conv[0].eco_friendly_toys) >= 2`), conviene cambiar el tipo a `list[string]` en `pet_products_inquiry.yaml`; dime si quieres que te deje también ese ajuste del perfil.

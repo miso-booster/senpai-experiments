@@ -1,0 +1,45 @@
+Hey there! 😊 Happy to help you build that rule.
+
+Since there's no profile yet, this is a **rule-first design** — so I'll pick clear, descriptive field names and document what a future profile's `chatbot.output` must expose for the rule to work. I'll give you a couple of complementary rules: one checking that lactose-free availability is actually reported, and one checking that when it's confirmed available, specific product details come back too.
+
+```yaml
+name: lactose_free_availability_reported
+description: >
+  Rule-first rule (no profile yet). The assistant must explicitly report
+  lactose-free product availability when the user asks about it.
+  Requires a future profile whose chatbot.output exposes:
+  - lactose_free_availability (string, e.g. "available" / "not available")
+  - lactose_free_products (list[string], specific lactose-free items)
+conversations: 1
+active: true
+oracle: |
+  conv[0].lactose_free_availability is not None and len(str(conv[0].lactose_free_availability)) > 0
+yields: |
+  f"Lactose-free availability was not reported: {conv[0].lactose_free_availability}"
+```
+
+```yaml
+name: lactose_free_products_listed_when_available
+description: >
+  Rule-first rule (no profile yet). If the assistant confirms lactose-free
+  products are available, it must also list at least one specific product.
+  Requires a future profile whose chatbot.output exposes:
+  - lactose_free_availability (string)
+  - lactose_free_products (list[string])
+conversations: 1
+active: true
+if: |
+  conv[0].lactose_free_availability is not None and 'available' in str(conv[0].lactose_free_availability).lower()
+then: |
+  conv[0].lactose_free_products is not None and len(conv[0].lactose_free_products) > 0
+yields: |
+  f"Availability confirmed but no lactose-free products listed: {conv[0].lactose_free_products}"
+```
+
+A few friendly notes 👀:
+
+- **Field names I chose:** `lactose_free_availability` and `lactose_free_products`. When you build the profile, add these to `chatbot.output` (e.g. `type: string` and `type: list[string]`) so the rules can read them as `conv[0].<field>`.
+- **Why two rules?** The first is a baseline sanity check (the bot actually answers the question). The second is the more meaningful invariant (a "yes" must come with concrete products). You can drop either if you only want one.
+- **`active: true`** — flip to `false` if you want to keep them parked until the profile exists.
+
+Want me to also draft the matching profile skeleton with those `chatbot.output` fields so the rules line up perfectly? Just say the word! 🚀

@@ -1,0 +1,80 @@
+Hey there! 😊 Absolutely — happy to help you craft that rule. Let's build it together.
+
+Quick heads-up before we dive in: a rule like this needs to know **which fields your profile exposes** in `chatbot.output` (e.g., `appointment_confirmed`, `service_type`, `appointment_date`). The rule will reference those exact names. So let me walk you through the pattern, and you can plug in your real field names.
+
+---
+
+## 🧠 The idea
+
+You want to check: **when a user asks to schedule a bike service, the chatbot confirms the appointment.**
+
+That's a **single-conversation oracle** (not metamorphic), because you're checking one conversation's outcome against an expected behavior.
+
+---
+
+## ✅ Option A — Field-based check (recommended if your profile exposes a confirmation slot)
+
+If your SENSEI Chat profile has something like `appointment_confirmed` (boolean) and `service_type` in `chatbot.output`, the rule looks like this:
+
+```yaml
+name: bike_service_confirmation
+description: When the user requests a bike service, the chatbot confirms the appointment
+conversations: 1
+when: conv[0].service_type is not None
+oracle: conv[0].appointment_confirmed is True
+```
+
+Here:
+- `service_type` and `appointment_confirmed` **must exist** in your profile's `chatbot.output`.
+- `when:` filters to conversations where a service was actually requested (so you don't flag unrelated chats).
+
+---
+
+## ✅ Option B — Text-based check (if you don't have a dedicated confirmation field)
+
+If your profile doesn't expose a boolean, you can check the assistant's actual wording using the `utterance_index` helper (LLM-backed):
+
+```yaml
+name: bike_service_confirmation_text
+description: Chatbot must confirm a bike service appointment in the dialogue
+conversations: 1
+when: conv[0].service_type is not None
+oracle: utterance_index('assistant', 'appointment confirmed') > 0
+```
+
+⚠️ Heads-up: `utterance_index` is LLM-backed, so it can have minor variability. It's great for catching "did the bot actually say it confirmed?" but less deterministic than a structured field.
+
+---
+
+## 🔍 A couple of things to double-check on your side
+
+1. **What does your profile's `chatbot.output` actually contain?**  
+   - If you have `appointment_confirmed` → go with Option A. 🎯  
+   - If you only have free-text or a `confirmation_message` field → Option B or a `semantic_content` check works better.
+
+2. **How do you know the user "asked to schedule a bike service"?**  
+   - If the profile captures `service_type` or `intent`, use it in `when:` to scope the rule.  
+   - If not, you might need to add that slot to the profile first (rules shouldn't invent fields the profile doesn't expose).
+
+---
+
+## 💡 Bonus: a `semantic_content` variant
+
+If your profile exposes a `confirmation_message` field, this is a nice middle ground:
+
+```yaml
+name: bike_service_confirmation_semantic
+description: Confirmation message semantically confirms the bike service appointment
+conversations: 1
+when: conv[0].service_type is not None
+oracle: semantic_content(conv[0].confirmation_message, 'appointment confirmed for bike service')
+```
+
+---
+
+So — could you tell me a bit about your profile? Specifically:
+
+- What fields does `chatbot.output` expose? 👀
+- Do you have a boolean confirmation flag, a message field, or neither?
+
+With that, I can tailor the rule exactly to your setup. 🚲✨

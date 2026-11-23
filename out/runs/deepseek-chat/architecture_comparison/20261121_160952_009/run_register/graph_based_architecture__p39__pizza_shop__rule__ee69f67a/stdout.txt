@@ -1,0 +1,34 @@
+conversation ID: graph_based_architecture__p39__pizza_shop__rule__ee69f67a
+$$$
+Hey there! 😊 Happy to help you build that metamorphic rule — let's break it down together.
+
+## What you're asking for
+
+A **metamorphic rule** that compares two conversations where everything is the same **except** whether a drink is added, and asserts that the price difference is exactly **$2**.
+
+## The rule
+
+```yaml
+name: adding_drink_costs_two_dollars
+description: Adding a drink to the same pizza order costs exactly 2 dollars extra
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].toppings == conv[1].toppings and conv[0].number == conv[1].number
+if:   conv[0].drink == '' and conv[1].drink != ''
+then: extract_float(conv[1].price) - extract_float(conv[0].price) == 2
+```
+
+## Why it's written this way 👀
+
+- **`conversations: 2`** → it's a metamorphic rule comparing a pair.
+- **`when:`** holds the *confounders* equal (same size, same toppings, same quantity) so the only thing that varies is the drink. This is the "ceteris paribus" idea — control everything else, vary one dimension.
+- **`if:`** picks the pair where `conv[0]` has **no drink** and `conv[1]` **has a drink**. I used `''` for "no drink" — if your profile represents "no drink" differently (e.g. `None`, `'none'`, `'no drink'`), swap that in.
+- **`then:`** asserts the price delta is exactly `2`.
+
+## ⚠️ Two things to double-check in your project
+
+1. **The `drink` field** — you mentioned the output name should be `drink`. Make sure your SENSEI Chat profile's `chatbot.output` actually exposes a `drink` slot, otherwise the rule can't read `conv[i].drink`. If "no drink" is stored as `None` rather than `''`, adjust the `if:` accordingly (e.g. `conv[0].drink is None`).
+
+2. **Currency** — `extract_float` just pulls the number out, so this works regardless of currency symbol. But if your prices are in a currency where "2 dollars" isn't the unit (e.g. EUR), the literal `2` still means "2 units of that currency." If you want to be strict about USD, you could add `and currency(conv[1].price) == 'USD'` to the `then:`.
+
+Want me to also add a currency guard, or adapt the "no drink" representation to match how your profile stores it? Just say the word 🙌
+$$$

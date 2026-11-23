@@ -1,0 +1,77 @@
+# Hey there! 👋 Happy to help you build that profile!
+
+I noticed something important first: the `customer_service_assistance.yaml` profile in your project has a **YAML syntax error** — the `user:` and `goals:` keys are missing their colons (`user` → `user:`, `goals` → `goals:`). That's why it failed to parse. Worth fixing separately! 😊
+
+Now, let's create your **shopping cart profile**. Here's a clean, runnable YAML that fits right into your `profiles/` folder:
+
+```yaml
+test_name: "Shopping Cart Item Addition"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer shopping online at Alcampo and want to add various
+    products to your shopping cart. Ask the chatbot how to add items,
+    request specific products, and confirm what is in your cart.
+  context:
+    - "You are planning your weekly grocery shopping and want to build your cart efficiently."
+    - "You prefer to add items one by one and confirm each addition."
+    - "You want to know the running total and item count in your cart."
+  goals:
+    - "Ask the chatbot how to add a product to your shopping cart."
+    - "Request to add {{product_name}} to your cart."
+    - "Ask for the current number of items in your cart."
+    - "Inquire about the total price of the items currently in your cart."
+    - "Ask how to remove an item from the cart if you change your mind."
+    - product_name:
+        function: forward()
+        type: string
+        data: [organic bananas, whole milk, Galician beef, olive oil, fresh bread]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - added_product_name:
+        type: string
+        description: "Name of the product added to the cart"
+    - cart_item_count:
+        type: int
+        description: "Total number of items in the shopping cart"
+    - cart_total_price:
+        type: money
+        description: "Total price of items in the cart"
+    - add_to_cart_instructions:
+        type: string
+        description: "Steps or guidance for adding items to the cart"
+    - removal_instructions:
+        type: string
+        description: "Guidance on removing items from the cart"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+## A few notes on the design 🧠
+
+- **`forward()` on `product_name`** — this cycles deterministically through the product list across conversations, so each run tests a different item. Nice for coverage!
+- **`chatbot.output` fields** — I used `money` for the total (matches your other profiles) and `int` for the item count. These become `conv[i].cart_total_price`, etc., if you later write Sensei-check rules against them.
+- **`single questions`** — keeps the user asking one thing at a time, which is realistic for cart-building.
+- **`fallback`** — I reused the Spanish fallback from your other Alcampo profiles so it matches your bot's real behavior.
+
+## ⚠️ One thing to double-check
+
+Your other profiles use `type: money` in `chatbot.output`, but the docs list `currency` as the standard custom type. If you have a `types/money.yml` defined in your project, you're golden ✅. If not, swap `money` → `currency` (or `float`) to avoid extraction errors.
+
+Want me to also add a **`change your mind`** interaction style (great for testing cart removals!), or tailor the product list to specific Alcampo categories? Just say the word! 😄

@@ -1,0 +1,37 @@
+conversation ID: one_node_architecture__p33__pizza_shop__profile__417a3804
+$$$
+Hey there! 😊 Happy to help you fill in that `chatbot` section — it's the part that tells Sensei what to extract from the conversation, and it's also what your rules will read later via `conv[i].<field>`.
+
+Looking at your goals (pizza types, Margarita price, drinks & prices, opening hours, delivery), here's a `chatbot` block that matches them nicely:
+
+```yaml
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_types:
+        type: string
+        description: "A list of the pizza types offered by the shop. Look for phrases like 'We offer [pizza types]' or a list of available pizzas."
+    - margarita_price:
+        type: currency
+        description: "The price of a Margarita pizza, including currency if present. If multiple sizes are mentioned, extract the price for all sizes mentioned. Look for phrases like 'Margarita pizza costs [price]' or '[price] for a Margarita'."
+    - drinks_and_prices:
+        type: string
+        description: "A list of available drinks and their corresponding prices. Extract the list, including the name and price of each drink. Look for phrases like 'We have [drink] for [price]' or a list of available drinks and prices."
+    - operating_hours:
+        type: string
+        description: "The shop's operating hours, including opening and closing times. Look for phrases like 'Our hours are [hours]' or 'We are open from [opening time] to [closing time]'."
+    - delivery_availability:
+        type: string
+        description: "Indication of whether the shop delivers or not. Extract the confirmation. Look for phrases like 'We deliver' or 'We do not offer delivery'."
+```
+
+A few friendly notes 👀:
+
+- **`is_starter: false`** — the user speaks first, which fits your "single question" style.
+- **`fallback`** — I reused the bot's real fallback text from your other pizza profiles so it stays consistent. If your bot has a different fallback, swap it in!
+- **`currency` type** for `margarita_price` — this is handy because later you can write rules like `extract_float(conv[0].margarita_price) > 0` or check `currency(...) == 'USD'`. If you'd rather keep it as plain text, just change it to `string`.
+- **Field names** — I picked clear, stable names (`pizza_types`, `margarita_price`, etc.) so any future rules can reference them without surprises. If you rename one later, remember to update the rules too. 😉
+
+Want me to also sketch a quick rule that uses one of these fields (e.g., checking the Margarita price is positive, or that delivery availability is stated)? Just say the word! 🍕
+$$$

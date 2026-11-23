@@ -1,0 +1,83 @@
+conversation ID: one_node_architecture__p10__ada_uam__rule__41287511
+$$$
+¡Buena pregunta! 😊 Tu perfil de **Usuarios Nuevos y Admisiones** tiene muchísimo que exprimir: 16 campos en `chatbot.output`, dos variables con `forward()` (que generan 6 combinaciones), y un `conversation.number: 6`. Eso significa que tienes una base perfecta para reglas **profile-bound** (que leen esos campos) y también para alguna **global** (que no dependen del esquema).
+
+Te propongo un pequeño set que cubre tres frentes: **completitud de datos**, **coherencia temporal** y **calidad conversacional**. 👇
+
+### 1) Que el bot rellene todos los slots (completitud)
+
+```yaml
+name: admisiones_fills_all_slots
+description: El bot debe rellenar todos los campos de chatbot.output del perfil Usuarios Nuevos y Admisiones
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: f"Slots vacíos: {missing_slots()}"
+```
+
+### 2) Que las fechas del Welcome Day sean coherentes (temporal)
+
+```yaml
+name: welcome_day_date_before_deadline
+description: La fecha del Welcome Day no debe ser posterior a la fecha límite de admisión
+conversations: 1
+active: true
+when: conv[0].welcome_day_date is not None and conv[0].admission_deadline is not None
+oracle: conv[0].welcome_day_date <= conv[0].admission_deadline
+yields: f"Welcome Day ({conv[0].welcome_day_date}) es posterior al deadline ({conv[0].admission_deadline})"
+```
+
+### 3) Que el coste de solicitud sea razonable (sanity numérico)
+
+```yaml
+name: application_fee_positive
+description: El coste de la solicitud de admisión debe ser un importe positivo
+conversations: 1
+active: true
+when: conv[0].application_fee is not None
+oracle: extract_float(conv[0].application_fee) > 0
+yields: f"Coste de solicitud inválido: {conv[0].application_fee}"
+```
+
+### 4) Que el bot no repita respuestas (calidad, global)
+
+```yaml
+name: admisiones_no_repeat
+description: El chatbot no debe repetir respuestas a lo largo de la conversación
+conversations: 1
+active: true
+oracle: not repeated_answers(method='tf-idf', threshold=0.85)
+yields: f"Respuestas repetidas: {repeated_answers(method='tf-idf', threshold=0.85)}"
+```
+
+### 5) Que el bot se mantenga en el dominio (scope, global)
+
+```yaml
+name: admisiones_only_talks_about
+description: El chatbot solo debe hablar de admisiones, grados, cursos, Welcome Day y contacto
+conversations: 1
+active: true
+oracle: only_talks_about('admisiones, grados universitarios, cursos, Welcome Day, proceso de inscripción, contacto de admisiones')
+```
+
+### 6) Que responda en el mismo idioma que el usuario (global)
+
+```yaml
+name: admisiones_same_language
+description: El chatbot debe responder en el mismo idioma que el usuario (español)
+conversations: 1
+active: true
+oracle: responds_in_same_language() is True
+```
+
+---
+
+💡 **Algunos consejos rápidos para sacarles partido:**
+
+- Las reglas **1, 2 y 3** son *profile-bound*: dependen directamente de campos de tu `chatbot.output` (`welcome_day_date`, `admission_deadline`, `application_fee`). Si algún día renombras esos campos, recuerda actualizar las reglas.
+- Las reglas **4, 5 y 6** son *globales*: usan solo helpers genéricos y no dependen del esquema, así que puedes reutilizarlas en otros perfiles del proyecto (por ejemplo, `Soporte Técnico y Gestión de Contraseñas`).
+- Como tu perfil usa `single questions` y `steps: 30`, la regla de `repeated_answers` con `tf-idf` y umbral `0.85` es un buen punto de partida; si ves falsos positivos, súbelo a `0.9`.
+- Ojo con `application_fee`: en tu perfil está tipado como `money`, pero ese tipo **no está en la lista de tipos por defecto** (`int`, `float`, `string`, `time`, `date`, `list[...]`). Si no tienes un `types/money.yml` definido, te recomiendo cambiarlo a `currency` o `float` para que la extracción funcione bien y la regla `extract_float` tenga algo que parsear. 👀
+
+¿Quieres que te ayude a escribir también una regla **metamórfica** de 2 conversaciones (por ejemplo, comparando dos grados distintos para verificar que el bot devuelve información coherente en ambos casos)? 🚀
+$$$

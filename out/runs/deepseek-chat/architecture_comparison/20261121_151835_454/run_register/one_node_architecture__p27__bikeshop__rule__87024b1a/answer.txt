@@ -1,0 +1,27 @@
+¡Buena idea! 😊 Esa es una regla de tipo *metamórfica* (2 conversaciones) donde comparamos qué pasa cuando el usuario insiste con la misma fecha.
+
+Antes de darte el YAML, un detalle importante sobre tu proyecto: en tus perfiles (por ejemplo `appointment.yml`) el campo de fecha confirmada se llama **`confirmed_date`** y es de tipo `date`. Así que la regla debe apoyarse en ese campo real de `chatbot.output` — no inventamos nombres nuevos 👀.
+
+Aquí tienes la regla:
+
+```yaml
+name: same_date_twice_is_rejected
+description: >
+  Si el usuario propone la misma fecha dos veces, el asistente debe rechazar
+  la segunda (no confirmar dos citas para la misma fecha). Se apoya en el campo
+  confirmed_date del perfil appointment.
+conversations: 2
+when: conv[0].confirmed_date == conv[1].confirmed_date
+if:   conv[0].confirmed_date is not None and conv[1].confirmed_date is not None
+then: utterance_index('assistant', 'cannot schedule another appointment on the same date') > 0
+yields: |
+  f"El asistente aceptó dos citas para la misma fecha: {conv[0].confirmed_date}"
+```
+
+Un par de notas para que funcione bien en tu proyecto 🙌:
+
+- **`confirmed_date`** viene directamente de `chatbot.output` en `appointment.yml`, así que la regla queda *profile-bound* a ese perfil.
+- El helper `utterance_index` es LLM-backed, así que la frase que buscas (`'cannot schedule another appointment on the same date'`) conviene ajustarla al texto real que devuelve tu bot cuando rechaza. Si tu bot dice algo como *"ya tienes una cita ese día"*, cambia esa cadena por la que use realmente.
+- Si prefieres una comprobación más estructural (sin depender del texto), podrías en su lugar verificar que **no** se confirma una segunda cita, pero eso requeriría un campo extra en `chatbot.output` (por ejemplo `appointment_accepted: bool`). Si quieres, te ayudo a añadirlo al perfil y a reescribir la regla con ese enfoque 💡.
+
+¿Quieres que la adapte a la frase exacta de rechazo de tu bot, o que la hagamos con un campo booleano en el perfil? 🚲

@@ -1,0 +1,45 @@
+¡Claro que sí! 😊 He revisado tu connector de Ada UAM y la documentación (`custom-connector-guide.md` y `connector-examples.md`). La estructura de la API de MillionBot es idéntica, así que solo hay que cambiar los identificadores y la URL de referencia. Aquí tienes el nuevo connector:
+
+```yaml
+name: "Gallo Morón de la Frontera"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+  payload_template:
+    conversation: "67ea76f4e213b2dcbc146e2b"
+    sender_type: "User"
+    sender: "67ea76f40643a3dd27e59411"
+    bot: "65ca19e7dbbb4e26cbeadf24"
+    language: "es"
+    url: "https://www.morondelafrontera.es/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Qué he cambiado respecto a Ada UAM 🔧
+
+| Campo | Ada UAM | Morón de la Frontera |
+|-------|---------|----------------------|
+| `name` | "Ada UAM" | "Gallo Morón de la Frontera" |
+| `Authorization` | `60a3bee2...` | `65ca19e7dbbb4e26cbeadf28` |
+| `conversation` | `682ce1ce...` | `67ea76f4e213b2dcbc146e2b` |
+| `sender` | `682ce1ce...` | `67ea76f40643a3dd27e59411` |
+| `bot` | `60a3be81...` | `65ca19e7dbbb4e26cbeadf24` |
+| `url` | UAM | `https://www.morondelafrontera.es/` |
+
+### Lo que se mantiene igual ✅
+- `base_url`, `path` (`/api/public/messages`) y `method` (`POST`): misma API de MillionBot.
+- `sender_type: "User"` y `language: "es"`.
+- `response_path: "response.0.text"`: coincide con la respuesta que me pasaste (`response[0].text`), así que extrae correctamente el texto del bot. 👍
+
+### Un par de avisos importantes ⚠️
+1. **`conversation` y `sender`**: en tu ejemplo de petición son IDs concretos de una sesión. Si el chatbot espera IDs únicos por sesión, puede que reutilizar estos fijos funcione (como en Ada UAM) o que convenga regenerarlos. Si ves respuestas raras o errores de sesión, avísame y lo ajustamos.
+2. **`Authorization`**: es la clave pública del widget. Si el Ayuntamiento la rota, habrá que actualizarla.
+3. El `text` de la respuesta viene con HTML (`<p>...</p>`). El connector lo devuelve tal cual; si luego quieres limpiarlo en las reglas, se puede hacer con helpers de validación.
+
+¿Quieres que lo guarde con algún nombre de archivo concreto (por ejemplo `moron-frontera.yaml`) o prefieres otro? Y si quieres, también te preparo un **profile** y alguna **rule** para probar este bot. 😄

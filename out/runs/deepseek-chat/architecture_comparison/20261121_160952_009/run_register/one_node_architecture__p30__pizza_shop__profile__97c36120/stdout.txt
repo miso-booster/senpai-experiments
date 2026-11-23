@@ -1,0 +1,88 @@
+conversation ID: one_node_architecture__p30__pizza_shop__profile__97c36120
+$$$
+Here's a profile for a rude, impatient pizza-shop customer — with 4 goals, 4 variables, and 2 `pairwise()` functions so `conversation.number` can be driven by the pairwise matrix 🍕⚡
+
+```yaml
+test_name: "rude_impatient_pizza_order"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a rude, impatient customer ordering a pizza and drinks for pickup.
+    You are in a hurry, you get annoyed easily, and you expect everything to be
+    done fast. You speak bluntly, interrupt, and complain if things take too long.
+  context:
+    - "personality: personalities/rude-user"
+    - "You are in a rush and want your order ready ASAP."
+    - "You have zero patience for slow or unclear answers."
+    - "You are picking the order up on your way home."
+  goals:
+    - "Demand a {{pizza_type}} pizza, and make it quick."
+    - "Tell them you want the {{pizza_size}} size, no time to waste."
+    - "Order {{number_of_drinks}} {{drink_type}} and hurry up about it."
+    - "Ask how long it will take and how much it costs — and don't make me wait."
+    - pizza_type:
+        function: pairwise()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Vegetarian, Four cheese]
+    - pizza_size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - drink_type:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Fanta, Water]
+    - number_of_drinks:
+        function: forward(drink_type)
+        type: int
+        data:
+          min: 1
+          max: 4
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - order_summary:
+        type: string
+        description: "A summary of the pizza and drink order, including pizza type, size, and drinks."
+    - total_cost:
+        type: currency
+        description: "The total cost of the order, including pizza and drinks."
+    - estimated_readiness_time:
+        type: time
+        description: "The estimated time until the order is ready for pickup."
+    - order_id:
+        type: string
+        description: "A unique identifier for the order."
+
+conversation:
+  number: combinations(1, pairwise)
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+    max_cost: 0.8
+  interaction_style:
+    - long phrases
+    - change your mind
+```
+
+A few quick notes so it runs smoothly 👇
+
+- **Pairwise matrix**: `pizza_type` and `pizza_size` both use `pairwise()`, so `conversation.number: combinations(1, pairwise)` will pull the full pairwise coverage set. If you want a lighter run, swap to `combinations(0.6, pairwise)`.
+- **Nested `forward()`**: `number_of_drinks` depends on `drink_type`, so it iterates deterministically per drink — nice for coverage without blowing up the case count.
+- **Rude personality**: I referenced `personalities/rude-user` (it's already used in your `pizza_and_drink_order_placement` profile). If that file doesn't exist in your project, either add it under `personalities/` or drop that context line.
+- **Outputs for rules**: `total_cost`, `estimated_readiness_time`, and `order_id` are exposed so your existing rules (e.g. `more_toppings_cost_more`, uniqueness checks) can reference them via `conv[i].<field>`.
+
+Want me to also draft a matching rule (like "rude user still gets a valid order summary") to pair with this profile? 😊
+$$$

@@ -1,0 +1,98 @@
+¡Claro que sí! 😊 Un perfil para un estudiante Erasmus recién llegado es súper útil — el típico caso de "no sé ni por dónde empezar con Moodle, Sigma, la VPN…". Te propongo un perfil enfocado en **pocas variables de entrada** (solo un par para dar variedad) pero con **outputs ricos** para que puedas validar con reglas que el bot da soporte real (pasos, enlaces, contactos, requisitos).
+
+Aquí tienes el perfil listo para pegar en `profiles/`:
+
+```yaml
+test_name: "Erasmus recién llegado - configuración inicial de servicios"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un estudiante Erasmus que acaba de llegar a la UAM y no conoce
+    los servicios digitales de la universidad. Necesitas ayuda práctica
+    para poner en marcha tu acceso a Moodle, Sigma y la VPN, y no sabes
+    por dónde empezar.
+  context:
+    - personality: personalities/curious-user
+    - "Acabas de recibir tu NIA y tu ID-UAM, pero no sabes cómo usarlos."
+    - "Tu nivel de español es bueno, aunque a veces preguntas de forma directa."
+    - "No tienes experiencia previa con las plataformas de la UAM."
+    - "Prefieres instrucciones paso a paso y enlaces donde poder consultar más."
+  goals:
+    - "Preguntar cómo acceder a Moodle por primera vez con tu cuenta institucional."
+    - "Pedir los pasos para crear o establecer tu contraseña de ID-UAM."
+    - "Solicitar información sobre qué es Sigma y cómo entrar con tu {{tipo_usuario}}."
+    - "Preguntar cómo instalar y configurar la VPN para acceder desde fuera del campus."
+    - "Pedir los datos de contacto del CAU por si te surge algún problema."
+    - tipo_usuario:
+        function: forward()
+        type: string
+        data: [cuenta de estudiante, cuenta de personal visitante]
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - moodle_access_requirements:
+        type: string
+        description: "Requisitos para acceder a Moodle (cuenta institucional, etc.)"
+    - moodle_environments:
+        type: string
+        description: "Entornos de Moodle disponibles (Grado, Postgrado, etc.)"
+    - password_setup_steps:
+        type: string
+        description: "Pasos para crear o establecer la contraseña de ID-UAM"
+    - activation_code_info:
+        type: string
+        description: "Cómo obtener el código de activación para la contraseña"
+    - sigma_access_info:
+        type: string
+        description: "Qué es Sigma y cómo acceder con la cuenta correspondiente"
+    - vpn_installation_steps:
+        type: string
+        description: "Pasos para instalar y configurar el cliente VPN (GlobalProtect)"
+    - vpn_download_links:
+        type: string
+        description: "Enlaces de descarga de la VPN por sistema operativo"
+    - cau_contact_email:
+        type: string
+        description: "Correo electrónico de contacto del CAU"
+    - cau_contact_phone:
+        type: string
+        description: "Teléfono de contacto del CAU"
+    - cau_service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+    - services_catalog_link:
+        type: string
+        description: "Enlace al catálogo de servicios"
+    - faq_link:
+        type: string
+        description: "Enlace a preguntas frecuentes"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - random:
+      - single questions
+      - make spelling mistakes
+      - long phrases
+```
+
+Un par de notas rápidas para que le saques todo el partido 👀:
+
+- **Pocas variables, sí** — solo `tipo_usuario` con dos valores (`forward()`), así generas 2 conversaciones con contexto distinto sin explotar combinaciones.
+- **Outputs pensados para reglas** — los campos como `password_setup_steps`, `vpn_installation_steps`, `cau_contact_email` o `services_catalog_link` te permiten luego escribir reglas tipo "el bot siempre da un enlace al catálogo" o "los pasos de contraseña no están vacíos" (`data_collected()` / `missing_slots()`).
+- **`steps: 20`** es suficiente para cubrir los 5 objetivos sin alargar demasiado (y con `max_cost` controlas el gasto).
+
+¿Quieres que te prepare también un par de **reglas Sensei-check** que validen estos outputs (por ejemplo, que el bot siempre devuelva contacto del CAU y enlaces de VPN)? Solo dime y te las dejo listas 😄

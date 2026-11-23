@@ -1,0 +1,49 @@
+Great question! 😊 Here's the gist, based on `sensei-check-doc.md` (and a few examples from `rules-examples.md`).
+
+## What a metamorphic rule is
+
+In Sensei-check, a **rule** is a condition checked over generated conversations. Rules can target:
+
+- **one** conversation → a traditional *oracle*,
+- **several** conversations → this is **metamorphic testing**,
+- **all** conversations → *global* checks.
+
+A **metamorphic rule** compares **pairs (or tuples) of conversations** that meet a selection filter, and asserts **how outputs should change — or stay the same — when inputs change**. Instead of checking an absolute expected answer (which is often hard to know), it checks a **relation** between conversations. That's how it sidesteps the "oracle problem". 🎯
+
+## The mental model
+
+1. **Generate conversations** with Sensei-chat. Each conversation stores the **inputs** the simulator chose (e.g. pizza size) and the **outputs** extracted by the LLM (e.g. price).
+2. **Write the rule** in YAML, declaring:
+   - how many conversations it needs (`conversations: N`, with `N ≥ 2`),
+   - an optional **filter** (`when:`) to pick comparable conversations,
+   - the **relation** to check (`oracle:` or `if:`/`then:`).
+3. Sensei-check evaluates it and reports failures.
+
+## Anatomy of a metamorphic rule
+
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Key pieces:
+- **`conv[i].field`** — access the i-th conversation's extracted outputs (these come from a profile's `chatbot.output`).
+- **`when:`** — keeps the comparison *ceteris paribus* (same size, drink, quantity), so the relation is meaningful.
+- **`if:` / `then:`** — reads like a law: "If X changes this way, then Y should change that way." You can also use a single `oracle:` boolean expression instead.
+
+## Typical relation types
+
+- **Monotonicity** — more toppings ⇒ higher price; larger size ⇒ not cheaper.
+- **Invariance** — same configuration ⇒ same price.
+- **Style/consistency** — same language, no topic drift, no repeated answers.
+- **Global uniqueness** — e.g. `is_unique('order_id')` across all conversations.
+
+## Important caveat ⚠️
+
+The `conv[i].field` names (`size`, `toppings`, `price`, …) are **illustrative examples**. In a real project they must match the actual `chatbot.output` fields of the target profile — if a field doesn't exist, the rule won't work until you add it to the profile.
+
+Want me to help you write a metamorphic rule for one of your actual profiles? If so, tell me which profile (or what it's about) and I'll inspect its `chatbot.output` fields first. 🚀

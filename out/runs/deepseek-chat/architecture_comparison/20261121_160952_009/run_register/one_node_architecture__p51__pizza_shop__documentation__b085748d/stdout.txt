@@ -1,0 +1,49 @@
+conversation ID: one_node_architecture__p51__pizza_shop__documentation__b085748d
+$$$
+Hey there! 😊 Great question — connectors are basically the **bridge** between Sensei and your chatbot. They tell Sensei *how to actually talk* to your bot's API: where to send messages, how to format them, and where to find the reply in the response.
+
+Let me break it down for you 👇
+
+## What connectors are for
+
+A **Custom YAML Connector** lets you plug Sensei into *any* chatbot API **without writing code**. You just describe the API in a YAML file, and Sensei uses it to send user messages and read the bot's answers. That's what powers your simulated conversations 🚀
+
+## The fields
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | ✅ Yes |
+| `send_message.path` | API endpoint path (appended to `base_url`) | ✅ Yes |
+| `send_message.method` | HTTP method (`POST`, `GET`, `PUT`, `DELETE`) | No (default: `POST`) |
+| `send_message.headers` | Custom headers (e.g., `Authorization`) | No |
+| `send_message.payload_template` | JSON structure with the `{user_msg}` placeholder | ✅ Yes |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | ✅ Yes |
+
+## A quick example
+
+Here's a minimal one — nice and simple:
+
+```yaml
+name: "Echo Bot"
+base_url: "https://postman-echo.com"
+send_message:
+  path: "/post"
+  method: "POST"
+  payload_template:
+    message: "{user_msg}"
+response_path: "json.message"
+```
+
+## A couple of things worth knowing 💡
+
+- **`{user_msg}`** is the placeholder where the simulated user's message gets injected into your payload.
+- **`response_path`** uses dot notation to dig into the JSON. For example:
+  - `"message"` → `response["message"]`
+  - `"data.text"` → `response["data"]["text"]`
+  - `"results.0.content"` → `response["results"][0]["content"]`
+
+Looking at your own connectors folder, you've got some nice real-world examples already — like `ada-uam.yaml` (which uses `response_path: "response.0.text"`) and `metro-madrid.yml` (which uses `response_path: "messages.0.content"`). Those are great references for nested responses! 👀
+
+Want me to help you build or fix a connector for a specific bot? Just tell me the API details and I'll draft it for you 😄
+$$$

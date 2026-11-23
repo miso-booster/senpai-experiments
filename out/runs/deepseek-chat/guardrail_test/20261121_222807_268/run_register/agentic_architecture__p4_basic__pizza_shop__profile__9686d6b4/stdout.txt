@@ -1,0 +1,439 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__9686d6b4
+$$$
+# 🐍 Python automation: LLM-generated valid SENSEI profiles
+
+Grounded in `sensei-chat-guide.md` (profile anatomy, `user.goals` variables/functions, `chatbot.output` types, `conversation` controls) and cross-checked against your real project profiles (`pizza_order_test_custom.yml`, `general_information_seeker.yaml`).
+
+## Architecture (the important part)
+
+The trick to getting **valid** profiles out of an LLM is: **don't trust the LLM — validate and repair.**
+
+```
+description ──► LLM (structured prompt) ──► YAML ──► Validator ──► ✅ valid? save
+                    ▲                                     │
+                    └──────── repair prompt ◄───── errors ┘  (max N retries)
+```
+
+Three layers:
+1. **Prompt** — embeds the profile contract (sections, allowed functions, allowed types, interaction-style keywords) so the model has no excuse to invent DSL.
+2. **Validator** — pure-Python checks mirroring the docs (variable ↔ `{{var}}` matching, `random(n) ≤ len(data)`, `pairwise` needs ≥2 vars, `combinations` needs ≥2 forward/pairwise, valid interaction-style keywords, valid output types, etc.).
+3. **Repair loop** — feed validation errors back to the LLM until valid or retries exhausted.
+
+## The script
+
+```python
+"""
+generate_sensei_profile.py
+LLM-driven generator for VALID SENSEI profiles.
+
+Usage:
+    export OPENAI_API_KEY=...
+    python generate_sensei_profile.py \
+        --description "A user booking a hotel room for a weekend, asking about price, breakfast and check-in time" \
+        --out profiles/hotel_booking.yml
+"""
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+import yaml
+from openai import OpenAI
+
+# ---------------------------------------------------------------------------
+# 1) THE CONTRACT — distilled from sensei-chat-guide.md
+# ---------------------------------------------------------------------------
+
+ALLOWED_FUNCTIONS = {
+    "default()", "random()", "random(n)", "random(rand)",
+    "another()", "another(n)", "forward()", "forward(var)",
+    "pairwise()",
+}
+
+ALLOWED_INTERACTION_STYLES = {
+    "long phrases", "change your mind", "make spelling mistakes",
+    "single questions", "all questions", "default",
+}
+# "change language: [..]" and "random: [..]" are handled specially.
+
+ALLOWED_OUTPUT_PRIMITIVES = {"int", "float", "string"}
+OUTPUT_TYPE_RE = re.compile(
+    r"^(int|float|string|currency|"
+    r"(time|date)(\(.*\))?|"
+    r"list\[(int|float|string|currency)\])$"
+)
+
+SYSTEM_PROMPT = """You are an expert author of SENSEI user-simulator profiles (YAML).
+You output ONLY valid YAML — no markdown fences, no commentary.
+
+A SENSEI profile MUST follow this exact structure:
+
+test_name: "<snake_case_name>"
+
+llm:
+  temperature: <float 0..1>
+  model: "<model name>"
+  model_prov: "<provider>"
+  format:
+    type: text            # or speech
+
+user:
+  language: <English|Spanish|...>
+  role: "<one paragraph describing the simulated user>"
+  context:
+    - "<freeform fact / preference>"
+  goals:
+    - "<goal sentence possibly using {{variables}}>"
+    - <variable_name>:
+        function: <one of: default() | random() | random(n) | random(rand) |
+                   another() | another(n) | forward() | forward(other_var) |
+                   pairwise()>
+        type: <int|float|string|custom_type_name>
+        data: <list | {min,max,step} | {min,max,linspace} | [any("...")]>
+
+chatbot:
+  is_starter: <true|false>
+  fallback: "<the bot's real fallback message>"
+  output:
+    - <field_name>:
+        type: <int|float|string|currency|time(fmt)|date(fmt)|list[type]|custom>
+        description: "<what to extract>"
+
+conversation:
+  number: <int | combinations | combinations(p) | combinations(p, pairwise)>
+  max_cost: <float>            # optional
+  goal_style:
+    steps: <int>               # OR random steps: <max> OR all_answered: {export, limit}
+    max_cost: <float>          # optional
+  interaction_style:
+    - <long phrases | change your mind | make spelling mistakes |
+       single questions | all questions | default>
+    - change language: [<lang>, ...]
+    - random: [<any of the above>]
+
+HARD RULES (violating any = invalid):
+1. Every {{variable}} used in a goal string MUST be declared as a mapping in `goals`
+   with the EXACT same name (case-sensitive).
+2. Every declared variable SHOULD be referenced by at least one goal string.
+3. `random(n)` requires n <= len(data). `another(n)` likewise.
+4. `pairwise()` requires at least 2 variables using pairwise().
+5. `conversation.number: combinations...` requires >= 2 variables using
+   forward() or pairwise().
+6. `user.goals` types may ONLY be int, float, string, or a custom type name.
+   NEVER use list/time/date in user.goals.
+7. `chatbot.output` types may be int, float, string, currency, time(...),
+   date(...), list[...], or a custom type name.
+8. interaction_style entries MUST be exact reserved keywords (lowercase),
+   except `change language:` and `random:` which take lists.
+9. Do NOT invent DSL fields. Only the sections/keys shown above.
+10. Output raw YAML only.
+"""
+
+USER_PROMPT_TEMPLATE = """Create a SENSEI profile for this scenario:
+
+{description}
+
+Additional constraints from the user:
+{constraints}
+
+Return ONLY the YAML document."""
+
+# ---------------------------------------------------------------------------
+# 2) VALIDATOR — pure Python, mirrors the docs
+# ---------------------------------------------------------------------------
+
+class ProfileError(Exception):
+    pass
+
+
+def _collect_vars_from_goals(goals: list) -> tuple[set, set, list]:
+    """Return (referenced_in_text, declared, errors)."""
+    referenced, declared, errors = set(), set(), []
+    for item in goals:
+        if isinstance(item, str):
+            referenced.update(re.findall(r"\{\{\s*(\w+)\s*\}\}", item))
+        elif isinstance(item, dict):
+            for name, spec in item.items():
+                declared.add(name)
+                if not isinstance(spec, dict):
+                    errors.append(f"Variable '{name}' must be a mapping with function/type/data.")
+                    continue
+                for k in ("function", "type", "data"):
+                    if k not in spec:
+                        errors.append(f"Variable '{name}' missing required key '{k}'.")
+        else:
+            errors.append(f"Goal entry must be str or dict, got {type(item).__name__}.")
+    return referenced, declared, errors
+
+
+def _check_function(name: str, spec: dict, errors: list) -> str:
+    fn = str(spec.get("function", "")).strip()
+    data = spec.get("data")
+
+    if fn.startswith("random(") and fn != "random(rand)":
+        m = re.match(r"random\((\d+)\)", fn)
+        if m and isinstance(data, list) and int(m.group(1)) > len(data):
+            errors.append(f"'{name}': random({m.group(1)}) > len(data)={len(data)}.")
+    elif fn.startswith("another("):
+        m = re.match(r"another\((\d+)\)", fn)
+        if m and isinstance(data, list) and int(m.group(1)) > len(data):
+            errors.append(f"'{name}': another({m.group(1)}) > len(data)={len(data)}.")
+    elif fn.startswith("forward(") and fn != "forward()":
+        m = re.match(r"forward\((\w+)\)", fn)
+        if not m:
+            errors.append(f"'{name}': malformed forward() — use forward() or forward(var).")
+    elif fn not in {"default()", "random()", "random(rand)", "another()",
+                    "forward()", "pairwise()"} and not re.match(
+                        r"^(random|another|forward)\(.+\)$", fn):
+        errors.append(f"'{name}': unknown function '{fn}'.")
+
+    # data shape sanity
+    if isinstance(data, dict):
+        if "min" in data and "max" in data:
+            if "step" not in data and "linspace" not in data:
+                errors.append(f"'{name}': numeric range needs 'step' or 'linspace'.")
+        elif not data:
+            errors.append(f"'{name}': empty data mapping.")
+    elif not isinstance(data, list):
+        errors.append(f"'{name}': data must be a list or a range mapping.")
+    return fn
+
+
+def _check_interaction_styles(styles, errors):
+    if not isinstance(styles, list):
+        errors.append("conversation.interaction_style must be a list.")
+        return
+    for s in styles:
+        if isinstance(s, str):
+            if s not in ALLOWED_INTERACTION_STYLES:
+                errors.append(f"Unknown interaction_style keyword: '{s}'.")
+        elif isinstance(s, dict):
+            for key, val in s.items():
+                if key == "change language":
+                    if not isinstance(val, list) or not val:
+                        errors.append("'change language' must be a non-empty list.")
+                elif key == "random":
+                    if not isinstance(val, list):
+                        errors.append("'random' must contain a list of styles.")
+                    else:
+                        for inner in val:
+                            if isinstance(inner, str) and inner not in ALLOWED_INTERACTION_STYLES:
+                                errors.append(f"Unknown style inside random: '{inner}'.")
+                else:
+                    errors.append(f"Unknown interaction_style mapping key: '{key}'.")
+        else:
+            errors.append("interaction_style entries must be str or dict.")
+
+
+def validate_profile(profile: dict) -> list[str]:
+    errors: list[str] = []
+
+    # --- top-level ---
+    for section in ("test_name", "user", "chatbot", "conversation"):
+        if section not in profile:
+            errors.append(f"Missing top-level section: '{section}'.")
+
+    user = profile.get("user", {}) or {}
+    chatbot = profile.get("chatbot", {}) or {}
+    conversation = profile.get("conversation", {}) or {}
+
+    # --- user ---
+    if not user.get("language"):
+        errors.append("user.language is required.")
+    if not user.get("role"):
+        errors.append("user.role is required.")
+
+    goals = user.get("goals", []) or []
+    referenced, declared, goal_errors = _collect_vars_from_goals(goals)
+    errors.extend(goal_errors)
+
+    missing = referenced - declared
+    if missing:
+        errors.append(f"Variables used in goals but not declared: {sorted(missing)}.")
+    unused = declared - referenced
+    if unused:
+        errors.append(f"Variables declared but never used in goals: {sorted(unused)}.")
+
+    pairwise_count = 0
+    forward_or_pairwise = 0
+    for item in goals:
+        if isinstance(item, dict):
+            for name, spec in item.items():
+                if not isinstance(spec, dict):
+                    continue
+                fn = _check_function(name, spec, errors)
+                if fn == "pairwise()":
+                    pairwise_count += 1
+                    forward_or_pairwise += 1
+                elif fn.startswith("forward("):
+                    forward_or_pairwise += 1
+                vtype = str(spec.get("type", ""))
+                if vtype in {"list", "time", "date"} or vtype.startswith(("list[", "time(", "date(")):
+                    errors.append(
+                        f"'{name}': type '{vtype}' is NOT allowed in user.goals "
+                        f"(only int/float/string/custom)."
+                    )
+
+    # --- chatbot ---
+    if "is_starter" not in chatbot:
+        errors.append("chatbot.is_starter is required (true|false).")
+    if not chatbot.get("fallback"):
+        errors.append("chatbot.fallback is required.")
+    outputs = chatbot.get("output", []) or []
+    if not outputs:
+        errors.append("chatbot.output must define at least one field.")
+    for out in outputs:
+        if not isinstance(out, dict):
+            errors.append("Each chatbot.output entry must be a mapping.")
+            continue
+        for fname, spec in out.items():
+            if not isinstance(spec, dict):
+                errors.append(f"Output '{fname}' must be a mapping with type/description.")
+                continue
+            otype = str(spec.get("type", ""))
+            if not OUTPUT_TYPE_RE.match(otype):
+                errors.append(f"Output '{fname}': invalid type '{otype}'.")
+            if not spec.get("description"):
+                errors.append(f"Output '{fname}': description is required.")
+
+    # --- conversation ---
+    number = conversation.get("number")
+    if number is None:
+        errors.append("conversation.number is required.")
+    elif isinstance(number, str) and number.startswith("combinations"):
+        if forward_or_pairwise < 2:
+            errors.append(
+                "conversation.number uses combinations but fewer than 2 "
+                "forward()/pairwise() variables are declared."
+            )
+        if "pairwise" in number and pairwise_count < 2:
+            errors.append(
+                "combinations(..., pairwise) requires >= 2 pairwise() variables."
+            )
+
+    goal_style = conversation.get("goal_style", {}) or {}
+    if not any(k in goal_style for k in ("steps", "random steps", "all_answered")):
+        errors.append("conversation.goal_style needs steps / random steps / all_answered.")
+
+    _check_interaction_styles(conversation.get("interaction_style", []), errors)
+
+    return errors
+
+# ---------------------------------------------------------------------------
+# 3) LLM CALL + REPAIR LOOP
+# ---------------------------------------------------------------------------
+
+def _strip_fences(text: str) -> str:
+    text = text.strip()
+    text = re.sub(r"^```(?:yaml)?\s*", "", text)
+    text = re.sub(r"\s*```$", "", text)
+    return text.strip()
+
+
+def generate_profile(description: str, constraints: str = "",
+                     model: str = "gpt-4o", max_retries: int = 3) -> dict:
+    client = OpenAI()
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": USER_PROMPT_TEMPLATE.format(
+            description=description, constraints=constraints or "(none)")},
+    ]
+
+    last_errors: list[str] = []
+    for attempt in range(1, max_retries + 1):
+        resp = client.chat.completions.create(
+            model=model, messages=messages, temperature=0.4,
+        )
+        raw = _strip_fences(resp.choices[0].message.content or "")
+
+        try:
+            profile = yaml.safe_load(raw)
+        except yaml.YAMLError as e:
+            last_errors = [f"YAML parse error: {e}"]
+            messages += [
+                {"role": "assistant", "content": raw},
+                {"role": "user", "content": f"Your YAML failed to parse:\n{e}\nReturn corrected YAML only."},
+            ]
+            continue
+
+        if not isinstance(profile, dict):
+            last_errors = ["Top-level YAML must be a mapping."]
+            messages += [
+                {"role": "assistant", "content": raw},
+                {"role": "user", "content": "Top-level must be a mapping. Return corrected YAML only."},
+            ]
+            continue
+
+        errors = validate_profile(profile)
+        if not errors:
+            print(f"✅ Valid profile on attempt {attempt}.")
+            return profile
+
+        last_errors = errors
+        print(f"⚠️  Attempt {attempt} invalid ({len(errors)} issues), repairing...")
+        messages += [
+            {"role": "assistant", "content": raw},
+            {"role": "user", "content":
+                "Your profile failed validation with these errors:\n"
+                + "\n".join(f"- {e}" for e in errors)
+                + "\nFix ALL of them and return the corrected YAML only."},
+        ]
+
+    raise ProfileError("Could not produce a valid profile.\nLast errors:\n"
+                       + "\n".join(f"- {e}" for e in last_errors))
+
+# ---------------------------------------------------------------------------
+# 4) CLI
+# ---------------------------------------------------------------------------
+
+def main():
+    ap = argparse.ArgumentParser(description="Generate a valid SENSEI profile with an LLM.")
+    ap.add_argument("--description", required=True, help="Scenario to simulate.")
+    ap.add_argument("--constraints", default="", help="Extra constraints (language, outputs...).")
+    ap.add_argument("--out", required=True, help="Output path, e.g. profiles/hotel.yml")
+    ap.add_argument("--model", default="gpt-4o")
+    ap.add_argument("--retries", type=int, default=3)
+    args = ap.parse_args()
+
+    try:
+        profile = generate_profile(args.description, args.constraints,
+                                   args.model, args.retries)
+    except ProfileError as e:
+        print(f"❌ {e}", file=sys.stderr)
+        sys.exit(1)
+
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(yaml.safe_dump(profile, sort_keys=False, allow_unicode=True),
+                   encoding="utf-8")
+    print(f"📄 Wrote {out}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Why this produces *valid* profiles
+
+| Doc rule (`sensei-chat-guide.md`) | Enforced by |
+|---|---|
+| `{{var}}` must match a declared variable exactly (§4.1, §9) | `_collect_vars_from_goals` + missing/unused checks |
+| `random(n)` needs `n ≤ len(data)` (§9) | `_check_function` |
+| `pairwise()` needs ≥2 vars (§4.4, §5) | `pairwise_count` check |
+| `combinations` needs ≥2 forward/pairwise (§5) | `forward_or_pairwise` check |
+| `user.goals` types limited to int/float/string/custom (§4.2, §6) | explicit rejection of `list`/`time`/`date` |
+| `chatbot.output` accepts primitives + `time(...)`, `date(...)`, `list[...]` (§6) | `OUTPUT_TYPE_RE` |
+| `interaction_style` = reserved keywords only (§5) | `_check_interaction_styles` |
+| `goal_style` must be steps / random steps / all_answered (§5) | presence check |
+
+## Suggested next steps
+
+1. **Add a schema file** — if you want belt-and-braces, drop a `pydantic` model mirroring `validate_profile` and use `instructor` or `response_format` for guaranteed JSON→YAML.
+2. **Wire in `validation_check.py`** — after writing the YAML, shell out to Sensei's own validator (`python validation_check.py --profile ... --combined-matrix`) for a second opinion on `forward`/`pairwise` matrices.
+3. **Batch mode** — loop over a CSV of scenarios and write one profile per row into `profiles/`.
+4. **Custom types** — if a scenario needs `currency`/`phone_number`, have the script also emit the matching `types/*.yml` (the `format` regex + `extraction` schema from §4.2).
+
+Want me to extend this with the **Pydantic schema** version, the **batch mode**, or auto-generation of matching **`types/`** files? 😊
+$$$

@@ -1,0 +1,36 @@
+conversation ID: graph_based_architecture__p28__bikeshop__rule__4d6279f4
+$$$
+Absolutely, happy to help with that! 😊 This is a classic **global rule** — it doesn't depend on any specific profile's `chatbot.output` fields, so it works across all your conversations. Perfect for catching those moments where a bot suddenly switches to English mid-conversation in Spanish 😅
+
+Here's a clean rule for it:
+
+```yaml
+name: responds_in_same_language
+description: The assistant must always reply in the same language as the user
+conversations: 1
+oracle: responds_in_same_language() is True
+```
+
+### What's happening here 👀
+
+- **`conversations: 1`** — this checks each conversation individually (one at a time).
+- **`responds_in_same_language()`** — a built-in helper that compares the language of the user's messages with the assistant's replies. It returns `True` if they match, or the offending responses otherwise.
+- **`is True`** — we assert the helper's result is exactly `True`, so any mismatch fails the rule.
+
+### A couple of things to keep in mind 💡
+
+- This helper is **LLM-backed**, so allow for minor variability — it's not a hard-coded string comparison.
+- It's a **profile-agnostic global rule**, so no need to reference any `chatbot.output` slots. It just works on the raw conversation text.
+- If you want to be extra strict about a *specific* language (say, everything must be English), you can combine it with the `language` helper:
+
+```yaml
+name: always_english
+description: All assistant replies must be in English
+conversations: 1
+oracle: language(chatbot_phrases) == 'ENG'
+```
+
+That second one is handy if your bot is *supposed* to only speak one language — while the first is better when the bot should mirror whatever the user speaks 🌍
+
+Want me to adapt this for a specific scenario (e.g., bilingual support, or a particular profile)? Just say the word! 🙌
+$$$

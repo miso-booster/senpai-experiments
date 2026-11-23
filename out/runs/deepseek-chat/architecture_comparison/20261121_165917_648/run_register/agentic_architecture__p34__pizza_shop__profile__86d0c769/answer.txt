@@ -1,0 +1,109 @@
+Here's a profile that captures the mid-conversation switch from a custom pizza to a predefined one 🍕 — the `change your mind` interaction style drives the flip, and the goals are ordered so the custom request comes first and the menu switch follows.
+
+```yaml
+test_name: "pizza_order_custom_then_predefined"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza over the phone. You start by asking
+    for a custom pizza with your own chosen size and toppings, but partway
+    through the conversation you change your mind and instead ask for a
+    predefined pizza from the shop's menu.
+  context:
+    - personality: personalities/conversational-user.yml
+    - your name is Jon Doe
+    - "You first want a custom pizza, then you switch to a menu pizza."
+  goals:
+    - "I'd like a {{size}} custom pizza with {{toppings}}"
+    - "Actually, forget the custom one — I'll take a {{pizza_type}} pizza instead"
+    - "{{cans}} cans of {{drink}}"
+    - how much will it cost
+    - how long will it take to be ready
+
+    - size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - big
+          - extra large
+
+    - toppings:
+        function: pairwise()
+        type: string
+        data:
+          - cheese
+          - mushrooms
+          - pepperoni
+
+    - pizza_type:
+        function: another()
+        type: string
+        data:
+          - Margherita
+          - Pepperoni
+          - Four Cheese
+          - Vegetarian
+          - any(3 classic pizza menu items)
+
+    - cans:
+        function: forward(drink)
+        type: int
+        data:
+          min: 1
+          max: 7
+          step: 1
+
+    - drink:
+        function: forward()
+        type: string
+        data:
+          - Sprite
+          - Coke
+          - Orange Fanta
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my pizza shop, can you say that again?"
+  output:
+    - price:
+        type: currency
+        description: The final price of the pizza order
+    - time:
+        type: time("hh:mm:ss")
+        description: The estimated time for the pizza to be ready
+    - order_id:
+        type: string
+        description: The order ID
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 6
+  interaction_style:
+    - change your mind
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+### How it works 🔍
+- **The mind-change behaviour** comes from the reserved `change your mind` interaction style. The user first asks for a **custom** pizza (size + toppings), then switches to a **predefined** menu pizza (`pizza_type`).
+- **Goals** are ordered so the custom request comes first and the "actually, forget the custom one…" switch follows — the simulator will naturally flip mid-conversation.
+- **`chatbot.output`** mirrors your existing pizza profiles (`price`, `time`, `order_id`), so any profile-bound rules targeting those fields will keep working. 👍
+- **`goal_style.steps: 6`** gives enough room for the custom request, the switch, the drinks, and the price/ETA questions.
+
+### A couple of things to confirm ✅
+1. **Personality file** — I referenced `personalities/conversational-user.yml` (used by your other profiles). If your project stores it under a different path, let me know and I'll adjust.
+2. **Output fields** — I kept `price` / `time` / `order_id` for consistency. If you'd like to also extract the *final* pizza type (to verify the bot actually honored the switch), I can add a field like `final_pizza_type: string` — just say the word.
+
+Want me to also write a companion rule (e.g., checking the bot confirms the predefined pizza after the switch)? 😊

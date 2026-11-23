@@ -1,0 +1,105 @@
+¡Listo! Aquí tienes el perfil completo, siguiendo las convenciones del proyecto (español, contexto CAU/TI, `single questions`, variables con `forward()`) y la guía `sensei-chat-guide.md`.
+
+```yaml
+test_name: Configuración de eduroam en el dispositivo
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: Spanish
+  role: Usuario que intenta configurar la red eduroam en su dispositivo pero no consigue conectarse.
+  context:
+  - 'personality: personalities/curious-user'
+  - Necesitas conectarte a la red inalámbrica eduroam para poder acceder a los recursos de la universidad desde tu dispositivo.
+  - Ya has intentado configurarla por tu cuenta siguiendo distintos métodos, pero en todos los casos algo falla y no logras conectarte.
+  - No estás seguro de si el problema es tu usuario, la contraseña, el certificado o el método de configuración elegido.
+  - Quieres que el CAU te guíe paso a paso hasta conseguir una conexión estable a eduroam.
+  goals:
+  - Explicar que no consigues conectarte a eduroam en tu {{dispositivo}} y pedir ayuda para configurarlo.
+  - Indicar que has intentado configurarlo mediante {{metodo_configuracion}} pero no ha funcionado.
+  - Preguntar qué credenciales debes usar para eduroam y si tu {{credencial}} es la correcta.
+  - Consultar si necesitas instalar o aceptar el {{certificado}} y cómo hacerlo.
+  - Pedir los pasos concretos para configurar eduroam en tu {{dispositivo}} con el método {{metodo_configuracion}}.
+  - dispositivo:
+      function: forward()
+      type: string
+      data:
+      - portátil con Windows
+      - portátil con macOS
+      - móvil Android
+      - iPhone
+      - tablet iPad
+      - portátil con Linux
+  - metodo_configuracion:
+      function: forward(dispositivo)
+      type: string
+      data:
+      - el asistente de configuración automática (eduroam CAT)
+      - la configuración manual introduciendo SSID, usuario y contraseña
+      - la app oficial de eduroam
+      - el perfil de configuración descargable del CAU
+  - credencial:
+      function: random()
+      type: string
+      data:
+      - usuario institucional (ID-UAM)
+      - correo institucional completo
+      - usuario y contraseña de la cuenta de red
+  - certificado:
+      function: random()
+      type: string
+      data:
+      - certificado raíz de la universidad
+      - certificado de eduroam CAT
+      - certificado del servidor de autenticación
+chatbot:
+  is_starter: false
+  fallback: ¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro\ncatálogo de servicios\n.\nRespondo a preguntas dirigidas al\nCentro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+  - dispositivo:
+      type: string
+      description: Dispositivo del usuario que intenta configurar eduroam
+  - metodo_configuracion:
+      type: string
+      description: Método de configuración de eduroam utilizado o recomendado
+  - credenciales_eduroam:
+      type: string
+      description: Credenciales correctas que debe usar el usuario para eduroam
+  - certificado_requerido:
+      type: string
+      description: Certificado necesario y cómo instalarlo o aceptarlo
+  - pasos_configuracion:
+      type: string
+      description: Pasos concretos para configurar eduroam en el dispositivo
+  - solucion_problema:
+      type: string
+      description: Causa probable del fallo y solución propuesta por el CAU
+  - conexion_confirmada:
+      type: string
+      description: Confirmación de que el usuario consigue conectarse a eduroam
+conversation:
+  number: 6
+  max_cost: 0.75
+  goal_style:
+    steps: 30
+  interaction_style:
+  - single questions
+```
+
+### Qué hace este perfil 🎯
+- **Usuario simulado**: alguien que **no logra configurar eduroam** en su dispositivo y pide ayuda al CAU.
+- **Variables (las distintas formas de intentar configurarlo)**:
+  - `dispositivo` → el equipo donde intenta conectarse (Windows, macOS, Android, iPhone, iPad, Linux).
+  - `metodo_configuracion` → **las diferentes vías de configuración**: asistente automático (eduroam CAT), configuración manual, app oficial de eduroam, perfil descargable del CAU. Está anidada con `forward(dispositivo)` para cubrir combinaciones dispositivo × método.
+  - `credencial` → qué credenciales usar (usuario institucional, correo completo, cuenta de red).
+  - `certificado` → qué certificado necesita y cómo aceptarlo.
+- **`chatbot.output`**: define los campos que las reglas podrán leer luego como `conv[i].<campo>` (p. ej. `pasos_configuracion`, `solucion_problema`, `conexion_confirmada`), tal como explica la sección 2.1.1 de `sensei-chat-guide.md`.
+
+### Notas y decisiones
+- Usé `forward()` en `dispositivo` y `forward(dispositivo)` en `metodo_configuracion` para generar una matriz de combinaciones (dispositivo × método), que es justo lo que pediste con "las diferentes formas de intentarlo". Si prefieres menos casos, puedo cambiar `metodo_configuracion` a `pairwise()` o `random()`.
+- `conversation.number: 6` es un valor fijo razonable; si quieres que se derive automáticamente de la matriz de combinaciones, puedo poner `combinations` (necesita al menos dos funciones `forward`/`pairwise`, que aquí se cumplen).
+- Mantuve el `fallback` y el estilo del resto de perfiles del proyecto (CAU/TI, `single questions`).
+
+¿Quieres que ajuste el número de conversaciones, el idioma, o que además te prepare una **regla** (por ejemplo, que el bot siempre indique los pasos de configuración y confirme la conexión) ligada a este perfil? 😊

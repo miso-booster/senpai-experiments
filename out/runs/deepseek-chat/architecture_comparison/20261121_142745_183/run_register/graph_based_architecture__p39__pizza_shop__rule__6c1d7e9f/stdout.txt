@@ -1,0 +1,27 @@
+conversation ID: graph_based_architecture__p39__pizza_shop__rule__6c1d7e9f
+$$$
+Hey there! 😊 Happy to help you build that metamorphic rule — it's a nice, clean one: hold the pizza fixed, toggle the drink, and check the price delta is exactly $2.
+
+Here's the rule, adapted to your project's `chatbot.output` fields (`size`, `toppings`, `drink`, `price`):
+
+```yaml
+name: drink_costs_two_dollars_extra
+description: Adding a drink to the same pizza costs exactly 2 dollars extra
+conversations: 2
+when: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+if:   conv[0].drink == '' and conv[1].drink != ''
+then: extract_float(conv[1].price) - extract_float(conv[0].price) == 2
+```
+
+### A few things worth knowing 👀
+
+1. **The `when` filter keeps things fair.** We compare two conversations with the *same size* and *same number of toppings* — so the only meaningful difference is the drink. That's the "ceteris paribus" idea: change one thing, hold the rest equal.
+
+2. **The `if`/`then` reads like a law.** "If one order has no drink and the other has a drink, then the second must cost exactly $2 more." 🍕➡️🥤
+
+3. **About the empty-drink check.** I used `conv[0].drink == ''` to mean "no drink." Depending on how your profile's `chatbot.output` represents an absent drink (empty string, `None`, `'none'`, etc.), you may want to adjust that condition. Could you tell me how the `drink` slot looks when no drink is ordered? That way I can make the rule bulletproof for your setup.
+
+4. **Exact equality (`== 2`) is strict.** If your prices are stored as strings like `"18.50 EUR"`, `extract_float` handles that fine. But if there's any rounding or currency formatting wobble, you might prefer a tolerance like `abs(... - 2) < 0.01`. Want me to switch it to that version?
+
+Just let me know about the empty-drink representation and whether you'd like the tolerance version, and I'll polish it up for you! 🚀
+$$$

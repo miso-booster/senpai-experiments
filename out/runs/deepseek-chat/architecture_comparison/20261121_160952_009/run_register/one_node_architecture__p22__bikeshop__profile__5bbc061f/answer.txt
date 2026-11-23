@@ -1,0 +1,71 @@
+Here's a profile that captures that "something feels off but I'm not sure what" vibe — the user describes discomfort, floats both hypotheses (fit vs. worn parts), and asks for advice/services without ever requesting a booking 😊
+
+```yaml
+test_name: "rider_with_discomfort_seeking_advice"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who has been experiencing discomfort while riding your bike.
+    You are not sure whether the problem is that the bike does not fit you correctly
+    or that some of its components are worn out. You want advice on possible
+    adjustments and on the services the shop offers, but you do NOT explicitly ask
+    to book an appointment.
+  context:
+    - "You ride regularly (commuting and weekend rides) and the discomfort has been building up over the last few weeks."
+    - "You feel it mostly in your {{discomfort_area}} after longer rides."
+    - "You suspect either a fit issue (saddle height, reach, handlebar position) or worn components (chain, cassette, brake pads, tires)."
+    - "You are looking for guidance and options, not a firm booking — you want to understand what could be done first."
+  goals:
+    - "Describe the discomfort you feel while riding, mentioning it is in your {{discomfort_area}}."
+    - "Say you are unsure whether the bike does not fit you properly or whether some components are worn."
+    - "Ask what adjustments could help improve your riding comfort."
+    - "Ask what services the shop offers that could address worn components."
+    - "Ask for advice on how to tell whether the issue is fit-related or wear-related."
+    - discomfort_area:
+        function: random()
+        type: string
+        data: [lower back, knees, wrists and hands, neck and shoulders, saddle area]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: "The chatbot's advice on possible bike fit adjustments (e.g., saddle height, reach, handlebar position) that could improve comfort."
+    - worn_component_guidance:
+        type: string
+        description: "The chatbot's guidance on how to identify worn components (chain, cassette, brake pads, tires) and what to check."
+    - offered_services:
+        type: string
+        description: "The services the shop offers that could address fit adjustments or worn components (e.g., tune-ups, inspections, component replacement)."
+    - appointment_mention:
+        type: string
+        description: "Whether the chatbot mentions or offers to book an appointment. Should reflect that the user did not explicitly request one."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single question
+  max_cost: 0.5
+```
+
+A couple of notes on the design 👀:
+
+- **`discomfort_area`** uses `random()` so each conversation explores a different body area — nice for coverage without exploding the case count.
+- The **`appointment_mention`** output slot is there on purpose: since the user never asks to book, it lets you later write a rule (e.g., a global or profile-bound check) about whether the bot pushes bookings unprompted.
+- The goals are phrased as *advice-seeking*, not booking — so the simulated user stays in character.
+
+Want me to also draft a Sensei-check rule that verifies the bot actually gives fit/wear guidance (e.g., using `data_collected()` or `semantic_content`)? Just say the word! 🚲

@@ -1,0 +1,92 @@
+Hey there! 😊 Happy to help you build a profile for testing appointment scheduling around wheel changes — and I love that you want to stress-test the date/time handling with several variables. Let me put together a clean profile for you 👇
+
+```yaml
+test_name: "wheel_change_appointment_scheduler"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who needs to book an appointment at a bike shop to have
+    your wheels changed. You want to confirm the shop can do the wheel change,
+    agree on a date and time, and make sure the appointment is properly confirmed.
+  context:
+    - "Your current wheels are worn out and you want them replaced as soon as possible."
+    - "You are flexible but you have a few preferred days and times in mind."
+    - "You want the appointment confirmed clearly with the exact date and time."
+  goals:
+    - "Ask if the shop can change the wheels on your bike."
+    - "Request an appointment for {{appointment_date}} at {{appointment_time}} to have your wheels changed."
+    - "Confirm the appointment details (date, time, and service) with the assistant."
+    - appointment_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - "next Monday"
+          - "November 6th, 2024"
+          - "the day after tomorrow"
+          - "this Saturday"
+    - appointment_time:
+        function: forward(appointment_date)
+        type: string
+        data:
+          - "09:00"
+          - "11:30"
+          - "14:00"
+          - "16:45"
+          - "18:15"
+    - wheel_type:
+        function: pairwise()
+        type: string
+        data:
+          - front wheel
+          - rear wheel
+          - both wheels
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmed_date:
+        type: date
+        description: "The date of the wheel-change appointment, as confirmed by the assistant."
+    - confirmed_time:
+        type: time("hh:mm")
+        description: "The time of the wheel-change appointment, as confirmed by the assistant."
+    - confirmed_service:
+        type: string
+        description: "The service to be performed (wheel change), as confirmed by the assistant."
+    - appointment_confirmation:
+        type: string
+        description: "The full confirmation message from the assistant, including date, time, and service."
+
+conversation:
+  number: combinations(0.6, forward)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 12
+  interaction_style:
+    - random:
+      - single questions
+      - make spelling mistakes
+      - change your mind
+  max_cost: 0.5
+```
+
+A few notes so you get the most out of it 💡:
+
+- **Date/time coverage:** `appointment_date` uses `forward()` and `appointment_time` nests on it with `forward(appointment_date)`, so you get a nice grid of day × time combinations — perfect for probing how the bot handles different dates and times.
+- **`combinations(0.6, forward)`** uses 60% of the forward-generated matrix (you need at least two nested `forward()` variables for this — which you have ✅). Bump it to `combinations` if you want the full grid.
+- **`wheel_type` with `pairwise()`** adds variety (front/rear/both) without exploding the case count.
+- **`chatbot.output`** exposes `confirmed_date`, `confirmed_time`, `confirmed_service`, and `appointment_confirmation` — these are exactly the fields you'd later reference in Sensei-check rules like `conv[0].confirmed_date` or `conv[0].confirmed_time` if you want to validate date/time handling metamorphically. 🎯
+- **`change your mind`** in the interaction style is a nice touch here — it tests whether the bot correctly updates the appointment when you switch dates mid-conversation.
+
+Want me to also draft a companion Sensei-check rule (e.g., "confirmed date/time must match what the user requested")? Just say the word! 🙌

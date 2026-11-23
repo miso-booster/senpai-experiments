@@ -1,0 +1,23 @@
+Hey there! 😊 I appreciate you being upfront, but I have to gently decline this one — I'm only able to help with **SENSEI PROFILES**, **SENSEI RULES**, **SENSEI CONNECTORS**, and their documentation. Writing a standalone Python script for matrix multiplication falls outside that scope, so I can't help with it here 🙏.
+
+That said, if what you're really after is validating something in the Sensei pipeline, I'd be happy to help with things like:
+
+- ✅ **Validating a profile** — e.g., checking your `pizza_order_test_custom.yml` for format errors, variable/goal mismatches, or `chatbot.output` schema issues.
+- ✅ **Validating a rule** — e.g., making sure `more_toppings_cost_more.yaml` references real `chatbot.output` fields from the right profile.
+- ✅ **Validating a connector** — e.g., checking `ada-uam.yaml` or `metro-madrid.yml` for correct `response_path` / `payload_template` structure.
+
+For example, if you want to sanity-check a rule against a profile, here's a quick pattern you can run through the Sensei validator:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more (same size/drink)
+conversations: 2
+active: true
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+⚠️ One thing I noticed while looking at your project: this rule references `conv[i].toppings`, `conv[i].drink`, and `conv[i].price`, but none of your current profiles expose those exact fields in `chatbot.output` (your closest matches are `total_cost`, `order_summary`, `drink_options`, etc.). That's a classic source of "rule never applies" or validation failures — worth checking!
+
+Want me to help you align that rule with a specific profile's `chatbot.output`, or dig into any of your other rules/profiles/connectors? Just point me at one and I'll take a look 👀

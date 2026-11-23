@@ -1,0 +1,54 @@
+Great question! 😊 Let me walk you through which fields in a SENSEI profile are **optional** versus required, based on the Sensei Profiles guide.
+
+## Fields that are NOT mandatory 🎉
+
+### `llm` section — entirely optional
+You can skip the whole `llm` block. If you omit it, Sensei applies sensible defaults (model, temperature) and defaults the format to `text`. Only add it when you need to override the model/temperature or switch to `speech` mode.
+
+```yaml
+# This whole block can be omitted
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+```
+
+### `chatbot.is_starter`
+Optional. It just tells Sensei whether the bot sends the first message.
+
+### `chatbot.fallback`
+Optional, though **highly recommended** — putting your bot's real fallback text here helps avoid endless loops. But it's not strictly required.
+
+### `conversation.max_cost` and `goal_style.max_cost`
+Both optional — they're just safety caps on spend (whole run vs. per-conversation).
+
+### `goal_style.export` and `goal_style.limit`
+Optional. `limit` defaults to 30 if omitted; `export` defaults to not exporting.
+
+### `interaction_style`
+Optional. If you don't specify it, the simulator just carries out the conversation naturally (the `default` behavior).
+
+### `user.context`
+Optional. You can leave it out if the `role` and `goals` are enough to describe the user.
+
+### `personalities/` references
+Optional — only needed if you want reusable persona prompt snippets.
+
+---
+
+## What IS effectively required ⚠️
+
+To have a runnable, meaningful profile you'll generally need:
+
+- **`test_name`** — identifies the profile.
+- **`user.language`**, **`user.role`**, and **`user.goals`** — the core of the simulated user.
+- **`chatbot.output`** — the extraction schema (also the contract for Sensei-check rules).
+- **`conversation.number`** and **`goal_style`** — to control how many conversations run and when they end.
+
+> 💡 One important nuance: any `{{variable}}` you use in a goal string **must** be declared in `user.goals` with the exact same name — that's a hard requirement, not optional.
+
+---
+
+Want me to point you to a specific profile in your project (like `pizza_order_test_custom.yml`) and highlight exactly which of its fields are optional? Just say the word! 🙌

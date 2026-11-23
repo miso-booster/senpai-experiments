@@ -1,0 +1,39 @@
+Quick heads-up before the YAML 👇
+
+You said there's no profile yet, but I actually found a very close match in your project: **`dietary_needs_and_special_products_inquiry.yaml`**. It already exposes a `lactose_free_availability` output field (plus `lactose_free_cheese_brands`), so a rule about lactose-free availability could be **profile-bound** to it right away.
+
+Since you asked me to name variables freely and treat it as rule-first, I've written the rule in **rule-first style** (Case C from the docs) using clear, self-descriptive field names. It's designed so it works as-is if you later create a profile exposing these outputs — and it also maps cleanly onto the existing profile's `lactose_free_availability` field if you'd rather bind it there.
+
+Here's the rule (based on `sensei-check-doc.md` + `rules-examples.md`):
+
+```yaml
+name: lactose_free_availability_confirmed
+description: >-
+  When the user asks about lactose-free products, the chatbot must explicitly
+  confirm their availability (and not leave the availability slot empty).
+  Rule-first design: assumes a future profile exposes `lactose_free_availability`
+  and `lactose_free_products` in chatbot.output.
+active: true
+conversations: 1
+when: conv[0].lactose_free_availability is not None or conv[0].lactose_free_products is not None
+oracle: |-
+  conv[0].lactose_free_availability is not None
+  and len(str(conv[0].lactose_free_availability).strip()) > 0
+  and semantic_content(conv[0].lactose_free_availability, 'confirms that lactose-free products are available')
+yields: |-
+  f"Lactose-free availability not confirmed. Got: {conv[0].lactose_free_availability}"
+```
+
+### What it does
+- **`conversations: 1`** → single-conversation oracle (per `sensei-check-doc.md` §11).
+- **`when`** → only runs when the profile actually extracted something for lactose-free availability/products, so it won't fire on unrelated conversations.
+- **`oracle`** → checks the field is present, non-empty, and (via the LLM-backed `semantic_content` helper) actually *confirms availability* rather than just mentioning the topic.
+- **`yields`** → helpful failure message showing what was extracted.
+
+### Fields this rule expects a future profile to expose
+For the rule to work, a profile's `chatbot.output` should provide:
+- `lactose_free_availability` — `string` — confirmation of lactose-free product availability.
+- `lactose_free_products` — `list[string]` — (optional) the lactose-free products mentioned.
+
+### Want me to bind it to the existing profile instead?
+If you'd prefer, I can rewrite it as a **profile-bound rule** targeting `dietary_needs_and_special_products_inquiry.yaml` using its real field `lactose_free_availability` (dropping the invented `lactose_free_products`). Just say the word and I'll adapt it. 😊

@@ -1,0 +1,49 @@
+conversation ID: one_node_architecture__p43__pizza_shop__connector__6553b383
+$$$
+¡Claro que sí! 😊 Vamos a revisarlo juntos.
+
+Tu conector está **casi perfecto** — de hecho, la estructura del `payload_template` y el `response_path` coinciden exactamente con la request y response que me pasaste:
+
+- **Request**: `message.text` → tu `payload_template` ya tiene `message: { text: "{user_msg}" }` ✅
+- **Response**: `response.text` → tu `response_path: "response.text"` ya apunta al sitio correcto ✅
+
+Entonces, ¿qué hay que arreglar? 🤔
+
+El único detalle que veo es que **falta el campo `name` con un valor descriptivo** (lo tienes, pero es genérico) y, sobre todo, que **no hay nada roto estructuralmente**. Sin embargo, para que sea un conector limpio y consistente con el resto de tus conectores (como `ada-uam.yaml` o `metro-madrid.yml`), te propongo esta versión pulida:
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+### Puntos a revisar (por si acaso) 👀
+
+1. **`{user_msg}` está bien colocado** dentro de `message.text` — coincide con tu request de ejemplo. ✅
+2. **`response_path: "response.text"`** navega correctamente por `response["response"]["text"]`. ✅
+3. **`Content-Type: application/json`** está presente — necesario para que el servidor interprete bien el body. ✅
+
+### ¿Qué podría estar fallando entonces? 🔍
+
+Si al probarlo no funciona, revisa esto:
+
+- **Autenticación**: ¿la API requiere un token o API key? Si es así, añádelo en `headers`:
+  ```yaml
+  headers:
+    Content-Type: "application/json"
+    Authorization: "Bearer TU_TOKEN"
+  ```
+- **URL real**: verifica que `base_url + path` = `https://api.anotherexample.com/api/chat` sea el endpoint correcto (a veces hay un `/v1/` o similar que falta).
+- **Método**: confirmaste que es `POST`, así que eso está bien.
+- **Respuesta de error**: si la API devuelve algo distinto cuando falla (por ejemplo `{"status": "error", "message": "..."}`), el `response_path` no encontrará `response.text` y dará error. Podrías probar primero con Postman o `curl` para confirmar la estructura exacta.
+
+¿Quieres que te ayude a probarlo con un ejemplo de código, o hay algún error concreto que estés viendo al ejecutarlo? Así puedo afinar más la solución 🚀
+$$$

@@ -1,0 +1,90 @@
+conversation ID: graph_based_architecture__p25__bikeshop__rule__3d421495
+$$$
+# Hey there! 👋 Happy to help you build that rule!
+
+Let me look at what you've got. Your profile exposes these `chatbot.output` fields:
+
+- `opening_and_closing` (str)
+- `tire` (money)
+- `tune_up` (money)
+- `seat_price` (str)
+- `care_bike` (str)
+
+And you want to check that the **prices** match the expected values:
+- Opening/closing: **10 to 20** (I'm guessing you mean the *hours* — like 10:00 to 20:00? Let me flag this below ⚠️)
+- Tune-up: **50**
+- Seat: **20**
+- Tyre: **20**
+
+---
+
+## ⚠️ Quick heads-up before we write the rule
+
+Your `opening_and_closing` field is a **string** describing the shop's hours (e.g., `"10am to 8pm"`). "10 to 20" could mean two things:
+
+1. **Opening hour = 10, closing hour = 20** (i.e., 10:00–20:00) — most likely what you mean 🕙
+2. A numeric range check on some value
+
+Since it's a free-text string, the cleanest way to check it is with the **`semantic_content`** helper (LLM-backed), which verifies that the string *means* what you expect. That's much more robust than trying to `extract_float` a phrase like `"10am to 8pm"`.
+
+Also note: `seat_price` is typed as `str` but you want to compare it to `20` — I'll use `extract_float` to pull the number out. Same for `tire` and `tune_up` (even though they're `money`, `extract_float` is the safest way to compare).
+
+---
+
+## ✅ The rule
+
+```yaml
+name: bike_shop_prices_and_hours
+description: >
+  Checks the bike shop profile outputs: opening/closing hours are 10–20,
+  tune-up costs 50, seat costs 20, and tyre costs 20.
+conversations: 1
+oracle: >
+  semantic_content(conv[0].opening_and_closing, 'opens at 10 and closes at 20 (10am to 8pm)')
+  and extract_float(conv[0].tune_up) == 50
+  and extract_float(conv[0].seat_price) == 20
+  and extract_float(conv[0].tire) == 20
+on-error: >
+  Expected hours 10–20, tune_up=50, seat=20, tire=20 — got
+  opening_and_closing={conv[0].opening_and_closing},
+  tune_up={conv[0].tune_up}, seat_price={conv[0].seat_price}, tire={conv[0].tire}
+```
+
+---
+
+## 🔍 Why this works
+
+| Check | Helper | Why |
+|---|---|---|
+| `opening_and_closing` = 10–20 | `semantic_content` | It's a **string** like `"10am to 8pm"` — semantic check handles phrasing variations ("10:00–20:00", "10 to 8pm", etc.) |
+| `tune_up` = 50 | `extract_float` | Pulls the number out of `"50"` or `"$50"` or `"50 EUR"` |
+| `seat_price` = 20 | `extract_float` | Field is `str`, so we parse it |
+| `tire` = 20 | `extract_float` | Same — robust against currency symbols |
+
+---
+
+## 💡 A couple of tips
+
+1. **If you want a strict numeric range** for hours instead of a semantic match, you'd need to change the profile so `opening_and_closing` exposes two numeric fields (e.g., `opening_hour: int`, `closing_hour: int`). Then you could write:
+   ```yaml
+name: opening_hours_check
+description: The chatbot reports opening hour 10 and closing hour 20
+conversations: 1
+oracle: conv[0].opening_hour == 10 and conv[0].closing_hour == 20
+```
+   That's more precise but requires a profile change. Your call! 😊
+
+2. **If prices can vary slightly** (e.g., taxes, rounding), swap `==` for a tolerance check:
+   ```yaml
+name: tune_up_price_check
+description: The tune-up price should be 50
+conversations: 1
+oracle: abs(extract_float(conv[0].tune_up) - 50) < 0.01
+```
+
+3. **`semantic_content` is LLM-backed**, so allow for tiny variability — but for something as clear as "10 to 20" it should be rock solid.
+
+---
+
+Want me to also write a **global rule** (e.g., "the bot never quotes prices outside these values across all conversations"), or a **metamorphic rule** comparing two conversations? Just say the word! 🚴✨
+$$$

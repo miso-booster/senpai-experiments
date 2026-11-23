@@ -1,0 +1,39 @@
+Hey! 👋 I dug into your project and I think I found the profile your rule is meant for. Before I hand you the fixed YAML, let me confirm the target and explain what's broken.
+
+## 🔍 What I found
+
+**Candidate profile:** `customer_service_assistance.yaml` — its `chatbot.output` exposes exactly the fields your rule uses:
+- `contact_options` (string) — methods to reach customer service for payment issues
+- `customer_service_number` (string) — contact number for general inquiries
+- plus `hours_of_operation`, `online_form_instructions`, `required_fields`, `message_details`
+
+That's a strong match for your rule's intent. ✅
+
+## 🐞 What's wrong with your current rule
+
+Based on `sensei-check-doc.md` and `rules-examples.md`, there are several issues:
+
+1. **Typo in the key:** `descriptin` → must be `description`.
+2. **`when:` is misused.** `when` is a *filter* that selects comparable conversations — it can't reference `user_request` (that's not a `chatbot.output` field, so it doesn't exist). In a 2-conversation metamorphic rule, `when` should compare fields across `conv[0]`/`conv[1]`.
+3. **`if:`/`then:` misuse.** You put the "both fields are present" check in `if:` with no `then:`. The presence check is really the *thing you want to assert* → it belongs in `oracle:` (or as `then:`).
+4. **`is not None` on a string field** is fine syntactically, but a cleaner, more meaningful check is that the extracted value is non-empty (e.g. `conv[0].contact_options` truthy).
+
+## ❓ Quick confirmation
+
+Is `customer_service_assistance.yaml` the profile this rule should target? If yes, here's the corrected rule (I'll finalize once you confirm):
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides correct contact options and information for customer service inquiries (profile customer_service_assistance).
+conversations: 2
+oracle: |
+  conv[0].contact_options and conv[1].customer_service_number
+```
+
+A couple of design notes so you can pick the flavor you want:
+
+- **Option A (above):** a simple 2-conversation check that both conversations produced the expected contact info. This is the closest to your original intent.
+- **Option B (single conversation, cleaner):** if you just want "the bot gives contact info", use `conversations: 1` with `oracle: contact_options and customer_service_number`. Simpler and less brittle.
+- **Option C (metamorphic, if you truly want a relation):** e.g. `when: conv[0].contact_options == conv[1].contact_options` then assert the number is consistent — but that needs a meaningful invariant, which your current fields don't obviously provide.
+
+👉 **Which do you want — A, B, or C?** And confirm the profile is `customer_service_assistance.yaml`, then I'll lock in the final YAML. 😊

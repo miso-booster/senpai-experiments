@@ -1,0 +1,51 @@
+conversation ID: one_node_architecture__p17__alcampo__rule__e68a5733
+$$$
+¡Buena pregunta! 😊 Vamos a arreglarla. Tu regla tiene **tres problemas** que la hacen fallar:
+
+1. **`conversations:` está vacío** → debe ser un número (`1`) o `all`. Sin valor, Sensei-check no sabe cuántas conversaciones necesita.
+2. **`membership_benefits` no es accesible "a pelo"** en el `oracle`. En reglas de 1 conversación, los campos de `chatbot.output` se leen como `membership_benefits[0]` (lista de valores extraídos) — o, si prefieres, usando `conv[0].membership_benefits`. Tal como lo escribiste, la variable no existe y la expresión peta.
+3. **`!= ''` no es una comprobación robusta** → si el campo es `None` (no extraído), `None != ''` es `True` y la regla pasaría "por accidente". Mejor comprobar que **no sea nulo y no esté vacío**.
+
+Aquí tienes la versión corregida:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits.
+conversations: 1
+active: true
+oracle: |
+  membership_benefits[0] is not None and str(membership_benefits[0]).strip() != ''
+yields: |
+  f"Membership benefits were not provided or are empty: {membership_benefits}"
+```
+
+### Qué cambia y por qué 🧐
+
+- **`conversations: 1`** → la regla se evalúa sobre cada conversación individual.
+- **`membership_benefits[0]`** → accede al valor extraído del campo `membership_benefits` definido en el `chatbot.output` de tus perfiles (por ejemplo `general_shopper_and_member_support.yaml`, que sí expone `membership_benefits`).
+- **`is not None and str(...).strip() != ''`** → cubre los dos casos problemáticos: campo no extraído (`None`) y campo extraído pero vacío (`""` o solo espacios).
+- **`yields`** → te da un mensaje útil cuando falla, mostrando qué se extrajo realmente.
+
+### Un detalle importante ⚠️
+
+Esta regla es **profile-bound**: solo tiene sentido para perfiles cuyo `chatbot.output` incluya `membership_benefits`. En tu proyecto lo tienen, por ejemplo:
+
+- `general_shopper_and_member_support.yaml`
+- `delivery_and_subscription_services.yaml` (como `subscription_benefits`)
+
+Si quieres que la regla aplique **solo** a los perfiles que exponen ese campo, puedes añadir un `when` que la filtre:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits.
+conversations: 1
+active: true
+when: membership_benefits is not None
+oracle: |
+  str(membership_benefits[0]).strip() != ''
+yields: |
+  f"Membership benefits were not provided or are empty: {membership_benefits}"
+```
+
+Así evitas falsos negativos en conversaciones donde el campo ni siquiera aplica. ¿Quieres que te la adapte también para `subscription_benefits` o para comprobar el **contenido semántico** (no solo que no esté vacío)? 🚀
+$$$

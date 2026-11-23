@@ -1,0 +1,50 @@
+conversation ID: graph_based_architecture__p6__ada_uam__rule__b9424141
+$$$
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el chatbot del CAU nos haya dado los tres datos de contacto clave: **email**, **teléfono** y **dirección física**.
+
+Como esos tres campos vienen del `chatbot.output` del perfil, la forma más limpia y directa es usar el helper `data_collected()`, que justamente comprueba que **todos los slots extraídos sean no-null**. Así no tenemos que repetir `conv[0].contact_email is not None and ...` tres veces 👌.
+
+Aquí tienes la regla lista para pegar:
+
+```yaml
+name: cau_contact_info_complete
+description: The CAU chatbot must provide contact email, phone number and physical address (all chatbot.output slots filled)
+conversations: 1
+oracle: data_collected() is True
+```
+
+### ¿Por qué esta regla funciona? 🔍
+
+- **`conversations: 1`** → es una regla de una sola conversación (un oráculo clásico), porque solo necesitamos revisar una conversación para saber si el CAU dio toda la info.
+- **`data_collected()`** → devuelve `True` solo si **todos** los campos de `chatbot.output` (`contact_email`, `contact_phone`, `physical_address`) fueron extraídos con valor no-null. Si falta cualquiera, falla. 🎯
+- No necesitas `when:` porque aplica a cualquier conversación.
+
+### Alternativa más explícita (si quieres mensajes de error más claros) 🛠️
+
+Si prefieres ver **exactamente cuál** slot falta cuando la regla falla, puedes escribirla así:
+
+```yaml
+name: cau_contact_info_complete
+description: The CAU chatbot must provide contact email, phone number and physical address
+conversations: 1
+oracle: conv[0].contact_email is not None and conv[0].contact_phone is not None and conv[0].physical_address is not None
+on-error: f"Missing CAU contact info — email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+O incluso usando `missing_slots()` para listar los que faltan:
+
+```yaml
+name: cau_contact_info_complete
+description: The CAU chatbot must provide contact email, phone number and physical address
+conversations: 1
+oracle: missing_slots() == []
+on-error: |
+  f"Missing slots: {missing_slots()}"
+```
+
+### Un detalle importante ⚠️
+
+Recuerda que `data_collected()` y `missing_slots()` revisan **todos** los slots del `chatbot.output`. Si en el futuro agregas más campos al perfil (por ejemplo `opening_hours`), esta regla también exigirá que estén llenos. Si solo quieres validar los tres de contacto, la **alternativa explícita** es más segura a largo plazo. 😉
+
+¿Quieres que te ayude a adaptarla para que también valide el **formato** del email o del teléfono? 📧📞
+$$$

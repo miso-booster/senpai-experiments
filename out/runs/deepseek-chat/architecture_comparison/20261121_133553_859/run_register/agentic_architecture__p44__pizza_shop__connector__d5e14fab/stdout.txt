@@ -1,0 +1,48 @@
+conversation ID: agentic_architecture__p44__pizza_shop__connector__d5e14fab
+$$$
+¡Claro que sí! 😊 Es el mismo backend de MillionBot, así que solo hay que cambiar los identificadores y la URL. Basándome en `custom-connector-guide.md` y `connector-examples.md` (y comparándolo con tu `ada-uam.yaml`), aquí tienes el nuevo connector:
+
+```yaml
+name: "Gallo Morón de la Frontera"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+  payload_template:
+    conversation: "67ea76f4e213b2dcbc146e2b"
+    sender_type: "User"
+    sender: "67ea76f40643a3dd27e59411"
+    bot: "65ca19e7dbbb4e26cbeadf24"
+    language: "es"
+    url: "https://www.morondelafrontera.es/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Qué he cambiado respecto a `ada-uam.yaml` 🔧
+
+| Campo | Ada UAM | Morón de la Frontera |
+|-------|---------|----------------------|
+| `name` | "Ada UAM" | "Gallo Morón de la Frontera" |
+| `Authorization` (header) | `60a3bee2...` | `65ca19e7dbbb4e26cbeadf28` |
+| `conversation` | `682ce1ce...` | `67ea76f4e213b2dcbc146e2b` |
+| `sender` | `682ce1ce...` | `67ea76f40643a3dd27e59411` |
+| `bot` | `60a3be81...` | `65ca19e7dbbb4e26cbeadf24` |
+| `url` | UAM | `https://www.morondelafrontera.es/` |
+
+### Lo que se mantiene igual ✅
+- `base_url`, `path` y `method` (mismo endpoint de MillionBot).
+- `language: "es"`.
+- La estructura del `payload_template` (`message.text` con `{user_msg}`).
+- El `response_path: "response.0.text"` — coincide con la respuesta que me pasaste (`response[0].text`), así que extrae correctamente el texto del bot.
+
+### Un par de notas 💡
+- Los valores `conversation` y `sender` son identificadores de sesión. Si el chatbot espera una sesión nueva por conversación, quizá convenga regenerarlos; pero para pruebas con un connector estático, estos valores del ejemplo funcionan.
+- El `text` de la respuesta viene con HTML (`<p>...</p>`). El connector extrae el string tal cual, así que si luego lo validas con reglas, ten en cuenta que puede contener etiquetas HTML.
+
+¿Quieres que lo guarde como archivo (por ejemplo `gallo-moron.yaml`) o prefieres ajustar algún valor antes? 🚀
+$$$

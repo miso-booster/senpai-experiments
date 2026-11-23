@@ -1,0 +1,30 @@
+conversation ID: one_node_architecture__p6__ada_uam__rule__396ff997
+$$$
+Here's a rule that checks the CAU contact details are all present and non-empty for the `consultante_de_servicios_y_asistencia_del_cau` profile 👇
+
+```yaml
+name: cau_contact_info_complete
+description: >
+  The Ada UAM chatbot must provide complete CAU contact information:
+  a contact email, a contact phone number, and a physical address.
+  Targets the consultante_de_servicios_y_asistencia_del_cau profile
+  (fields contact_email, contact_phone, physical_address from chatbot.output).
+conversations: 1
+active: true
+oracle: |
+  data_collected() is True
+  and conv[0].contact_email not in (None, '')
+  and conv[0].contact_phone not in (None, '')
+  and conv[0].physical_address not in (None, '')
+yields: |
+  f"Missing CAU contact info — email: {conv[0].contact_email}, phone: {conv[0].contact_phone}, address: {conv[0].physical_address}"
+```
+
+A couple of quick notes so it behaves exactly as you expect 😊
+
+- **`data_collected()`** already ensures *all* extracted slots are non-null, but I added explicit checks on the three fields so the rule stays meaningful even if you later add more outputs to the profile.
+- The field names (`contact_email`, `contact_phone`, `physical_address`) match your profile's `chatbot.output` exactly — if you rename any of them, update the rule too.
+- If you'd rather keep it minimal and rely purely on the profile schema, you can drop the three explicit checks and keep just `data_collected() is True`.
+
+Want me to also add a companion rule that validates the *format* (e.g., email contains `@`, phone has digits, address is reasonably long)? Just say the word! ✨
+$$$

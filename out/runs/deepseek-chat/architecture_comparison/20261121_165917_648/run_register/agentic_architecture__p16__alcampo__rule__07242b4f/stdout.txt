@@ -1,0 +1,65 @@
+conversation ID: agentic_architecture__p16__alcampo__rule__07242b4f
+$$$
+Perfect — I've loaded the docs (`sensei-check-doc.md`, `rules-examples.md`, `sensei-chat-guide.md`) and checked your project. Since you told me there's no profile yet, this is a **rule-first design (Case C)** from the docs: I'll pick sensible variable names and clearly list the `chatbot.output` fields a future profile must expose.
+
+## The rule
+
+```yaml
+name: lactose_free_availability_consistency
+description: >
+  Rule-first design (no profile yet). Checks that when the user asks about
+  lactose-free products, the chatbot confirms availability and reports the
+  same availability status for the same product across comparable conversations.
+  Requires a future profile exposing: product_name, lactose_free_available,
+  lactose_free_brands, lactose_free_price.
+active: true
+conversations: 2
+when: conv[0].product_name == conv[1].product_name
+if: conv[0].lactose_free_available is not None and conv[1].lactose_free_available is not None
+then: conv[0].lactose_free_available == conv[1].lactose_free_available
+yields: |
+  f"Lactose-free availability for '{conv[0].product_name}' is inconsistent: "
+  f"{conv[0].lactose_free_available} vs {conv[1].lactose_free_available}"
+```
+
+And a companion single-conversation sanity check (same field contract):
+
+```yaml
+name: lactose_free_availability_reported
+description: >
+  Rule-first design (no profile yet). When the user asks about a lactose-free
+  product, the chatbot must report an availability status and, if available,
+  at least one brand. Requires a future profile exposing: product_name,
+  lactose_free_available, lactose_free_brands.
+active: true
+conversations: 1
+when: conv[0].product_name is not None
+oracle: |
+  conv[0].lactose_free_available is not None and (
+    conv[0].lactose_free_available is False
+    or len(conv[0].lactose_free_brands) > 0
+  )
+yields: |
+  f"No lactose-free availability info for '{conv[0].product_name}' "
+  f"(available={conv[0].lactose_free_available}, brands={conv[0].lactose_free_brands})"
+```
+
+## What the future profile must expose in `chatbot.output`
+
+| Field | Suggested type | Purpose |
+|---|---|---|
+| `product_name` | `string` | The product the user asked about (used to pair conversations) |
+| `lactose_free_available` | `string` (or `bool`-like) | Availability status reported by the bot |
+| `lactose_free_brands` | `list[string]` | Brands of the lactose-free variant |
+| `lactose_free_price` | `currency` | Price of the lactose-free variant (optional, for future price rules) |
+
+## Notes & why this shape
+
+- **Case C per docs**: `sensei-check-doc.md` §3.2 says rule-first designs should explicitly document which `chatbot.output` fields a future profile must provide — that's the table above.
+- **Metamorphic rule** (`conversations: 2`): same product asked twice ⇒ availability answer must be stable. This is the classic invariance pattern from §6.1.
+- **`when` filter** keeps the cohort comparable (same `product_name`), per §6.2.
+- **`yields`** is used instead of `on-error` because that's the key shown in `rules-examples.md`.
+- ⚠️ Heads-up: your existing profile `dietary_needs_and_special_products_inquiry.yaml` already has `lactose_free_availability` and `lactose_free_cheese_brands` — but it's a *different* schema (no `product_name`, no list of brands). If you'd rather bind to that profile instead of waiting for a new one, tell me and I'll adapt the rule to its actual fields. 😊
+
+Want me to also draft the matching profile so the rule becomes runnable right away?
+$$$

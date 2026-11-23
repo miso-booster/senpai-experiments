@@ -1,0 +1,29 @@
+conversation ID: one_node_architecture__p27__bikeshop__rule__10a21127
+$$$
+¡Buena idea! 😊 Esa es una regla metamórfica muy útil: si el usuario insiste con la misma fecha dos veces, el asistente debería rechazar la segunda petición (o al menos no confirmarla de nuevo).
+
+Antes de escribirla, un detalle importante: en tu proyecto **no hay reglas todavía** y los perfiles que manejan fechas son `appointment.yml` (con `confirmed_date`, `confirmed_time`, `confirmed_service`) y `qa.yml`. La regla que te propongo se apoya en el perfil `appointment`, que es el que expone `confirmed_date`.
+
+Aquí tienes la regla:
+
+```yaml
+name: duplicate_date_is_rejected
+description: >
+  Si el usuario propone dos veces la misma fecha para una cita, el asistente
+  debe rechazar o no confirmar la segunda petición. Se apoya en el perfil
+  `appointment` (campos confirmed_date / confirmed_time / confirmed_service).
+conversations: 2
+when: conv[0].confirmed_date == conv[1].confirmed_date
+if:   conv[0].confirmed_date is not None and conv[1].confirmed_date is not None
+then: utterance_index('assistant', 'cannot accept the same date again') > 0 or utterance_index('assistant', 'already have an appointment') > 0
+on-error: f"El asistente aceptó dos veces la misma fecha {conv[0].confirmed_date} sin rechazar la segunda."
+```
+
+Un par de notas para que la ajustes a tu gusto 👇
+
+- **`when`**: filtra las parejas de conversaciones que comparten la misma `confirmed_date`, que es justo el escenario que quieres vigilar.
+- **`then`**: usa `utterance_index` (helper LLM-backed) para buscar en la conversación un turno del asistente donde rechace la fecha repetida. Puedes afinar las frases clave (`'cannot accept the same date again'`, `'already have an appointment'`, etc.) según cómo responda tu bot real.
+- Si tu bot responde con otras palabras (por ejemplo *"that slot is taken"* o *"you already booked that day"*), solo cambia los patrones dentro de `utterance_index`.
+
+¿Quieres que la adapte para que también cubra el caso de `confirmed_time` repetido, o para que use `semantic_content` en lugar de `utterance_index`? Dime y la afinamos juntos 🙌
+$$$

@@ -1,0 +1,22 @@
+Here's the rule, based on the `responds_in_same_language()` helper documented in `sensei-check-doc.md` and the example in `rules-examples.md`:
+
+```yaml
+name: chatbot_responds_in_same_language
+description: The chatbot responds in the same language as the user
+conversations: 1
+active: True
+oracle: responds_in_same_language()
+yields: f"The chatbot does not respond in the same language as the user"
+```
+
+### Why this works 💡
+- **`responds_in_same_language()`** is a built-in, LLM-backed helper that checks whether the assistant's replies match the language the user is writing in. It returns `True` when they match.
+- **`conversations: 1`** — this is a single-conversation oracle, so it runs per conversation (no need for pairs like metamorphic rules).
+- **`yields`** gives you a friendly failure message when the check fails.
+- It's **profile-agnostic**: it doesn't reference any `chatbot.output` fields, so it works across all your profiles without needing to target a specific one.
+
+### A couple of notes ⚠️
+- Since `responds_in_same_language` is LLM-backed, expect minor variability — it's a style check, not a hard numeric assertion.
+- If you'd instead like to assert a *specific* language (e.g., "always English"), you could use the `language(chatbot_phrases) == 'ENG'` helper instead — just let me know and I'll adapt it.
+
+Want me to tweak the name, add it as inactive (`active: False`) for now, or switch to a fixed-language check? 😊

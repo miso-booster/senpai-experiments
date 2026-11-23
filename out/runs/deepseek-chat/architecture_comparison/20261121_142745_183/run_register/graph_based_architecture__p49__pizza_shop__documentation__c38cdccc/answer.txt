@@ -1,0 +1,75 @@
+Hey there! 😊 Great question — `pairwise()` is one of those functions that feels a bit magical until you see it in action, and then it clicks. Let me break it down for you.
+
+## What `pairwise()` does
+
+`pairwise()` generates combinations across **2 or more variables** so that **every possible pair of values is covered at least once** — without testing the full Cartesian product (which explodes fast).
+
+Think of it like this: instead of testing *every* combination, you test just enough combinations to guarantee that any two variables are tried together in all their pairings. 🎯
+
+## A quick example
+
+Say you have two variables:
+
+- `size`: `[small, medium, big]`
+- `toppings`: `[cheese, mushrooms, pepperoni]`
+
+A **full Cartesian product** would be 3 × 3 = **9 combinations**. With `pairwise()`, you'd get something like **3 combinations** that still cover every size–topping pair at least once. Much leaner, and you still catch most 2-way defects.
+
+## How to use it in a profile
+
+You assign `pairwise()` as the `function` for a variable, just like `forward()` or `random()`:
+
+```yaml
+goals:
+  - "a {{size}} custom pizza with {{toppings}}"
+  - size:
+      function: pairwise()
+      type: string
+      data: [small, medium, big, extra large]
+  - toppings:
+      function: pairwise()
+      type: string
+      data: [cheese, mushrooms, pepperoni]
+```
+
+## Important rules to remember ⚠️
+
+1. **You need at least 2 variables using `pairwise()`** — otherwise there's nothing to pair! If you only declare one, it won't work as intended.
+2. It pairs across **2+ variables**, so the more variables you mark with `pairwise()`, the more coverage you get per combination.
+3. When you use `pairwise()` in your variables, you can set `conversation.number` to `combinations(...)` to automatically size the run based on the generated matrix — for example:
+
+```yaml
+conversation:
+  number: combinations(0.5, pairwise)   # 50% of the pairwise matrix
+```
+
+> 💡 Note: a minimum of two `pairwise()` (or two nested `forward()`) functions must be declared in the `goals` variables to define a conversation number from a combination matrix.
+
+## When to reach for it
+
+- ✅ You have **several variables with multiple options** and want broad coverage without a combinatorial explosion.
+- ✅ You want to catch **2-way interaction bugs** (e.g., "does a large + pepperoni combo break pricing?") efficiently.
+- ❌ You need **full exhaustive coverage** of every combination — then use nested `forward()` instead.
+
+## A real example from your project 👀
+
+Your `pizza_order_test_custom.yml` profile uses it nicely:
+
+```yaml
+- size:
+    data: [small, medium, big, extra large]
+    function: pairwise()
+    type: string
+- toppings:
+    data: [cheese, mushrooms, pepperoni]
+    function: pairwise()
+    type: string
+```
+
+Here, `size` and `toppings` are both `pairwise()`, so Sensei will generate combinations ensuring every size is tried with every topping at least once — without testing all 4 × 3 = 12 combos.
+
+And in `pizza_and_drink_order_placement.yaml`, the `conversation.number` is set to `8`, which is a fixed count rather than `combinations(...)` — that's fine too, but if you wanted the run to auto-scale to the pairwise matrix, you'd switch it to `combinations(...)`.
+
+---
+
+Want me to help you design a `pairwise()` setup for a specific profile, or walk through how `combinations()` interacts with it? Just say the word! 🙌

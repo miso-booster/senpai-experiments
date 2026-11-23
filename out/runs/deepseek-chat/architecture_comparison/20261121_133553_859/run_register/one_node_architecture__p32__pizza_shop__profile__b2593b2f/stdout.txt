@@ -1,0 +1,73 @@
+conversation ID: one_node_architecture__p32__pizza_shop__profile__b2593b2f
+$$$
+¡Claro que sí! 🍕 Vamos a crear un perfil bien limpio para probar el chatbot de la pizzería, con un `chatbot.output` que exponga exactamente lo que necesitas: tipo de pizza, bebida, ID del pedido y precio final en dólares.
+
+Aquí tienes el perfil listo para pegar en `profiles/`:
+
+```yaml
+test_name: "pizza_order_basic_check"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer placing a pizza order for pickup at a local pizza shop.
+    You want to choose a pizza type, a drink, and confirm the final price and order ID.
+  context:
+    - "You are ordering for a casual dinner with friends."
+    - "You prefer to pick up the order yourself."
+  goals:
+    - "Ask what kinds of pizzas are available."
+    - "Order a {{pizza_type}} pizza."
+    - "Ask what drinks are available."
+    - "Order one {{drink}}."
+    - "Ask for the final price in dollars and the order ID."
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Hawaiian, Vegetarian, Four cheese]
+    - drink:
+        function: forward()
+        type: string
+        data: [Coke, Sprite, Water, Orange Fanta]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_type:
+        type: string
+        description: "The type of pizza the customer ordered (e.g. Margarita, Pepperoni)."
+    - drink:
+        type: string
+        description: "The drink the customer ordered (e.g. Coke, Sprite)."
+    - order_id:
+        type: string
+        description: "The unique identifier for the order, as stated by the chatbot."
+    - final_price:
+        type: currency
+        description: "The final price of the order in dollars (USD), including pizza and drink."
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 6
+    max_cost: 0.2
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que todo fluya bien 😊:
+
+- **`final_price` usa `type: currency`** — así el extractor captura el símbolo/moneda, y luego en tus reglas puedes usar `currency(conv[0].final_price) == 'USD'` para verificar que efectivamente sea en dólares.
+- **`order_id` como `string`** — perfecto para reglas de unicidad tipo `is_unique('order_id')`.
+- **`pizza_type` y `drink` como `string`** — coinciden con los nombres que ya usas en tus reglas existentes (`more_toppings_cost_more`, etc.), así que si quieres reutilizar esas reglas, solo tendrías que alinear los nombres de los campos.
+
+¿Quieres que te prepare también una regla de ejemplo que valide que el precio sea en USD y que el `order_id` sea único? 🚀
+$$$

@@ -1,0 +1,52 @@
+conversation ID: agentic_architecture__p17__alcampo__rule__482c625d
+$$$
+¡Buena pregunta! 😊 Ya vi por qué no te funciona. Te explico y te dejo la versión corregida.
+
+## Por qué no funcionaba
+
+Según `sensei-check-doc.md` y `rules-examples.md`, hay dos problemas en tu regla:
+
+1. **`conversations:` está vacío.** Es un campo obligatorio: debe ser un número (`1`, `2`, …) o `all`. Sin él, la regla no se puede evaluar.
+2. **`membership_benefits` se usa como variable "suelta".** En una regla de **una sola conversación** (oráculo), los campos del `chatbot.output` del perfil se acceden como listas indexadas (`membership_benefits[0]`), o usando helpers como `data_collected()` / `missing_slots()`. Escribir `membership_benefits != ''` no es la forma documentada de comprobar que el slot se rellenó.
+
+Además, revisé el perfil **`general_shopper_and_member_support.yaml`**, que sí expone el campo `membership_benefits` (tipo `string`, "Benefits of Club de Socios membership"). Así que la regla encaja perfecto con ese perfil. ✅
+
+## Regla corregida
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits (profile general_shopper_and_member_support).
+conversations: 1
+active: true
+oracle: |
+  membership_benefits[0] is not None and membership_benefits[0] != ''
+yields: |
+  f"Membership benefits were not provided: got {membership_benefits}"
+```
+
+## Qué cambié y por qué
+
+- **`conversations: 1`** → ahora la regla sabe que evalúa una sola conversación (obligatorio según `sensei-check-doc.md`).
+- **`membership_benefits[0]`** → acceso correcto al slot extraído del `chatbot.output` del perfil (patrón de `rules-examples.md`, p. ej. `country[0]`, `size[0]`).
+- **`is not None and != ''`** → comprueba que el campo realmente se rellenó (no vacío ni ausente).
+- **`active: true`** → para que la regla se ejecute.
+- **`yields`** → mensaje de error útil cuando falla (como en los ejemplos de `rules-examples.md`).
+
+## Alternativa más robusta 💡
+
+Si lo que quieres es verificar que **todos** los slots del perfil se rellenaron (no solo `membership_benefits`), puedes usar el helper `data_collected()`:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot informs users about membership benefits (profile general_shopper_and_member_support).
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: |
+  f"Missing slots: {missing_slots()}"
+```
+
+Pero ojo: esa versión exige que **todos** los campos del perfil estén rellenos, lo cual puede ser demasiado estricto si no todos los objetivos se cubren en cada conversación. Para tu caso concreto (solo `membership_benefits`), la primera versión es la más adecuada.
+
+¿Quieres que la deje apuntando solo a `membership_benefits` (primera opción) o prefieres la comprobación global con `data_collected()`? Y si quieres, puedo guardarla directamente en tu proyecto. 😊
+$$$

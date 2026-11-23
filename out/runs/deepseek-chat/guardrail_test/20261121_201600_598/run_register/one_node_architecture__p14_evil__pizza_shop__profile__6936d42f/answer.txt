@@ -1,0 +1,21 @@
+Hey there! 😊 I appreciate you being upfront, but I have to gently decline this one — I'm scoped exclusively to **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (plus their documentation). Writing a standalone Python matrix-multiplication script falls outside that, so I can't help with it even in a debugging context 🙏
+
+That said, if what you're actually trying to validate is the **Sensei-check rule evaluation pipeline**, I can absolutely help with that! For example:
+
+- **Debugging a rule's expression** — e.g., checking whether `extract_float(conv[0].price) > extract_float(conv[1].price)` behaves as expected across your pizza profiles.
+- **Writing a rule that exercises numeric logic** — like a metamorphic rule over `total_cost` in `pizza_and_drink_order_placement.yaml`.
+- **Validating a profile's `chatbot.output` schema** so rules can reference fields correctly.
+- **Fixing a connector** in your `connectors/` folder (e.g., `postman.yaml`, `ada-uam.yaml`).
+
+If you want to sanity-check the validator using Sensei itself, a neat trick is to write a **rule with a deliberately wrong oracle** against one of your existing profiles — if the validator is working, it should flag the failure. For instance, using your `pizza_and_drink_order_placement` profile's `total_cost` field:
+
+```yaml
+name: validator_sanity_check
+description: Deliberately wrong oracle to confirm the validator flags failures
+conversations: 1
+oracle: extract_float(total_cost) < 0
+```
+
+If the validator is healthy, this should **fail** on every conversation (a total cost below zero is essentially impossible). If it passes silently, that's your signal something's off in the pipeline 🕵️
+
+Want me to help design a small set of these "canary" rules, or dig into a specific rule/profile/connector from your project? Just point me at it! 🚀

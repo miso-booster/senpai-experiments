@@ -1,0 +1,27 @@
+conversation ID: one_node_architecture__p18__alcampo__rule__3b06d41a
+$$$
+¡Claro que sí! 😊 Vamos a crear una regla que compruebe que el chatbot devolvió una lista de juguetes eco-friendly durante la conversación.
+
+Mirando tu perfil `pet_products_inquiry.yaml`, veo que ya tienes un output llamado **`eco_friendly_toys`** (tipo `string`), así que la regla puede apoyarse directamente en ese campo. 👌
+
+Aquí tienes la regla lista para pegar en `rules/`:
+
+```yaml
+name: eco_friendly_toys_returned
+description: The chatbot returns a list of eco-friendly toys from One Two Fun during the conversation
+conversations: 1
+active: true
+oracle: |
+  eco_friendly_toys is not None and len(eco_friendly_toys) > 0
+yields: |
+  f"Expected a list of eco-friendly toys, but got: {eco_friendly_toys}"
+```
+
+Un par de notas para que quede redondita 💡:
+
+- **`conversations: 1`** → es una regla de una sola conversación (oráculo clásico), no metamórfica.
+- **`eco_friendly_toys`** se lee directamente del `chatbot.output` del perfil, así que si algún día renombras ese campo en el perfil, recuerda actualizar la regla también.
+- Si quieres ser más estricto y comprobar que realmente contiene **varios** juguetes (una lista, no un solo ítem), podrías añadir algo como `len(eco_friendly_toys) > 1` — pero ojo, depende de cómo el extractor devuelva el campo (si es un `string` concatenado, `len` cuenta caracteres, no elementos).
+
+¿Quieres que la ajuste para que también verifique que menciona la marca **One Two Fun** o los **materiales sostenibles**? Solo dime y te la dejo afinada 🚀
+$$$

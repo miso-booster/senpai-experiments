@@ -1,0 +1,90 @@
+conversation ID: agentic_architecture__p12__alcampo__profile__01b5cf63
+$$$
+Here's a profile where the simulated user asks the chatbot to add items to their shopping cart, matching your project's style (Alcampo grocery bot, `gpt-4o-mini`, `single questions`, Spanish fallback, `money` for prices):
+
+```yaml
+test_name: Shopping Cart Item Addition
+llm:
+  temperature: 0.9
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: Customer shopping online who wants to add products to their shopping cart.
+  context:
+  - You are doing your weekly grocery shopping on the Alcampo website.
+  - You already have a few items in mind and want to add them to your cart one by one.
+  - You care about quantities and want to confirm the cart contents and total before checking out.
+  goals:
+  - Ask the chatbot to add {{product}} to your shopping cart.
+  - Ask the chatbot to add {{quantity}} units of {{product}} to your cart.
+  - Ask the chatbot to add another product, {{second_product}}, to the cart.
+  - Ask the chatbot to show you what is currently in your shopping cart.
+  - Ask the chatbot for the current total price of your cart.
+  - product:
+      function: forward()
+      type: string
+      data:
+      - milk
+      - eggs
+      - bread
+      - apples
+  - second_product:
+      function: pairwise()
+      type: string
+      data:
+      - rice
+      - pasta
+      - olive oil
+      - coffee
+  - quantity:
+      function: pairwise()
+      type: int
+      data:
+        min: 1
+        max: 5
+        step: 1
+chatbot:
+  is_starter: false
+  fallback: Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios.
+  output:
+  - added_items:
+      type: list[string]
+      description: Products the user asked to add to the cart
+  - cart_contents:
+      type: list[string]
+      description: Items currently in the shopping cart
+  - cart_item_count:
+      type: int
+      description: Total number of items in the shopping cart
+  - cart_total:
+      type: money
+      description: Current total price of the shopping cart
+  - confirmation_message:
+      type: string
+      description: Chatbot confirmation that items were added to the cart
+conversation:
+  number: 4
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+  - single questions
+```
+
+### What this profile does 🛒
+- **Simulated user** asks the chatbot to add specific products (and quantities) to the cart, then asks to review the cart and its total — exactly the "add items to cart" flow you described.
+- **Variables** (`product`, `second_product`, `quantity`) are declared in `user.goals` and used in the goal strings, per the docs' rule that `{{…}}` names must match declarations exactly.
+  - `forward()` iterates deterministically over products, while `pairwise()` covers combinations of the second product and the quantity (two pairwise variables, as required when using `pairwise()`).
+- **`chatbot.output`** defines the extraction contract (`added_items`, `cart_contents`, `cart_item_count`, `cart_total`, `confirmation_message`) so you can later write Sensei-check rules referencing `conv[i].cart_total`, etc.
+- **Conversation controls** mirror your other profiles: `single questions`, a step cap, and a cost cap.
+
+### Notes / things you might tweak
+- I used `money` for `cart_total` to match your existing profiles (e.g., `online_ordering_process.yaml`). If your project's `types/` doesn't define `money`, swap it for `currency` or `float`.
+- `list[string]` is a documented default output type, so no custom type file is needed for `added_items` / `cart_contents`.
+- If you'd rather the user *only* add items (no cart review/total), just drop those two goals.
+- If you prefer a simple random quantity instead of pairwise coverage, change `quantity` back to `random()` and switch `second_product` to `forward()` or `another()` so no lone `pairwise()` remains.
+
+Want me to also create a matching **rule** (e.g., "cart total increases after adding items" or "every requested item appears in `cart_contents`")? If so, I'll load the rules docs and we can align it to this profile's outputs. 😊
+$$$

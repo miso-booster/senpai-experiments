@@ -1,0 +1,88 @@
+conversation ID: graph_based_architecture__p31__pizza_shop__profile__6396d2f1
+$$$
+Hey there! 👋 Happy to help you fix this profile — I spotted a few things that would trip Sensei up. Let me walk you through them 😊
+
+## What's broken 🔍
+
+**1. `is_starter`, `fallback`, and `output` are in the wrong place** 🚨
+In your YAML, these three keys are indented under `user:` — but they belong under `chatbot:`. Right now Sensei would try to read them as user fields and fail (or silently ignore them).
+
+**2. `interaction_style` uses an invalid keyword** ❌
+`single question` isn't a valid style — the reserved keyword is **`single questions`** (plural). Same family as `all questions`. This one would raise an error.
+
+**3. `export: 1` should be a boolean** ⚠️
+`export` expects `true` or `false`, not `1`. Use `export: false` (or `true` if you actually want the CSV).
+
+**4. `type: str` in `custom_pizza_pricing`** ⚠️
+The default primitive is **`string`**, not `str`. `str` would only work if you had a custom type named `str` in `types/` — you don't. Change it to `string`.
+
+**5. Missing `number` in `conversation`** ⚠️
+Your `conversation` block has no `number` field. Add it (e.g. `number: 3`) so Sensei knows how many conversations to run.
+
+---
+
+## Fixed version ✅
+
+```yaml
+test_name: general_information_seeker
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+    - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+    - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+    - Ask what types of questions the chatbot can answer.
+    - Ask what the daily opening hours are.
+    - Ask about the estimated order time, without specifying the number of pizzas.
+    - Ask what drink options are available and their prices.
+    - Ask about the pricing for a custom pizza.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - available_information:
+        type: string
+        description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+    - opening_hours:
+        type: string
+        description: The daily opening hours of the pizza shop, as stated by the chatbot.
+    - estimated_order_time:
+        type: string
+        description: The chatbot's explanation of the estimated order time, including factors that influence it.
+    - drink_options_and_prices:
+        type: string
+        description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+    - custom_pizza_pricing:
+        type: string
+        description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+---
+
+## A couple of friendly tips 💡
+
+- **`all_answered` + `single questions`** is a nice combo here — the simulator will ask one goal per turn and keep going until every output field is satisfied (or the `limit` of 20 is hit). 
+- I trimmed the `\nFor troubleshooting...` bit from your `fallback` — that looked like a leaked LangChain error string rather than your bot's real fallback. Put your **actual bot fallback** there so Sensei doesn't loop forever when the bot doesn't understand. 🍕
+- Since you're using `all_answered`, make sure each goal maps cleanly to one of your `output` fields — otherwise the simulator may keep asking and burn through your `max_cost`. Your five goals line up nicely with the five outputs, so you're good! 👍
+
+Want me to double-check any of the other profiles in your project too? Just say the word 😊
+$$$

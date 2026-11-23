@@ -1,0 +1,44 @@
+conversation ID: agentic_architecture__p47__pizza_shop__documentation__b872998f
+$$$
+# Metamorphic rules in Sensei-check 🧠✨
+
+Based on `sensei-check-doc.md` (and the examples in `rules-examples.md`), here's the gist:
+
+## The core idea
+A **metamorphic rule** is a Sensei-check rule that validates a **relation across a set of conversations** rather than checking one absolute answer. Instead of asking *"is this reply correct?"* (the classic oracle problem), it asks *"when I change an input in a controlled way, does the output change the way it should?"* — or *"when inputs are equal, do outputs stay consistent?"*
+
+This is exactly the metamorphic-testing mindset: check **relations between conversations**, not absolute truths.
+
+## How it differs from other rules
+Rules in Sensei-check can target:
+- **1 conversation** → a traditional single-conversation oracle (e.g. "small pizza costs ≥ $10").
+- **N ≥ 2 conversations** → **metamorphic** (compare pairs/tuples).
+- **all conversations** → global checks (e.g. `is_unique('order_id')`).
+
+So a metamorphic rule is the **multi-conversation** case: `conversations: 2` (or more).
+
+## Anatomy of a metamorphic rule
+```yaml
+name: toppings_monotonicity
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Key pieces:
+- **`conversations: N`** — how many conversations the rule needs (≥ 2 for metamorphic).
+- **`when:`** — a filter that selects *comparable* conversations (the "ceteris paribus" cohort — hold confounders equal).
+- **`oracle:`** *or* **`if:` / `then:`** — the relation to check. `if`/`then` reads like a law: *"if X varies this way, then Y should vary that way."*
+- **`conv[i].field`** — how you access each conversation's extracted outputs (which come from a profile's `chatbot.output`).
+
+## Two common flavours
+1. **Monotonicity / invariance** — vary one input, assert the output moves (or doesn't) in the expected direction. E.g. more toppings ⇒ higher price; larger size ⇒ not cheaper.
+2. **Consistency across comparable cases** — keep inputs equal, assert style/semantics stay stable. E.g. same pizza type & size ⇒ same language, no topic drift.
+
+## Important caveat ⚠️
+The `conv[i].field` names (`size`, `toppings`, `price`, …) are **illustrative examples** in the docs. In a real project they must match the actual `chatbot.output` fields of the target SENSEI Chat profile — don't invent fields the profile doesn't expose.
+
+Want me to help you write a metamorphic rule for one of your actual profiles? If so, tell me the scenario and I'll look up the right profile and its `chatbot.output` fields first 😊
+$$$

@@ -1,0 +1,75 @@
+conversation ID: one_node_architecture__p20__bikeshop__profile__2a609164
+$$$
+Hey there! 😊 Great idea — a wheel-change appointment profile is a nice way to stress-test how the bot handles dates and times. Here's a profile that varies the day and the time independently so you get good coverage of the scheduling logic.
+
+A couple of quick notes on the design:
+- I used **nested `forward()`** for `day` and `time` so you get a deterministic grid of date/time combinations.
+- I set `conversation.number: combinations` so it uses the full matrix (you can switch to `combinations(0.6)` if you want a lighter run).
+- The `chatbot.output` fields (`confirmed_date`, `confirmed_time`, `confirmed_service`) are the ones your rules can later reference as `conv[i].confirmed_date`, etc. — handy if you want to add a metamorphic rule like "same day requested ⇒ same day confirmed".
+
+```yaml
+test_name: "wheel_change_appointment"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who needs to book an appointment at a bike shop to have
+    your wheels changed. You are friendly but to the point, and you want to
+    confirm the exact day and time of the appointment before finishing.
+  context:
+    - "Your current wheels are worn out and you want them replaced as soon as possible."
+    - "You are flexible about the day but you have a specific time in mind for each request."
+    - "You want the shop to confirm the date and time clearly before you leave."
+  goals:
+    - "Ask to book an appointment to have your wheels changed on {{day}} at {{time}}."
+    - "Confirm the appointment details (day and time) with the assistant."
+    - day:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - "next Monday"
+          - "November 6th, 2024"
+          - "the day after tomorrow"
+    - time:
+        function: forward(day)
+        type: string
+        data:
+          - "09:00"
+          - "11:30"
+          - "14:00"
+          - "16:45"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmed_date:
+        type: date
+        description: "The date of the wheel-change appointment, as confirmed by the assistant."
+    - confirmed_time:
+        type: time("hh:mm")
+        description: "The time of the wheel-change appointment, as confirmed by the assistant."
+    - confirmed_service:
+        type: string
+        description: "The service to be performed (wheel change), as confirmed by the assistant."
+
+conversation:
+  number: combinations
+  goal_style:
+    all_answered:
+      export: true
+      limit: 8
+  interaction_style:
+    - default
+```
+
+If you'd rather keep the run small while still covering every day/time pair at least once, swap `function: forward(day)` on `time` for `function: pairwise()` and set `number: combinations(1, pairwise)` — that trims the grid nicely. Want me to also draft a matching Sensei-check rule (e.g., "the confirmed date must equal the requested day")? Just say the word! 🚲✨
+$$$

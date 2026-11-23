@@ -1,0 +1,39 @@
+Hey there! 😊 Happy to help you draft that rule.
+
+Quick heads-up before we dive in: since there's **no profile yet**, this is a **rule-first design** case. That means the rule will assume a future profile exposes certain `chatbot.output` fields — and you'll need to make sure that profile actually provides them, or the rule won't work. I'll document those assumptions clearly so you (or whoever builds the profile) know exactly what's needed. 👍
+
+Here's a clean rule for checking lactose-free availability:
+
+```yaml
+name: lactose_free_availability
+description: >
+  Rule-first design. Assumes a future profile exposes chatbot.output fields:
+  `product_name` (string), `lactose_free_available` (bool),
+  and `lactose_free_alternatives` (list[string]).
+  Checks that when a user asks about a product, the assistant either confirms
+  lactose-free availability or offers at least one lactose-free alternative.
+conversations: 1
+if:   product_name is not None
+then: lactose_free_available is True or len(lactose_free_alternatives) > 0
+on-error: f"No lactose-free option reported for '{product_name}' (available={lactose_free_available}, alternatives={lactose_free_alternatives})"
+```
+
+### What this rule assumes about the future profile 🧩
+
+For this rule to work, the profile's `chatbot.output` must expose:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `product_name` | `string` | The product the user asked about |
+| `lactose_free_available` | `bool` | Whether a lactose-free version exists |
+| `lactose_free_alternatives` | `list[string]` | Lactose-free substitutes offered |
+
+If any of these are missing or renamed, the rule will break — so keep the names in sync between the profile and the rule. 🔗
+
+### A couple of things to consider 🤔
+
+- **`if`/`then` vs `oracle`:** I used `if`/`then` because it reads like a law ("if a product is discussed, then a lactose-free option must be surfaced"). If you'd rather have a plain boolean check, swap it for `oracle:`.
+- **Strictness:** Right now the rule passes if *either* availability is confirmed *or* alternatives are listed. If you want it stricter (e.g., alternatives must be listed whenever the product isn't natively lactose-free), just say the word and I'll tighten it. 💪
+- **Global alternative:** If you'd rather not depend on profile fields at all, we could write a profile-agnostic version using `only_talks_about` or `utterance_index` — but that's weaker and less precise. Profile-bound is the better fit here.
+
+Want me to also sketch the matching **profile snippet** for `chatbot.output` so the two stay aligned? Just let me know! 😄

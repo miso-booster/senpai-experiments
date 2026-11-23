@@ -1,0 +1,101 @@
+¡Claro que sí! 😊 Aquí tienes un perfil listo para usar, con variables que cubren las distintas formas en que un usuario podría intentar configurar eduroam (móvil, portátil, tablet, etc.) y los sistemas operativos más comunes.
+
+```yaml
+test_name: "Configuración de eduroam en el dispositivo"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un miembro de la comunidad universitaria que intenta configurar la red
+    eduroam en tu dispositivo, pero no consigues conectarte. Estás algo frustrado
+    porque necesitas internet para tus tareas y ya has probado varias veces sin éxito.
+  context:
+    - personality: personalities/impatient-user
+    - "Tienes tu cuenta institucional (ID-UAM) y contraseña a mano, pero no sabes si el problema es la configuración o tus credenciales."
+    - "Has intentado conectarte desde distintos lugares del campus y siempre falla la autenticación."
+    - "No estás seguro de si necesitas instalar un certificado o un perfil de configuración."
+  goals:
+    - "Pedir ayuda para configurar eduroam en mi {{dispositivo}} con {{sistema_operativo}}."
+    - "Explicar que al conectarme a la red eduroam me aparece un error de {{tipo_error}}."
+    - "Preguntar si debo usar mi {{credencial}} como usuario al configurar la conexión."
+    - "Solicitar los pasos o el perfil de configuración para {{metodo_configuracion}}."
+    - "Preguntar a quién puedo contactar si sigo sin poder conectarme tras seguir los pasos."
+    - dispositivo:
+        function: forward()
+        type: string
+        data: [móvil Android, iPhone, portátil Windows, MacBook, tablet iPad]
+    - sistema_operativo:
+        function: forward(dispositivo)
+        type: string
+        data: [Android 13, Android 14, iOS 17, Windows 11, macOS Sonoma, iPadOS 17]
+    - tipo_error:
+        function: random()
+        type: string
+        data:
+          - autenticación fallida
+          - certificado no válido
+          - contraseña incorrecta
+          - no se puede conectar a la red
+          - tiempo de espera agotado
+    - credencial:
+        function: random()
+        type: string
+        data: [correo institucional completo, NIA, ID-UAM]
+    - metodo_configuracion:
+        function: pairwise()
+        type: string
+        data:
+          - instalación manual de certificado
+          - perfil de configuración automático
+          - asistente de configuración de eduroam
+          - conexión directa sin certificado
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - eduroam_setup_steps:
+        type: string
+        description: "Pasos indicados para configurar eduroam en el dispositivo"
+    - required_credentials:
+        type: string
+        description: "Credenciales necesarias para autenticarse en eduroam"
+    - certificate_required:
+        type: string
+        description: "Indicación sobre si se necesita instalar un certificado o perfil"
+    - configuration_profile_link:
+        type: string
+        description: "Enlace o referencia al perfil de configuración de eduroam"
+    - troubleshooting_tips:
+        type: string
+        description: "Consejos para resolver el error de conexión"
+    - support_contact:
+        type: string
+        description: "Información de contacto del CAU para soporte adicional"
+
+conversation:
+  number: combinations(0.6, forward)
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - random:
+      - make spelling mistakes
+      - single questions
+      - long phrases
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👀:
+
+- **Variables encadenadas**: `sistema_operativo` depende de `dispositivo` con `forward(dispositivo)`, así que cada dispositivo se probará con sistemas operativos coherentes. Si prefieres desacoplarlos, cambia esa función por `random()`.
+- **`metodo_configuracion` con `pairwise()`**: cubre combinaciones de métodos de configuración sin explotar el número total de casos. Como solo hay una variable `pairwise`, si quieres usar `combinations(...)` con matriz pairwise necesitarías al menos dos variables con `pairwise()` — avísame y te lo ajusto.
+- **`chatbot.output`**: los campos están pensados para que luego puedas escribir reglas Sensei-check (por ejemplo, comprobar que `eduroam_setup_steps` no esté vacío o que `support_contact` siempre se rellene).
+
+¿Quieres que te prepare también una regla Sensei-check asociada a este perfil (por ejemplo, que el bot siempre indique las credenciales necesarias o que no deje `support_contact` vacío)? 😊

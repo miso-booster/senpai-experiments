@@ -1,0 +1,44 @@
+Hey there! 😊 Great catch — let's dig into this together.
+
+## What's wrong 🔍
+
+Your rule is missing the **`if:`** clause. Right now it only has `when` and `then`:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if: len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+In Sensei-check, `then` is **only meaningful together with `if`** — they form the implication `if <precondition> then <expected relation>`. Without an `if`, the `then` has no trigger condition, so the rule can't evaluate the metamorphic relation properly (and it will likely error out or never fire).
+
+The `when` clause is just a **filter** that picks comparable conversation pairs — it does *not* express the actual relation you want to check. You need to state the "more toppings" condition explicitly in `if:`.
+
+## The fix ✅
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+## Why this works 💡
+
+- **`when`** → keeps the comparison fair: same size and same drink (ceteris paribus). 🍕
+- **`if`** → the actual variation: conversation 0 has *more* toppings than conversation 1.
+- **`then`** → the expected consequence: conversation 0 must cost *more*.
+
+This matches the canonical example from the Sensei-check docs exactly, and it also lines up with your project's `more_toppings_cost_more.yaml` (which already has the `if:` clause in place).
+
+## One thing to double-check 👀
+
+Make sure your SENSEI Chat profile's `chatbot.output` actually exposes `size`, `drink`, `toppings`, and `price` — otherwise the rule will fail to resolve those fields. If any of them are named differently (e.g. `total_price` instead of `price`), update the rule to match.
+
+Want me to also review the other rules in your project (like `same_number_of_toopings_cost_the_same` — I noticed a small typo in the name there 😄)? Just say the word!

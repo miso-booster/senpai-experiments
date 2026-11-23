@@ -1,0 +1,68 @@
+conversation ID: graph_based_architecture__p44__pizza_shop__connector__405be22b
+$$$
+¡Claro que sí! 🎉 Es un caso perfecto para adaptar el connector de Ada UAM al chatbot del Ayuntamiento de Morón de la Frontera. La estructura de la API de MillionBot es la misma, así que solo tenemos que cambiar los valores específicos de este bot.
+
+Aquí tienes el YAML adaptado:
+
+```yaml
+name: "Gallo Morón"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+  payload_template:
+    conversation: "67ea76f4e213b2dcbc146e2b"
+    sender_type: "User"
+    sender: "67ea76f40643a3dd27e59411"
+    bot: "65ca19e7dbbb4e26cbeadf24"
+    language: "es"
+    url: "https://www.morondelafrontera.es/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+## Qué he cambiado respecto al de Ada UAM 🔍
+
+| Campo | Ada UAM | Gallo Morón |
+|-------|---------|-------------|
+| `name` | "Ada UAM" | "Gallo Morón" (puedes ponerle el que prefieras) |
+| `Authorization` | `60a3bee2e3987316fed3218f` | `65ca19e7dbbb4e26cbeadf28` |
+| `conversation` | `682ce1ce271ce860cffde0fd` | `67ea76f4e213b2dcbc146e2b` |
+| `sender` | `682ce1cefe831160cee700ed` | `67ea76f40643a3dd27e59411` |
+| `bot` | `60a3be81f9a6b98f7659a6f9` | `65ca19e7dbbb4e26cbeadf24` |
+| `url` | UAM | `https://www.morondelafrontera.es/` |
+
+## Lo que se mantiene igual ✅
+
+- El `base_url`, el `path` (`/api/public/messages`) y el `method` (POST) — la API es la misma.
+- El `language: "es"`.
+- El `response_path: "response.0.text"` — porque en la respuesta que me pasaste vemos que el texto viene en `response[0].text`, ¡exactamente igual que en Ada UAM! 🎯
+
+## Un par de detalles a tener en cuenta 👀
+
+- **Headers extra opcionales**: en tu captura aparecen `Referer`, `Origin`, `User-Agent`, etc. No son estrictamente necesarios (el de Ada UAM tampoco los lleva y funciona), pero si algún día el bot te da problemas de CORS o rechaza peticiones, puedes añadirlos así:
+
+```yaml
+name: "Morón de la Frontera"
+base_url: "https://www.morondelafrontera.es"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+    Origin: "https://www.morondelafrontera.es"
+    Referer: "https://www.morondelafrontera.es/"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+- **`conversation` y `sender`**: estos IDs suelen ser de una sesión concreta. Si el bot deja de responder o quieres una conversación "limpia", puede que necesites regenerarlos desde la web del Ayuntamiento (abriendo el chat y mirando la petición en las DevTools). Pero para empezar, con estos valores debería funcionar.
+
+¿Quieres que te lo deje también con los headers extra incluidos, o lo probamos primero con la versión mínima? 😊
+$$$

@@ -1,0 +1,87 @@
+conversation ID: one_node_architecture__p22__bikeshop__profile__ebd123bb
+$$$
+Here's a profile for that scenario — a rider who's uncomfortable on the bike, unsure whether it's fit or worn components, and looking for advice without explicitly booking anything 😊
+
+```yaml
+test_name: bike_discomfort_advice_seeker
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who has been experiencing discomfort while riding your bike.
+    You are not sure whether the bike is not fitted correctly to your body or whether
+    some of your components are simply worn out. You want advice from the bike shop
+    on possible adjustments or services they offer, but you do NOT explicitly ask to
+    book an appointment — you are still exploring your options.
+  context:
+    - "You ride regularly, mostly for commuting and weekend rides."
+    - "Lately you've noticed knee pain and numbness in your hands after longer rides."
+    - "You suspect either the saddle height/handlebar position is off, or that your saddle, grips, or drivetrain are worn."
+    - "You are friendly but a bit unsure about bike mechanics, so you appreciate clear explanations."
+    - "You are not ready to commit to a booking yet — you just want to understand what could be wrong and what the shop can do."
+  goals:
+    - "Explain that you feel discomfort when riding and you're not sure if it's a fit issue or worn components."
+    - "Ask what kinds of adjustments the shop can make to improve comfort (e.g., saddle height, handlebar position)."
+    - "Ask whether worn components like the saddle, grips, or drivetrain could be causing the discomfort."
+    - "Ask what services the shop offers that could help (e.g., bike fitting, tune-up, component replacement)."
+    - "Ask for a rough idea of what such a service would involve or cost, without requesting to book anything."
+    - discomfort_area:
+        function: forward()
+        type: string
+        data: [knees, hands, lower back, shoulders]
+    - suspected_cause:
+        function: forward()
+        type: string
+        data: [bike fit, worn components, both]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - discomfort_advice:
+        type: string
+        description: >
+          The chatbot's advice on possible causes of the rider's discomfort, covering
+          both bike fit adjustments and worn components.
+    - adjustment_options:
+        type: string
+        description: >
+          The adjustments the chatbot suggests or mentions (e.g., saddle height,
+          handlebar position, stem length).
+    - relevant_services:
+        type: string
+        description: >
+          The services the shop offers that could address the discomfort (e.g., bike
+          fitting, tune-up, component replacement).
+    - service_cost_info:
+        type: money
+        description: >
+          Any price or cost estimate the chatbot provides for a relevant service.
+          Leave empty if no price is given.
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+A couple of notes on the design choices 👀
+
+- **No booking goal** — the goals deliberately stop at asking about services and cost, so the simulator won't push for an appointment. That keeps this profile cleanly separate from your `appointment.yml` and `bike_repair_and_maintenance_scheduler.yaml` profiles.
+- **Two `forward()` variables** (`discomfort_area` and `suspected_cause`) give you a small coverage grid across conversations, so the bot gets tested with different complaints.
+- **`chatbot.output` fields** are named to be rule-friendly later — e.g., you could write a global rule like `data_collected() == True` or a profile-bound rule checking that `relevant_services` is non-empty.
+
+Want me to also draft a matching Sensei-check rule (for example, verifying the bot always offers at least one adjustment or service)? Just say the word! 🚲
+$$$

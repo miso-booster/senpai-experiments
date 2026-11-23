@@ -1,0 +1,47 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__afde86ec
+$$$
+Hey! 😄 Happy to build that with you. I loaded `sensei-chat-guide.md` (the profiles doc) and peeked at your existing profiles (`pizza_and_drink_order_placement.yaml`, etc.) so the generator matches your project's conventions.
+
+Before I dump a big script on you, one quick design question — because "valid profiles" can mean two different things:
+
+**What should the automation actually do?**
+
+- **A) Generate** — take a plain-English description ("a user booking a rental car for a weekend") and have an LLM emit a complete, schema-valid profile YAML.
+- **B) Repair/validate** — take an existing profile, run it through a validator (checking the rules from the doc: `{{var}}` ↔ declared variable name matching, `random(n)` with `n ≤ len(data)`, `combinations` requiring ≥2 `forward`/`pairwise`, valid `interaction_style` keywords, etc.) and let the LLM fix the errors.
+- **C) Both** — generate → validate → auto-repair loop until it passes. (This is the one I'd recommend, and it's what I'll build unless you say otherwise.)
+
+A couple of things I'll assume unless you correct me:
+
+1. **LLM access**: I'll use the OpenAI Python SDK (`gpt-4o-mini`) with a `--model` / `--provider` flag, since your profiles already use `gpt-4o-mini`. Say the word if you'd rather use LangChain or a local model.
+2. **Output**: writes into `profiles/<test_name>.yaml`, and refuses to overwrite unless `--force`.
+3. **Validation**: a pure-Python structural validator (no Sensei runtime needed) that encodes the doc's constraints, so the loop can run offline.
+
+Here's the plan I'll implement:
+
+```python
+# sensei_profile_generator.py
+# 1. describe -> LLM (JSON-mode) -> profile dict
+# 2. validate_profile(dict) -> list[str] of errors  (doc-derived rules)
+# 3. if errors: feed them back to the LLM, ask for a corrected YAML, retry (max N)
+# 4. yaml.safe_dump -> profiles/<test_name>.yaml
+```
+
+The validator will enforce, straight from `sensei-chat-guide.md`:
+
+- `test_name` present; `user.language`, `user.role`, `user.goals`, `chatbot.output`, `conversation` present.
+- Every `{{var}}` in goal strings has a **matching declared variable** (case-sensitive), and every declared variable is actually used.
+- Variable `type` ∈ `{int, float, string}` or an existing file in `types/`; no `list`/`time`/`date` in `user.goals`.
+- `function` ∈ `default|random|random(n)|random(rand)|another|another(n)|forward|pairwise`; `random(n)`/`another(n)` require `n ≤ len(data)`.
+- `conversation.number: combinations` only if ≥2 `forward`/`pairwise` variables exist.
+- `goal_style` is exactly one of `steps`, `random steps`, `all_answered`; `random steps` ≤ 20.
+- `interaction_style` entries are only the reserved keywords (`long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, `random: [...]`).
+- `chatbot.output` types are primitives, `time(...)`, `date(...)`, `list[...]`, or a custom type in `types/`.
+
+**So — confirm and I'll write the full script:**
+
+1. Go with **C (generate + validate + auto-repair)**? Or just A or B?
+2. OpenAI SDK + `gpt-4o-mini` OK?
+3. Should the generator also **auto-create missing custom `types/*.yml`** when the LLM invents a custom type, or should it be forbidden from using custom types entirely?
+
+Answer those (even just "C, yes, forbid") and I'll hand you the complete, runnable script plus a sample generated profile. 🚀
+$$$

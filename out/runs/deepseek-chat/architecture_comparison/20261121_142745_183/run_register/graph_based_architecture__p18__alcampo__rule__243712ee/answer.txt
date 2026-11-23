@@ -1,0 +1,82 @@
+¡Hola! 😊 Claro que sí, te ayudo con esa regla. Antes de escribirla, déjame aclararte un par de cositas para que quede bien alineada con tu proyecto 👇
+
+## Lo que necesitas en el perfil primero 🧩
+
+Para que la regla funcione, el perfil de SENSEI Chat debe exponer un campo en `chatbot.output` llamado `eco_friendly_toys`. Algo así:
+
+```yaml
+test_name: "eco_friendly_toys_profile"
+
+user:
+  language: English
+  role: "A customer looking for eco-friendly toys."
+  context:
+    - "You are interested in sustainable and environmentally friendly products."
+  goals:
+    - "Ask for a list of eco-friendly toys"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - eco_friendly_toys:
+        type: list[string]
+        description: List of eco-friendly toys returned by the chatbot
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+⚠️ Importante: si el campo no existe en `chatbot.output`, la regla no podrá leerlo. Así que asegúrate de añadirlo al perfil antes (o en paralelo).
+
+## La regla 📏
+
+Aquí tienes una propuesta de regla de una sola conversación que comprueba que el chatbot **ha devuelto una lista no vacía** de juguetes eco-friendly:
+
+```yaml
+name: eco_friendly_toys_returned
+description: The chatbot must return a non-empty list of eco-friendly toys during the conversation
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) > 0
+on-error: "Expected a non-empty eco_friendly_toys list, got: {conv[0].eco_friendly_toys}"
+```
+
+### ¿Qué hace exactamente? 🔍
+
+- `conversations: 1` → se evalúa por conversación individual.
+- `oracle` → comprueba dos cosas:
+  1. Que el campo `eco_friendly_toys` no sea `None` (es decir, que se haya extraído algo).
+  2. Que la lista tenga al menos un elemento (`len(...) > 0`).
+- `on-error` → mensaje claro si falla, mostrando lo que se obtuvo.
+
+## Variantes que quizá te interesen 👀
+
+**Si quieres exigir un mínimo de juguetes** (por ejemplo, al menos 3):
+
+```yaml
+name: eco_friendly_toys_min_count
+description: The chatbot must return at least 3 eco-friendly toys
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) >= 3
+```
+
+**Si quieres comprobar que TODAS las conversaciones del batch devuelven la lista** (regla global):
+
+```yaml
+name: all_conversations_have_eco_toys
+description: Every conversation must return a non-empty eco-friendly toys list
+conversations: all
+oracle: exists("conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) > 0")
+```
+
+Hmm, ojo con esta última: `exists` comprueba que *alguna* conversación cumple la condición, no que *todas* la cumplan. Si quieres que **todas** la cumplan, lo más limpio es usar `conversations: 1` con el `oracle` de la primera versión — se evaluará conversación a conversación y fallará en cualquiera que no cumpla ✅.
+
+## Un detalle sobre el nombre del campo 🏷️
+
+Dijiste "algo como `eco_friendly_toys`". Si al final lo llamas distinto en el perfil (por ejemplo `eco_toys` o `sustainable_toys`), recuerda **actualizar la regla** para que use exactamente el mismo nombre. Los nombres deben coincidir al 100% entre `chatbot.output` y la regla.
+
+¿Quieres que te la adapte a algún caso concreto (por ejemplo, validar que los juguetes sean de una lista cerrada, o que no se repitan entre conversaciones)? ¡Dímelo y la afinamos juntos! 🙌

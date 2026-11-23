@@ -1,0 +1,44 @@
+Hey there! 😊 Great question — let's build a **profile-agnostic global rule** that checks whether the chatbot actually talked about current promotions. Since it's not tied to any profile, we'll rely on the generic helpers (`utterance_index`, `only_talks_about`, etc.) rather than `chatbot.output` fields. 🙌
+
+Here's a clean rule for you:
+
+```yaml
+name: promotions_mentioned
+description: The chatbot must provide information about current promotions somewhere in the conversation
+conversations: 1
+oracle: utterance_index('assistant', 'current promotions') > 0
+```
+
+### Why this works 🧠
+
+- **`conversations: 1`** → it's a single-conversation oracle (no metamorphic pairing needed).
+- **`utterance_index('assistant', 'current promotions')`** → this LLM-backed helper scans the assistant's turns and returns the index of the first turn where the topic appears. If it's `> 0`, the bot did mention promotions. If it returns `0` (or nothing found), the rule fails. ✅
+- **No profile dependency** → we're not referencing any `chatbot.output` slot, so it works across any profile. 🎯
+
+### A couple of tweaks you might like 👀
+
+If you want to be a bit more **lenient** on wording (the bot might say "deals", "offers", "discounts" instead of "promotions"), you can broaden the topic phrase:
+
+```yaml
+name: promotions_mentioned
+description: The chatbot must provide information about current promotions, offers or deals
+conversations: 1
+oracle: utterance_index('assistant', 'current promotions, offers or deals') > 0
+```
+
+Or, if you'd rather **guard scope** (i.e., the bot stays on-topic *and* covers promotions), you could combine helpers — but for a focused "did it mention promotions?" check, the version above is the cleanest. 👍
+
+### Heads-up ⚠️
+
+`utterance_index` is **LLM-backed**, so expect a tiny bit of variability in edge cases (as noted in the docs). If you need stricter determinism, you could instead use `chatbot_returns('promotion')` and check the length:
+
+```yaml
+name: promotions_mentioned
+description: The chatbot must provide information about current promotions
+conversations: 1
+oracle: len(chatbot_returns('promotion')) > 0
+```
+
+That one does a literal pattern match on the assistant's replies — faster and deterministic, but it won't catch synonyms like "deals" or "offers". Pick whichever fits your testing vibe! 😄
+
+Want me to adapt this to a specific phrasing your bot uses, or turn it into a metamorphic rule (e.g., "promotions mentioned consistently across comparable dialogs")? Just say the word! 🚀

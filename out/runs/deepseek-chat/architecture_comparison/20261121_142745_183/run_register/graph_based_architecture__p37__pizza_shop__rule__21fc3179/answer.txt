@@ -1,0 +1,34 @@
+¡Buena idea! 🍕🥤 Esa regla encaja perfecto con el estilo de `ordering_conversation_turns_assistant`, pero enfocada en la **bebida** en lugar de la pizza.
+
+Te propongo esto, usando `utterance_index` para verificar que el asistente menciona la confirmación de la bebida **después** de que el usuario la pide:
+
+```yaml
+name: assistant_confirms_drink
+description: The assistant confirms the drink the user ordered after the user orders it
+conversations: 1
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms the drink order')
+```
+
+### Por qué está escrita así 👀
+
+- **`conversations: 1`** → es una regla de una sola conversación (un oráculo clásico), no metamórfica.
+- **`utterance_index('user', 'ordering a drink')`** → busca el turno en el que el usuario pide la bebida.
+- **`utterance_index('assistant', 'confirms the drink order')`** → busca el turno en el que el asistente confirma esa bebida.
+- La comparación `<` asegura que la confirmación ocurre **después** del pedido (no antes, lo cual sería raro).
+
+### Un par de consejos 💡
+
+1. **Sé específico en las descripciones de `utterance_index`.** Es un helper respaldado por LLM, así que frases claras como `'confirms the drink order'` funcionan mejor que algo vago como `'drink'`. Si tu bot confirma con un formato concreto (por ejemplo, "your Coke is added"), puedes afinar la frase para reducir falsos positivos.
+2. **Si quieres cubrir también el caso de que el usuario no pida bebida**, podrías añadir un `when:` que filtre solo conversaciones donde sí se pidió algo. Pero ojo: `when:` en reglas de 1 conversación trabaja sobre los slots del `chatbot.output`, no sobre la conversación en sí — así que si tu perfil expone un campo tipo `drink`, podrías hacer:
+
+```yaml
+name: assistant_confirms_drink
+description: The assistant confirms the drink the user ordered after the user orders it
+conversations: 1
+when: drink is not None
+oracle: utterance_index('user', 'ordering a drink') < utterance_index('assistant', 'confirms the drink order')
+```
+
+Así solo se evalúa cuando realmente hay una bebida en juego 🎯
+
+¿Quieres que te ayude a adaptarla a los nombres reales de los campos de tu perfil (`chatbot.output`), o a crear una versión metamórfica que compare dos conversaciones? 😊

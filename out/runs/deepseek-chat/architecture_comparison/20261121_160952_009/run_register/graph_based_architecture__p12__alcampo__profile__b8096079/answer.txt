@@ -1,0 +1,118 @@
+# Hey there! 👋 Happy to help you build that profile!
+
+I'll craft a **shopping cart profile** for you — one where the simulated user asks the chatbot to add items to their cart. Let me walk you through it and give you a ready-to-use YAML. 🛒
+
+---
+
+## 🧠 Quick design thinking
+
+Before writing, here's what I kept in mind (based on the Sensei Profiles guide):
+
+- **`user.goals`** → the actual requests ("add X to my cart", "add Y", etc.)
+- **Variables** → I used `forward()` on a couple of them so you get a nice combination matrix, and `random()` for simpler picks.
+- **`chatbot.output`** → fields the extractor will pull at the end (cart contents, quantities, totals…). These are also what your **Sensei-check rules** can later read as `conv[i].<field>`.
+- **`conversation.number`** → since I used **two `forward()` variables**, I can safely use `combinations(...)`. 🎯
+- **`interaction_style`** → kept it natural with a touch of `change your mind` (super realistic for cart scenarios!).
+
+---
+
+## 📄 Ready-to-use profile
+
+Save this as `profiles/shopping_cart_management.yaml`:
+
+```yaml
+test_name: "shopping_cart_management"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer shopping online at Alcampo. You want to build up your
+    shopping cart by asking the chatbot to add specific products, adjust
+    quantities, and confirm what is currently in your cart.
+  context:
+    - "You are doing your weekly grocery shopping and prefer to add items one by one."
+    - "You care about getting the right quantity and the correct product variant."
+    - "You like to double-check your cart total before finishing."
+  goals:
+    - "Ask the chatbot to add {{quantity}} of {{product}} to your shopping cart."
+    - "Ask the chatbot to add {{second_product}} to your cart as well."
+    - "Request a summary of everything currently in your cart."
+    - "Ask for the current total price of your cart in {{currency}}."
+    - product:
+        function: forward()
+        type: string
+        data: [milk, eggs, bread, olive oil, rice]
+    - quantity:
+        function: forward()
+        type: int
+        data:
+          min: 1
+          max: 3
+          step: 1
+    - second_product:
+        function: random()
+        type: string
+        data: [apples, cheese, coffee, pasta, yogurt, tomatoes]
+    - currency:
+        function: random()
+        type: string
+        data: [EUR, USD]
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy?"
+  output:
+    - added_items:
+        type: list[string]
+        description: "Products the user asked to add to the cart"
+    - cart_summary:
+        type: string
+        description: "Summary of all items currently in the cart"
+    - cart_total:
+        type: currency
+        description: "Total price of the cart"
+    - item_quantities:
+        type: string
+        description: "Quantities associated with each cart item"
+
+conversation:
+  number: combinations(0.6, forward)
+  goal_style:
+    steps: 8
+    max_cost: 0.1
+  interaction_style:
+    - change your mind
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+---
+
+## 🔍 Why this works nicely
+
+| Piece | Why it's there |
+|---|---|
+| **Two `forward()` variables** (`product`, `quantity`) | Enables `combinations(0.6, forward)` → you get a solid grid of product × quantity combos without exploding the run. ✅ |
+| **`second_product` with `random()`** | Adds variety without bloating the matrix. |
+| **`change your mind`** | Very realistic — users often tweak quantities or swap items mid-cart. 😄 |
+| **`chatbot.output` fields** | Ready to be referenced in rules like `conv[0].cart_total` or `conv[0].added_items`. |
+
+---
+
+## 💡 A couple of tips
+
+- If you want **full coverage** of every product × quantity combo, swap `combinations(0.6, forward)` for `combinations` (no fraction).
+- If you later write **Sensei-check rules** about the cart (e.g., "total must be positive", "added items must appear in summary"), the `cart_total` and `added_items` fields are already there for you. 🎯
+- Want a **custom type** for currency? You likely already have `types/currency.yml` in your project — just reference `currency` as I did. If not, let me know and I'll show you the file. 😊
+
+---
+
+Want me to tweak it — e.g., add **removing items**, **checkout flow**, or a **Spanish-language version**? Just say the word! 🚀

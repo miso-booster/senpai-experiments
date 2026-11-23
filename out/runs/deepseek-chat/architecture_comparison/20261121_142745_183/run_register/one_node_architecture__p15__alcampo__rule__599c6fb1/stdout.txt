@@ -1,0 +1,45 @@
+conversation ID: one_node_architecture__p15__alcampo__rule__599c6fb1
+$$$
+# Fixing your `customer_service_contact_info` rule 🔧
+
+Nice rule idea! There are a few things to fix so it actually runs. Let me walk you through them 👇
+
+## What's off
+
+1. **Typo in the header**: `descriptin` → `description`. Sensei-check expects `description`.
+2. **Missing `then:`**: You have `if:` but no `then:`. An `if/then` relation needs both sides — otherwise there's nothing to assert.
+3. **`user_request` field doesn't exist**: Your `customer_service_assistance.yaml` profile doesn't expose a `user_request` output. The fields it *does* expose are: `contact_options`, `customer_service_number`, `hours_of_operation`, `online_form_instructions`, `required_fields`, `message_details`. So `when:` can't filter on `user_request`.
+4. **`conv[i].field` vs `conv[i].field[0]`**: In your profile, outputs are extracted as lists (e.g. `contact_options` is a list). So `conv[0].contact_options` is a list — comparing it to `None` works, but you likely want to check it's non-empty.
+
+## A working version
+
+Since the profile doesn't expose `user_request`, the cleanest fix is to drop that filter and instead assert that **both** conversations produced the relevant contact info. Here's a rule that runs against your `customer_service_assistance` profile:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and a customer service number for customer service inquiries.
+conversations: 2
+if: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+then: len(conv[0].contact_options) > 0 and len(conv[1].customer_service_number) > 0
+```
+
+## Why this works
+
+- `if:` guards the rule — it only applies when both conversations actually extracted the fields (avoids false failures on empty extractions).
+- `then:` asserts the extracted values are non-empty lists, which is what "the chatbot provided the info" really means here.
+- No invented fields — `contact_options` and `customer_service_number` both exist in your profile's `chatbot.output` ✅
+
+## If you *really* want to filter by request type
+
+You'd first need to add a field to the profile's `chatbot.output`, e.g.:
+
+```yaml
+- user_request:
+    type: string
+    description: The type of customer service request the user made
+```
+
+Then your original `when:` would work. But honestly, for a 2-conversation check like this, the `if/then` version above is simpler and more robust — it doesn't depend on the extractor classifying the request correctly.
+
+Want me to also add a **single-conversation** version that checks `data_collected()` for this profile? That's a nice complement to catch missing extractions across the board 😊
+$$$

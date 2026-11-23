@@ -1,0 +1,31 @@
+I found a strong candidate. Before writing the rule, I need to confirm the target profile with you, because the rule depends on its `chatbot.output` fields.
+
+## 📋 Candidate profile found
+
+**`pizza_and_drink_order_placement.yaml`** — a customer ordering pizza + drinks for pickup.
+
+Its `chatbot.output` fields are:
+- `pizza_options`
+- `drink_options`
+- `order_summary` ← *a comprehensive summary confirming pizza type, size, toppings, number of drinks, and drink type*
+- `total_cost`
+- `estimated_readiness_time`
+- `pickup_location`
+- `order_id`
+
+## 🤔 Quick question before I generate the rule
+
+Your request is: *"check in the conversation whether the assistant confirms it added the drink the user asked for."*
+
+There are two ways to interpret "the drink the user asked for":
+
+1. **Using the profile's extracted outputs** (`order_summary` / `drink_options`) — a profile-bound rule. This is the most robust and idiomatic approach, but note the profile doesn't expose a dedicated `drink_type` output field. The drink info lives inside the free-text `order_summary`.
+2. **Using the conversation text directly** with the `utterance_index` helper (LLM-backed) — e.g., checking that the assistant confirms the drink order after the user orders it. This doesn't need a specific output field and works even without a dedicated `drink` slot.
+
+**My recommendation:** a hybrid single-conversation rule that checks the assistant confirms the drink order in the dialogue (using `utterance_index`), which fits this profile well since the drink is confirmed inside `order_summary` rather than a structured field.
+
+👉 **Can you confirm:**
+- Is `pizza_and_drink_order_placement.yaml` the profile we should target? (or another one?)
+- Do you prefer approach **1** (output-based), **2** (dialogue-based), or the **hybrid** I recommend?
+
+Once you confirm, I'll generate the YAML. 😊

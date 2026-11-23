@@ -1,0 +1,119 @@
+¡Hola! 😊 Con gusto te ayudo a arreglarlo. Revisé tu perfil contra la guía `sensei-chat-guide.md` y encontré varios problemas de estructura. Te los explico y luego te dejo la versión corregida.
+
+## 🔍 Problemas encontrados
+
+1. **`user.goals` mal formado (el más grave).** Las variables `identificador_id_uam` y `user_account` están declaradas *dentro* de la lista de goals, pero con una indentación rota: `type`, `data`, etc. quedaron colgando como si fueran items de la lista de goals. Además, la variable `identificador_id_uam` **no tiene su clave declarada** (falta `identificador_id_uam:` antes de `type: string`). Según la guía (§4.1), cada `{{variable}}` debe declararse como un mapping con su nombre exacto.
+
+2. **Falta `user.role`.** Es opcional, pero muy recomendable para darle contexto al simulador. Lo añadí.
+
+3. **`chatbot.output` con duplicados conceptuales.** Tienes `contact_info` y `contact_information` (dos campos para lo mismo) y `password_setup_link` vs `password_change_steps`. No es un error de sintaxis, pero conviene consolidar para que las reglas no se confundan. Los dejé pero te lo señalo abajo.
+
+4. **`conversation.goal_style.steps: 30`.** Es válido (no hay tope duro documentado para `steps` fijo), pero es muy alto para 5 conversaciones. Lo dejé como pediste, solo lo menciono.
+
+5. **`llm` sin `model_prov`.** Opcional (la guía dice que si se omite se usan defaults), pero lo añadí como `openai` para que sea explícito y consistente con `gpt-4o-mini`.
+
+## ✅ Perfil corregido
+
+```yaml
+test_name: Asistencia Técnica y Cuentas
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita resolver problemas técnicos de acceso a tus
+    plataformas virtuales y cuentas de usuario, y que quiere gestionar tu
+    ID-UAM y tu contraseña a través del Centro de Atención a Usuarios (CAU).
+  context:
+    - Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad.
+    - Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias.
+    - Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento.
+  goals:
+    - Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU).
+    - Preguntar sobre los procedimientos para obtener una cuenta ID-UAM.
+    - Solicitar los pasos necesarios para establecer la contraseña por primera vez.
+    - Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado.
+    - Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}.
+    - identificador_id_uam:
+        function: random()
+        type: string
+        data:
+          - '123456789'
+          - '987654321'
+          - '112233445'
+          - '556677889'
+          - '998877665'
+    - user_account:
+        function: random()
+        type: string
+        data:
+          - usuario123
+          - maria.garcia
+          - juan_lopez_2023
+          - pedro.salas
+          - sara.martinez
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_info:
+        type: string
+        description: Detalles de contacto del CAU
+    - operational_hours:
+        type: string
+        description: Horarios operativos del CAU
+    - available_services_list:
+        type: string
+        description: Servicios disponibles para crear cuenta
+    - password_setup_link:
+        type: string
+        description: Enlace para establecer contraseña
+    - contact_information:
+        type: string
+        description: Opciones de asistencia para recuperación de ID-UAM
+    - recovery_steps:
+        type: string
+        description: Pasos para recuperar ID-UAM
+    - activation_code:
+        type: string
+        description: Código de activación para cambiar contraseña
+    - user_account:
+        type: string
+        description: Nombre de usuario para recuperación
+    - identificador_id_uam:
+        type: string
+        description: Identificador único de ID-UAM
+    - password_change_steps:
+        type: string
+        description: Pasos para cambiar la contraseña
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 30
+```
+
+## 📝 Resumen de cambios
+
+| Cambio | Motivo (según `sensei-chat-guide.md`) |
+|---|---|
+| Añadida clave `identificador_id_uam:` | Cada `{{variable}}` debe declararse con su nombre exacto (§4.1). |
+| Corregida indentación de `type`/`data` | Las variables son mappings dentro de `goals`, no items sueltos (§4.1, §4.3). |
+| Añadido `function: random()` a ambas variables | Sin `function` no se define cómo se elige el valor en cada conversación (§4.4). |
+| Añadido `user.role` | Recomendado para dar contexto al simulador (§3, §7). |
+| Añadido `model_prov: openai` | Explicitar el proveedor del modelo (§3). |
+| `fallback` en una sola línea | El `\n` literal no se interpreta en YAML plano; ahora es texto limpio. |
+
+## ⚠️ Sugerencias opcionales (no las apliqué para no cambiar tu diseño)
+
+- **Consolidar campos duplicados** en `chatbot.output`: `contact_info` vs `contact_information`, y `password_setup_link` vs `password_change_steps`. Si vas a escribir reglas, nombres únicos y estables ayudan mucho (§2.1.2).
+- **`steps: 30`** es alto; si quieres conversaciones más cortas, considera `random steps: 10` o `all_answered` con `limit`.
+
+¿Quieres que consolide los campos duplicados de `output` o que ajuste el `goal_style`? También, si planeas escribir reglas para este perfil, dime y te ayudo a alinear los nombres de `chatbot.output` con ellas. 🚀

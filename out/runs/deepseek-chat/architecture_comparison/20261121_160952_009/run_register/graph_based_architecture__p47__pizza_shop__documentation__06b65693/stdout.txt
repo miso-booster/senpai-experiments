@@ -1,0 +1,54 @@
+conversation ID: graph_based_architecture__p47__pizza_shop__documentation__06b65693
+$$$
+Great question! 😊 Let me break down what a **metamorphic rule** means in the context of Sensei-check.
+
+## The short answer
+
+A **metamorphic rule** is a rule that checks a *relationship* between **two or more conversations** — instead of checking a single conversation against a fixed expected answer. 🎯
+
+## Why this matters
+
+Normally, testing a chatbot means asking: *"Did the bot give the right answer?"* — but for LLM-based bots, there's often **no single correct answer** to compare against. That's the classic *oracle problem*.
+
+Metamorphic testing sidesteps this by checking **how outputs change when inputs change**. You don't need to know the exact right price — you just need to know that *more toppings should cost more*. 💡
+
+## How it looks in practice
+
+In Sensei-check, a metamorphic rule uses `conversations: N` (with N ≥ 2) and compares fields across conversations via `conv[0]`, `conv[1]`, etc.
+
+Here's a real example from your project — `more_toppings_cost_more.yaml`:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Reading it out loud: *"If two orders have the same size and drink, and one has more toppings, then it must cost more."* 🍕
+
+## The three key parts
+
+1. **`when`** — a filter that picks *comparable* conversations (holding confounders equal, like size and drink).
+2. **`if` / `then`** — the relation itself, written like a law: *"If X changes this way, then Y should change that way."*
+3. **`conv[i].field`** — the fields come from your profile's `chatbot.output` (e.g., `toppings`, `price`).
+
+## Two flavors you'll see
+
+- **Monotonic relations** — e.g., more toppings ⇒ higher price (like the example above).
+- **Invariance relations** — e.g., same number of toppings ⇒ same price (like your `same_number_of_toopings_cost_the_same.yaml`).
+
+## Quick contrast
+
+| Rule type | Conversations | What it checks |
+|---|---|---|
+| Single-conversation oracle | `1` | Absolute correctness (e.g., price ≥ $10) |
+| **Metamorphic rule** | `2+` | A *relation* between conversations |
+| Global rule | `all` | A property across the whole batch (e.g., unique order IDs) |
+
+So in a nutshell: **metamorphic rules let you test chatbot behavior by comparing conversations, not by knowing the "right" answer upfront.** 🙌
+
+Want me to help you write a new metamorphic rule, or walk through one of your existing ones in more detail?
+$$$

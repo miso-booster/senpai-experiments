@@ -1,0 +1,47 @@
+conversation ID: agentic_architecture__p7__ada_uam__rule__1b8414fb
+$$$
+I found the profile and confirmed the exact output fields. Here's what I've got:
+
+**Profile:** `consultante_de_servicios_y_asistencia_del_cau.yaml`
+**Relevant `chatbot.output` fields:**
+- `contact_email` (string) — Correo electrónico del CAU
+- `contact_phone` (string) — Número de teléfono del CAU
+- `physical_address` (string) — Dirección física del CAU
+
+These match exactly the three outputs you mentioned. 🎯
+
+Before I write the rule, one quick confirmation:
+
+**Is this the profile we should target for the rule?** (i.e., `consultante_de_servicios_y_asistencia_del_cau.yaml`)
+
+Assuming yes, here's the rule I'd create. It's a **single-conversation oracle** that checks the three extracted fields against the correct CAU info. Since the fields are free-text strings, I use `semantic_content(value, description)` (LLM-backed semantic match) to be robust to formatting variations (e.g., "91 497 4029" vs "914974029", or "cau@uam.es" with different casing).
+
+```yaml
+name: cau_contact_info_correct
+description: >
+  Checks that the chatbot provides the correct contact information for the CAU
+  (email, phone and physical address) for the
+  consultante_de_servicios_y_asistencia_del_cau profile.
+conversations: 1
+active: True
+oracle: |
+  semantic_content(contact_email, 'cau@uam.es') is True and
+  semantic_content(contact_phone, '91 497 4029') is True and
+  semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107') is True
+yields: |
+  f"CAU contact info incorrect -> email: {contact_email}, phone: {contact_phone}, address: {physical_address}"
+```
+
+A few notes about this design (grounded in `sensei-check-doc.md` §6.4 and `rules-examples.md`):
+
+- **`conversations: 1`** — this is a single-conversation oracle (not metamorphic), since we're checking absolute correctness of extracted values.
+- **`semantic_content(value, desc)`** — the documented LLM-backed helper for semantic matching. It tolerates minor formatting differences in the free-text strings. If you'd rather do **strict** matching, I can switch to exact comparisons (e.g., `contact_email == 'cau@uam.es'`), but that's brittle against formatting.
+- **`yields`** — provides a helpful failure message showing the actual extracted values.
+
+A couple of things to flag:
+
+1. **`semantic_content` is LLM-backed**, so allow for minor variability (per the docs). If you want deterministic checks, tell me and I'll use exact string matching instead.
+2. The profile also extracts `service_hours`, `contact_method`, etc. — I'm only validating the three fields you specified. Let me know if you'd like me to extend the rule to cover more.
+
+Want me to proceed with this rule as-is, or adjust the matching strategy (strict vs. semantic)?
+$$$

@@ -1,0 +1,63 @@
+Hey there! 😊 Happy to help you fill in that `chatbot` section. Since your goals are all about *gathering information* (pizza types, prices, drinks, hours, delivery), the `chatbot.output` should capture exactly those answers so you can later validate them — and even write Sensei-check rules against them.
+
+Here's a complete, ready-to-paste version of your profile:
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_types:
+        type: string
+        description: "The list of pizza types offered by the shop. Look for phrases like 'We offer...' or an enumeration of available pizzas."
+    - margarita_price:
+        type: money
+        description: "The price of a Margarita pizza, including currency if present. If multiple sizes are mentioned, capture the price(s) for all sizes mentioned."
+    - drinks_and_prices:
+        type: string
+        description: "The list of available drinks and their corresponding prices, as stated by the chatbot."
+    - operating_hours:
+        type: string
+        description: "The shop's operating hours, including opening and closing times."
+    - delivery_availability:
+        type: string
+        description: "Whether the shop delivers or not, as confirmed by the chatbot."
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single question
+```
+
+A few friendly notes on the choices 👇
+
+- **One output field per goal** — that keeps the extraction clean and makes it easy to check `data_collected()` or `missing_slots()` later.
+- **`margarita_price` uses `type: money`** — that's handy because a rule like `extract_float(conv[0].margarita_price) > 0` will work nicely on it.
+- **`is_starter: false`** — your simulated user opens the conversation, so the bot doesn't need to greet first.
+- **`fallback`** — I reused the bot's real fallback text from your other pizza profiles so the simulator doesn't loop forever. Swap it if this bot has a different one.
+
+Want me to also draft a Sensei-check rule that verifies, say, that the Margarita price is always reported? Just say the word! 🍕✨

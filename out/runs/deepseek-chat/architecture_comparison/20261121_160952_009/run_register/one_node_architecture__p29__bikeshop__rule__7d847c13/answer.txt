@@ -1,0 +1,37 @@
+Absolutely! 😊 Let's build a rule that checks the chatbot actually **confirms** an appointment when the user asks to schedule a bike service.
+
+Looking at your project, the `appointment.yml` profile already exposes the perfect fields for this — `confirmed_date`, `confirmed_time`, and `confirmed_service`. So we can write a **profile-bound rule** that verifies all three get filled in (i.e., the appointment was truly confirmed).
+
+Here's a clean rule using the `data_collected()` helper, which checks that all extracted outputs are non-null:
+
+```yaml
+name: appointment_confirmation
+description: The chatbot confirms the appointment (date, time, and service) when the user schedules a bike service
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: f"Missing appointment details: {missing_slots()}"
+```
+
+If you want to be a bit more explicit and check each field individually (useful when you want a clearer failure message), you could write it like this instead:
+
+```yaml
+name: appointment_confirmation_explicit
+description: The chatbot confirms date, time, and service for a scheduled bike service appointment
+conversations: 1
+active: true
+oracle: |
+  conv[0].confirmed_date is not None
+  and conv[0].confirmed_time is not None
+  and conv[0].confirmed_service is not None
+yields: |
+  f"Appointment not fully confirmed — date: {conv[0].confirmed_date}, time: {conv[0].confirmed_time}, service: {conv[0].confirmed_service}"
+```
+
+A couple of quick notes 👇
+
+- **Field names matter**: these rules rely on the exact `chatbot.output` names in `appointment.yml` (`confirmed_date`, `confirmed_time`, `confirmed_service`). If you rename them there, update the rule too.
+- **`data_collected()` is the simplest option** when you just want "all slots filled". The explicit version is nicer when you want to *see* which piece is missing in the failure message.
+- If you'd rather check that the confirmation is **semantically correct** (e.g., the date matches what the user asked for), we can go further with `semantic_content(...)` — just say the word and I'll draft that variant! 🚀
+
+Want me to also add a **global** companion rule (e.g., "no appointment is confirmed without a date") or adapt this for the `bike_repair_and_maintenance_scheduler` profile?

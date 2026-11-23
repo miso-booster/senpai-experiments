@@ -1,0 +1,83 @@
+conversation ID: agentic_architecture__p22__bikeshop__profile__319c1ed9
+$$$
+Here's the profile 👇 It's built on the structure from `sensei-chat-guide.md` and matches the style of your existing bike profiles (`bike_service_and_repair_inquirer.yaml`, `bike_repair_and_maintenance_scheduler.yaml`).
+
+```yaml
+test_name: bike_discomfort_fit_and_wear_advisor
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A cyclist who is experiencing discomfort while riding their bike. You are not
+    sure whether the discomfort comes from the bike not being fitted correctly or
+    from worn components. You want advice on possible adjustments and on the
+    services the shop offers, but you do NOT explicitly ask to book an appointment.
+  context:
+    - "You ride regularly (commuting and weekend rides) and the discomfort has been building up over the last few weeks."
+    - "The discomfort is mainly in your knees, lower back, and hands/wrists."
+    - "You suspect either a poor bike fit (saddle height, reach, handlebar position) or worn parts (chain, cassette, tires, brake pads)."
+    - "You are looking for guidance and options, not a hard commitment to book anything today."
+  goals:
+    - "Describe the discomfort you feel while riding and where it shows up."
+    - "Explain that you are unsure whether it is a bike fit issue or worn components."
+    - "Ask what adjustments could help reduce the discomfort."
+    - "Ask how you can tell whether your components are worn out."
+    - "Ask which services the shop offers that could help with fit or worn parts."
+    - "Ask for a rough idea of what those services involve and their cost."
+    - "Do not explicitly ask to book an appointment; only react if the shop offers one."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustments:
+        type: string
+        description: "The bike fit adjustments the chatbot recommends (e.g., saddle height, reach, handlebar/stem position, cleat position)."
+    - wear_indicators:
+        type: string
+        description: "How the chatbot says the user can tell whether components (chain, cassette, tires, brake pads) are worn."
+    - available_services:
+        type: string
+        description: "The shop services the chatbot mentions that are relevant to bike fit or worn components."
+    - service_details:
+        type: string
+        description: "What the relevant services involve (e.g., a professional bike fitting session, a tune-up, component replacement)."
+    - service_price:
+        type: money
+        description: "The price or price range the chatbot gives for the relevant service(s)."
+    - appointment_offered:
+        type: string
+        description: "Whether the chatbot proactively offered or suggested booking an appointment, and any details it gave. Extract 'none' if no appointment was offered."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 30
+  interaction_style:
+    - single questions
+```
+
+### What this profile does 🚲
+- **Simulated user**: a cyclist with knee/back/hand discomfort who is genuinely unsure whether it's a **fit problem** or **worn components**, and who wants **advice + service options** without explicitly asking to book.
+- **Chatbot contract**: `is_starter: false` (the user opens), and the fallback matches your other bike profiles so it stays consistent.
+- **`chatbot.output`** (the contract rules will read as `conv[i].<field>`):
+  - `fit_adjustments`, `wear_indicators` → the two diagnostic branches the user is weighing.
+  - `available_services`, `service_details`, `service_price` → the shop's offerings.
+  - `appointment_offered` → lets you later write a rule checking the bot **didn't push** a booking (or that it only offered it), matching the "does not explicitly ask to book" requirement.
+- **Conversation controls**: 3 conversations, `all_answered` goal style, `single questions` interaction style — same pattern as your existing bike profiles.
+
+### A couple of things to confirm ✨
+1. **`money` type**: your existing bike profiles use `type: money`, but `sensei-chat-guide.md` documents `currency` as the money type. If `money` is a custom type in your `types/` folder, we're fine — otherwise I'd switch `service_price` to `currency`. Want me to check/adjust?
+2. **Personality**: I left out a `personalities/` reference. Your other profiles use `skeptical-user` / `rude-user`. Should this user be neutral, or would you like a specific personality (e.g., `skeptical-user`)?
+
+Want me to save this as `profiles/bike_discomfort_fit_and_wear_advisor.yaml`, or tweak anything first?
+$$$

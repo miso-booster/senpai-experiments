@@ -1,0 +1,88 @@
+conversation ID: graph_based_architecture__p14__alcampo__profile__ab29d6ea
+$$$
+¡Hola! 😊 ¡Qué buena idea! Un perfil enfocado en **recomendaciones de recetas y planificación de menús** es súper útil para probar el chatbot de Alcampo. Déjame ayudarte a crearlo.
+
+Antes de escribir el YAML, te comento un par de cosas importantes que vi en tu proyecto:
+
+- Ya tienes un perfil relacionado llamado **`recipe_management_and_cooking_support.yaml`**, pero ese se centra más en las *funcionalidades* de "La Cocina de Alcampo" (buscar recetas, añadir ingredientes a la lista, etc.). Tu nuevo perfil puede enfocarse más en el **diálogo de recomendación y planificación de menús** (que el bot proponga recetas concretas, adapte menús, sugiera alternativas…). Así se complementan sin duplicarse. 👌
+- Ojo con un detalle: en tu proyecto el **`fallback`** del chatbot está en español, así que tiene sentido que el `user.language` sea `Spanish` para que la conversación fluya de forma natural. Si prefieres inglés, solo cambia ese campo.
+
+Aquí tienes un perfil listo para copiar en `profiles/menu_planning_and_recipe_recommendations.yaml`:
+
+```yaml
+test_name: "menu_planning_and_recipe_recommendations"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un cliente que quiere planificar los menús de la semana y necesita
+    que el chatbot te recomiende recetas concretas, adaptadas a tus gustos,
+    número de comensales y presupuesto.
+  context:
+    - "Tienes una familia de {{num_comensales}} personas y cocinas en casa entre semana."
+    - "Buscas recetas {{tipo_receta}} que sean fáciles y rápidas de preparar."
+    - "Tienes en cuenta el presupuesto y aprovechar ingredientes de temporada."
+    - "Te gustaría que el chatbot te propusiera un menú completo, no solo platos sueltos."
+  goals:
+    - "Pide al chatbot que te recomiende recetas {{tipo_receta}} para {{num_comensales}} personas."
+    - "Pregunta qué ingredientes de temporada puede aprovechar esta semana."
+    - "Solicita un menú semanal completo con primer plato, segundo y postre."
+    - "Pide una alternativa más económica o más saludable para uno de los platos."
+    - "Pregunta cómo añadir los ingredientes de una receta a la lista de la compra."
+    - tipo_receta:
+        function: forward()
+        type: string
+        data: [vegetarianas, con carne, con pescado, rápidas de 20 minutos]
+    - num_comensales:
+        function: forward(tipo_receta)
+        type: int
+        data:
+          min: 2
+          max: 6
+          step: 2
+
+chatbot:
+  is_starter: false
+  fallback: "Parece que tu mensaje no es claro o no es una pregunta relacionada con Alcampo. 😊 ¿En qué puedo ayudarte hoy? Estoy aquí para resolver tus dudas sobre nuestros productos y servicios."
+  output:
+    - recommended_recipes:
+        type: list[string]
+        description: "Recetas concretas recomendadas por el chatbot"
+    - seasonal_ingredients:
+        type: list[string]
+        description: "Ingredientes de temporada mencionados"
+    - weekly_menu:
+        type: string
+        description: "Menú semanal propuesto (primeros, segundos y postres)"
+    - recipe_alternatives:
+        type: string
+        description: "Alternativas económicas o saludables sugeridas"
+    - shopping_list_instructions:
+        type: string
+        description: "Instrucciones para añadir ingredientes a la lista de la compra"
+
+conversation:
+  number: combinations(1, forward)
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+### Un par de notas rápidas para que lo ajustes a tu gusto ✨
+
+1. **`conversation.number`**: usé `combinations(1, forward)` porque tienes un `forward()` (`tipo_receta`) y un `pairwise()` (`num_comensales`). Si prefieres un número fijo de conversaciones, cámbialo por un entero (por ejemplo `number: 4`). Recuerda que para usar `combinations` necesitas al menos dos funciones de combinación declaradas — aquí las tienes. 👍
+
+2. **`chatbot.output`**: estos campos son el "contrato" con las reglas de Sensei-check. Si luego quieres escribir reglas sobre, por ejemplo, que el menú siempre incluya postre, o que las recetas recomendadas no estén vacías, ya tienes los campos listos para referenciarlos como `conv[i].weekly_menu`, `conv[i].recommended_recipes`, etc.
+
+3. **`interaction_style`**: dejé `single questions` para que el bot reciba una petición por turno y sea más fácil evaluar cada respuesta. Si quieres probar cómo se comporta con usuarios que cambian de idea o escriben frases largas, puedes añadir `change your mind` o `long phrases`.
+
+¿Quieres que te lo adapte para que esté **en inglés**, que añada **más variables** (por ejemplo, tipo de dieta o restricciones alimentarias), o que lo enfoque hacia **reglas de validación** concretas? ¡Dime y lo afinamos juntos! 🙌
+$$$

@@ -1,0 +1,61 @@
+¡Claro que sí! 😊 Te preparo un perfil enfocado en un usuario que contacta al CAU para obtener sus datos de contacto (teléfono, email, dirección física y horarios). Lo dejo alineado con el estilo de tus otros perfiles (español, `single questions`, `chatbot.output` con campos claros para que luego puedas escribir reglas sobre ellos).
+
+```yaml
+test_name: "Soporte y contacto del CAU"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario que necesita ponerse en contacto con el Centro de Atención a Usuarios (CAU)
+    de la UAM y quiere conocer sus datos de contacto y horarios para resolver una duda.
+  context:
+    - personality: personalities/formal-user
+    - "Tienes una incidencia con tu cuenta ID-UAM y necesitas contactar con el CAU cuanto antes."
+    - "Prefieres tener a mano todos los canales de contacto: teléfono, correo y dirección física."
+    - "También te interesa saber en qué horario puedes llamar o acudir presencialmente."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir el correo electrónico de contacto del CAU."
+    - "Preguntar por la dirección física donde se encuentra el CAU."
+    - "Consultar el horario de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👀:
+
+- Los cuatro campos de `chatbot.output` (`contact_phone`, `contact_email`, `physical_address`, `service_hours`) son justo los que pediste, así que luego puedes escribir reglas tipo `data_collected() == True` o `missing_slots() == []` para verificar que el bot los rellena todos.
+- Si quieres variar el tono del usuario, puedes cambiar `personalities/formal-user` por otro de tus personalities (por ejemplo `impatient-user`), ya que en tus perfiles usas varios.
+- Si más adelante quieres comprobar que el horario es coherente, podrías añadir una regla con `semantic_content(conv[0].service_hours, '...')`.
+
+¿Quieres que te prepare también una regla de Sensei-check que valide que estos cuatro campos se recogen correctamente? 😊

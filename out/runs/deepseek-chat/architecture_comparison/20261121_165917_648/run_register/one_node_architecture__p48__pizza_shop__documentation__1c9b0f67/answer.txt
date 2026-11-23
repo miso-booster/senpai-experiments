@@ -1,0 +1,72 @@
+Great question! 😊 Let me walk you through which fields in a Sensei profile are **optional** versus which ones you really need.
+
+## The short answer
+
+Strictly speaking, the **only truly mandatory** parts of a profile are the ones Sensei needs to actually simulate a conversation:
+
+- `user` (with at least `role` and `goals`)
+- `chatbot` (with `is_starter` and `fallback`)
+
+Everything else has sensible defaults or is optional. Let me break it down 👇
+
+## Optional / non-mandatory fields
+
+### `test_name`
+Nice for identifying the profile in reports, but not required for execution.
+
+### `llm`
+**Fully optional.** If you omit it, Sensei applies defaults (model, temperature) and `format.type` defaults to `text`. You only add it when you want to override the model/temperature or switch to `speech` mode.
+
+```yaml
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+```
+
+### `user.context`
+Optional. It enriches the persona (personality snippets, constraints, preferences) but the simulator can run without it.
+
+### `user.language`
+Optional — defaults are applied if omitted, though it's good practice to set it explicitly.
+
+### `chatbot.output`
+Optional in the sense that a profile can run without extraction. **But** if you plan to write Sensei-check rules against this profile, you *do* need the relevant fields here (that's the contract rules read via `conv[i].field`).
+
+### `conversation.max_cost` and `goal_style.max_cost`
+Both optional cost caps. Omit them if you don't need spend limits.
+
+### `conversation.number`
+Optional — if omitted, defaults apply. But if you're using `forward()`/`pairwise()` combinations, you'll usually want to set it (e.g., `combinations(0.5, pairwise)`).
+
+### `conversation.interaction_style`
+Optional. If omitted, the user simulator behaves naturally (equivalent to `default`).
+
+### `conversation.goal_style`
+Optional — defaults apply if omitted. You'd set it when you want fixed `steps`, `random steps`, or `all_answered` with export/limit.
+
+## Quick reference table
+
+| Field | Mandatory? | Notes |
+|---|---|---|
+| `test_name` | ❌ | Helpful label only |
+| `llm` | ❌ | Defaults applied if omitted |
+| `user.role` | ✅ | Core to simulation |
+| `user.goals` | ✅ | Core to simulation |
+| `user.language` | ❌ | Defaults applied |
+| `user.context` | ❌ | Enriches persona |
+| `chatbot.is_starter` | ✅ | Needed to know who talks first |
+| `chatbot.fallback` | ✅ | Prevents endless loops |
+| `chatbot.output` | ❌* | *Required if rules will read these fields |
+| `conversation.number` | ❌ | Defaults apply |
+| `conversation.goal_style` | ❌ | Defaults apply |
+| `conversation.interaction_style` | ❌ | Defaults to natural behavior |
+| `conversation.max_cost` | ❌ | Optional spend cap |
+
+## One important nuance ⚠️
+
+Even though `chatbot.output` is technically optional for *running* a profile, it becomes **effectively mandatory** the moment you want to validate that profile with Sensei-check rules. For example, your `more_toppings_cost_more.yaml` rule reads `conv[0].price`, `conv[0].size`, `conv[0].drink`, and `conv[0].toppings` — so whichever profile that rule targets **must** expose those fields in `chatbot.output`, or the rule can't work.
+
+Want me to check one of your existing profiles (like `pizza_order_test_custom.yml`) and point out which fields are missing or could be trimmed? Just say the word! 🙌

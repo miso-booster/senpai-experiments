@@ -1,0 +1,36 @@
+Hey there! 😊 Happy to help you draft that rule.
+
+Quick heads-up before we dive in: since there's **no profile yet**, this is a **rule-first design** case. That means the rule will assume a future SENSEI Chat profile exposes certain `chatbot.output` fields — and you'll need to make sure that profile actually provides them, or the rule won't have anything to check. I'll document the assumed fields clearly so you can wire them up later. 👍
+
+Here's a rule that checks whether the assistant correctly reports **lactose-free availability** for a requested product:
+
+```yaml
+name: lactose_free_availability
+description: >
+  Rule-first design. Assumes a future profile exposes chatbot.output fields:
+  product_name (string), lactose_free_requested (bool),
+  lactose_free_available (bool), lactose_free_note (string).
+  If the user asks for a lactose-free version of a product, the assistant
+  must explicitly state availability (yes/no) and never leave it null.
+conversations: 1
+if:   lactose_free_requested is True
+then: lactose_free_available is not None and len(lactose_free_note) > 0
+on-error: "Lactose-free availability not reported for product '{lactose_free_requested}' (available={lactose_free_available}, note='{lactose_free_note}')"
+```
+
+### What this assumes from the future profile's `chatbot.output`
+
+| Field | Type | Meaning |
+|---|---|---|
+| `product_name` | string | The product being asked about |
+| `lactose_free_requested` | bool | Whether the user asked for a lactose-free variant |
+| `lactose_free_available` | bool | Whether the assistant confirmed availability |
+| `lactose_free_note` | string | The assistant's explanation (e.g. "Yes, we have lactose-free milk") |
+
+### A couple of things to keep in mind 💡
+
+- **`on-error` uses f-string syntax** — but note that `lactose_free_requested` is a bool, so the message will print `True`/`False`. If you'd rather reference the product name, swap it to `{product_name}`.
+- If you want a **stricter** check (e.g., the note must actually mention "lactose-free" or "sin lactosa" for Alcampo), you could add a helper like `utterance_index('assistant', 'lactose-free') > 0` or `semantic_content(lactose_free_note, 'confirms lactose-free availability')`.
+- Since this is **rule-first**, remember to update the rule if you later rename fields in the profile — the rule and `chatbot.output` must stay in sync. 🔗
+
+Want me to also draft a **metamorphic version** (e.g., "if lactose-free is requested, the price shouldn't drop below the regular version") or a **global scope rule** for the Alcampo domain? Just say the word! 🙌

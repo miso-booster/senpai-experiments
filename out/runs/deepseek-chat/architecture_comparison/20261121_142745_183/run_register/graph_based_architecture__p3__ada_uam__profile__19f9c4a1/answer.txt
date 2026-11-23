@@ -1,0 +1,191 @@
+¡Hola! 😊 Claro que sí, con gusto te ayudo a dejar ese perfil bien ordenadito. Le eché un buen vistazo y encontré varios detallitos que vale la pena corregir. Te los explico uno por uno y luego te dejo el YAML ya arreglado 👇
+
+## 🔍 Lo que encontré
+
+**1. La variable `identificador_id_uam` está "suelta" y mal ubicada**
+En tus `goals` tienes esto:
+
+```yaml
+test_name: "Asistencia Técnica y Cuentas"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Usuario con problemas técnicos relacionados con plataformas virtuales y cuentas de usuario."
+  context:
+    - personality: personalities/curious-user
+    - "Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad."
+    - "Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias."
+    - "Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento."
+  goals:
+    - "Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU)."
+    - "Preguntar sobre los procedimientos para obtener una cuenta ID-UAM."
+    - "Solicitar los pasos necesarios para establecer la contraseña por primera vez."
+    - "Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado."
+    - "Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}."
+    - identificador_id_uam:
+        data: ['123456789', '987654321', '112233445', '556677889', '998877665']
+        function: forward()
+        type: string
+    - user_account:
+        data: [usuario123, maria.garcia, juan_lopez_2023, pedro.salas, sara.martinez]
+        function: forward()
+        type: string
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_info:
+        type: string
+        description: "Detalles de contacto del CAU"
+    - operational_hours:
+        type: string
+        description: "Horarios operativos del CAU"
+    - available_services_list:
+        type: string
+        description: "Servicios disponibles para crear cuenta"
+    - password_setup_link:
+        type: string
+        description: "Enlace para establecer contraseña"
+    - contact_information:
+        type: string
+        description: "Opciones de asistencia para recuperación de ID-UAM"
+    - recovery_steps:
+        type: string
+        description: "Pasos para recuperar ID-UAM"
+    - activation_code:
+        type: string
+        description: "Código de activación para cambiar contraseña"
+    - user_account:
+        type: string
+        description: "Nombre de usuario para recuperación"
+    - identificador_id_uam:
+        type: string
+        description: "Identificador único de ID-UAM"
+    - password_change_steps:
+        type: string
+        description: "Pasos para cambiar la contraseña"
+
+conversation:
+  number: 5
+  max_cost: 0.75
+  goal_style:
+    steps: 30
+  interaction_style:
+    - single questions
+```
+
+Aquí hay dos problemas:
+- La declaración de `identificador_id_uam` (con `type` y `data`) quedó **pegada debajo del goal de `user_account`**, así que YAML la interpreta como parte de ese goal y no como una variable independiente. Por eso `{{identificador_id_uam}}` queda sin declarar → error de validación.
+- A `user_account` le falta el `function` (por ejemplo `forward()`), que es obligatorio para saber cómo se eligen los valores.
+
+**2. Falta `model_prov` en el bloque `llm`**
+En el resto de tus perfiles del proyecto aparece `model_prov: openai`. Aquí no está. No es obligatorio (hay defaults), pero para mantener consistencia con tus otros perfiles conviene añadirlo.
+
+**3. Falta `interaction_style` en `conversation`**
+Tus otros perfiles usan `interaction_style: [single questions]`. Aquí no lo pusiste, así que se usaría el comportamiento por defecto. Si quieres que el usuario haga una pregunta por turno (como en los demás), añádelo.
+
+**4. Detalle menor en `output`**
+Tienes `contact_info` y `contact_information` — nombres muy parecidos que pueden confundir a la hora de escribir reglas de Sensei-check. No rompe nada, pero te sugiero dejarlos bien diferenciados (por ejemplo `cau_contact_info` y `id_uam_recovery_contact`). Es opcional, pero ayuda mucho cuando escribas reglas que lean `conv[i].<campo>`.
+
+## ✅ Versión corregida
+
+```yaml
+test_name: Asistencia Técnica y Cuentas
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: "Usuario con problemas técnicos relacionados con plataformas virtuales y cuentas de usuario."
+  context:
+    - "Te enfrentas a una serie de problemas técnicos al acceder a tus plataformas virtuales y cuentas de usuario, lo que está afectando tu productividad."
+    - "Necesitas resolver estos inconvenientes lo más pronto posible, ya que dependen de ciertas funcionalidades para completar tus tareas diarias."
+    - "Además, te gustaría asegurarte de que tu información de cuenta esté protegida y accesible en todo momento."
+  goals:
+    - "Solicitar información sobre los métodos disponibles para contactar al Centro de Atención a Usuarios (CAU)."
+    - "Preguntar sobre los procedimientos para obtener una cuenta ID-UAM."
+    - "Solicitar los pasos necesarios para establecer la contraseña por primera vez."
+    - "Pedir información sobre el proceso de recuperación del {{identificador_id_uam}} si lo he olvidado."
+    - "Consigue el código de activación necesario para cambiar la contraseña de {{user_account}}."
+    - identificador_id_uam:
+        function: forward()
+        type: string
+        data:
+          - '123456789'
+          - '987654321'
+          - '112233445'
+          - '556677889'
+          - '998877665'
+    - user_account:
+        function: forward()
+        type: string
+        data:
+          - usuario123
+          - maria.garcia
+          - juan_lopez_2023
+          - pedro.salas
+          - sara.martinez
+
+chatbot:
+  is_starter: false
+  fallback: "¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_info:
+        type: string
+        description: "Detalles de contacto del CAU"
+    - operational_hours:
+        type: string
+        description: "Horarios operativos del CAU"
+    - available_services_list:
+        type: string
+        description: "Servicios disponibles para crear cuenta"
+    - password_setup_link:
+        type: string
+        description: "Enlace para establecer contraseña"
+    - contact_information:
+        type: string
+        description: "Opciones de asistencia para recuperación de ID-UAM"
+    - recovery_steps:
+        type: string
+        description: "Pasos para recuperar ID-UAM"
+    - activation_code:
+        type: string
+        description: "Código de activación para cambiar contraseña"
+    - user_account:
+        type: string
+        description: "Nombre de usuario para recuperación"
+    - identificador_id_uam:
+        type: string
+        description: "Identificador único de ID-UAM"
+    - password_change_steps:
+        type: string
+        description: "Pasos para cambiar la contraseña"
+
+conversation:
+  number: 5
+  goal_style:
+    steps: 30
+  interaction_style:
+    - single questions
+```
+
+## 💡 Un par de consejos extra
+
+- **`number: 5` con dos `forward()`**: como tienes dos variables con `forward()`, podrías usar `number: combinations` para aprovechar la matriz de combinaciones completa (5 × 5 = 25 casos). Si prefieres quedarte con 5 conversaciones, está perfecto así — solo ten en cuenta que no se cubrirán todas las combinaciones.
+- **`role`**: en tu versión original faltaba; lo añadí porque es una pieza clave del perfil (describe quién es el usuario simulado). Si ya lo tenías en otro sitio, ignóralo 😉.
+- **`max_cost`**: tus otros perfiles tienen `conversation.max_cost` (0.5, 0.75…). Aquí no lo pusiste; si quieres controlar el gasto, añádelo.
+
+¿Quieres que te ayude también a revisar las **reglas de Sensei-check** que lean estos campos, o a ajustar el `number` para aprovechar las combinaciones? ¡Aquí estoy! 🙌

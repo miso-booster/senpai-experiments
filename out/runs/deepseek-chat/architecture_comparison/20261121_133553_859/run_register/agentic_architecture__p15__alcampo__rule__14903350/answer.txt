@@ -1,0 +1,46 @@
+Great news — I found a profile that matches your rule perfectly! 🎯
+
+## What's wrong with your rule
+
+Based on `sensei-check-doc.md` and `rules-examples.md`, there are a few issues:
+
+1. **Typo in the key**: `descriptin` → should be `description`.
+2. **`when` references fields that don't exist as inputs**: `conv[i].user_request` is not a `chatbot.output` field in any profile. In metamorphic rules, `when` filters over **extracted outputs** (`conv[i].<field>`), not free-form request labels.
+3. **`if`/`then` misuse**: you wrote `if: ... is not None` with no `then`. The `if`/`then` form is an implication (precondition → expected relation). For a simple "these fields must be filled" check, a single-conversation `oracle` is the right tool.
+4. **`conversations: 2` is unnecessary**: your check doesn't compare two conversations — it just verifies outputs are present. That's a `conversations: 1` oracle.
+
+## Matching profile found ✅
+
+`customer_service_assistance.yaml` exposes exactly the fields you need:
+
+- `contact_options` (string) — methods to reach customer service for payment issues
+- `customer_service_number` (string) — contact number for general inquiries
+- plus `hours_of_operation`, `online_form_instructions`, `required_fields`, `message_details`
+
+So this is a **profile-bound rule** targeting `customer_service_assistance.yaml`.
+
+## Proposed fixed rule
+
+```yaml
+name: customer_service_contact_info
+description: >-
+  Ensures the chatbot provides contact options and a customer service number
+  for customer service inquiries (profile: customer_service_assistance).
+conversations: 1
+active: true
+oracle: |
+  conv[0].contact_options is not None and conv[0].customer_service_number is not None
+yields: |
+  f"Missing contact info — contact_options={conv[0].contact_options}, customer_service_number={conv[0].customer_service_number}"
+```
+
+**Key changes:**
+- Fixed `descriptin` → `description`.
+- `conversations: 2` → `1` (single-conversation oracle, no comparison needed).
+- Dropped the invalid `when: conv[i].user_request == ...` filter (those fields don't exist).
+- Replaced the dangling `if:` with a proper `oracle:` boolean check.
+- Added `yields:` for a helpful failure message (per `rules-examples.md`).
+
+---
+
+**Before I finalize:** is `customer_service_assistance.yaml` the profile you want this rule bound to? If yes, I'll confirm it's ready to save. If you'd rather keep it as a **2-conversation metamorphic** rule (e.g., "both conversations must expose contact info"), let me know and I'll adapt it accordingly. 😊

@@ -1,0 +1,30 @@
+Perfect! Since you want a **profile-agnostic** rule (Case B), I'll build it using only generic helpers — no `chatbot.output` fields involved. The most fitting helper here is `utterance_index('assistant', ...)`, which is LLM-backed and finds the turn where the assistant mentions a topic. I'll also add a `when` filter so the rule only applies to conversations where the user actually asked about promotions (otherwise it'd be a false positive).
+
+Here's the rule:
+
+```yaml
+name: chatbot_provides_promotions_info
+description: >-
+  When the user asks about current promotions, the chatbot must provide
+  information about them at some point in the conversation.
+  Profile-agnostic rule (uses only generic helpers, no chatbot.output fields).
+conversations: 1
+active: True
+when: utterance_index('user', 'asking about current promotions or discounts') > 0
+oracle: utterance_index('assistant', 'providing information about current promotions or discounts') > 0
+yields: f"The chatbot did not provide information about current promotions when asked"
+```
+
+### How it works 🔍
+- **`when`**: filters to conversations where the user actually asked about promotions (`utterance_index('user', ...) > 0`). This keeps the rule meaningful and avoids flagging conversations where promotions never came up.
+- **`oracle`**: asserts the assistant mentioned promotions info somewhere (`utterance_index('assistant', ...) > 0`).
+- **`yields`**: a helpful failure message.
+
+### Notes & caveats ⚠️
+- `utterance_index` is **LLM-backed** (per `sensei-check-doc.md` §6.4), so expect minor variability — the phrasing of the topic descriptions matters. You can tweak the strings (e.g., `'current promotions, sales, or special offers'`) to better match your domain.
+- This rule is **intentionally profile-agnostic** — it relies only on the documented generic helper `utterance_index` and does **not** reference any `chatbot.output` slots. That means it works across any profile.
+- If you'd rather make it stricter (e.g., require the bot to mention a *specific* promo name or discount percentage), that would need a profile-bound field and a different helper like `semantic_content`. Let me know if you want that variant!
+
+Docs relied on: `sensei-check-doc.md` (helpers table & global-rule guidance) and `rules-examples.md` (rule structure conventions).
+
+Want me to also add a companion rule that checks the bot *doesn't* invent promotions when the user didn't ask? 😊

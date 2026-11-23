@@ -1,0 +1,26 @@
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el chatbot de Ada UAM devuelve la información correcta del CAU: dirección física, correo electrónico y teléfono.
+
+Como los campos `contact_email`, `contact_phone` y `physical_address` vienen del `chatbot.output` del perfil *Consultante de servicios y asistencia del CAU*, la regla es **profile-bound** y usa esos mismos nombres.
+
+Para comparar de forma robusta (el bot puede escribir el email con mayúsculas, el teléfono con espacios o guiones, y la dirección con variaciones), uso `semantic_content`, que es un helper LLM-backed ideal para verificar coincidencia semántica en texto libre.
+
+```yaml
+name: cau_contact_info_correct
+description: >
+  Verifica que el chatbot devuelve la información de contacto correcta del CAU
+  (email, teléfono y dirección física) para el perfil "Consultante de servicios
+  y asistencia del CAU".
+conversations: 1
+active: true
+oracle: |
+  semantic_content(contact_email, 'cau@uam.es') and
+  semantic_content(contact_phone, '91 497 4029') and
+  semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+yields: |
+  f"Datos del CAU incorrectos o incompletos -> email: {contact_email}, teléfono: {contact_phone}, dirección: {physical_address}"
+```
+
+Un par de notas rápidas para que quede perfecta 👇
+
+- **`semantic_content(value, desc)`** es tolerante a variaciones de formato (mayúsculas, espacios, guiones), así que no te romperá si el bot escribe `91-497-4029` o `CAU@UAM.ES`. Si prefieres una comprobación más estricta y determinista, podrías usar comparaciones exactas con `extract_float(contact_phone) == 914974029` para el teléfono, pero perderías tolerancia en la dirección.
+- Si quieres **separar los tres chequeos** en reglas independientes (útil para saber exactamente qué falla), puedo dividirlas en tres reglas de una sola condición cada una. ¿Te las preparo así? 😊

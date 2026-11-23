@@ -1,0 +1,33 @@
+¡Perfecto! Ya tengo todo lo que necesito 😊. Encontré un perfil que encaja muy bien con tu petición.
+
+## Perfil candidato
+
+**`pizza_and_drink_order_placement.yaml`** — un cliente que pide una pizza y bebidas para recoger.
+
+Sus campos de `chatbot.output` (los que las reglas pueden leer como `conv[i].<campo>`) son:
+
+- `pizza_options`
+- `drink_options`
+- `order_summary` ← *resumen completo del pedido, incluyendo número y tipo de bebidas*
+- `total_cost`
+- `estimated_readiness_time`
+- `pickup_location`
+- `order_id`
+
+## Sobre la regla que quieres
+
+Tu petición es: *"comprobar si el asistente confirma que añadió la bebida que el usuario pidió"*.
+
+Aquí hay un matiz importante que quiero comentarte antes de escribir el YAML:
+
+- El perfil **no** expone un campo separado tipo `drink_type` o `drink_confirmed`. Lo que sí expone es `order_summary`, que según su descripción **incluye el tipo y número de bebidas** del pedido.
+- Por tanto, la forma más limpia de comprobar "el asistente confirma la bebida" es verificar que el asistente **menciona la bebida pedida en su resumen del pedido**. Para eso el helper más adecuado es `utterance_index('assistant', ...)` (basado en LLM), que busca en qué turno el asistente habla de un tema.
+
+## Antes de generarla, confírmame esto 🙏
+
+1. **¿Este es el perfil correcto?** (`pizza_and_drink_order_placement.yaml`) ¿O quieres que la regla apunte a otro (p. ej. `pizza_order_test_custom.yml`)?
+2. **¿Cómo quieres comprobar la confirmación?** Te propongo dos enfoques:
+   - **(A) Basado en el resumen del pedido** (recomendado): comprobar que `order_summary` no está vacío y que el asistente menciona la bebida pedida. Es lo más alineado con los campos reales del perfil.
+   - **(B) Basado en el diálogo**: usar `utterance_index('assistant', 'confirms the drink order') > 0` para detectar que el asistente confirma la bebida en algún turno (más genérico, no depende de `order_summary`).
+
+Dime **perfil + enfoque (A o B)** y te dejo la regla lista en YAML. Si quieres, puedo incluso combinar ambos en una sola regla. 🚀

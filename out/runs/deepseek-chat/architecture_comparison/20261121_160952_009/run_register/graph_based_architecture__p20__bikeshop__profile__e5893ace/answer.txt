@@ -1,0 +1,87 @@
+Hey there! 😊 Happy to help you build that profile — testing date/time handling is a great idea, and Sensei's `forward()`/`another()` functions are perfect for covering different days and times. Let me walk you through it 👇
+
+## 🚲 Profile: `wheel_change_appointment.yml`
+
+```yaml
+test_name: "wheel_change_appointment"
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who wants to book an appointment at a bike shop
+    to have the wheels on your bike changed. You are friendly but direct,
+    and you care about getting a specific day and time confirmed.
+  context:
+    - "Your current wheels are worn out and you want them replaced with new ones."
+    - "You rely on your bike for daily commuting, so you want the appointment soon."
+    - "You are flexible on the exact day but you have a preferred time in mind."
+  goals:
+    - "Ask to book an appointment to have the wheels of your bike changed."
+    - "Request the appointment for {{appointment_date}} at {{appointment_time}}."
+    - "Confirm the date and time the shop offers you."
+    - appointment_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - "next Monday"
+          - "November 6th, 2024"
+          - "the day after tomorrow"
+          - "next Saturday"
+    - appointment_time:
+        function: another()
+        type: string
+        data:
+          - "09:00"
+          - "10:30"
+          - "13:00"
+          - "15:30"
+          - "17:00"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmed_date:
+        type: date
+        description: "The date of the wheel-change appointment confirmed by the assistant."
+    - confirmed_time:
+        type: time("hh:mm")
+        description: "The time of the appointment confirmed by the assistant."
+    - confirmed_service:
+        type: string
+        description: "The service to be performed (wheel change / wheel replacement), as confirmed by the assistant."
+    - appointment_confirmation:
+        type: string
+        description: "The full confirmation message from the chatbot, including date and time."
+
+conversation:
+  number: combinations(1, forward)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 8
+  interaction_style:
+    - default
+```
+
+## 🧠 Why it's built this way
+
+- **`appointment_date` uses `forward()`** → it walks deterministically through every date, so you get full coverage of each day you care about. 🗓️
+- **`appointment_time` uses `another()`** → it cycles through times without repeating until the pool is exhausted, so you don't hammer the same slot over and over. ⏰
+- **`conversation.number: combinations(1, forward)`** → since you only have one `forward()` variable, this uses the full forward matrix (all dates). If you want *every date × every time* combination, swap `appointment_time` to `forward()` too and use `combinations(1, forward)` — that gives you the full grid. 🔁
+- **`goal_style: all_answered` with `export: true`** → you'll get a CSV showing which outputs were satisfied, super handy for spotting date/time mismatches. 📊
+- **`chatbot.output`** captures `confirmed_date` and `confirmed_time` as proper `date`/`time` types — so later Sensei-check rules can compare them cleanly (e.g., `conv[0].confirmed_date`). ✅
+
+## 💡 Quick tip
+
+If you want to stress-test the bot's date *parsing* even more, you can mix in relative and absolute formats in `appointment_date` (like I did: `tomorrow`, `next Monday`, `November 6th, 2024`). That's a great way to see whether the chatbot normalizes them correctly. 😎
+
+Want me to also add a **Sensei-check rule** that verifies the confirmed date matches the requested one? Just say the word and I'll draft it for you! 🙌

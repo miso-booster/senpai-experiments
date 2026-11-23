@@ -1,0 +1,77 @@
+Hey there! 😊 Happy to help you build that profile — sounds like a fun one to test! Let's get your appointment-scheduling scenario set up with some nice date/time variety so the chatbot really gets a workout 🚴‍♂️
+
+Here's a complete, runnable profile you can drop into your `profiles/` folder:
+
+```yaml
+test_name: "wheel_change_appointment_scheduler"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who wants to book an appointment at a bike shop to have
+    your wheels changed. Be friendly and natural, and make sure to confirm the
+    date, time, and service with the assistant.
+  context:
+    - "Your current wheels are worn out and you need them replaced soon."
+    - "You rely on your bike for daily commuting, so you want the appointment booked quickly."
+    - "You are flexible but prefer a morning or early afternoon slot."
+  goals:
+    - "Ask to set an appointment to have my wheels changed on {{ap_date}} at {{hour}}"
+    - "Confirm the date, time, and service for the appointment"
+    - ap_date:
+        function: forward()
+        type: string
+        data:
+          - tomorrow
+          - "November 6th, 2024"
+          - next Monday
+          - "December 12th, 2024"
+    - hour:
+        function: another()
+        type: string
+        data: ["09:00", "10:30", "13:00", "15:30", "17:00"]
+    - service:
+        function: default()
+        type: string
+        data: ["wheel change"]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - confirmed_date:
+        type: date
+        description: "the date of the appointment, confirmed by the assistant"
+    - confirmed_time:
+        type: string
+        description: "the hour of the appointment, confirmed by the assistant"
+    - confirmed_service:
+        type: string
+        description: "the service to be done in the appointment (wheel change), confirmed by the assistant"
+
+conversation:
+  number: combinations(1, forward)
+  goal_style:
+    all_answered:
+      export: true
+      limit: 6
+  interaction_style:
+    - default
+```
+
+### A few notes on the choices 👇
+
+- **`ap_date` uses `forward()`** so every date in the list gets exercised deterministically — perfect for checking how the bot handles different days (relative like *"tomorrow"*, absolute like *"November 6th, 2024"*, and weekday-based like *"next Monday"*). 🗓️
+- **`hour` uses `another()`** so you get unique time slots per conversation without repeats until the pool runs out — great for testing time parsing and edge cases like `15:30` vs `17:00`.
+- **`conversation.number: combinations(1, forward)`** uses the full forward matrix (4 dates × 5 hours = 20 combos) so you cover every date/time pairing. If you want to trim cost, swap to `combinations(0.5, forward)` for half the coverage. 💸
+- **`goal_style.all_answered` with `export: true`** gives you a CSV showing which outputs were satisfied — super handy for spotting where the bot drops the ball on date/time confirmation. 📊
+- **`chatbot.output`** extracts `confirmed_date`, `confirmed_time`, and `confirmed_service` so you can later write Sensei-check rules against them (e.g., `conv[i].confirmed_date is not None`). 🔍
+
+Want me to also whip up a **Sensei-check rule** that verifies the confirmed date/time actually matches what the user requested? Just say the word and I'll draft it! 😄

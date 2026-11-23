@@ -1,0 +1,53 @@
+conversation ID: one_node_architecture__p26__bikeshop__rule__645a7094
+$$$
+Hey there! 👋 Happy to help you fix this rule — there are a few things that need adjusting. Let me walk you through them 😊
+
+## What's wrong with the current rule
+
+1. **`conversations: 2` is unnecessary** — you're only checking a single value against a fixed number, so this should be `conversations: 1`. Metamorphic rules (2+) are for comparing *pairs* of conversations, which isn't what you want here.
+
+2. **`when: conv[0].tune_up_price == 50` is a filter, not a check** — this would only *select* conversations where the price is already 50, so the rule would never actually catch a wrong price. The comparison belongs in the `oracle` (or `then`), not in `when`.
+
+3. **`then: "The tune-up price is $50."` is a string, not a boolean expression** — Sensei-check needs a Python expression that evaluates to `True`/`False`. A plain sentence won't be evaluated as a check.
+
+4. **`conv[0].tune_up_price` may be a `money` type** — in your `bike_repair_and_maintenance_scheduler` profile, `tune_up_price` is declared as `type: money`. To compare it numerically, wrap it with `extract_float(...)`. Also, if you want to be strict about the currency, you can check `currency(...)` too.
+
+5. **`if: conv[0].tune_up_price is not None`** — this is fine as a guard, but it's cleaner to just use a single `oracle` for a simple equality check.
+
+## Fixed rule ✅
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price is equal to $50 (USD).
+conversations: 1
+oracle: extract_float(tune_up_price) == 50 and currency(tune_up_price) == 'USD'
+yields: f"Expected tune-up price of $50, but got {tune_up_price}"
+```
+
+## What I changed and why
+
+| Change | Reason |
+|--------|--------|
+| `conversations: 2` → `1` | Single-value check, no pair comparison needed. |
+| Removed `when: conv[0].tune_up_price == 50` | It was filtering *out* the very cases you want to catch. |
+| Replaced `if`/`then` with a single `oracle` | Simpler and correct for a plain equality check. |
+| `conv[0].tune_up_price` → `tune_up_price` | In single-conversation rules you access fields directly (no `conv[i]` needed). |
+| Wrapped with `extract_float(...)` | `tune_up_price` is `type: money`, so we parse the numeric value. |
+| Added `currency(...) == 'USD'` | Ensures it's actually dollars, not just the number 50. |
+| Added `yields:` | Gives a helpful failure message showing the actual value. |
+
+## A couple of things to double-check on your side 👀
+
+- The field name must match your profile's `chatbot.output`. In `bike_repair_and_maintenance_scheduler.yaml` you have `tune_up_price` ✅ — but note that `bike_service_and_repair_inquirer.yaml` also has a `tune_up_price` field, so this rule will apply to whichever profile(s) you run it against.
+- If you want to be **lenient about currency** (e.g., accept the number regardless of symbol), just drop the `currency(...)` part:
+
+```yaml
+name: check_tune_up_price
+description: Checks that the tune-up price is equal to 50 (any currency).
+conversations: 1
+oracle: extract_float(tune_up_price) == 50
+yields: f"Expected tune-up price of 50, but got {tune_up_price}"
+```
+
+Hope that clears it up! Let me know if you'd like a version that also checks the price is *at least* $50, or one that combines it with the `tune_up_offered` confirmation 🚲✨
+$$$

@@ -1,0 +1,70 @@
+conversation ID: one_node_architecture__p4__ada_uam__profile__69ad7899
+$$$
+¡Claro que sí! 😊 Vamos a crear un perfil enfocado en un usuario que busca soporte del CAU y quiere obtener esos cuatro datos clave: teléfono, email, dirección física y horarios.
+
+He revisado tus perfiles existentes (por ejemplo `consultante_de_servicios_y_asistencia_del_cau.yaml`) y ya tienes campos muy parecidos en `chatbot.output` (`contact_email`, `contact_phone`, `physical_address`, `service_hours`). Para mantener consistencia entre perfiles y que tus reglas puedan reutilizar los mismos nombres, te propongo **reusar esos nombres de campo** en este nuevo perfil. Así, si más adelante escribes una regla tipo `data_collected()` o `missing_slots()`, funcionará igual de bien en ambos. 👌
+
+Aquí tienes el perfil listo para pegar en `profiles/`:
+
+```yaml
+test_name: "Soporte del CAU: contacto y horarios"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita contactar con el Centro de Atención a Usuarios (CAU)
+    de la UAM para resolver una incidencia con tu cuenta. Quieres obtener los datos
+    de contacto y los horarios de atención para poder comunicarte por el canal que
+    más te convenga.
+  context:
+    - personality: personalities/formal-user
+    - "Tienes una incidencia con tu cuenta ID-UAM y prefieres hablar con una persona."
+    - "Antes de escribir o llamar, quieres confirmar que el CAU está abierto."
+    - "Valoras respuestas claras y concretas: teléfono, email, dirección y horario."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico de contacto del CAU."
+    - "Preguntar por la dirección física donde se encuentra el CAU."
+    - "Consultar el horario de atención del CAU para saber cuándo puedo contactar."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👀:
+
+- **`chatbot.output` como contrato**: los cuatro campos (`contact_phone`, `contact_email`, `physical_address`, `service_hours`) son los que luego podrás leer en reglas como `conv[0].contact_phone`. Si el bot no los expone en la conversación, el extractor los dejará vacíos y una regla como `data_collected() == True` fallará — justo lo que quieres detectar. ✅
+- **`single questions`**: hace que el usuario pregunte de una en una, lo que da al bot la oportunidad de responder cada dato por separado. Si prefieres forzar que pida todo junto, cambia a `all questions`.
+- **`max_cost`**: puse un tope de 0.5 $ por conversación para que puedas iterar sin sustos. Ajusta según tu presupuesto.
+
+¿Quieres que te prepare también una **regla** que verifique que estos cuatro campos se rellenan correctamente (por ejemplo, que el teléfono tenga formato válido o que el horario no esté vacío)? ¡Dímelo y la montamos! 🚀
+$$$

@@ -1,0 +1,87 @@
+conversation ID: graph_based_architecture__p34__pizza_shop__profile__8b7fcea2
+$$$
+Hey there! 😊 Great idea — that's a really nice scenario to test how gracefully your bot handles a mid-conversation pivot. Let me walk you through a profile that does exactly that.
+
+## 🍕 Profile: `custom_to_predefined_pivot`
+
+Here's a full, runnable profile that starts the user on a **custom pizza** and then has them **change their mind** to a **predefined pizza**:
+
+```yaml
+test_name: "custom_to_predefined_pivot"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza. You start by building a custom pizza,
+    but halfway through you change your mind and decide to order a predefined
+    pizza instead. Be natural about the switch — apologize lightly and explain
+    you changed your mind.
+  context:
+    - "You are ordering for a casual dinner at home."
+    - "You initially want full control over toppings, but then decide a predefined pizza is simpler."
+  goals:
+    - "Ask what pizza types are available."
+    - "Start a custom pizza with {{custom_size}} size and {{toppings}} toppings."
+    - "Change your mind and ask for a predefined {{pizza_type}} pizza instead."
+    - "Confirm the final order and ask for the total price."
+    - custom_size:
+        function: forward()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: forward()
+        type: string
+        data: [cheese, mushrooms, pepperoni, olives]
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Pepperoni, Four cheese, Vegetarian]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Can you rephrase?"
+  output:
+    - custom_pizza_request:
+        type: string
+        description: "The chatbot's response when the user starts building a custom pizza."
+    - order_change_acknowledged:
+        type: string
+        description: "The chatbot's response when the user switches to a predefined pizza. Look for acknowledgement of the change."
+    - final_order_summary:
+        type: string
+        description: "The final confirmed order, which should reflect the predefined pizza, not the custom one."
+    - total_price:
+        type: money
+        description: "The total price of the final (predefined) pizza order."
+
+conversation:
+  number: 4
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - change your mind
+    - single questions
+```
+
+## 🔑 Why this works
+
+- **`change your mind`** in `interaction_style` is the key ingredient here — it nudges the simulated user to actually pivot during the conversation, which is exactly your scenario. 🎯
+- The **goals** are ordered so the user *first* starts a custom pizza, *then* asks for a predefined one. This gives the bot a clear "before and after" to react to.
+- The **`chatbot.output`** fields are designed so you (or Sensei-check rules) can verify the bot **acknowledged the change** and that the **final order reflects the predefined pizza** — not the abandoned custom one. That's the real thing you're testing here. 👀
+
+## 💡 A couple of tips
+
+- If you want to make the pivot *more* explicit and less dependent on the interaction style, you can also add a goal like: `"Say 'actually, never mind the custom one — I'll just take a {{pizza_type}}'."`
+- If you later want to write **Sensei-check rules** on this, `final_order_summary` and `total_price` are the fields to target — e.g., checking that the summary mentions the predefined type and not the custom toppings.
+
+Want me to also sketch a **rule** that verifies the final order doesn't still contain the custom toppings? Just say the word and I'll draft it for you! 🙌
+$$$

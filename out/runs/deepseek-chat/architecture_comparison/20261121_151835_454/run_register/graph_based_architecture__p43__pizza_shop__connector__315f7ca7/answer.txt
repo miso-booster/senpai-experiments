@@ -1,0 +1,91 @@
+¡Hola! 😊 Claro que sí, vamos a revisar ese conector juntos.
+
+La buena noticia: **tu conector está casi perfecto**. De hecho, tal como lo tienes, ya debería funcionar correctamente. Déjame explicarte por qué 👇
+
+## Revisión campo por campo
+
+| Campo | Tu valor | ¿Correcto? |
+|-------|----------|------------|
+| `base_url` | `https://api.anotherexample.com` | ✅ |
+| `send_message.path` | `/api/chat` | ✅ |
+| `send_message.method` | `POST` | ✅ |
+| `headers` | `Content-Type: application/json` | ✅ |
+| `payload_template` | `message.text = "{user_msg}"` | ✅ |
+| `response_path` | `response.text` | ✅ |
+
+## ¿Por qué funciona?
+
+**1. El payload coincide con tu request** 🎯
+Tu `payload_template` genera exactamente esto:
+```json
+{
+  "message": {
+    "text": "hola"
+  }
+}
+```
+Que es justo lo que espera la API. El placeholder `{user_msg}` se sustituye por el mensaje del usuario. ¡Perfecto!
+
+**2. El `response_path` apunta bien** 🎯
+Tu respuesta es:
+```json
+{
+  "status": "success",
+  "response": {
+    "text": "¡Hola! ¿Cómo puedo ayudarte hoy?"
+  }
+}
+```
+Con `response_path: "response.text"` navegas a `response["text"]` → `"¡Hola! ¿Cómo puedo ayudarte hoy?"`. ¡Exacto! ✅
+
+## Un detalle a tener en cuenta ⚠️
+
+El único punto que **no puedo verificar** es si la API requiere algún tipo de **autenticación** (token, API key, etc.). Si al probarlo recibes un `401` o `403`, tendrías que añadir la cabecera correspondiente, por ejemplo:
+
+```yaml
+name: "My Custom Bot"
+base_url: "https://api.mychatbot.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "Bearer tu-api-key"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+## Versión final (idéntica a la tuya, lista para copiar) ✅
+
+```yaml
+name: "Test Connector 2"
+base_url: "https://api.anotherexample.com"
+send_message:
+  path: "/api/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message:
+      text: "{user_msg}"
+response_path: "response.text"
+```
+
+## ¿Cómo comprobarlo? 🔍
+
+Puedes probarlo así, igual que en los ejemplos de la guía:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("ruta/a/test-connector-2.yml")
+success, response = bot.execute_with_input("hola")
+print(response)
+```
+
+Si te devuelve `¡Hola! ¿Cómo puedo ayudarte hoy?`, ¡todo está en orden! 🎉
+
+---
+
+Cuéntame: **¿estás teniendo algún error concreto al probarlo?** (un código HTTP, un mensaje de error, una respuesta vacía…). Con ese detalle puedo afinar aún más la ayuda. ¡Aquí estoy para lo que necesites! 😊

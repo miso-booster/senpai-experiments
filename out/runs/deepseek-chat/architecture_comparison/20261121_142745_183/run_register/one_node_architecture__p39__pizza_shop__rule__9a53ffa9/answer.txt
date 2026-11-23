@@ -1,0 +1,22 @@
+Hey there! 😊 Happy to help with that metamorphic rule.
+
+One quick heads-up before the YAML: for this rule to work, your profile's `chatbot.output` needs a `drink` field (so the rule can compare conversations with and without a drink) and a `price` field (to compare costs). If your profile uses different names, just swap them in.
+
+Here's the rule — it checks that, holding size and toppings equal, a conversation with a drink costs exactly $2 more than one without:
+
+```yaml
+name: drink_costs_two_extra
+description: Adding a drink to an otherwise identical order costs exactly $2 more
+conversations: 2
+when: conv[0].size == conv[1].size and len(conv[0].toppings) == len(conv[1].toppings)
+if:   conv[0].drink is not None and conv[1].drink is None
+then: abs((extract_float(conv[0].price) - extract_float(conv[1].price)) - 2) < 1e-03
+```
+
+A couple of notes to make it behave nicely 👀:
+
+- **`when`** keeps the comparison fair — same size and same number of toppings, so the only real difference is the drink.
+- **`if`/`then`** reads like a law: *if* one order has a drink and the other doesn't, *then* the price gap should be $2 (with a tiny tolerance for float rounding).
+- If your `drink` field is a list (e.g. `list[string]`), swap the `if` to something like `len(conv[0].drink) > 0 and len(conv[1].drink) == 0`.
+
+Want me to tweak it for a different currency, a per-drink multiplier, or adapt it to your exact `chatbot.output` field names? Just say the word! 🙌

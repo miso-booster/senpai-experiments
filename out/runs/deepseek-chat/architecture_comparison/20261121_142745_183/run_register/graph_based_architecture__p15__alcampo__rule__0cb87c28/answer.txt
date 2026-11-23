@@ -1,0 +1,86 @@
+Hey there! 👋 Happy to help you get this rule working 😊
+
+Before I dive in, I want to flag a few things I noticed — some of them are quick fixes, and one is a bit more structural. Let me walk you through them one by one.
+
+---
+
+## 🔍 Issues I spotted
+
+### 1. Typo in the header
+```yaml
+name: conversation_lengths
+description: The number of turns of the user and the chatbot equal the conversation length
+conversations: 1
+active: false
+oracle: conversation_length() == conversation_length('assistant') + conversation_length('user')
+```
+That should be `description:`. Easy fix ✅
+
+### 2. Missing `then:` clause
+Your rule has an `if:` but **no `then:`**. In Sensei-check, the `if`/`then` pair is an implication — `if` sets the precondition, `then` is the relation that must hold. Without `then`, the rule has nothing to assert. 🚩
+
+### 3. `when:` uses fields that may not exist
+```yaml
+name: contact_options_consistency
+description: Compares conversations about contact options and customer service numbers
+conversations: 2
+when: conv[0].user_request == 'contact options' and conv[1].user_request == 'customer service number'
+oracle: conv[0].user_request != conv[1].user_request
+```
+`user_request` is not a standard `chatbot.output` field. Unless your SENSEI Chat profile explicitly exposes `user_request` in `chatbot.output`, this filter will never match anything. Same goes for `contact_options` and `customer_service_number` — those need to be real `chatbot.output` slots in your profile. ⚠️
+
+### 4. The relation itself is a bit weak
+Even if the fields exist, `if: X is not None and Y is not None` with no `then:` doesn't really *check* anything meaningful. A metamorphic rule should assert a **relation** — e.g., "when the user asks for contact options, the bot must actually surface a phone number / email / hours."
+
+---
+
+## ✅ A working version (assuming your profile exposes the right fields)
+
+Here's a corrected rule that keeps your intent — checking that the chatbot provides correct contact info across two comparable conversations:
+
+```yaml
+name: customer_service_contact_info
+description: When users ask for contact options or the customer service number, the chatbot must surface valid contact information.
+conversations: 2
+when: conv[0].user_request in ['contact options', 'customer service number'] and conv[1].user_request in ['contact options', 'customer service number']
+if: conv[0].user_request != conv[1].user_request
+then: conv[0].contact_options is not None and conv[1].customer_service_number is not None
+```
+
+What changed:
+- Fixed the `description` typo ✏️
+- Added a real `then:` clause so the rule actually asserts something
+- Made `when:` a bit more forgiving (both conversations must be about contact info, but not necessarily the exact same phrasing)
+- `if:` now expresses the metamorphic variation (different request types → both must still yield contact info)
+
+---
+
+## 🧠 But wait — do these fields exist in your profile?
+
+This is the important part 👀. For the rule above to work, your SENSEI Chat profile's `chatbot.output` **must** expose:
+
+- `user_request` (string)
+- `contact_options` (string or list)
+- `customer_service_number` (string)
+
+If any of those are missing or named differently (e.g., `phone_number` instead of `customer_service_number`), the rule will silently fail to match. Could you share the `chatbot.output` block of the profile this rule targets? Then I can tailor the field names exactly to your schema 🎯
+
+---
+
+## 💡 Alternative: a simpler, more robust version
+
+If you don't have a `user_request` slot, you can lean on the built-in helpers instead. For example, checking that the bot actually *mentions* contact info when asked:
+
+```yaml
+name: customer_service_contact_info
+description: Chatbot surfaces contact information when the user asks for it.
+conversations: 1
+if: utterance_index('user', 'contact') > 0 or utterance_index('user', 'customer service') > 0
+then: utterance_index('assistant', 'phone') > 0 or utterance_index('assistant', 'email') > 0 or utterance_index('assistant', 'hours') > 0
+```
+
+This uses `utterance_index` (LLM-backed) and doesn't depend on any custom `chatbot.output` fields — handy if your profile is still being built 🌱
+
+---
+
+Want me to adapt either version to your actual profile schema? Just paste the `chatbot.output` section and I'll wire it up precisely 💪

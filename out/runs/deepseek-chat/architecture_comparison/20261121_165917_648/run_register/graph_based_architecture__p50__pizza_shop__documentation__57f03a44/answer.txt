@@ -1,0 +1,54 @@
+Great question! 😊 Let me break it down for you.
+
+## What is an oracle? 🔮
+
+In Sensei-check, an **oracle** is the part of a rule that states **what condition must be true** for a conversation (or set of conversations) to pass.
+
+Think of it as the "expected outcome" — the thing you're checking against. The name comes from the classic software-testing idea of an *oracle*: the source of truth that tells you whether a test passed or failed.
+
+## Where it fits in a rule
+
+A Sensei-check rule can express its check in **two ways**:
+
+### 1. A single `oracle:` expression
+
+```yaml
+name: unique_order_ids
+description: No duplicate order_id across all conversations
+conversations: all
+oracle: is_unique('order_id')
+```
+
+Here the `oracle` is one boolean expression. If it evaluates to `True`, the rule passes. ✅
+
+### 2. An `if:` / `then:` pair (for implications)
+
+```yaml
+name: more_toppings_cost_more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Here the `then:` clause plays the role of the oracle — it's the relation that must hold **whenever** the `if:` precondition is met.
+
+## A quick analogy 🍕
+
+Imagine you're checking pizza orders:
+- **`when:`** = "only look at orders with the same size and drink" (the filter)
+- **`if:`** = "whenever one has more toppings…"
+- **`then:`** = "…the price must be higher" ← **this is the oracle**
+
+So the oracle is the **"what should be true"** part — the actual assertion your rule is making. Everything else (`when`, `if`) just sets up *which* conversations to compare and *under what conditions*.
+
+## Handy extras 💡
+
+- You can pair an oracle with a `yields:` message to explain failures, e.g.:
+  ```yaml
+  oracle: data_collected() == True
+  yields: f"Missing slots: {missing_slots()}"
+  ```
+- Oracles can use any of the built-in helpers (`extract_float`, `language`, `only_talks_about`, `is_unique`, etc.).
+
+Want me to show you a few more oracle examples from your project's rules, or help you write one for a specific check? 🚀

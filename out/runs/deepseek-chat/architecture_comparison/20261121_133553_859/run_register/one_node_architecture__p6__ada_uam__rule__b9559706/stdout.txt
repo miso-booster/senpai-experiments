@@ -1,0 +1,27 @@
+conversation ID: one_node_architecture__p6__ada_uam__rule__b9559706
+$$$
+Here's a rule that checks the Ada UAM bot actually delivered the CAU contact details — email, phone, and physical address — all in one conversation 👇
+
+```yaml
+name: cau_contact_info_complete
+description: >
+  The chatbot must provide complete contact information for the CAU:
+  an email address, a phone number, and a physical address.
+conversations: 1
+active: true
+oracle: |
+  contact_email is not None and contact_email != ''
+  and contact_phone is not None and contact_phone != ''
+  and physical_address is not None and physical_address != ''
+yields: |
+  f"Missing CAU contact info — email: {contact_email}, phone: {contact_phone}, address: {physical_address}"
+```
+
+A couple of quick notes so it behaves the way you expect 😊:
+
+- **Field names match your `chatbot.output`** exactly (`contact_email`, `contact_phone`, `physical_address`), so the rule stays in sync with the profile.
+- **`conversations: 1`** means it runs per conversation — each one is checked on its own. If you'd rather verify that *at least one* conversation got the full info, you could switch to a global variant using `exists(...)`.
+- The `yields` message is handy for debugging: when it fails, you'll see exactly which piece was missing.
+
+Want me to also add a **global version** (e.g., "at least one conversation must contain all three") or a **stricter check** that validates the email/phone *format* (not just presence)? Just say the word! 🚀
+$$$

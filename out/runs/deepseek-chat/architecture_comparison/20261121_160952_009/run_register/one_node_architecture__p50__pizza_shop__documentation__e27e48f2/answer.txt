@@ -1,0 +1,45 @@
+Great question! 😊 Let me break down what an **oracle** is in the context of Sensei-check rules.
+
+## What is an oracle?
+
+In testing, an **oracle** is simply the **mechanism that tells you whether a test passed or failed** — it's the "source of truth" you compare your results against.
+
+In **Sensei-check**, `oracle:` is a field in a rule that holds a **Python expression** evaluated over one or more conversations. If it evaluates to `True`, the rule passes; if `False`, it fails.
+
+## Two flavors in Sensei-check
+
+**1. Single-conversation oracle** — checks one conversation at a time (a traditional test):
+
+```yaml
+name: small_pizza_price
+description: Checks the base prices of small pizzas (>=10$)
+conversations: 1
+when: size[0] == 'small'
+oracle: extract_float(price) >= 10 and currency(price) == 'USD'
+```
+
+**2. Metamorphic oracle** — compares *several* conversations (this is where Sensei-check shines). You can express it either as a plain `oracle:` expression over `conv[i]`, or more readably as an `if:`/`then:` pair:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Here the "oracle" is the **relation** `then:` — it doesn't need to know the *absolute* correct price, just that *more toppings ⇒ higher price*. That's the magic of metamorphic testing: you sidestep the "oracle problem" (not knowing the exact right answer) by checking **relationships** instead. 🎯
+
+## Quick mental model
+
+| Field | Role |
+|-------|------|
+| `when:` | Filter — which conversations are eligible |
+| `oracle:` | The pass/fail condition (single or multi-conversation) |
+| `if:` / `then:` | A readable way to write a metamorphic oracle |
+| `yields:` | Optional custom failure message |
+
+So in short: **the oracle is the check itself** — the expression that decides "did this conversation (or pair of conversations) behave correctly?" ✅
+
+Want me to help you write an oracle for a specific scenario in your pizza shop project? 🍕

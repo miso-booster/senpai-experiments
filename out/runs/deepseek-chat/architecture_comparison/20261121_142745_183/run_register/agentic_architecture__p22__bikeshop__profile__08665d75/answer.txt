@@ -1,0 +1,89 @@
+Here's the profile, following the structure in `sensei-chat-guide.md` and matching the conventions of your existing bike profiles (same `llm` block, `fallback`, `all_answered` goal style, and `single questions` interaction style):
+
+```yaml
+test_name: bike_discomfort_fit_or_wear_advisor
+
+llm:
+  temperature: 0.5
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A cyclist who is experiencing discomfort while riding their bike. You are
+    unsure whether the discomfort comes from the bike not being fitted correctly
+    or from worn components. You want advice on possible adjustments and on the
+    services the shop offers, but you do NOT explicitly ask to book an appointment.
+  context:
+    - 'personality: personalities/skeptical-user'
+    - You ride regularly and have started noticing discomfort (e.g., knees, back, or hands) during and after rides.
+    - You are not sure if the cause is a poor bike fit or worn parts such as the saddle, grips, pedals, or drivetrain.
+    - You want to understand what adjustments might help and what services the shop offers to diagnose or fix the issue.
+    - You are only exploring options for now and do not want to commit to an appointment yet.
+  goals:
+    - Describe the discomfort you feel while riding and ask what might be causing it.
+    - Ask whether the discomfort is more likely due to a poor bike fit or to worn components.
+    - Ask what adjustments could be made to improve comfort.
+    - Ask what services the shop offers to diagnose fit issues or worn parts.
+    - Ask how a bike fitting service works and what it involves.
+    - Ask how you can tell whether your components are worn out.
+    - Ask for a general recommendation on what to do next, without booking an appointment.
+
+chatbot:
+  is_starter: false
+  fallback: I'm sorry it's a little loud in my shop, can you say that again?
+  output:
+    - discomfort_description:
+        type: string
+        description: The discomfort the user described while riding, as acknowledged or restated by the chatbot (e.g., knee, back, or hand pain).
+    - possible_causes:
+        type: string
+        description: The chatbot's explanation of possible causes of the discomfort, distinguishing between poor bike fit and worn components.
+    - suggested_adjustments:
+        type: string
+        description: The adjustments the chatbot suggests to improve comfort, such as saddle height, handlebar position, or cleat alignment.
+    - available_services:
+        type: string
+        description: The services the shop offers to diagnose fit issues or worn parts, such as bike fitting, inspections, or tune-ups.
+    - bike_fitting_details:
+        type: string
+        description: A description of how the bike fitting service works and what it involves.
+    - wear_detection_advice:
+        type: string
+        description: The chatbot's advice on how to tell whether components are worn out.
+    - next_step_recommendation:
+        type: string
+        description: The chatbot's general recommendation on what the user should do next.
+    - appointment_offered:
+        type: string
+        description: Whether the chatbot proactively offered or suggested booking an appointment, and how the user responded. The user should not have explicitly requested one.
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 30
+  interaction_style:
+  - single questions
+```
+
+### What this profile does and why
+
+- **Role & context** capture the exact scenario: discomfort, uncertainty between **fit vs. worn components**, wanting **advice** but **not** explicitly booking. The `skeptical-user` personality matches the exploratory, cautious tone of your other bike profiles.
+- **Goals** walk the user through the natural flow of the conversation — describing the problem, asking about causes, adjustments, services, fit details, wear detection, and a next-step recommendation — while deliberately **never** asking to book.
+- **`chatbot.output`** is designed as a clean contract for future SENSEI-check rules (per §2.1 of `sensei-chat-guide.md`). Each field maps to a business property you'd likely want to validate, e.g.:
+  - `suggested_adjustments` / `possible_causes` → check the bot actually addresses both fit and wear.
+  - `available_services` / `bike_fitting_details` → check the shop's offerings are described.
+  - `appointment_offered` → a useful field to test that the bot doesn't push booking when the user hasn't asked (or to check how it handles a proactive offer).
+- **Conversation controls** mirror your existing profiles (`number: 3`, `max_cost: 0.5`, `all_answered` with `limit: 30`, `single questions`), so it runs consistently with the rest of the project.
+
+A couple of things worth flagging:
+
+1. **`money` type note:** your other profiles use `type: money` in `chatbot.output`, but the guide (`sensei-chat-guide.md` §6) lists `int`, `float`, `string`, `time`, `date`, and `list[...]` as the built-in output types. I avoided `money` here since this profile doesn't extract prices — but if you later add pricing fields, you may want to confirm whether `money` is a custom type in your `types/` folder.
+2. **`appointment_offered`** is intentionally a `string` (not a boolean) so it can capture both whether the bot offered and how the user reacted — handy for a rule later.
+
+Want me to also draft a **SENSEI-check rule** bound to this profile (e.g., verifying the bot addresses both fit and wear, or that it doesn't force a booking)? Just say the word and I'll load the rules docs and align it to these output fields 😊.

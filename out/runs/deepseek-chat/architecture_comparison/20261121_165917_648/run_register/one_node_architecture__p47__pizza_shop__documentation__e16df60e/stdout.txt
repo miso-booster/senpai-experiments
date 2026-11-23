@@ -1,0 +1,53 @@
+conversation ID: one_node_architecture__p47__pizza_shop__documentation__e16df60e
+$$$
+Hey there! 😊 Great question — metamorphic rules are one of the coolest (and most powerful) parts of Sensei-check. Let me break it down for you.
+
+## The short version
+
+A **metamorphic rule** is a rule that checks a **relationship between two or more conversations** — instead of checking one conversation against a fixed expected answer.
+
+Think of it like this: instead of asking *"Is this pizza exactly $18.50?"* (which is hard to know in advance), you ask *"If I add more toppings to the same pizza, does the price go up?"* — a relationship that should **always** hold, no matter the exact numbers. 🍕
+
+## Why it matters
+
+This solves the classic **oracle problem** — the difficulty of knowing the "correct" answer for every possible conversation. With metamorphic testing, you don't need to know the exact answer; you just need to know how the answer should **change** (or stay the same) when you tweak the inputs.
+
+## How it works in Sensei
+
+1. **Sensei-chat generates conversations** using profiles (personas, goals, styles). Each conversation stores the inputs chosen and the outputs extracted.
+2. **A metamorphic rule** declares:
+   - how many conversations it needs (`conversations: 2` or `all`),
+   - an optional **filter** (`when:`) to pick comparable conversations,
+   - and the **relation** to check (`if`/`then` or `oracle`).
+3. Sensei-check evaluates the rule across matching conversation pairs and reports failures.
+
+## A quick example
+
+Here's a metamorphic rule from your own project — it says *"more toppings on the same size pizza and drink should cost more"*:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Notice the pattern:
+- **`when:`** keeps the confounders equal (same size, same drink) — this is the *ceteris paribus* condition.
+- **`if:`/`then:`** reads like a law: *"If X changes this way, then Y should change that way."*
+
+## The mental model
+
+| Regular oracle | Metamorphic rule |
+|---|---|
+| Checks **one** conversation against a fixed expected value | Checks a **relation** across **several** conversations |
+| "Is the price $18.50?" | "Does more toppings ⇒ higher price?" |
+| Needs a known correct answer | Needs only a known *relationship* |
+
+So in a nutshell: **a metamorphic rule is a YAML-declared condition that compares pairs (or tuples) of conversations and asserts how outputs should relate when inputs vary** — monotonicity, invariance, uniqueness, and so on. 🎯
+
+Want me to help you write a new one, or adapt one of your existing rules to a different field? Just say the word! 🙌
+$$$

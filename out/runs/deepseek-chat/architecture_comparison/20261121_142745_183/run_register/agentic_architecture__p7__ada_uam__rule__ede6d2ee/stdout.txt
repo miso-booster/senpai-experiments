@@ -1,0 +1,28 @@
+conversation ID: agentic_architecture__p7__ada_uam__rule__ede6d2ee
+$$$
+I found the matching profile. Here's what I see:
+
+**Profile:** `consultante_de_servicios_y_asistencia_del_cau.yaml`
+**Relevant `chatbot.output` fields:**
+- `contact_email` (string) — Correo electrónico del CAU
+- `contact_phone` (string) — Número de teléfono del CAU
+- `physical_address` (string) — Dirección física del CAU
+
+These three match exactly the outputs you listed. ✅
+
+Before I write the rule, one quick confirmation:
+
+**Is this the profile we should target?** (`consultante_de_servicios_y_asistencia_del_cau.yaml`) If yes, I'll build the rule around `contact_email`, `contact_phone`, and `physical_address`.
+
+Also, a small design note on how I'll check correctness — the docs (`sensei-check-doc.md`) offer a few helper options:
+
+1. **`semantic_content(value, desc)`** — an LLM-backed check that the extracted value semantically matches the expected text. This is the most robust for free-text fields like an address (e.g. `"C/ Francisco Tomás y Valiente nº 11, Edificio B, planta primera, despacho TI-107, Escuela Politécnica Superior"`).
+2. **`extract_float` / substring checks** — good for the phone number (`91 497 4029`) and email (`cau@uam.es`), which are exact strings.
+
+My plan is a **single-conversation rule** (`conversations: 1`) that asserts all three fields are correct, using:
+- `contact_email` → exact/normalized string match with `cau@uam.es`
+- `contact_phone` → `extract_float` comparison against `914974029` (robust to spaces/formatting)
+- `physical_address` → `semantic_content(...)` against the expected address text
+
+Want me to go ahead with that approach for this profile? (And should the rule be `active: true`?)
+$$$

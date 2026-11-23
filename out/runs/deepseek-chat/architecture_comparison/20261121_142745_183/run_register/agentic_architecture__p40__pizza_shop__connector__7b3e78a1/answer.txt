@@ -1,0 +1,37 @@
+Here's your connector, built from the captured HTTP request/response and following `custom-connector-guide.md` + `connector-examples.md` 🚀
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### How it maps to the docs
+- **`base_url` + `send_message.path`** → `https://api.1millionbot.com` + `/api/public/messages` (same MillionBot pattern as the Ada UAM example).
+- **`headers`** → kept `Content-Type`, the `Authorization` token, plus `Origin`/`Referer`/`User-Agent` (like the Metro Madrid example, which also needs browser-ish headers).
+- **`payload_template`** → mirrors the captured JSON body exactly, with `message.text` set to the `{user_msg}` placeholder.
+- **`response_path: "response.0.text"`** → the reply lives at `response[0].text` in the JSON, so dot-notation with the array index `0` (documented in "How `response_path` Works").
+
+### Heads-up ⚠️
+- The bot reply is HTML (`<p>¡Buenos días!<br><br>¿En qué puedo ayudarte?</p>`). The connector returns it raw, so if your rules compare text you may want to account for the HTML tags.
+- `conversation` and `sender` are session IDs from that capture. If the API expects a fresh conversation per test run, you may need to generate/rotate them — the connector format itself doesn't support dynamic IDs beyond `{user_msg}`.
+
+Want me to also draft a profile that pairs with this connector? 😊

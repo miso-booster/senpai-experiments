@@ -1,0 +1,77 @@
+conversation ID: agentic_architecture__p33__pizza_shop__profile__14589611
+$$$
+Your profile already exists in the project (`pizza_and_drinks_information_seeker.yaml`) and it already has a `chatbot` section — so I'll show you the complete version with the `chatbot` field filled in, plus a couple of small adjustments worth making.
+
+Here's the full profile with the `chatbot` field completed (based on `sensei-chat-guide.md` §3 and §6):
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order.
+  context:
+  - 'personality: personalities/skeptical-user'
+  - You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria.
+  - You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered.
+  - You have a variety of preferences among your friends, so you need to find options that cater to different tastes.
+  goals:
+  - Ask about the available pizza types.
+  - Ask about the price of a Margarita pizza.
+  - Ask about the available drinks and their prices.
+  - Ask about the shop's operating hours.
+  - Ask if they deliver.
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. Could you please rephrase that?"
+  output:
+  - pizza_types:
+      type: list[string]
+      description: The pizza types offered by the shop. Look for phrases like "We offer [pizza types]" or a list of available pizzas.
+  - margarita_price:
+      type: float
+      description: The price of a Margarita pizza, including currency if present. If multiple sizes are mentioned, extract the price for all sizes mentioned.
+  - drinks_and_prices:
+      type: list[string]
+      description: The available drinks and their corresponding prices. Extract each drink with its price, e.g. "Coke - 2.50".
+  - operating_hours:
+      type: string
+      description: The shop's operating hours, including opening and closing times. Look for phrases like "Our hours are [hours]" or "We are open from [opening time] to [closing time]".
+  - delivery_availability:
+      type: string
+      description: Whether the shop delivers or not. Look for phrases like "We deliver" or "We do not offer delivery".
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+  - single questions
+```
+
+### What's in the `chatbot` field and why 🔧
+
+Based on `sensei-chat-guide.md`:
+
+1. **`fallback`** — the original had a broken string with a stray backtick and a LangChain troubleshooting URL baked in. I replaced it with a clean, realistic bot fallback message (the docs recommend putting the bot's *real* fallback text here to avoid endless loops — so double-check it matches your actual bot's wording).
+
+2. **`pizza_types`** — set to `type: list[string]`. Since this is a *list* of pizza types, the list type is more accurate and makes it usable in rules (e.g., checking uniqueness or membership).
+
+3. **`margarita_price`** — set to `type: float`. The docs list `int`, `float`, `string`, `time(...)`, `date(...)`, and `list[...]` as default output types; `float` is the safest fit for a price. If you have a custom `money` type in your `types/` folder, tell me and I'll switch it back.
+
+4. **`drinks_and_prices`** — set to `type: list[string]` for the same reason as `pizza_types` (it's a list of drink+price pairs).
+
+5. **`operating_hours` / `delivery_availability`** — kept as `string`, which is fine for free-text extraction.
+
+### A note on `is_starter` and `interaction_style` 👀
+- `is_starter: false` means the **chatbot** speaks first. Make sure that matches your bot's actual behaviour.
+- Your `interaction_style` used `single question`, but the valid keyword is **`single questions`** (plural), so I've used that form.
+
+Want me to also **write this version to the file** for you, or would you prefer to tweak the `money`/`single questions` points first? 😊
+$$$

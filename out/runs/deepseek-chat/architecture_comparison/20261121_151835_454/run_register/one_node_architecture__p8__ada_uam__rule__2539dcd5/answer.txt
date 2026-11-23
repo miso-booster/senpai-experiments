@@ -1,0 +1,55 @@
+¡Hola! 😊 Let's take a look at your rule together — there are a couple of things worth fixing so it actually does what you intend.
+
+## What's going on with the current rule
+
+Your rule has a **logic problem**: the `when` filter and the `oracle` are checking the *exact same thing*. That means the rule only ever runs on conversations that already have the correct values, and then it "passes" because it re-checks the same condition. In practice, it can never fail — which defeats the purpose of a test. 🚩
+
+Also, a few smaller issues:
+
+- **`conversations: 1`** is correct for a single-conversation oracle, but then you should reference fields as `conv[0].field` (which you do) — good. However, in single-conversation rules you can also just use the bare field names (e.g. `contact_email`). Both work, but mixing styles can be confusing.
+- **The `when` clause is redundant.** If you want to *always* check the CAU contact details, drop the `when` entirely.
+- **No `yields` message**, so if it fails you won't get a helpful explanation of *what* was wrong.
+
+## Fixed version
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the correct contact details (email, phone, address).
+conversations: 1
+oracle: |
+  conv[0].contact_email == 'cau@uam.es'
+  and conv[0].contact_phone == '91 497 4029'
+  and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+yields: |
+  f"Wrong CAU contact info: email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+## Why this version is better
+
+1. **No `when` filter** → the rule runs on *every* conversation, so it can actually catch a wrong answer. ✅
+2. **`oracle` does the real check** → it compares the extracted fields against the expected values.
+3. **`yields` gives a helpful failure message** → when something is off, you'll see exactly which field was wrong and what value came back. Super useful for debugging! 🔍
+4. **`conv[0].field` references** match your profile's `chatbot.output` fields (`contact_email`, `contact_phone`, `physical_address`), which I can see are defined in your `consultante_de_servicios_y_asistencia_del_cau.yaml` profile. 
+
+## One thing to double-check 👀
+
+Your profile `consultante_de_servicios_y_asistencia_del_cau.yaml` exposes:
+- `contact_email` ✅
+- `contact_phone` ✅
+- `physical_address` ✅
+
+So the field names line up nicely. Just make sure the **exact strings** you're comparing against (`'cau@uam.es'`, `'91 497 4029'`, the address) match what the chatbot actually returns — small differences in spacing or accents (e.g. `nº` vs `n°`) will make the comparison fail. If you notice flaky failures, consider using `semantic_content()` for the address, which is more forgiving of formatting variations:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provides the correct contact details.
+conversations: 1
+oracle: |
+  conv[0].contact_email == 'cau@uam.es'
+  and conv[0].contact_phone == '91 497 4029'
+  and semantic_content(conv[0].physical_address, 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+yields: |
+  f"Wrong CAU contact info: email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+Want me to also add a `when` that restricts this to conversations where the user actually asked for contact info? That would make it a bit more targeted — just say the word! 🙌

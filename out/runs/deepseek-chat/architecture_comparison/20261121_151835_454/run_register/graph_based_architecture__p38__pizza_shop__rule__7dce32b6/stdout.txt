@@ -1,0 +1,89 @@
+conversation ID: graph_based_architecture__p38__pizza_shop__rule__7dce32b6
+$$$
+Great question! 😊 Let me walk you through it.
+
+Since you want to check that the chatbot **actually provides** an `order_id`, this is a **single-conversation oracle** — you're not comparing two conversations, just verifying that the output slot got filled. The cleanest way is to use the `data_collected()` helper or check the field directly.
+
+Here's how I'd write it:
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must provide an order_id in its output
+conversations: 1
+oracle: conv[0].order_id is not None and len(str(conv[0].order_id)) > 0
+```
+
+### Why this works 🧠
+
+- `conversations: 1` → single-conversation oracle, no `when`/`if`/`then` needed.
+- `conv[0].order_id` → pulls the `order_id` field from your profile's `chatbot.output` (make sure that slot exists in your profile!).
+- `is not None` → guards against the slot never being filled.
+- `len(str(...)) > 0` → guards against an empty string sneaking through.
+
+### A slightly more idiomatic alternative ✨
+
+If you want to lean on the built-in helper and make it more readable:
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must provide an order_id in its output
+conversations: 1
+oracle: conv[0].order_id is not None
+```
+
+Or, if you want to assert **all** output slots are filled (not just `order_id`):
+
+```yaml
+name: order_id_is_provided
+description: All extracted outputs including order_id must be non-null
+conversations: 1
+oracle: data_collected() is True
+```
+
+### ⚠️ One important caveat
+
+This rule only works if your **SENSEI Chat profile** actually exposes `order_id` in `chatbot.output`. If it doesn't, the rule will fail (or error) because the field won't exist. So double-check your profile first — something like:
+
+```yaml
+test_name: "pizza_order_summary"
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza from a pizza shop.
+    Provide your order details and confirm the summary.
+  context:
+    - "You want to order a pizza and a drink."
+  goals:
+    - "Order a {{size}} pizza with {{toppings}} and a {{drink}}"
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+    - toppings:
+        function: random(2)
+        type: string
+        data: [cheese, mushrooms, pepper, ham, bacon, pepperoni, olives, corn, chicken]
+    - drink:
+        function: random()
+        type: string
+        data: [water, coke, fanta, beer]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - order_id:
+        type: string
+        description: Unique identifier for the order
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+If you'd like, I can also show you a **global uniqueness** variant (`is_unique('order_id')`) to make sure no two conversations share the same ID — just say the word! 🙌
+$$$

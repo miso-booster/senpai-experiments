@@ -1,0 +1,51 @@
+Great question! 😊 Let me break it down for you.
+
+## What is an oracle?
+
+In testing, an **oracle** is simply *the mechanism that tells you whether a test passed or failed* — it's the "source of truth" you compare your results against.
+
+Think of it like a referee in a football match ⚽: the players do their thing, but the referee decides whether a goal counts. The oracle is that referee for your tests.
+
+## How it works in Sensei-check
+
+In a Sensei rule, the `oracle:` field is a **Python expression that must evaluate to `True`** for the rule to pass. If it evaluates to `False`, the rule fails.
+
+Here's a simple example from your own project:
+
+```yaml
+name: only_talks_about_pizzas
+description: The chatbot only talks about pizzas
+conversations: 1
+active: true
+oracle: only_talks_about('pizza orders, drink orders, information on delivery of pizzas, information about the pizza shop')
+```
+
+Here the oracle is `only_talks_about(...)` — if the chatbot stays on topic, it returns `True` and the rule passes. If it drifts off-topic, the oracle fails. 🎯
+
+## The "oracle problem" 🧩
+
+Here's the tricky part: for many chatbot behaviors, there's **no single correct answer** to compare against. If a user asks "what pizzas do you have?", there are a hundred valid ways to respond — so a traditional oracle (like "the answer must equal X") doesn't work.
+
+That's exactly why **metamorphic testing** exists! Instead of checking absolute answers, metamorphic rules check *relationships between conversations* — for example, "more toppings ⇒ higher price." The oracle becomes a **relation**, not a fixed value. That's what your rule `more_toppings_cost_more` does:
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza cost more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+Here the `if`/`then` pair *is* the oracle — it checks that the price relationship holds, without needing to know the "correct" price. 🙌
+
+## Quick summary
+
+| Term | Meaning |
+|------|---------|
+| **Oracle** | The pass/fail check in a rule |
+| **Traditional oracle** | Compares output to a known correct answer |
+| **Metamorphic oracle** | Checks a *relation* between conversations (e.g., monotonicity) |
+
+Want me to help you write a new oracle for one of your pizza rules, or explain how `if`/`then` differs from a plain `oracle:` field? 🍕

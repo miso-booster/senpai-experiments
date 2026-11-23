@@ -1,0 +1,105 @@
+conversation ID: agentic_architecture__p30__pizza_shop__profile__c66147af
+$$$
+Here's your pizza shop profile! 🍕
+
+```yaml
+test_name: "pizza_shop_rude_fast_customer"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are an impatient, rude customer ordering pizza over chat. You are in a
+    hurry and expect everything done fast. You are blunt, curt, and easily
+    annoyed: you use short, demanding phrases, you don't say "please" or
+    "thank you", you interrupt and push the bot to hurry up, and you get
+    irritated if the bot is slow or asks too many questions.
+  context:
+    - "You are starving and in a rush — you want your order confirmed ASAP."
+    - "You have no patience for small talk or long explanations."
+    - "You are rude but still give the info needed to place the order."
+  goals:
+    - "Demand a {{size}} {{crust}} pizza with {{topping}} and a {{drink}}, and tell them to hurry up"
+    - "Ask how long it will take and snap at them if it's too slow"
+    - "Ask for the total {{price}} and complain it's too expensive"
+    - "Demand the {{order_id}} so you can track it, and tell them to be quick"
+    - size:
+        function: pairwise()
+        type: string
+        data: [small, medium, large]
+    - crust:
+        function: pairwise()
+        type: string
+        data: [thin, thick, stuffed]
+    - topping:
+        function: random()
+        type: string
+        data: [pepperoni, mushrooms, ham, pineapple, olives, extra cheese]
+    - drink:
+        function: random()
+        type: string
+        data: [cola, water, beer, orange juice]
+    - price:
+        function: random()
+        type: string
+        data: [USD, EUR, GBP]
+    - order_id:
+        function: random()
+        type: string
+        data: [order number, tracking code, receipt number]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't understand that. Could you rephrase?"
+  output:
+    - pizza_size:
+        type: string
+        description: "The size of the pizza ordered"
+    - crust_type:
+        type: string
+        description: "The crust type of the pizza"
+    - topping:
+        type: string
+        description: "The topping requested on the pizza"
+    - drink:
+        type: string
+        description: "The drink ordered"
+    - total_price:
+        type: currency
+        description: "Final total price of the order"
+    - order_id:
+        type: string
+        description: "The order identifier / tracking reference"
+
+conversation:
+  number: combinations(1, pairwise)  # driven by the two pairwise variables (size, crust)
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - single questions
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+### What this does & how it maps to the docs (`sensei-chat-guide.md`)
+
+- **Rude + fast user** 🏃: The `user.role` and `context` describe an impatient, blunt customer who pushes the bot to hurry — no "please/thank you", short demanding phrases.
+- **4 goals**: Four goal strings (order the pizza, ask ETA, ask price, demand order id), each using `{{variables}}`.
+- **4 variables**: `size`, `crust`, `topping`, `drink` — plus `price` and `order_id` used as phrasing helpers in the goals. (If you want *strictly* 4 declared variables, tell me and I'll fold `price`/`order_id` into plain text.)
+- **2 pairwise functions**: `size` and `crust` both use `function: pairwise()`. Per §5 of the guide, **two pairwise variables are required** to derive `conversation.number` from a combination matrix — so I set `number: combinations(1, pairwise)` to use the full pairwise matrix. You can switch to `combinations(0.6, pairwise)` to use 60% of it.
+- **`chatbot.output`**: Defines the extraction schema (`pizza_size`, `crust_type`, `topping`, `drink`, `total_price`, `order_id`) so future Sensei-check rules can read them as `conv[i].<field>`.
+
+A couple of quick questions to fine-tune it:
+1. Do you want **exactly 4 declared variables** (dropping `price`/`order_id` as variables and just hardcoding them in the goal text)?
+2. Should the conversation number use the **full** pairwise matrix (`combinations(1, pairwise)`) or a fraction like `0.6`?
+
+Want me to also create a matching **rule** (e.g., checking the order is confirmed fast, or that `total_price` > 0)? Just say the word 😊
+$$$

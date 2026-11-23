@@ -1,0 +1,75 @@
+conversation ID: agentic_architecture__p31__pizza_shop__profile__4c2ccdc8
+$$$
+All fixed! 🎉 I based this on `sensei-chat-guide.md` (profile anatomy, `chatbot.output` types, and conversation controls).
+
+## What was wrong 🔍
+
+1. **`is_starter` / `fallback` / `output` were indented under `user:`** — they belong under a top-level `chatbot:` section. As written, the whole `chatbot` contract was missing.
+2. **`custom_pizza_pricing` used `type: str`** — not a valid type. The docs only allow `int`, `float`, `string`, `time(...)`, `date(...)`, `list[...]`, or custom types. Changed to `string`.
+3. **`fallback` contained a broken multi-line string** with a stray backtick, a literal `\n`, and a leaked LangChain troubleshooting URL. Replaced with a clean, single-line fallback.
+4. **`conversation.number` was missing** — the docs list it as a conversation control; I added `number: 1` (adjust as you like).
+5. **`goal_style.all_answered.export: 1`** — should be a boolean (`true`/`false`), not `1`.
+
+## Corrected profile ✅
+
+```yaml
+test_name: general_information_seeker
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+    - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+    - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+    - Ask what types of questions the chatbot can answer.
+    - Ask what the daily opening hours are.
+    - Ask about the estimated order time, without specifying the number of pizzas.
+    - Ask what drink options are available and their prices.
+    - Ask about the pricing for a custom pizza.
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you order predefined or custom pizzas, and then drinks."
+  output:
+    - available_information:
+        type: string
+        description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+    - opening_hours:
+        type: string
+        description: The daily opening hours of the pizza shop, as stated by the chatbot.
+    - estimated_order_time:
+        type: string
+        description: The chatbot's explanation of the estimated order time, including factors that influence it.
+    - drink_options_and_prices:
+        type: string
+        description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+    - custom_pizza_pricing:
+        type: string
+        description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+
+conversation:
+  number: 1
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+## Notes 💡
+
+- **`number: 1`** — I picked a single conversation as a safe default; bump it up if you want more runs.
+- **`export: true`** — this will generate a CSV showing which outputs were satisfied, handy for debugging.
+- **Output types** — I kept everything as `string` since these are descriptive answers. If you later write rules that need to compare prices or times numerically, consider switching `drink_options_and_prices` / `custom_pizza_pricing` to a `currency` custom type (defined in `types/`) so rules can use `extract_float(...)`.
+
+Want me to also draft a rule that validates these outputs (e.g., that `opening_hours` and `estimated_order_time` are non-empty)? Just say the word 😊
+$$$

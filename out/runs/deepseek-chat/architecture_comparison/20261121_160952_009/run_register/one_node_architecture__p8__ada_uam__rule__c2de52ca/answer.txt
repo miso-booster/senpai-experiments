@@ -1,0 +1,62 @@
+¡Hola! 😊 Let's take a look at your rule together.
+
+## Short answer: it's *almost* okay, but it has a logical flaw
+
+Your rule **will run without errors**, but it's **redundant and self-defeating**. Let me show you why, then give you the fixed version.
+
+### The problem
+
+You put the *exact same condition* in both `when:` and `oracle:`:
+
+- `when:` filters conversations to only those where the CAU gave the correct info.
+- `oracle:` then checks... that the CAU gave the correct info.
+
+So the rule only ever evaluates conversations that **already pass**, and it can never fail. If the chatbot gives a wrong email, that conversation is filtered out by `when:` and the rule simply reports "not applicable" instead of "fail". That's the opposite of what you want — you'd never catch a bug. 🐛
+
+Also, `when:` is meant to select *comparable cohorts* (e.g., "same size, same drink"), not to pre-assert the expected answer.
+
+### The fix
+
+Drop the `when:` (or keep it only for a genuine cohort filter), and let `oracle:` do the checking. Since these are exact string matches, I'd also add a friendly `yields:` message so failures are readable:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct contact details (email, phone, address).
+conversations: 1
+oracle: |
+  conv[0].contact_email == 'cau@uam.es'
+  and conv[0].contact_phone == '91 497 4029'
+  and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+yields: |
+  f"Wrong CAU contact info: email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+### Why this is better
+
+- **`oracle:` is the single source of truth.** Every conversation is checked, and any mismatch is reported as a failure — which is exactly what a test should do. ✅
+- **`yields:`** gives you a clear message showing *what* was wrong, so debugging is much easier.
+- **No `when:`** because there's no cohort to filter here — you want to check *all* conversations against the expected values.
+
+### One thing to double-check 👀
+
+Make sure the field names match your profile's `chatbot.output`. Looking at your project, the profile **`consultante_de_servicios_y_asistencia_del_cau.yaml`** exposes `contact_email`, `contact_phone`, and `physical_address` — so those names are correct. 🎯 But note that other profiles (e.g. `asistencia_técnica_y_cuentas.yaml`) use different names like `contact_info` or `contact_information`, so this rule is **profile-bound** to the CAU consultante profile. That's fine — just keep it in mind if you reuse it.
+
+### A small caveat about exact string matching ⚠️
+
+Exact equality on `physical_address` is brittle: the bot might return the same address with slightly different spacing, accents, or capitalization (e.g. `C/ Francisco Tomas y Valiente` without the accent). If you notice false failures, consider a softer check using `semantic_content(...)`:
+
+```yaml
+name: check_cau_information
+description: Checks that the CAU provided correct contact details (email, phone, address).
+conversations: 1
+oracle: |
+  conv[0].contact_email == 'cau@uam.es'
+  and conv[0].contact_phone == '91 497 4029'
+  and semantic_content(conv[0].physical_address, 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+yields: |
+  f"Wrong CAU contact info: email={conv[0].contact_email}, phone={conv[0].contact_phone}, address={conv[0].physical_address}"
+```
+
+That keeps the email/phone as strict checks (they should be exact) but tolerates minor wording differences in the address. 🙌
+
+Want me to adapt this rule for another profile, or turn it into a metamorphic rule (e.g. "same contact info across all CAU-related conversations")? Just say the word! 😄

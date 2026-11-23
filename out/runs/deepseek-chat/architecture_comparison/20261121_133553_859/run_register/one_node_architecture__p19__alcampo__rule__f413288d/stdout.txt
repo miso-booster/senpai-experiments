@@ -1,0 +1,24 @@
+conversation ID: one_node_architecture__p19__alcampo__rule__f413288d
+$$$
+Hey there! 😊 Happy to help with that.
+
+Since you want a **profile-agnostic global rule** (not tied to any specific `chatbot.output` schema), the cleanest approach is to use the LLM-backed `utterance_index` helper to check whether the assistant actually mentions promotions somewhere in the dialogue. That way it works across any profile in your Alcampo project — no field names required.
+
+Here's a rule that checks the chatbot provided information about current promotions:
+
+```yaml
+name: provides_promotions_info
+description: The chatbot provides information about current promotions or discounts
+conversations: 1
+active: true
+oracle: utterance_index('assistant', 'current promotions or discounts') > 0
+yields: f"No promotion information found in the assistant's replies"
+```
+
+A couple of quick notes 👀:
+
+- `utterance_index('assistant', ...)` returns the turn index where the assistant mentions the topic — `> 0` means it happened somewhere in the conversation. If you'd rather allow the very first turn too, use `>= 0`.
+- Since this is **LLM-backed**, expect slight variability — keep the topic phrase descriptive (as above) rather than too narrow.
+
+If you'd like a stricter version that also requires the bot to mention *specific* offers (not just the word "promotions"), I can tweak the topic phrase or add a second check. Just say the word! 🙌
+$$$

@@ -1,0 +1,50 @@
+Hey there! 😊 Great catch — let's get this rule working properly.
+
+## What's wrong 👀
+
+Your rule is missing the `if:` clause. Right now it says:
+
+> "Whenever two conversations have the same size and drink, the first one's price must be greater than the second one's."
+
+That's not a metamorphic relation — it's just comparing two arbitrary conversations! Since `conv[0]` and `conv[1]` are picked in no particular order, the rule will fail roughly half the time (whenever `conv[0]` happens to be the cheaper one). 💥
+
+The whole point of a metamorphic rule is to **hold confounders equal and vary one dimension** — here, the number of toppings. That variation must be expressed in an `if:` clause.
+
+## The fix ✅
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+## Why this works 🎯
+
+- **`when:`** filters comparable pairs — same size, same drink (ceteris paribus).
+- **`if:`** states the *variation*: `conv[0]` has strictly more toppings than `conv[1]`.
+- **`then:`** asserts the *expected relation*: the one with more toppings costs more.
+
+Now the rule only fires when the precondition actually holds, and the direction of comparison is meaningful. 🍕💰
+
+## A couple of extra tips 💡
+
+1. **Consider adding `number` (quantity) to `when:`** — if your profile exposes it. Two pizzas vs. one pizza with the same toppings would break the price comparison otherwise:
+   ```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more (same size/drink/qty)
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink and conv[0].number == conv[1].number
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+   (This matches your project's `same_number_of_toppings_cost_the_same` rule, which already filters on `drink` — worth aligning them.)
+
+2. **Make sure `toppings` and `price` exist in your profile's `chatbot.output`** — otherwise the rule can't evaluate. If you renamed a field (e.g., `total_price`), update the rule to match.
+
+3. **Watch for `None` values** — if `price` extraction fails for one conversation, `extract_float` may error out. That's usually a signal to check the profile's output extraction rather than the rule itself.
+
+Want me to also review `same_number_of_toppings_cost_the_same`? It has a similar structure and I spotted a small naming typo (`same_number_of_toopings_cost_the_same`) in the file name vs. the `name:` field — happy to help tidy that up too! 🙌

@@ -1,0 +1,43 @@
+Here's how I'd approach it, based on the profile that already exposes an `order_id` output 👇
+
+## 📋 Candidate profile
+
+**`pizza_and_drink_order_placement.yaml`** — a customer placing a pizza + drink order for pickup.
+
+Its `chatbot.output` fields are:
+- `pizza_options`
+- `drink_options`
+- `order_summary`
+- `total_cost`
+- `estimated_readiness_time`
+- `pickup_location`
+- **`order_id`** ✅ (type: `string`, "A unique identifier for the order…")
+
+This is the profile whose `order_id` output we'd check.
+
+## ✅ Draft rule (single-conversation oracle)
+
+Following the profile-bound pattern from `sensei-check-doc.md` (§3.1, §11) and `rules-examples.md`, a rule that verifies the chatbot actually provided an order ID looks like this:
+
+```yaml
+name: order_id_provided
+description: The chatbot must provide an order_id at the end of the pizza and drink order (profile pizza_and_drink_order_placement)
+conversations: 1
+active: true
+oracle: order_id is not None and len(str(order_id).strip()) > 0
+yields: "The chatbot did not provide an order ID, got: {order_id}"
+```
+
+### Why this works
+- `order_id` is a real field in the profile's `chatbot.output`, so the rule is **profile-bound** and consistent with the docs' rule↔profile contract (`sensei-check-doc.md` §3.1).
+- `conversations: 1` → it's a simple per-conversation oracle (not metamorphic).
+- The oracle checks the extracted value is present and non-empty, which is exactly "the order ID was provided by the chatbot".
+- `yields` gives a helpful failure message showing the actual value.
+
+### 💡 Optional variants
+- **Stricter (must be filled):** if you want to assert *all* outputs are filled, you could use the generic helper `data_collected() == True` — but that checks every slot, not just `order_id`.
+- **Global uniqueness:** if you also want to ensure IDs don't repeat across runs, that's a separate `conversations: all` rule using `is_unique('order_id')` (see `sensei-check-doc.md` §5.5).
+
+---
+
+Before I finalize: **is `pizza_and_drink_order_placement.yaml` the profile you want this rule bound to?** If yes, I'll save it as-is. If you'd rather target a different profile (or make it a general rule), just say the word 😊.

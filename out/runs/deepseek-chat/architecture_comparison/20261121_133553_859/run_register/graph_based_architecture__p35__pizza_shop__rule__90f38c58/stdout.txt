@@ -1,0 +1,42 @@
+conversation ID: graph_based_architecture__p35__pizza_shop__rule__90f38c58
+$$$
+Hey there! 😊 Happy to help you write that rule. Let me look at your project context first — I can see you already have some pizza rules in place, so I'll match that style.
+
+Here's a single-conversation oracle that checks a small pizza costs $10:
+
+```yaml
+name: small_pizza_price_is_10
+description: A small pizza costs exactly $10
+conversations: 1
+when: size == 'small'
+oracle: extract_float(price) == 10
+```
+
+A few quick notes so it works smoothly for you 👇
+
+- **`when: size == 'small'`** — this filters to only the conversations where the pizza size is `small`, so the rule only fires on relevant cases. (In single-conversation rules you reference fields directly, without the `conv[i].` prefix.)
+- **`extract_float(price) == 10`** — this pulls the numeric value out of your `price` field (e.g. `"10.00 USD"` → `10.0`) and compares it. Using `extract_float` is safer than a substring check.
+- **Field names** — `size` and `price` must exist in your profile's `chatbot.output`. Since your `more_toppings_cost_more` rule already uses `conv[0].size` and `conv[0].price`, you're all set there ✅
+
+If you'd rather be a bit more lenient (say, allow a tiny rounding tolerance), you could use:
+
+```yaml
+name: small_pizza_price
+description: Small pizzas should cost 10 USD
+conversations: 1
+active: true
+when: size[0] == 'small'
+oracle: abs(extract_float(price) - 10) < 0.01 and currency(price) == 'USD'
+```
+
+And if you also want to pin the currency, you can extend it like this:
+
+```yaml
+name: small_pizza_price
+description: Small pizzas should cost exactly 10 USD
+conversations: 1
+oracle: extract_float(price) == 10 and currency(price) == 'USD'
+```
+
+Want me to tweak it — for example, check a *range* instead of an exact value, or apply it to medium/large too? Just say the word! 🍕
+$$$

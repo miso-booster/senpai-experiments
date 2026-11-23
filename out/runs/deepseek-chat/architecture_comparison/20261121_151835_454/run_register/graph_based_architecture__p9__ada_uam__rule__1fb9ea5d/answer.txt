@@ -1,0 +1,45 @@
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el horario de la biblioteca sea de 9 a 20, usando el campo `library_hours` que expone tu perfil.
+
+Como el horario puede venir en distintos formatos ("9:00 a 20:00", "de 9 a 8pm", "09:00-20:00", etc.), lo más robusto es usar el helper `semantic_content`, que hace una comprobación semántica con LLM y tolera variaciones de redacción. 🎯
+
+```yaml
+name: library_hours_9_to_20
+description: El horario de atención de la biblioteca debe ser de 9:00 a 20:00 (perfil "Préstamos y Recursos de la Biblioteca")
+conversations: 1
+oracle: semantic_content(library_hours, 'Horario de atención de la biblioteca de 9:00 a 20:00')
+```
+
+### ¿Por qué así? 🤔
+
+- **`conversations: 1`** → es un oráculo de una sola conversación, no una relación metamórfica. Solo necesitamos comprobar el valor extraído.
+- **`library_hours`** → es exactamente el nombre del slot en tu `chatbot.output`, así que la regla queda *profile-bound* y consistente con el perfil. ✅
+- **`semantic_content(...)`** → compara el contenido del slot con la descripción esperada usando LLM, así que no se rompe si el bot responde "de 9 de la mañana a 8 de la noche" en lugar de "9:00-20:00".
+
+### Alternativa más estricta (si el formato es fijo) 🔍
+
+Si tu bot siempre devuelve algo como `"9:00 - 20:00"` o `"9 a 20"`, puedes usar una comprobación más determinista con `extract_float`:
+
+```yaml
+name: library_hours_9_to_20_strict
+description: El horario de la biblioteca debe contener las horas 9 y 20
+conversations: 1
+oracle: extract_float(library_hours) == 9 and 20 in [extract_float(x) for x in library_hours.split() if any(c.isdigit() for c in x)]
+```
+
+> ⚠️ Ojo: esta versión es más frágil porque depende del formato exacto. Si el bot puede escribir "nueve a ocho de la noche", fallará. Por eso te recomiendo la versión con `semantic_content` como principal. 👍
+
+### Un detalle importante 💡
+
+Si quieres que la regla **falle explícitamente** cuando el slot venga vacío (`None`), puedes añadir un `when` que filtre solo conversaciones donde se haya recogido el dato:
+
+```yaml
+name: library_hours_9_to_20
+description: El horario de atención de la biblioteca debe ser de 9:00 a 20:00
+conversations: 1
+when: library_hours is not None
+oracle: semantic_content(library_hours, 'Horario de atención de la biblioteca de 9:00 a 20:00')
+```
+
+Así evitas falsos negativos cuando el usuario no llegó a preguntar por el horario. 🙌
+
+¿Quieres que te ayude también a crear una regla metamórfica (por ejemplo, que el horario sea **consistente** entre varias conversaciones)? Solo dime y lo armamos juntos 😄

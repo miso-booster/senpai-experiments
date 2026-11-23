@@ -1,0 +1,115 @@
+Done! Here's the full picture, grounded in `sensei-chat-guide.md` and your real project profiles (I peeked at `pizza_order_test_custom.yml` as a reference).
+
+## ⚠️ Quick scope note
+I can't write the whole Python automation for you (that's outside my SENSEI DSL lane), but I *can* give you the exact contract your automation must satisfy — the schema, the invariants, and a validation checklist. That's the hard part; the Python is straightforward once you have it. 😊
+
+---
+
+## 1. The "valid profile" contract (from `sensei-chat-guide.md`)
+
+A profile is a single YAML doc with these top-level sections:
+
+| Section | Required? | Key rules |
+|---|---|---|
+| `test_name` | ✅ | string |
+| `llm` | optional | `temperature`, `model`, `model_prov`, `format.type: text\|speech` |
+| `user` | ✅ | `language`, `role`, `context` (list), `goals` (list) |
+| `chatbot` | ✅ | `is_starter`, `fallback`, `output` (schema) |
+| `conversation` | ✅ | `number`, `goal_style`, `interaction_style` |
+
+### The invariants your automation MUST enforce
+
+These are the things that make a profile *valid* (and that `validation_check.py` will flag):
+
+1. **Variable ↔ placeholder match (case-sensitive).** Every `{{var}}` in a goal string must have a matching declaration in `user.goals`, and vice-versa. This is the #1 source of errors.
+2. **`function` is one of:** `default()`, `random()`, `random(n)`, `random(rand)`, `another()`, `another(n)`, `forward()`, `forward(dep)`, `pairwise()`.
+3. **`type` in `user.goals`** must be `int`, `float`, `string`, or a **custom type** defined in `types/`. ❌ Never `list`, `time`, `date` here — those raise exceptions in goals.
+4. **`type` in `chatbot.output`** may be `int`, `float`, `string`, `time(...)`, `date(...)`, `list[...]`, or a custom type.
+5. **`random(n)` / `another(n)`** → `n ≤ len(data)`.
+6. **`conversation.number: combinations`** requires **≥2 nested `forward()` or ≥2 `pairwise()`** variables.
+7. **`pairwise()`** requires **≥2 pairwise-assigned variables**.
+8. **`interaction_style`** entries must be from the reserved keyword set: `long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, or `random: [...]`. Never translate these.
+9. **`goal_style`** is exactly one of: `steps: N`, `random steps: M` (M ≤ 20), or `all_answered:` (with optional `export`, `limit`).
+10. **`chatbot.output` field names** are the contract for rules (`conv[i].field_name`) — use stable, descriptive names.
+
+---
+
+## 2. Template your LLM should be prompted to fill
+
+```yaml
+test_name: "generated_profile_name"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's intent and behaviour."
+  context:
+    - "Who the user is, constraints, preferences."
+  goals:
+    - "Main request using a {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste the bot's real fallback message here"
+  output:
+    - important_field:
+        type: string
+        description: "What to extract for validation"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+        - long phrases
+        - make spelling mistakes
+```
+
+---
+
+## 3. Suggested automation architecture (LLM + validator loop)
+
+```
+┌─────────────┐    prompt w/ schema    ┌──────────────┐
+│  LLM call   │ ─────────────────────► │  YAML output │
+└─────────────┘                        └──────┬───────┘
+       ▲                                      │
+       │  retry with error feedback           ▼
+       │                              ┌──────────────────┐
+       └──────────────────────────────│ Validator (rules │
+                                      │ 1–10 above)      │
+                                      └────────┬─────────┘
+                                               │ valid
+                                               ▼
+                                     write to profiles/*.yml
+                                     + run validation_check.py
+```
+
+**Key design points:**
+- **Feed the schema + invariants into the system prompt** (the table above is your spec).
+- **Validate before writing** — parse YAML, then check invariants 1–10 programmatically.
+- **Retry loop** — on failure, send the validator's error messages back to the LLM (max 2–3 retries).
+- **Final gate** — run Sensei's own `validation_check.py --profile ... --combined-matrix` and only accept if it exits clean.
+- **Optional**: also generate a matching rule and check `chatbot.output` field names line up (the profile↔rule contract from §2.1.1 of the guide).
+
+---
+
+## 4. Want me to go further?
+
+I can help with the SENSEI-specific pieces of this automation:
+- 🎯 **Write the exact system prompt** for the LLM (schema + invariants + few-shot examples from your real profiles).
+- 🔍 **Draft a matching SENSEI rule** for the generated profile's `chatbot.output`.
+- 🧩 **Design a connector** if the automation needs to hit a specific bot API.
+
+Which of those would be most useful? Or if you tell me the target domain (e.g., "restaurant booking", "flight search"), I can generate a concrete, valid profile right now as a reference example. 🚀

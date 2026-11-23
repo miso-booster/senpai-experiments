@@ -1,0 +1,105 @@
+I'll create the YAML connector for that request first, then a Python script to send multiple messages through it 😊
+
+## 1) YAML Connector
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+A couple of notes on the mapping 👀:
+- `response_path: "response.0.text"` points to the first element of the `response` array, which is where the bot's reply lives in your sample.
+- The reply text comes back wrapped in HTML (`<p>...</p>`), so the script below strips tags for readability.
+- I kept only the headers that matter for the API call (auth, origin, referer, user-agent). The browser-specific ones (`Sec-Fetch-*`, `Priority`, etc.) aren't needed.
+
+## 2) Python script to send multiple requests
+
+```python
+"""
+Send multiple messages to the SAIC Malaga chatbot via the custom YAML connector.
+
+Usage:
+    python send_multiple.py
+
+Requires:
+    - The connector YAML saved as `saic-malaga.yaml` next to this script.
+    - The `chatbot_connectors` package available in your environment.
+"""
+
+import re
+import time
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+CONNECTOR_PATH = "saic-malaga.yaml"
+
+# Messages to send, in order. The bot keeps conversation state via the
+# `conversation` id in the payload, so replies build on each other.
+MESSAGES = [
+    "hola",
+    "¿qué trámites puedo hacer aquí?",
+    "necesito pedir cita previa",
+    "gracias",
+]
+
+# Small pause between requests to be polite to the API.
+DELAY_SECONDS = 1.0
+
+
+def strip_html(text: str) -> str:
+    """Remove HTML tags and collapse whitespace for readable output."""
+    if not isinstance(text, str):
+        return str(text)
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+    return re.sub(r"[ \t]+", " ", text).strip()
+
+
+def main() -> None:
+    bot = CustomChatbot(CONNECTOR_PATH)
+
+    for i, message in enumerate(MESSAGES, start=1):
+        print(f"\n[{i}/{len(MESSAGES)}] User: {message}")
+        try:
+            success, response = bot.execute_with_input(message)
+        except Exception as exc:  # network / parsing errors
+            print(f"  ⚠️  Request failed: {exc}")
+            continue
+
+        if not success:
+            print(f"  ⚠️  Bot returned an error: {response}")
+            continue
+
+        print(f"  Bot: {strip_html(response)}")
+        time.sleep(DELAY_SECONDS)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### How it works
+- **`CustomChatbot(CONNECTOR_PATH)`** loads your YAML and handles the HTTP call, payload templating (`{user_msg}`), and `response_path` extraction for you.
+- **`execute_with_input(message)`** returns `(success, response)` — `success` is a boolean, `response` is the extracted bot text.
+- The **`conversation` id stays fixed** across messages, so the bot treats them as one ongoing session (just like a real user chatting). If you want each message to start a fresh conversation, generate a new UUID per request and inject it into the payload — let me know and I can adapt the script for that.
+- **`strip_html`** cleans up the `<p>...</p>` / `<br>` markup so the console output is readable.
+
+Want me to also add a version that reads messages from a file, or one that logs the full JSON responses for debugging? 🚀

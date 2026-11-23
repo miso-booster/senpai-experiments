@@ -1,0 +1,73 @@
+conversation ID: graph_based_architecture__p4__ada_uam__profile__055ab763
+$$$
+¡Claro que sí! 😊 Me encanta que quieras crear un perfil enfocado en el CAU. Vamos a armarlo paso a paso para que quede sólido y listo para correr.
+
+Antes de escribir el YAML, te cuento lo que necesitamos cubrir:
+
+- **`user.role` y `context`**: quién es el usuario y qué necesita (soporte del CAU).
+- **`user.goals`**: las preguntas concretas para obtener teléfono, email, dirección y horarios.
+- **`chatbot.output`**: los campos que quieres extraer al final (¡justo los cuatro que mencionas!).
+- **`conversation`**: cuántas conversaciones, cuántos pasos y estilo de interacción.
+
+Aquí tienes un perfil completo y listo para copiar en `profiles/`:
+
+```yaml
+test_name: "Soporte del CAU - Datos de contacto"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Usuario que necesita contactar al Centro de Atención a Usuarios (CAU)
+    de la UAM para resolver una duda sobre sus servicios y quiere obtener
+    los datos de contacto y los horarios de atención.
+  context:
+    - "Eres miembro de la comunidad universitaria y tienes una incidencia que quieres resolver cuanto antes."
+    - "Prefieres contactar al CAU por el canal que te resulte más cómodo (teléfono o correo)."
+    - "También te interesa saber dónde está físicamente la oficina por si necesitas acudir en persona."
+  goals:
+    - "Solicitar el número de teléfono de contacto del Centro de Atención a Usuarios (CAU)."
+    - "Pedir el correo electrónico del CAU para poder escribirles."
+    - "Preguntar por la dirección física de la oficina de atención del CAU."
+    - "Consultar los horarios de atención del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Dirección física del CAU"
+    - service_hours:
+        type: string
+        description: "Horario de atención del CAU"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+Un par de notas rápidas para que lo tengas claro 👀:
+
+- **Los cuatro `output`** (`contact_phone`, `contact_email`, `physical_address`, `service_hours`) son exactamente lo que pediste. Si luego quieres escribir reglas de Sensei-check, podrás leerlos como `conv[i].contact_phone`, etc. 🙌
+- **`single questions`** hace que el usuario pregunte de una en una, lo cual encaja genial para ir pidiendo cada dato por separado.
+- **`steps: 20`** da margen suficiente para las cuatro preguntas sin alargar demasiado la conversación.
+- El **`fallback`** lo copié del estilo de tus otros perfiles del proyecto para mantener coherencia.
+
+¿Quieres que le añada algo más, como un `interaction_style` con `make spelling mistakes` o `change language`, o prefieres dejarlo limpio y directo? También puedo ayudarte a crear una regla de Sensei-check que verifique que los cuatro campos vienen rellenos si te interesa 😊
+$$$

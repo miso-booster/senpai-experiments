@@ -1,0 +1,129 @@
+¡Perfecto! 😊 Encontré tu perfil en el proyecto: **`usuarios_nuevos_y_admisiones.yaml`**. Ya lo leí y tengo claros sus campos de `chatbot.output`, así que puedo proponerte reglas que encajen exactamente con lo que el perfil extrae.
+
+Basándome en `sensei-check-doc.md`, `rules-examples.md` y `sensei-chat-guide.md`, aquí tienes una batería de reglas pensadas para "probar" este perfil. Las agrupé en tres tipos: **globales** (no dependen de campos concretos), **de completitud** (usan `data_collected`/`missing_slots`) y **de contenido** (usan campos específicos del `chatbot.output`).
+
+### 📋 Campos disponibles en tu perfil
+`admission_to_grados_link`, `waitlist_info_link`, `future_students_link`, `welcome_day_link`, `grados_available`, `cursos_available`, `waitlist_procedures`, `welcome_day_date`, `welcome_day_time`, `admission_deadline`, `future_students_info`, `admission_requirements`, `event_location`, `enrollment_process`, `contact_admissions`, `application_fee`.
+
+---
+
+### 1) Regla global: el bot responde en el mismo idioma
+El usuario habla en español, así que el bot debería responder en español.
+
+```yaml
+name: responde_en_mismo_idioma
+description: El chatbot responde en el mismo idioma que el usuario (español)
+conversations: 1
+active: True
+oracle: responds_in_same_language()
+yields: f"El chatbot no responde en el mismo idioma que el usuario"
+```
+
+---
+
+### 2) Regla global: el bot no se repite
+Útil para detectar respuestas repetitivas o en bucle (típico cuando el bot cae en el fallback).
+
+```yaml
+name: no_respuestas_repetidas
+description: El chatbot no repite respuestas a lo largo de la conversación
+conversations: 1
+active: True
+oracle: not repeated_answers(method='tf-idf', threshold=0.75)
+yields: f"El chatbot repite respuestas: {repeated_answers(method='tf-idf', threshold=0.75)}"
+```
+
+---
+
+### 3) Regla global: el bot se mantiene en el tema
+El bot debería hablar solo de admisiones, grados, cursos, Welcome Day, etc.
+
+```yaml
+name: solo_habla_de_admisiones
+description: El chatbot solo habla de admisiones, grados, cursos y Welcome Day
+conversations: 1
+active: True
+oracle: only_talks_about('proceso de admisión, grados y cursos ofrecidos, listas de espera, evento Welcome Day, recursos para futuros estudiantes')
+```
+
+---
+
+### 4) Regla de completitud: se rellenan todos los slots
+Comprueba que el extractor rellenó todos los campos de `chatbot.output`. Ojo: con 16 campos y `steps: 30`, es posible que no todos se llenen en una sola conversación, así que esta regla es exigente — pero es una buena forma de ver qué falta.
+
+```yaml
+name: todos_los_slots_rellenos
+description: Todos los campos de chatbot.output se rellenan al final de la conversación
+conversations: 1
+active: True
+oracle: data_collected() == True
+yields: f"Slots sin rellenar: {missing_slots()}"
+```
+
+---
+
+### 5) Regla de contenido: enlaces no vacíos
+Tu perfil extrae varias URLs (`admission_to_grados_link`, `welcome_day_link`, etc.). Esta regla verifica que el bot no devuelva botones/enlaces vacíos.
+
+```yaml
+name: enlaces_no_vacios
+description: El chatbot no devuelve botones o enlaces vacíos
+conversations: 1
+active: True
+oracle: |
+  not chatbot_returns("LINK: <empty>") and not chatbot_returns("AVAILABLE BUTTONS:", and_not="- BUTTON TEXT:")
+```
+
+---
+
+### 6) Regla de contenido: la cuota de solicitud es un importe válido
+`application_fee` es de tipo `money`, así que verificamos que, si se extrae, sea un valor numérico positivo.
+
+```yaml
+name: cuota_solicitud_valida
+description: Si se extrae la cuota de solicitud, debe ser un importe positivo
+conversations: 1
+active: True
+when: application_fee is not None
+oracle: extract_float(application_fee) > 0
+yields: f"Cuota de solicitud inválida: {application_fee}"
+```
+
+---
+
+### 7) Regla de contenido: el bot menciona el Welcome Day
+Como el usuario pregunta explícitamente por el Welcome Day, el bot debería mencionarlo en algún turno.
+
+```yaml
+name: menciona_welcome_day
+description: El chatbot menciona el evento Welcome Day en la conversación
+conversations: 1
+active: True
+oracle: utterance_index('assistant', 'Welcome Day') > 0
+yields: f"El chatbot no menciona el Welcome Day"
+```
+
+---
+
+### 8) Regla de contenido: el bot menciona el proceso de admisión
+Análoga a la anterior, pero para el proceso de admisión a grados.
+
+```yaml
+name: menciona_proceso_admision
+description: El chatbot menciona el proceso de admisión a grados
+conversations: 1
+active: True
+oracle: utterance_index('assistant', 'proceso de admisión') > 0
+yields: f"El chatbot no menciona el proceso de admisión"
+```
+
+---
+
+### 💡 Notas importantes (según la documentación)
+
+- **Reglas 1–3 y 5** son **globales**: usan solo helpers genéricos (`responds_in_same_language`, `repeated_answers`, `only_talks_about`, `chatbot_returns`) y no dependen de campos concretos del `chatbot.output`.
+- **Reglas 4, 6, 7 y 8** son **profile-bound**: usan `data_collected`/`missing_slots` o campos reales del perfil (`application_fee`). Si renombras esos campos en el perfil, hay que actualizar la regla.
+- Los helpers `language`, `tone`, `utterance_index`, `only_talks_about`, `responds_in_same_language` son **LLM-backed**, así que puede haber pequeña variabilidad — no te alarmes si un caso aislado falla.
+- La regla 4 (`data_collected`) es la más exigente. Si ves que falla mucho, puede que necesites **subir `steps`** o **reducir el número de campos** en el perfil. Es una buena señal de qué información no está llegando a extraerse.
+
+¿Quieres que te las guarde como archivos en `rules/` (por ejemplo, una por archivo o agrupadas), o prefieres ajustar alguna antes? También puedo añadir una regla **metamórfica** (comparando 2 conversaciones) si te interesa probar consistencia entre distintos grados/cursos. 🚀

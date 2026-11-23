@@ -1,0 +1,74 @@
+Here's a profile for your scenario — a new-bike owner who wants the shop to set the bike up and swap the seat and handlebar grips 🚲
+
+```yaml
+test_name: bike_setup_customization_request
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    A customer who recently bought a new bike and wants to bring it to the shop
+    to have it set up and tailored to their liking, specifically by changing the
+    seat and the handlebar grips.
+  context:
+    - "You just bought a new bike and are excited to ride it, but the stock seat and grips don't feel right for you."
+    - "You want the shop to set the bike up properly and swap out the seat and the handlebar grips for ones you prefer."
+    - "You are friendly but a bit unsure about the details, so you ask questions about options, pricing, and timing."
+    - "You'd like to get this done soon, ideally by dropping the bike off or booking an appointment."
+  goals:
+    - "Explain that you just bought a new bike and want it set up for you."
+    - "Ask if the shop can change the seat on your new bike."
+    - "Ask if the shop can also replace the handlebar grips."
+    - "Ask what seat and grip options are available to choose from."
+    - "Ask how much the seat and grip changes will cost."
+    - "Ask how long the setup and customization will take."
+    - "Ask whether you need to book an appointment or can just drop the bike off."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - setup_service_offered:
+        type: string
+        description: "Confirmation from the chatbot that the shop can set up / customize a newly bought bike. Look for positive confirmations like 'Yes, we can set up your new bike' or similar."
+    - seat_change_offered:
+        type: string
+        description: "Confirmation that the shop can change the seat on the bike, and any details about seat options mentioned."
+    - grips_change_offered:
+        type: string
+        description: "Confirmation that the shop can replace the handlebar grips, and any details about grip options mentioned."
+    - customization_price:
+        type: currency
+        description: "The price stated by the chatbot for the seat and/or handlebar grip changes and setup, including currency if present."
+    - setup_duration:
+        type: string
+        description: "The estimated time or duration the chatbot provides for the setup and customization, such as 'about an hour' or 'same day'."
+    - appointment_details:
+        type: string
+        description: "Details of how to proceed, such as whether an appointment is needed or the bike can be dropped off, including any date/time or booking confirmation."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+### What this does and why 🛠️
+- **Scenario fit:** The simulated user is a new-bike owner who wants the shop to set the bike up and swap the **seat** and **handlebar grips** — exactly your use case.
+- **Conventions matched:** I followed the style of your existing bike profiles (`bike_repair_and_maintenance_scheduler.yaml`, `bike_service_and_repair_inquirer.yaml`): same `llm` block, the same shop `fallback` line, the `single questions` interaction style, and the `all_answered` goal style with a `limit`.
+- **`chatbot.output` as the rules contract:** Per `sensei-chat-guide.md` (§2.1), these output fields are what Sensei-check rules will later read as `conv[i].<field>`. I kept names descriptive and stable (`seat_change_offered`, `grips_change_offered`, `customization_price`, `setup_duration`, `appointment_details`) so you can build rules on top of them.
+- **Price type:** I used `currency` for the price, which is the built-in type the docs recommend for monetary values.
+
+A couple of quick questions to fine-tune it:
+1. Should the user be **friendly** (as written) or a different personality (your other profiles use `rude-user` / `skeptical-user`)?
+2. Should I also draft a **Sensei-check rule** to validate this profile (e.g., that the bot confirms both seat and grip changes)?

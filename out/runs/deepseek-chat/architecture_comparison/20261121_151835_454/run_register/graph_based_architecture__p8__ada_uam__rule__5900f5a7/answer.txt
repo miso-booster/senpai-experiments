@@ -1,0 +1,71 @@
+¡Hola! 😊 Let's take a look at your rule together — I'll walk you through what's going on and how to make it shine ✨
+
+## Quick verdict
+
+The rule is **syntactically valid** (it will parse and run), but it has a **logical problem**: the `when` filter and the `oracle` are checking *exactly the same thing*. That makes the rule **tautological** — it can never fail in a meaningful way. Let me explain why, then show you a fixed version.
+
+## Why it's problematic
+
+Look at the structure:
+
+```yaml
+name: contact_email_consistency
+description: The chatbot returns the expected contact email (cau@uam.es)
+conversations: 1
+when: conv[0].contact_email == 'cau@uam.es'
+oracle: conv[0].contact_email == 'cau@uam.es'
+```
+
+Sensei-check first **selects** conversations with `when:`. Then it **checks** the `oracle` on those selected conversations.
+
+So the flow is:
+1. "Only consider conversations where the email/phone/address are exactly correct."
+2. "For those conversations, assert the email/phone/address are exactly correct."
+
+Step 2 is guaranteed to pass for every conversation that survived step 1 — because that's literally how they were selected. The rule is **vacuously true**. It will never catch a wrong contact detail, because any conversation with wrong details is filtered out *before* the oracle runs. 🚫
+
+Also, a small note: `conversations: 1` with `conv[0]` is fine, but for a single-conversation oracle you can also use the shorthand fields directly (`contact_email`, `contact_phone`, …) without `conv[0]` — both styles appear in the docs.
+
+## What you probably *meant* to check
+
+I suspect your intent is: **"The CAU (Centro de Atención al Usuario) must always give the correct contact details."** That's a **single-conversation oracle** — no filter needed. The `when` should be dropped (or used only to select *relevant* conversations, e.g. those where the user actually asked for contact info).
+
+## Fixed version
+
+```yaml
+name: check_cau_information
+description: The CAU must provide the correct contact details (email, phone, physical address).
+conversations: 1
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+That's it — just remove the `when`. Now the rule will actually **fail** if the chatbot reports a wrong email, phone, or address. 🎯
+
+### Optional refinement (if you only want to check when contact info is relevant)
+
+If you only want to assert this when the user *asked* about contact details (so you don't fail on unrelated conversations where the fields are legitimately empty), use `when` to select **relevant** conversations — not to pre-assert the answer:
+
+```yaml
+name: check_cau_information
+description: When the user asks for contact details, the CAU must provide the correct email, phone, and address.
+conversations: 1
+when: conv[0].contact_email is not None or conv[0].contact_phone is not None or conv[0].physical_address is not None
+oracle: conv[0].contact_email == 'cau@uam.es' and conv[0].contact_phone == '91 497 4029' and conv[0].physical_address == 'C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107'
+```
+
+Here `when` selects conversations where the bot *did* output contact info, and the oracle checks it's the *right* info. This is the classic "filter for relevance, then assert correctness" pattern. ✅
+
+## One thing to double-check 🔍
+
+Make sure `contact_email`, `contact_phone`, and `physical_address` are **actual fields in your profile's `chatbot.output`** (per the docs, section 3.1). If the profile exposes them under different names (e.g. `email`, `phone`, `address`), update the rule to match — otherwise the fields will be `None` and the oracle will fail for the wrong reason.
+
+## TL;DR
+
+| Aspect | Status |
+|---|---|
+| YAML syntax | ✅ Valid |
+| Field references | ⚠️ Verify against `chatbot.output` |
+| Logic | ❌ Tautological — `when` duplicates `oracle` |
+| Fix | Remove `when` (or make it a *relevance* filter, not an *answer* filter) |
+
+Want me to help you adapt this to your actual `chatbot.output` field names, or draft a companion metamorphic rule (e.g. "contact info stays consistent across paraphrased questions")? Just say the word 🙌

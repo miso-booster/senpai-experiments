@@ -1,0 +1,51 @@
+conversation ID: agentic_architecture__p44__pizza_shop__connector__0a08a203
+$$$
+¡Claro que sí! 😊 Es el mismo backend de MillionBot (`api.1millionbot.com`), así que solo hay que cambiar los identificadores del bot, la conversación, el sender, la URL de referencia y la `Authorization`. La estructura del payload y el `response_path` (`response.0.text`) se mantienen igual, porque la respuesta tiene la misma forma.
+
+Aquí tienes el connector adaptado (basado en `custom-connector-guide.md` y `connector-examples.md`):
+
+```yaml
+name: "Gallo Morón de la Frontera"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "65ca19e7dbbb4e26cbeadf28"
+  payload_template:
+    conversation: "67ea76f4e213b2dcbc146e2b"
+    sender_type: "User"
+    sender: "67ea76f40643a3dd27e59411"
+    bot: "65ca19e7dbbb4e26cbeadf24"
+    language: "es"
+    url: "https://www.morondelafrontera.es/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Qué he cambiado respecto a `ada-uam.yaml` 🔧
+
+| Campo | Ada UAM | Morón de la Frontera |
+|-------|---------|----------------------|
+| `name` | "Ada UAM" | "Gallo Morón de la Frontera" |
+| `Authorization` (header) | `60a3bee2...` | `65ca19e7dbbb4e26cbeadf28` |
+| `conversation` | `682ce1ce...` | `67ea76f4e213b2dcbc146e2b` |
+| `sender` | `682ce1ce...` | `67ea76f40643a3dd27e59411` |
+| `bot` | `60a3be81...` | `65ca19e7dbbb4e26cbeadf24` |
+| `url` | UAM | `https://www.morondelafrontera.es/` |
+
+### Lo que se mantiene igual ✅
+- `base_url`, `path` y `method` (mismo endpoint de MillionBot).
+- `sender_type: "User"` y `language: "es"`.
+- La estructura anidada `message.text: "{user_msg}"`.
+- `response_path: "response.0.text"` — la respuesta de Morón tiene la misma forma (`response` es un array y el texto está en el índice 0), así que la ruta de extracción no cambia.
+
+### Un par de avisos importantes ⚠️
+- **`conversation` y `sender`**: en el ejemplo de Ada UAM son IDs fijos. Si el bot de Morón espera una conversación nueva por sesión, quizá convenga generar esos IDs dinámicamente (pero el connector YAML no soporta lógica dinámica más allá del placeholder `{user_msg}`). Con los valores fijos de tu captura debería funcionar para pruebas.
+- **`Authorization`**: es el token público del widget; si caduca o cambia, habrá que actualizarlo.
+- El texto de respuesta viene con HTML (`<p>...</p>`); el connector lo devolverá tal cual. Si quieres texto limpio, eso habría que tratarlo fuera del connector.
+
+¿Quieres que lo guarde como un archivo nuevo (por ejemplo `gallo-moron.yaml`) o prefieres revisarlo antes? También puedo ajustar el `name` si quieres otro nombre. 🐓
+$$$

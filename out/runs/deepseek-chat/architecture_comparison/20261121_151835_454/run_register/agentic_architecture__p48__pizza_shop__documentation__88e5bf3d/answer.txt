@@ -1,0 +1,67 @@
+Hey! 😊 Great question — based on `sensei-chat-guide.md`, here's the breakdown of what's **not mandatory** in a profile.
+
+## Optional fields
+
+**`llm` (the whole block)**
+The FAQ is explicit: *"Do I have to define `llm`? No. If omitted, defaults are applied (e.g., model and temperature) and the format defaults to text."* You only need it when you want to override model/temperature or switch to `speech` mode.
+
+**`llm.format.config`**
+Only relevant when `format.type: speech` — the doc marks it as `# (only for type: speech)`.
+
+**`user.context`**
+Marked optional in the anatomy section. It can hold a `personality:` reference to `personalities/<file>.yml` (also optional) or freeform constraint strings.
+
+**`conversation.max_cost`**
+Explicitly commented as `# optional: cap spend for the whole run`.
+
+**`goal_style.max_cost`**
+Also optional — a per-conversation cost cap.
+
+**`goal_style.all_answered.export` and `.limit`**
+Both optional; `limit` defaults to 30 if omitted.
+
+**`interaction_style`**
+Not listed as required in the anatomy — if you omit it, the simulator just behaves naturally (the `default` style).
+
+**`chatbot.output`**
+Not strictly required to *run* a profile, but ⚠️ strongly recommended: it's the contract that Sensei-check rules read via `conv[i].<field_name>`. Without it, no profile-bound rules can validate anything.
+
+**`test_name`**
+Present in every example, but the doc never states it's enforced — treat it as strongly recommended rather than a hard requirement.
+
+## Typically required (for a meaningful run)
+
+- `user.language`, `user.role`, `user.goals`
+- `chatbot.is_starter`, `chatbot.fallback` (the doc warns to put the *real* bot fallback text to avoid endless loops)
+- `conversation.number` and `goal_style`
+
+## Minimal skeleton
+
+```yaml
+test_name: "my_first_sensei_profile"
+
+user:
+  language: English
+  role: "Describe what the simulated user wants and how they behave."
+  goals:
+    - "Main request with a {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste your bot’s real fallback here"
+  output:
+    - important_field:
+        type: string
+        description: "What you want to extract/validate"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+```
+
+Want me to check one of your existing profiles in the project to see which optional fields it's currently using (or missing)? Just say the word 🙌

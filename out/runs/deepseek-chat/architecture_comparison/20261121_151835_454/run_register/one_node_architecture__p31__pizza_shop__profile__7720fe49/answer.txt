@@ -1,0 +1,60 @@
+I spotted the issue right away 😊 — your `chatbot:` block got swallowed into `user:` because the `is_starter`, `fallback`, and `output` keys are indented under `user` instead of living under their own `chatbot:` section. There's also a stray `type: str` (should be `string`) and `export: 1` (should be a boolean `true`).
+
+Here's the corrected profile:
+
+```yaml
+test_name: general_information_seeker
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A potential customer seeking general information about the pizza shop before placing an order.
+  context:
+  - You are planning a casual pizza night with friends and want to explore options from a local pizza shop you haven't tried before.
+  - Before placing an order, you want to gather some general information about their menu, services, and pricing.
+  goals:
+  - Ask what types of questions the chatbot can answer.
+  - Ask what the daily opening hours are.
+  - Ask about the estimated order time, without specifying the number of pizzas.
+  - Ask what drink options are available and their prices.
+  - Ask about the pricing for a custom pizza.
+chatbot:
+  is_starter: false
+  fallback: 'I''m sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks.'
+  output:
+  - available_information:
+      type: string
+      description: The chatbot's response listing the types of questions it can answer. Look for phrases like "I can answer questions about..." or "I can provide information on...".
+  - opening_hours:
+      type: string
+      description: The daily opening hours of the pizza shop, as stated by the chatbot.
+  - estimated_order_time:
+      type: string
+      description: The chatbot's explanation of the estimated order time, including factors that influence it.
+  - drink_options_and_prices:
+      type: string
+      description: A list of available drink options and their corresponding prices, as provided by the chatbot.
+  - custom_pizza_pricing:
+      type: string
+      description: The chatbot's explanation of pricing for a custom pizza, including size and additional ingredients.
+conversation:
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 20
+  interaction_style:
+  - single question
+```
+
+What I fixed 👇
+
+- **`chatbot:` section restored** — `is_starter`, `fallback`, and `output` now sit under their own top-level `chatbot:` key instead of being nested inside `user`.
+- **`custom_pizza_pricing.type`** changed from `str` → `string` (the valid primitive name).
+- **`export: 1`** → `export: true` (it's a boolean flag).
+- **Cleaned the `fallback`** — removed the leftover LangChain troubleshooting URL that had leaked into the message text.
+
+One small heads-up 💡: your `interaction_style` uses `single question`, but the documented keyword is `single questions` (plural). I left it as-is since it may match your local build, but if validation complains, that's the first thing to check. Want me to also review the rules that reference this profile's outputs?

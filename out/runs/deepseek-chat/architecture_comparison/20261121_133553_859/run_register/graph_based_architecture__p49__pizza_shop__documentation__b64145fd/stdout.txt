@@ -1,0 +1,80 @@
+conversation ID: graph_based_architecture__p49__pizza_shop__documentation__b64145fd
+$$$
+Hey there! 😊 Great question — `pairwise()` is one of the handiest tools in Sensei Profiles when you want good coverage without exploding your test count. Let me break it down for you.
+
+## What `pairwise()` does
+
+`pairwise()` generates **pairwise-coverage combinations** across **2 or more variables**. Instead of testing *every* possible combination (the full Cartesian product), it guarantees that **every pair of values across any two variables appears at least once**.
+
+That's a huge deal because most bugs come from **2-way interactions** — so you catch the vast majority of defects while running *way* fewer conversations.
+
+## A quick analogy 🍕
+
+Imagine you're testing pizza orders with:
+- **size**: small, medium, large
+- **toppings**: cheese, mushrooms, pepperoni
+
+A **full grid** would be 3 × 3 = **9 combinations**. With `pairwise()`, you'd get around **3–4 combinations** — but every size still gets paired with every topping at least once. Same coverage of pairs, way less work. 🙌
+
+## How to use it
+
+Just set `function: pairwise()` on **at least two variables** in your `user.goals`:
+
+```yaml
+goals:
+  - "Order a {{size}} pizza with {{toppings}}"
+  - size:
+      function: pairwise()
+      type: string
+      data: [small, medium, large]
+  - toppings:
+      function: pairwise()
+      type: string
+      data: [cheese, mushrooms, pepperoni]
+```
+
+## Important rules to remember ⚠️
+
+1. **You need a minimum of 2 pairwise-assigned variables.** One alone won't do anything meaningful.
+2. **`conversation.number` can be driven by the matrix.** You can write:
+   ```yaml
+   conversation:
+     number: combinations(0.5, pairwise)
+   ```
+   This uses the pairwise matrix and takes 50% of it. Or just `combinations` to use the whole thing.
+3. **It's different from `forward()`.** `forward()` iterates deterministically (and can be *nested* to build full grids). `pairwise()` is about *efficient coverage* across multiple variables.
+
+## Real example from your project 👀
+
+Your `pizza_order_test_custom.yml` profile uses it like this:
+
+```yaml
+- size:
+    data: [small, medium, big, extra large]
+    function: pairwise()
+    type: string
+- toppings:
+    data: [cheese, mushrooms, pepperoni]
+    function: pairwise()
+    type: string
+```
+
+And then:
+
+```yaml
+conversation:
+  number: combinations(0.5, pairwise)
+```
+
+So Sensei builds a pairwise matrix of size × toppings, then runs **50%** of those combinations. Nice and efficient! ✅
+
+## TL;DR
+
+| | `forward()` | `pairwise()` |
+|---|---|---|
+| Purpose | Deterministic iteration / nesting | Efficient 2-way coverage |
+| Combos | Full grid (can explode) | Minimal set covering all pairs |
+| Min variables | 1 | 2 |
+
+Hope that clears it up! Want me to help you design a pairwise setup for a specific profile, or show how it interacts with `conversation.number`? 🚀
+$$$

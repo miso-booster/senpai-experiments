@@ -1,0 +1,90 @@
+conversation ID: agentic_architecture__p12__alcampo__profile__37c941e2
+$$$
+Here's a profile that simulates a user asking the chatbot to add items to their shopping cart. I based the structure on `sensei-chat-guide.md` and matched the conventions of your existing profiles (e.g. `online_ordering_process.yaml`, `product_inquiry_and_order_placement.yaml`).
+
+```yaml
+test_name: "Shopping Cart Item Addition"
+
+llm:
+  temperature: 0.9
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer shopping online and you want to add products to your
+    shopping cart. Ask the chatbot to add specific items, quantities, and
+    variants to your cart, and confirm what is currently in it.
+  context:
+    - "You are building a weekly grocery order and adding items one by one."
+    - "You prefer to confirm quantities and variants before adding an item."
+    - "You may ask the chatbot to review or update the cart contents."
+  goals:
+    - "Ask the chatbot to add {{quantity}} x {{product}} to your shopping cart."
+    - "Ask the chatbot to add {{second_product}} to your cart as well."
+    - "Confirm the current contents of your shopping cart."
+    - "Ask the chatbot to update the quantity of {{product}} in your cart."
+    - product:
+        function: forward()
+        type: string
+        data:
+          - any(5 common grocery products)
+    - second_product:
+        function: random()
+        type: string
+        data:
+          - any(5 common grocery products)
+    - quantity:
+        function: random()
+        type: int
+        data:
+          min: 1
+          max: 5
+          step: 1
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't quite get that. Could you rephrase your request about your shopping cart?"
+  output:
+    - added_items:
+        type: list[string]
+        description: "Items the chatbot added to the shopping cart"
+    - item_quantities:
+        type: list[int]
+        description: "Quantities added for each item"
+    - cart_contents:
+        type: list[string]
+        description: "Current contents of the shopping cart after the requests"
+    - cart_total_items:
+        type: int
+        description: "Total number of items in the cart"
+    - cart_total_price:
+        type: float
+        description: "Total price of the cart, if provided"
+    - confirmation_message:
+        type: string
+        description: "Chatbot's confirmation that items were added"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 8
+  interaction_style:
+    - single questions
+```
+
+### What this profile does
+- **User role/goals**: The simulated user asks the bot to add items (with quantities) to the cart, adds a second item, confirms cart contents, and updates a quantity — all driven by `{{product}}`, `{{second_product}}`, and `{{quantity}}` variables.
+- **Variables**: `product` uses `forward()` for deterministic coverage, `second_product` uses `random()`, and `quantity` is an `int` range (1–5).
+- **`chatbot.output`**: Defines the contract for later rules — `added_items`, `item_quantities`, `cart_contents`, `cart_total_items`, `cart_total_price`, `confirmation_message`. These can be referenced in Sensei-check rules as `conv[i].<field>`.
+
+### Notes / things you may want to tweak
+- I used `list[string]` / `list[int]` for cart contents since the docs support list types in `chatbot.output`. If your bot returns a single string summary instead, switch those to `string`.
+- `cart_total_price` is `float` — if you have a `currency` custom type in `types/`, using `currency` would be more precise.
+- The `fallback` is generic; paste your bot's **real** fallback text to avoid loops (per the docs' best practices).
+
+Want me to also create a **Sensei-check rule** that validates this profile (e.g., "every requested item appears in `cart_contents`")? If so, I'll load the rules docs and align it with these output fields 😊.
+$$$

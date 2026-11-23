@@ -1,0 +1,79 @@
+conversation ID: one_node_architecture__p2_basic__pizza_shop__profile__164dc1fa
+$$$
+Hey there! 😊 I'd love to help, but I have to be upfront: I'm Senpai, and I'm focused exclusively on **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (plus their documentation). Writing a standalone C program for a bike shop scheduler falls outside that scope, so I can't take that one on 🙏.
+
+That said — if you're actually trying to *test* a bike shop chatbot with Sensei, I'm totally here for that! For example, I could help you:
+
+- 🧑‍💻 **Create a SENSEI profile** that simulates a user booking a bike shop appointment (with `date(...)` and `time(...)` output types for extraction).
+- 📏 **Write SENSEI rules** to validate appointment behavior — e.g., uniqueness of appointment IDs, monotonicity of available slots, or that the bot confirms the booking.
+- 🔌 **Configure a SENSEI connector** to point at your bike shop chatbot's API.
+
+Here's a quick taste of what a profile for that scenario could look like:
+
+```yaml
+test_name: "bike_shop_appointment_booking"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer trying to book a bike repair appointment at a local shop.
+    Ask about availability, then book a slot for a specific service.
+  context:
+    - "You need a tune-up before a weekend ride."
+    - "You prefer morning appointments."
+  goals:
+    - "Book a {{service}} appointment on {{appointment_date}} at {{appointment_time}}"
+    - service:
+        function: forward()
+        type: string
+        data: [tune-up, brake adjustment, wheel truing]
+    - appointment_date:
+        function: another()
+        type: string
+        data:
+          - any(3 dates within the next 14 days)
+    - appointment_time:
+        function: random()
+        type: string
+        data: ["09:00", "11:00", "14:00", "16:30"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - appointment_id:
+        type: string
+        description: "Confirmation / booking reference"
+    - appointment_date:
+        type: date(day-month-year)
+        description: "Confirmed appointment date"
+    - appointment_time:
+        type: time(hh:mm)
+        description: "Confirmed appointment time"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 6
+  interaction_style:
+    - single questions
+```
+
+And a matching rule to check appointment IDs are unique across the batch:
+
+```yaml
+name: unique_appointment_ids
+description: Every booking has a unique appointment_id
+conversations: all
+oracle: is_unique('appointment_id')
+```
+
+Want me to build out a fuller profile + rule set for your bike shop bot? Just tell me a bit about what the chatbot does and I'll tailor it 🚲✨
+$$$

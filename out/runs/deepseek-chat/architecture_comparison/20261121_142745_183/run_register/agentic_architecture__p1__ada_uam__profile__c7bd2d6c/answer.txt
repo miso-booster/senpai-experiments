@@ -1,0 +1,103 @@
+Here's your eduroam profile! 🎓📶 It follows the structure in `sensei-chat-guide.md` and matches the style of your existing profiles (Spanish, CAU-style support bot).
+
+```yaml
+test_name: "Configuración de eduroam en el dispositivo"
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario de la universidad que quiere conectarse a la red eduroam
+    desde su dispositivo, pero no consigue configurarla correctamente y pide
+    ayuda al servicio de soporte técnico.
+  context:
+    - "personality: personalities/impatient-user"
+    - "Tienes una cuenta institucional válida, pero no sabes qué credenciales usar en eduroam."
+    - "Ya lo has intentado varias veces y siempre falla la conexión o la autenticación."
+    - "No estás seguro de si el problema es del dispositivo, de la contraseña o de la configuración."
+  goals:
+    - "Explica que no consigues conectarte a eduroam desde tu {{device}} usando el método {{setup_method}}."
+    - "Pide los pasos concretos para configurar eduroam en tu {{device}} con el método {{setup_method}}."
+    - "Pregunta qué credenciales debes introducir (usuario y contraseña) para eduroam."
+    - "Consulta qué hacer si la conexión sigue fallando después de seguir los pasos."
+    - device:
+        function: forward()
+        type: string
+        data:
+          - portátil con Windows
+          - portátil con macOS
+          - portátil con Linux
+          - móvil Android
+          - iPhone
+    - setup_method:
+        function: pairwise()
+        type: string
+        data:
+          - el instalador automático (eduroam CAT)
+          - la configuración manual de la red Wi-Fi
+          - la app oficial de eduroam
+          - el perfil de configuración descargable
+    - setup_channel:
+        function: pairwise()
+        type: string
+        data:
+          - siguiendo una guía web paso a paso
+          - con ayuda del servicio de soporte técnico
+          - desde la propia configuración del sistema operativo
+
+chatbot:
+  is_starter: false
+  fallback: >
+    ¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres,
+    puedes consultar nuestro catálogo de servicios. Respondo a preguntas
+    dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías
+    de la Información.
+  output:
+    - selected_device:
+        type: string
+        description: "Dispositivo del usuario para el que se explica la configuración"
+    - setup_method_used:
+        type: string
+        description: "Método de configuración de eduroam recomendado (instalador, manual, app, perfil)"
+    - eduroam_credentials:
+        type: string
+        description: "Credenciales que debe usar el usuario (usuario y contraseña institucional)"
+    - setup_steps:
+        type: string
+        description: "Pasos de configuración de eduroam para el dispositivo indicado"
+    - troubleshooting_tips:
+        type: string
+        description: "Recomendaciones si la conexión a eduroam sigue fallando"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.5
+  goal_style:
+    steps: 8
+  interaction_style:
+    - random:
+        - make spelling mistakes
+        - single questions
+        - long phrases
+```
+
+### What's going on here 👇
+
+- **Variables for the different setup methods** — exactly what you asked for:
+  - `device` (Windows, macOS, Linux, Android, iPhone) uses `forward()` so every device gets covered.
+  - `setup_method` (instalador automático / configuración manual / app oficial / perfil descargable) uses `pairwise()`.
+  - `setup_channel` (guía web / soporte técnico / configuración del sistema) also uses `pairwise()`, giving a second pairwise variable so the pairwise coverage matrix is well defined.
+  - With two `pairwise()` variables declared, `conversation.number: combinations(0.6, pairwise)` generates a reduced but well-covered set of conversations (per §5 of `sensei-chat-guide.md`).
+- **`chatbot.output`** defines the contract that future rules can read as `conv[i].<field>`. I chose fields that make sense for validation (e.g., you could later write a rule checking that `setup_steps` is not empty, or that `eduroam_credentials` mentions the institutional account).
+- **`fallback`** mirrors the CAU-style fallback used in your other profiles so the simulator doesn't loop forever.
+- **`interaction_style`** adds realistic friction (typos, long phrases, single questions) — typical for a frustrated user.
+
+### A couple of things you may want to tweak ✨
+- If your bot's real fallback text differs, paste it into `chatbot.fallback`.
+- If you'd rather cover **all** device × method combinations, change `conversation.number` to `combinations` (full matrix) — but that's more conversations/cost.
+- Want me to also draft a **rule** bound to this profile (e.g., "the bot always provides setup steps and credentials")? Just say the word and I'll load the rules docs and build it against these `chatbot.output` fields. 😊

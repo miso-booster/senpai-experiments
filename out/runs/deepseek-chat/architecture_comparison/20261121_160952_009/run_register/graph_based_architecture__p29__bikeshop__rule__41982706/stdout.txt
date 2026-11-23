@@ -1,0 +1,105 @@
+conversation ID: graph_based_architecture__p29__bikeshop__rule__41982706
+$$$
+Absolutely, happy to help with that! 🚴‍♂️ Let's build a Sensei-check rule that verifies the chatbot **confirms an appointment** when the user asks to schedule a bike service.
+
+Before I give you the YAML, a quick heads-up on the **profile-bound** nature of this rule 👇
+
+## First: what does your profile expose?
+
+For this rule to work, your SENSEI Chat profile needs to expose the relevant fields in `chatbot.output`. A typical setup for a bike service appointment might look like:
+
+```yaml
+# profiles/bike_service_booking.yaml
+test_name: "bike_service_booking"
+
+user:
+  language: English
+  role: >
+    You are a customer trying to schedule a bike service appointment.
+    Ask about available dates and times, the type of service needed, and confirm the booking.
+  context:
+    - "You want your bike serviced as soon as possible."
+  goals:
+    - "Book a {{service_type}} appointment on {{appointment_date}} at {{appointment_time}}"
+    - service_type:
+        function: random()
+        type: string
+        data: [basic tune-up, full service, brake adjustment, wheel truing]
+    - appointment_date:
+        function: random()
+        type: string
+        data:
+          - any(3 dates within the next 30 days)
+    - appointment_time:
+        function: random()
+        type: string
+        data: ["09:00", "10:00", "11:00", "14:00", "15:00"]
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - appointment_confirmed:
+        type: bool
+        description: Whether the appointment was confirmed
+    - appointment_date:
+        type: string
+        description: Scheduled date (e.g. "2024-06-15")
+    - appointment_time:
+        type: string
+        description: Scheduled time (e.g. "10:00")
+    - service_type:
+        type: string
+        description: Type of service requested
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+If your field names differ (e.g. `confirmed`, `booking_date`), just swap them in the rule below — the **structure** stays the same. 🛠️
+
+## The rule
+
+Here's a clean single-conversation oracle that checks the confirmation:
+
+```yaml
+name: bike_service_confirmation
+description: Chatbot confirms the appointment when the user asks to schedule a bike service
+conversations: 1
+when: service_type is not None
+oracle: appointment_confirmed is True and appointment_date is not None and appointment_time is not None
+```
+
+### What each part does 🧩
+
+- **`when: service_type is not None`** → only applies to conversations where the user actually requested a service (keeps the rule focused).
+- **`oracle`** → asserts that the appointment is confirmed **and** a date/time were provided. That's the "confirmation" you're after.
+
+## Want a stronger, LLM-backed version?
+
+If you'd rather check that the chatbot *verbally* confirms (not just that a slot is filled), you can lean on `utterance_index`:
+
+```yaml
+name: bike_service_confirmation_verbal
+description: Chatbot verbally confirms the bike service appointment
+conversations: 1
+when: service_type is not None
+oracle: utterance_index('assistant', 'confirmed') > 0 and appointment_confirmed is True
+```
+
+This checks that the assistant actually *says* something confirming (LLM-backed, so allow minor variability) **and** that the output slot agrees. ✅
+
+## A couple of tips 💡
+
+- If you want to be strict about **both** date and time being present, keep the `is not None` checks — they catch half-filled bookings.
+- If your profile uses a single `appointment_datetime` field instead of separate date/time, just reference that one.
+- Remember: **don't invent fields** — if `appointment_confirmed` isn't in your `chatbot.output`, add it to the profile first, then reference it here.
+
+Could you share your actual `chatbot.output` field names? I can tailor the rule exactly to your profile so it drops right in 😊
+$$$

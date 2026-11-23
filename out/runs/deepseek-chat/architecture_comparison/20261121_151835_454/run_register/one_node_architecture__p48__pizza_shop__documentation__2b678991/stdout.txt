@@ -1,0 +1,81 @@
+conversation ID: one_node_architecture__p48__pizza_shop__documentation__2b678991
+$$$
+Great question! 😊 Let me walk you through which fields in a Sensei profile are **optional** versus which ones you really need.
+
+## The short answer
+
+In practice, the **only truly essential parts** of a profile are:
+
+- `test_name`
+- `user` (with at least `language`, `role`, and `goals`)
+- `chatbot` (with at least `output`)
+
+Everything else can be omitted and Sensei will apply sensible defaults.
+
+## Field-by-field breakdown
+
+### `llm` — optional ✅
+If you leave it out, defaults are applied (model, temperature) and `format` defaults to `text`. You only need it when you want to override the model/temperature or switch to `speech` mode.
+
+```yaml
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+```
+
+### `chatbot.is_starter` — optional ✅
+Defaults to `false` (the user speaks first). Set it to `true` only if your bot greets first.
+
+### `chatbot.fallback` — optional, but strongly recommended ⚠️
+Not mandatory, but skipping it can cause endless loops when the bot doesn't understand. Best practice: paste your bot's **real** fallback text here.
+
+### `conversation` — optional ✅
+If omitted, defaults kick in. But you'll usually want to set at least `number` and `goal_style` to control how many conversations run and how they end.
+
+### `conversation.max_cost` / `goal_style.max_cost` — optional ✅
+Pure safety caps. Nice to have, never required.
+
+### `interaction_style` — optional ✅
+Defaults to natural conversation. Add styles only when you want to stress-test (typos, language switching, etc.).
+
+### `user.context` — optional ✅
+Helpful for richer personas, but not required.
+
+### `user.goals` variables — optional ✅
+Only declare variables you actually use in `{{...}}` placeholders.
+
+## Quick "minimal valid profile" example
+
+Here's the leanest profile that will still run:
+
+```yaml
+test_name: "minimal_profile"
+
+user:
+  language: English
+  role: "A customer ordering a pizza."
+  goals:
+    - "Order a {{size}} pizza"
+    - size:
+        function: random()
+        type: string
+        data: [small, medium, large]
+
+chatbot:
+  output:
+    - price:
+        type: currency
+        description: "Final price of the order"
+```
+
+That's it — no `llm`, no `conversation`, no `fallback`, no `context`. Sensei fills in the rest 🎉
+
+## One caveat worth flagging 👀
+
+Since your project has rules like `more_toppings_cost_more` and `same_number_of_toppings_cost_the_same` that reference `conv[i].toppings`, `conv[i].size`, `conv[i].drink`, and `conv[i].price` — make sure whichever profile those rules target actually **exposes those fields in `chatbot.output`**. That's a "mandatory in practice" dependency even though the schema itself doesn't enforce it.
+
+Want me to check whether any of your current profiles are missing fields that your active rules depend on? I can scan them for you 😊
+$$$

@@ -1,0 +1,62 @@
+# How `pairwise()` works 🧩
+
+Great question! `pairwise()` is a **fill function** you use inside `user.goals` to generate combinations of variable values — but instead of testing *every* possible combination (which explodes fast), it guarantees that **every pair of values across your variables appears at least once**.
+
+Think of it like this: if you have 3 pizza sizes × 3 toppings × 3 drinks, a full grid is 27 conversations. With `pairwise()`, you'd cover every *pair* (size+topping, size+drink, topping+drink) in far fewer runs — usually just a handful. 🎯
+
+---
+
+## Quick mental model
+
+- **`forward()`** → deterministic, full iteration (great for nesting and complete grids).
+- **`pairwise()`** → smart coverage: every **2-way combination** is tested at least once, without the Cartesian explosion.
+
+You need **at least 2 variables** declared with `pairwise()` for it to work — otherwise there's nothing to pair.
+
+---
+
+## Example from your project
+
+Your `pizza_order_test_custom.yml` profile uses it like this:
+
+```yaml
+goals:
+  - "a {{size}} custom pizza with {{toppings}}, {{size}}"
+  - size:
+      data: [small, medium, big, extra large]
+      function: pairwise()
+      type: string
+  - toppings:
+      data: [cheese, mushrooms, pepperoni]
+      function: pairwise()
+      type: string
+```
+
+Here, `size` (4 values) and `toppings` (3 values) are both `pairwise()`. Instead of 4 × 3 = 12 conversations, Sensei generates a **minimal set** where every size appears with every topping at least once — typically just 4 conversations. ✅
+
+---
+
+## Combining with `conversation.number`
+
+You can also let `pairwise()` drive how many conversations run:
+
+```yaml
+conversation:
+  number: combinations(0.5, pairwise)
+```
+
+This means: take the pairwise matrix, and run **50%** of it. You can also use `combinations(1, pairwise)` for the full set, or just `combinations` to use the largest matrix available.
+
+> ⚠️ Reminder: you need **at least two** `pairwise()` (or two nested `forward()`) variables declared for `combinations` to have a matrix to work from.
+
+---
+
+## When to reach for it 🎯
+
+- You have **many variables** and want broad coverage without a huge test suite.
+- You're hunting for **2-way interaction bugs** (e.g., "does a large + pepperoni combo break pricing?").
+- You want **fast smoke coverage** before running a full `forward()` grid.
+
+If you need *every* combination (e.g., for exhaustive metamorphic rule coverage), stick with nested `forward()`. If you want smart, lean coverage — `pairwise()` is your friend 😊
+
+Want me to sketch a profile that mixes `pairwise()` and `forward()` together, or show how it interacts with a specific rule?

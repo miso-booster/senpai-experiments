@@ -1,0 +1,67 @@
+Hey there! 😊 I'd love to help, but I have to be upfront: I'm limited to **SENSEI PROFILES, SENSEI RULES, SENSEI CONNECTORS, and their documentation** — so I can't write you a standalone Python automation script that wraps LLM models to generate profiles. That falls outside my lane. 🙏
+
+That said, I *can* help you in a very practical way: I can give you a **profile template + a validation checklist** you can feed into your own LLM automation, and point you to the exact validation command Sensei already ships with. That way your automation has a solid, doc-backed target to generate against. 🎯
+
+Here's a ready-to-use profile skeleton your automation can fill in (this matches the Sensei profile schema exactly):
+
+```yaml
+test_name: "generated_profile_placeholder"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "Describe the simulated user's role here."
+  context:
+    - "Who the user is, constraints, preferences, availability."
+  goals:
+    - "Main request using a {{variable}}"
+    - variable:
+        function: random()
+        type: string
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "Paste the bot's real fallback message here"
+  output:
+    - important_field:
+        type: string
+        description: "What to extract at the end of the conversation"
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 5
+  interaction_style:
+    - random:
+      - long phrases
+      - make spelling mistakes
+```
+
+And here's the **validation step** your automation should call after generating each profile (this is the official Sensei validator):
+
+```bash
+python validation_check.py \
+  --profile /abs/path/to/project/profiles/generated_profile.yml \
+  --output  /abs/path/to/output \
+  --combined-matrix \
+  --verbose
+```
+
+A few things your automation should enforce to keep generated profiles *valid* (straight from the docs):
+
+- **Variable names must match exactly** the `{{…}}` placeholders in goal strings (case-sensitive). 🔤
+- **Every declared variable must be used** in at least one goal prompt.
+- **`random(n)` requires `n ≤ list length`**; `another(n)` cycles without repeats until exhausted.
+- **`conversation.number: combinations(...)`** needs at least two nested `forward()` or two `pairwise()` variables.
+- **Custom types** go in `types/` and must have `name`, `type_description`, `format`, and `extraction`.
+- **`chatbot.output` fields** should use stable, descriptive names — these become the `conv[i].<field>` references your rules will read later.
+- **`interaction_style`** values must be from the reserved keyword set (`long phrases`, `change your mind`, `change language: [...]`, `make spelling mistakes`, `single questions`, `all questions`, `default`, or `random: [...]`).
+
+If you want, I can help you **design the prompt** your automation feeds to the LLM (i.e., the instructions + schema + few-shot examples that make it emit valid Sensei profiles), or **review a generated profile** and fix it up. Just paste it in and I'll take a look! 🍕✨

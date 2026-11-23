@@ -1,0 +1,34 @@
+conversation ID: one_node_architecture__p38__pizza_shop__rule__4b39373a
+$$$
+Great question! 😊 Let me walk you through it.
+
+Since `order_id` is one of the fields in your `chatbot.output` (I can see it in profiles like `pizza_and_drink_order_placement.yaml` and `pizza_order_test_custom.yml`), the cleanest way to check that the chatbot actually provided an order ID is a **single-conversation rule** that verifies the extracted `order_id` is present and non-empty.
+
+Here's how I'd write it:
+
+```yaml
+name: order_id_is_provided
+description: The chatbot must provide a non-empty order ID at the end of the conversation
+conversations: 1
+active: true
+oracle: order_id is not None and str(order_id).strip() != ''
+yields: f"The chatbot did not provide a valid order ID, got: {order_id}"
+```
+
+### Why this works 🧠
+
+- **`conversations: 1`** → it's a simple oracle over a single conversation (no metamorphic comparison needed).
+- **`order_id`** → refers directly to the field you defined in `chatbot.output`. If the extractor couldn't find an order ID, it will be `None`, and the rule fails.
+- **`str(order_id).strip() != ''`** → guards against empty strings or whitespace-only values, which can slip through when the extractor returns an empty match.
+- **`yields`** → gives you a friendly, readable failure message showing exactly what was captured.
+
+### A couple of things to keep in mind 👀
+
+1. **Field name must match exactly.** Your profiles use `order_id` (e.g., in `pizza_and_drink_order_placement.yaml` and `pizza_order_test_custom.yml`), so the rule lines up perfectly. If a profile used a different name like `booking_id`, you'd need to adjust the rule or the profile.
+
+2. **Not every profile exposes `order_id`.** For example, `general_information_seeker.yaml` and `pizza_and_drinks_information_seeker.yaml` don't have an `order_id` output — so this rule is **profile-bound** and should be run against order-placement profiles only. Running it against an info-seeker profile would fail simply because the field doesn't exist there.
+
+3. **If you want a stricter check** (e.g., the ID should look like a real identifier and not just any text), you could add a pattern check — but for "was it provided?", the version above is exactly what you want. ✅
+
+Want me to also draft a companion rule that checks the order ID is **unique across conversations** (using `is_unique('order_id')`)? That pairs really nicely with this one! 🍕
+$$$

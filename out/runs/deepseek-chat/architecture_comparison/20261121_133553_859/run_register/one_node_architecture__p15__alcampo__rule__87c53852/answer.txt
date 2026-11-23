@@ -1,0 +1,65 @@
+Hey there! 😊 Happy to help you get this rule working. Let me walk you through what needs fixing — there are a few structural issues plus a mismatch with your actual profile fields.
+
+## What's going wrong
+
+1. **Typo in the header**: `descriptin` → `description`. Sensei-check expects the exact key.
+2. **Missing `then`**: An `if:` without a `then:` isn't a valid relation. You need to state what should hold.
+3. **`user_request` doesn't exist**: Your `customer_service_assistance.yaml` profile doesn't expose a `user_request` field in `chatbot.output`. Rules can only reference fields the profile actually extracts.
+4. **`conversations: 2` + `when` on `user_request`**: Since there's no `user_request` field, the `when` filter can never match — the rule would silently never apply.
+
+## What your profile actually exposes
+
+From `customer_service_assistance.yaml`, the relevant `chatbot.output` fields are:
+- `contact_options`
+- `customer_service_number`
+- `hours_of_operation`
+- `online_form_instructions`
+- `required_fields`
+- `message_details`
+
+So the rule should be built around **those** fields.
+
+## Two ways to fix it
+
+### Option A — Single-conversation oracle (recommended)
+
+Since you just want to ensure the chatbot *provides* contact info, this is really a single-conversation check, not a metamorphic one:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and customer service number for inquiries.
+conversations: 1
+active: true
+oracle: conv[0].contact_options is not None and conv[0].customer_service_number is not None
+yields: f"Missing contact info — contact_options: {conv[0].contact_options}, customer_service_number: {conv[0].customer_service_number}"
+```
+
+### Option B — Keep it metamorphic (2 conversations)
+
+If you genuinely want to compare two conversations, filter on something the profile *does* expose. For example, checking that both conversations fill the contact fields:
+
+```yaml
+name: customer_service_contact_info
+description: Ensure the chatbot provides contact options and customer service number across customer service inquiries.
+conversations: 2
+active: true
+if: conv[0].contact_options is not None
+then: conv[1].customer_service_number is not None
+yields: f"Conversation 0 had contact_options but conversation 1 lacked customer_service_number"
+```
+
+## Key takeaway 💡
+
+Rules can only reference fields that exist in the target profile's `chatbot.output`. If you want a `user_request` field to filter on, you'd first need to **add it to the profile**:
+
+```yaml
+chatbot:
+  output:
+    - user_request:
+        type: string
+        description: The type of customer service request the user made
+```
+
+…and then the rule could use it. But honestly, for "does the bot give contact info?" — **Option A** is cleaner and does exactly what your description says. 🎯
+
+Want me to also add a companion rule checking `hours_of_operation` or `online_form_instructions`? Just say the word!

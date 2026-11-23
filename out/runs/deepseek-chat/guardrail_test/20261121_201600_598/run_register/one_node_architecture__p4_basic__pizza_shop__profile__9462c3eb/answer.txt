@@ -1,0 +1,85 @@
+I'd love to help, but I have to be upfront: **writing a standalone Python automation script (LLM-driven profile generator) is outside what I can do here** 🙏. I'm scoped to SENSEI **profiles**, **rules**, and **connectors** — their documentation, structure, validation, and fixes — not general Python tooling or automation code.
+
+That said, I can absolutely help you get to the same goal **using Sensei's own mechanisms** — which is actually the cleaner path. Here's what I *can* do:
+
+---
+
+### ✅ What I can help with (and probably what you actually need)
+
+**1. A ready-to-use profile template** you can feed to an LLM as a "fill-in-the-blanks" schema. The LLM only needs to produce YAML that matches this shape — no Python required.
+
+```yaml
+test_name: "generated_profile_<domain>"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "<one sentence: who the simulated user is>"
+  context:
+    - "<background fact 1>"
+    - "<background fact 2>"
+  goals:
+    - "<main request using {{variable}}>"
+    - "<follow-up request>"
+    - variable_name:
+        function: forward()      # or random(), pairwise(), another()
+        type: string             # or int, float, or a custom type from types/
+        data: [option1, option2, option3]
+
+chatbot:
+  is_starter: false
+  fallback: "<paste the bot's real fallback message>"
+  output:
+    - field_name:
+        type: string             # int | float | string | time(...) | date(...) | list[...] | custom
+        description: "<what to extract at the end>"
+
+conversation:
+  number: 3
+  goal_style:
+    steps: 5
+  interaction_style:
+    - single question
+```
+
+**2. A prompt you can hand to any LLM** to generate profiles in that shape. Something like:
+
+> *"Generate a Sensei profile YAML for a chatbot that handles [DOMAIN]. Follow this exact schema: [paste template]. Rules: every `{{variable}}` in `goals` must be declared with `function`, `type`, and `data`. Use only `forward`, `random`, `another`, `pairwise`, or `default` as functions. Use only `int`, `float`, `string`, or a custom type name for `type`. `chatbot.output` fields must be stable, descriptive names. Return only the YAML."*
+
+**3. Validation** — once the LLM produces a profile, run Sensei's own validator to catch format errors:
+
+```bash
+python validation_check.py --profile /abs/path/to/project/profiles/generated.yml --output /abs/path/to/output --combined-matrix --verbose
+```
+
+That's the "automation" step — Sensei already ships it, so you don't need to build one.
+
+---
+
+### ❌ What I can't do
+- Write the Python orchestration code (LLM calls, file I/O, retry loops, etc.)
+- Build a generator pipeline or CLI wrapper
+
+---
+
+### 💡 Suggested workflow (no custom Python needed)
+
+1. **LLM generates YAML** using the template + prompt above.
+2. **Save** it under `profiles/`.
+3. **Validate** with `validation_check.py`.
+4. **Fix** any errors (paste them here and I'll help you correct the YAML).
+5. **Run** with `sensei_chat.py` or via `run.yml`.
+
+---
+
+Want me to:
+- 🎯 Draft the **exact LLM prompt** tailored to your pizza-shop domain (so it produces profiles consistent with your existing ones like `pizza_and_drink_order_placement.yaml`)?
+- 🧩 Or review a profile the LLM already generated and fix it?
+
+Just tell me which direction and I'm on it 😊

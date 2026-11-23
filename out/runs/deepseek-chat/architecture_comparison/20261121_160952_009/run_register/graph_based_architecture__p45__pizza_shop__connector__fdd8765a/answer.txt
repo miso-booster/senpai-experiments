@@ -1,0 +1,61 @@
+¡Claro que sí! 😊 Vamos a crear ese connector paso a paso. La idea es quedarnos solo con los headers mínimos necesarios (`Content-Type` y `Authorization`), ignorando los específicos del navegador como `Origin`, `Referer`, `Host`, etc.
+
+Aquí tienes el YAML listo para usar:
+
+```yaml
+name: "SAIC Malaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### Un detalle importante sobre "quitar las etiquetas HTML" 👀
+
+El campo `response_path` solo **extrae** el valor del JSON (en este caso `response[0].text`), pero **no transforma** el contenido. Es decir, con esta configuración el texto llegará tal cual:
+
+```yaml
+name: "345634"
+base_url: "https://api.example.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+El connector YAML **no tiene una opción nativa para limpiar HTML** — el `response_path` únicamente navega por el JSON con notación de puntos. Para eliminar las etiquetas HTML necesitarías hacerlo en el código que consume la respuesta, por ejemplo:
+
+```python
+import re
+
+success, response = bot.execute_with_input("hola")
+if success:
+    clean_text = re.sub(r"<[^>]+>", "", response).strip()
+    print(clean_text)
+# → ¡Buenos días! ¿En qué puedo ayudarte?
+```
+
+### Resumen de lo que hice 🛠️
+- ✅ Usé solo `Content-Type` y `Authorization` como headers mínimos.
+- ✅ Copié el `payload_template` exactamente del request (con `{user_msg}` como placeholder).
+- ✅ Configuré `response_path: "response.0.text"` para apuntar al texto de la respuesta.
+- ⚠️ Aclaro que la limpieza de HTML debe hacerse fuera del YAML, ya que el formato no lo soporta.
+
+¿Quieres que te ayude a adaptar el código Python que consume este connector para que limpie el HTML automáticamente? 😊

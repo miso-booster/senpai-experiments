@@ -1,0 +1,86 @@
+conversation ID: agentic_architecture__p1__ada_uam__profile__3c78e113
+$$$
+¡Listo! Aquí tienes el perfil, siguiendo el estilo de los perfiles existentes del proyecto (español, CAU/UAM, `single questions`) y las reglas de `sensei-chat-guide.md` 📶
+
+```yaml
+test_name: Usuario que no consigue configurar eduroam en su dispositivo
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: Spanish
+  role: Usuario de la universidad que intenta configurar la red inalámbrica eduroam en su dispositivo pero no lo consigue, y pide ayuda al Centro de Atención a Usuarios para completar la configuración.
+  context:
+  - 'personality: personalities/formal-user'
+  - Eres miembro de la comunidad universitaria y necesitas eduroam para conectarte a internet en el campus, pero tras varios intentos sigues sin poder conectarte.
+  - No eres experto en temas técnicos, así que agradeces instrucciones claras y paso a paso.
+  - Ya has probado al menos un método de configuración por tu cuenta y ha fallado, por lo que estás algo frustrado.
+  goals:
+  - ' pedir ayuda porque no consigo configurar eduroam en mi {{device}} y necesito conectarme a internet en el campus.'
+  - ' explicar que he intentado configurarlo mediante {{setup_method}} y no ha funcionado.'
+  - ' preguntar cuáles son los datos de acceso (usuario y contraseña) que debo introducir para eduroam en mi {{device}}.'
+  - ' solicitar instrucciones paso a paso para configurar eduroam en mi {{device}} usando {{setup_method}}.'
+  - ' preguntar si necesito instalar algún certificado o perfil de configuración y cómo obtenerlo.'
+  - ' consultar qué puedo hacer si la conexión sigue fallando después de seguir las instrucciones.'
+  - device:
+      function: pairwise()
+      type: string
+      data: [portátil con Windows, portátil con macOS, móvil Android, iPhone, tablet iPad]
+  - setup_method:
+      function: pairwise()
+      type: string
+      data: [la configuración manual de la red, el asistente de configuración automática, la app eduroam CAT, el perfil de configuración descargable]
+  - connection_error:
+      function: random()
+      type: string
+      data: [la autenticación falla, no aparece la red eduroam, se queda en "obteniendo dirección IP", se conecta pero sin acceso a internet]
+chatbot:
+  is_starter: false
+  fallback: ¿Puedes preguntármelo de otra forma? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información.
+  output:
+  - eduroam_setup_request:
+      type: string
+      description: Solicitud de ayuda para configurar eduroam
+  - device_type:
+      type: string
+      description: Dispositivo en el que el usuario intenta configurar eduroam
+  - setup_method_used:
+      type: string
+      description: Método de configuración que el usuario ya ha intentado
+  - connection_error:
+      type: string
+      description: Error o síntoma concreto que experimenta el usuario al conectarse
+  - credentials_required:
+      type: string
+      description: Datos de acceso (usuario y contraseña) necesarios para eduroam
+  - setup_steps:
+      type: string
+      description: Instrucciones paso a paso proporcionadas para configurar eduroam
+  - certificate_instructions:
+      type: string
+      description: Indicaciones sobre certificados o perfiles de configuración
+  - troubleshooting_advice:
+      type: string
+      description: Recomendaciones si la conexión sigue fallando
+  - support_contact_details:
+      type: string
+      description: Detalles de contacto para asistencia adicional
+conversation:
+  number: combinations(0.6, pairwise)
+  max_cost: 0.5
+  goal_style:
+    steps: 25
+  interaction_style:
+  - single questions
+```
+
+### Qué hace y por qué 🔍
+- **Variables = formas de configurarlo**: `setup_method` cubre los métodos típicos (manual, asistente automático, app eduroam CAT, perfil descargable) y `device` los dispositivos. Ambas usan `pairwise()` para cubrir todas las parejas dispositivo × método sin explotar el número de conversaciones, y `conversation.number: combinations(0.6, pairwise)` toma el 60% de esa matriz (requiere ≥2 variables `pairwise`, como indica `sensei-chat-guide.md` §5).
+- **`connection_error`** con `random()` añade variedad al síntoma reportado, y se usa en el contexto de la conversación.
+- **`chatbot.output`** está pensado como contrato para futuras reglas: por ejemplo, una regla podría comprobar que `setup_steps` no está vacío cuando `eduroam_setup_request` existe, o que `device_type` coincide con el dispositivo declarado en el perfil.
+- **Estilo**: mantuve español, `single questions`, `is_starter: false` y un `fallback` realista del CAU, igual que en `estudiante_con_problemas_de_acceso_a_moodle.yaml` y `soporte_técnico_y_gestión_de_contraseñas.yaml`.
+
+¿Quieres que le añada una regla SENSEI asociada (por ejemplo, que las instrucciones de configuración siempre se proporcionen), o que ajuste los métodos/dispositivos a los que realmente soporta vuestro CAU? 😊
+$$$

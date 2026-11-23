@@ -1,0 +1,39 @@
+¡Buena pregunta! 😊 Vamos a revisarla, porque tiene varios problemillas que explican por qué no te funciona.
+
+## Qué está mal en la regla
+
+1. **`conversations:` está vacío** → Sensei-check necesita saber cuántas conversaciones usar. Para una regla de una sola conversación debe ser `1`.
+2. **`membership_benefits` no es un campo global** → en reglas de una conversación, los campos del `chatbot.output` se acceden con `conv[0].<campo>` (o directamente por nombre si el campo es escalar). Tal como lo escribiste, el intérprete no sabe de dónde sacar `membership_benefits`.
+3. **`!= ''` es frágil** → si el extractor devuelve `None` (no extrajo nada), `None != ''` es `True` y la regla pasaría aunque no haya información. Mejor comprobar que **no sea `None` y no esté vacío**.
+4. **Falta `active`** → no es obligatorio, pero ayuda a que quede claro que la regla está habilitada.
+
+## Versión corregida
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits (Club de Socios).
+conversations: 1
+active: true
+oracle: conv[0].membership_benefits is not None and conv[0].membership_benefits != ''
+yields: f"Missing or empty membership_benefits: {conv[0].membership_benefits}"
+```
+
+## Un detalle importante sobre tu proyecto 👀
+
+En tus perfiles de Alcampo, el campo se llama **`membership_benefits`** en `general_shopper_and_member_support.yaml` ✅ — pero en `delivery_and_subscription_services.yaml` el campo equivalente es **`subscription_benefits`** (habla de "Alcampo Más", no de "Club de Socios"). Si quieres cubrir ambos perfiles con la misma idea, tienes dos opciones:
+
+**Opción A — regla por perfil (más limpia):** una regla para `membership_benefits` y otra para `subscription_benefits`.
+
+**Opción B — regla global con `exists` (cubre todo el dataset):**
+
+```yaml
+name: membership_benefits_information
+description: At least one conversation reports membership/subscription benefits.
+conversations: all
+active: true
+oracle: exists("conv[0].membership_benefits is not None and conv[0].membership_benefits != ''")
+```
+
+⚠️ Ojo con la Opción B: `exists` evalúa la expresión sobre **cada** conversación del dataset, y si un perfil no tiene el campo `membership_benefits` en su `chatbot.output`, esa conversación simplemente no lo cumplirá (no rompe, pero tampoco aporta). Por eso, si tu intención es validar *un perfil concreto*, quédate con la **Opción A** — es la más segura y predecible.
+
+¿Quieres que te prepare también la regla gemela para `subscription_benefits`, o prefieres una regla metamórfica que compare ambos perfiles? 🚀

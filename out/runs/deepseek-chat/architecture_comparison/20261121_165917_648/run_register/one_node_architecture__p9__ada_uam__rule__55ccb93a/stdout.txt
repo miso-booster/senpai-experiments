@@ -1,0 +1,40 @@
+conversation ID: one_node_architecture__p9__ada_uam__rule__55ccb93a
+$$$
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el horario de la biblioteca extraído en `library_hours` sea de 9 a 20.
+
+Como el campo `library_hours` es de tipo `string` (texto libre), lo más robusto es usar `semantic_content` para comprobar que el contenido menciona ese horario, y además una comprobación numérica con `extract_float` para asegurarnos de que aparecen las horas 9 y 20.
+
+Aquí tienes la regla lista para pegar en `rules/`:
+
+```yaml
+name: library_hours_9_to_20
+description: El horario de la biblioteca debe ser de 9 a 20 (perfil Préstamos y Recursos de la Biblioteca)
+conversations: 1
+active: true
+oracle: |
+  semantic_content(library_hours, 'horario de atención de la biblioteca de 9:00 a 20:00')
+yields: |
+  f"El horario de la biblioteca no coincide con 9-20: {library_hours}"
+```
+
+Y si prefieres una comprobación más estricta (numérica), puedes añadir esta variante que exige que aparezcan las horas 9 y 20 en el texto:
+
+```yaml
+name: library_hours_contains_9_and_20
+description: El campo library_hours debe mencionar las 9 y las 20 horas
+conversations: 1
+active: true
+oracle: |
+  library_hours is not None and 9.0 in [extract_float(x) for x in library_hours.split()] and 20.0 in [extract_float(x) for x in library_hours.split()]
+yields: |
+  f"El horario extraído no contiene 9 y 20: {library_hours}"
+```
+
+Un par de notas rápidas 👀:
+
+- La primera regla usa `semantic_content`, que es **LLM-backed**, así que es más flexible con formatos como "de 9:00 a 20:00", "9h-20h", "9 AM a 8 PM", etc. Puede haber pequeña variabilidad.
+- La segunda es más rígida y depende de cómo venga formateado el string; úsala solo si el bot responde siempre con un formato predecible.
+- Ambas asumen que el perfil expone `library_hours` en `chatbot.output`, cosa que ya hace tu perfil ✅.
+
+¿Quieres que te la deje combinada en una sola regla, o prefieres mantener las dos separadas? 😊
+$$$

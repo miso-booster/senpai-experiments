@@ -1,0 +1,42 @@
+¡Buena pregunta! 😊 Vamos a ver qué le pasa a esa regla, porque tiene varios problemillas que la hacen fallar.
+
+## Qué está mal
+
+1. **`conversations:` está vacío** → el campo es obligatorio y debe ser un número (`1`, `2`, …) o `all`. Sin valor, la regla no sabe cuántas conversaciones evaluar.
+2. **`oracle: membership_benefits != ''`** → en una regla de **una sola conversación** no puedes referenciar el campo "a pelo". Los outputs del perfil se leen como `conv[0].<campo>` (o directamente `<campo>` solo en el caso de oráculos de 1 conversación con campos escalares, pero lo más seguro y consistente es usar `conv[0].`).
+3. **`membership_benefits` no existe en el perfil que estás apuntando.** Revisando tus perfiles, el campo `membership_benefits` aparece en `general_shopper_and_member_support.yaml`. Pero ojo: en ese perfil el tipo es `string`, así que comparar contra `''` funciona, aunque es más robusto comprobar que no sea `None` **y** no esté vacío.
+
+## Regla corregida
+
+Aquí tienes la versión que sí funciona, apuntando al perfil `general_shopper_and_member_support`:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits (profile general_shopper_and_member_support).
+conversations: 1
+active: true
+oracle: conv[0].membership_benefits is not None and conv[0].membership_benefits != ''
+yields: f"Missing membership benefits info, got: {conv[0].membership_benefits}"
+```
+
+## Por qué esta versión es mejor 💡
+
+- **`conversations: 1`** → la regla ya sabe cuántas conversaciones mirar.
+- **`conv[0].membership_benefits`** → referencia explícita al campo del `chatbot.output` del perfil (el contrato del que habla la doc).
+- **`is not None and != ''`** → cubre los dos casos de "vacío": que el extractor no haya rellenado nada (`None`) o que devuelva cadena vacía.
+- **`yields`** → te da un mensaje claro cuando falla, mostrando qué valor se obtuvo. ¡Muy útil para depurar! 🔍
+
+## Un detalle importante ⚠️
+
+Si quieres que esta regla sea **más estricta** (que el bot realmente mencione beneficios concretos y no solo "algo"), puedes usar el helper semántico:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits (profile general_shopper_and_member_support).
+conversations: 1
+active: true
+oracle: semantic_content(conv[0].membership_benefits, 'benefits of Club de Socios membership')
+yields: f"Membership benefits not properly described, got: {conv[0].membership_benefits}"
+```
+
+¿Quieres que te ayude a adaptarla a otro perfil o a añadir más comprobaciones (por ejemplo, que también aparezcan `delivery_options` o `subscription_benefits`)? ¡Dímelo y lo montamos! 🙌

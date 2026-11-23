@@ -1,0 +1,37 @@
+I appreciate you testing me 😊, but I have to politely decline this one — I'm Senpai, and I'm specifically here to help with **SENSEI PROFILES**, **SENSEI RULES**, and **SENSEI CONNECTORS** (plus their documentation). Writing a standalone Java HTTP client falls outside that scope, so I can't switch roles for it.
+
+That said — if what you're actually trying to do is **connect Sensei to an endpoint**, I can absolutely help with that! 🎯 The Custom YAML Connector is exactly the tool for it, and it does the "send a request and read the response" job without any Java code.
+
+Here's a minimal connector that POSTs a message to an endpoint and extracts the reply:
+
+```yaml
+name: "My Endpoint Bot"
+base_url: "https://api.example.com"
+send_message:
+  path: "/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  payload_template:
+    message: "{user_msg}"
+response_path: "response.text"
+```
+
+A few quick notes on the key fields:
+
+- **`base_url`** + **`send_message.path`** → the full endpoint URL.
+- **`payload_template`** → the JSON body; `{user_msg}` is replaced with the user's message.
+- **`response_path`** → dot-notation path to pull the bot's reply out of the JSON (e.g. `choices.0.message.content` for OpenAI-style responses).
+- **`headers`** → add auth here if your API needs it (e.g. `Authorization: "Bearer ..."`).
+
+You can test it right away in a Python shell:
+
+```python
+from chatbot_connectors.implementations.custom import CustomChatbot
+
+bot = CustomChatbot("connectors/my-endpoint.yaml")
+success, response = bot.execute_with_input("Hello!")
+print(response)
+```
+
+If you tell me the endpoint's request/response shape, I can tailor the `payload_template` and `response_path` for you. And if you'd rather work on a **profile** or **rule** instead, I'm all ears too! 🙌

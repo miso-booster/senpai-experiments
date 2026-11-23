@@ -1,0 +1,38 @@
+conversation ID: agentic_architecture__p17__alcampo__rule__11895325
+$$$
+El fallo está en cómo se construye el mensaje de error: en YAML, un valor sin comillas que contiene `: ` (dos puntos seguidos de espacio) rompe el parseo. Por eso `yields: f"Missing slots: {...}"` y `yields: f"... was not provided: {...}"` no se interpretan como texto plano. La solución es entrecomillar todo el valor o usar el bloque escalar `|`.
+
+Además, la regla original tiene tres problemas de fondo:
+
+1. **`conversations:` vacío** → hay que indicar cuántas conversaciones necesita la regla (`1`, `2` o `all`).
+2. **`membership_benefits != ''`** → el campo extraído puede ser `None` (no rellenado) y no `''`, así que esa comparación no detecta el caso real de fallo. Lo idiomático es usar `data_collected()` / `missing_slots()`.
+3. **Falta `active: True`** → sin esto la regla puede quedar inactiva.
+
+El perfil que expone ese campo es `general_shopper_and_member_support.yaml` (tiene `membership_benefits` como `string`). Aquí tienes las dos variantes, ya con el `yields` bien entrecomillado:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot accurately informs users about membership benefits (profile general_shopper_and_member_support).
+conversations: 1
+active: True
+oracle: data_collected() == True
+yields: "Missing slots: {missing_slots()}"
+```
+
+Esta versión comprueba que **todos** los slots de `chatbot.output` se han rellenado (incluido `membership_benefits`), siguiendo el patrón `chatbot_fills_all_slots` de los ejemplos.
+
+Si solo te interesa ese campo en concreto:
+
+```yaml
+name: membership_benefits_information
+description: Ensure the chatbot informs users about membership benefits (profile general_shopper_and_member_support).
+conversations: 1
+active: True
+oracle: membership_benefits is not None and membership_benefits != ''
+yields: "membership_benefits was not provided: {membership_benefits}"
+```
+
+Aquí el `is not None` cubre el caso en que el extractor no rellene el campo, que es lo que probablemente te estaba fallando en la versión original.
+
+¿La regla va dirigida a `general_shopper_and_member_support.yaml`? ¿Y prefieres validar **todos los slots** o solo **`membership_benefits`**? Con eso te dejo el YAML definitivo listo para guardar.
+$$$

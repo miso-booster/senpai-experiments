@@ -1,0 +1,55 @@
+conversation ID: graph_based_architecture__p48__pizza_shop__documentation__21acab39
+$$$
+Great question! 😊 Let me walk you through which fields in a SENSEI profile are **optional** versus required.
+
+## Fields that are **NOT mandatory** in a profile
+
+### 1. `llm` section — entirely optional
+If you omit it, Sensei applies defaults (model, temperature) and the format defaults to `text`. You only need it when you want to override the model/temperature or switch to `speech` mode.
+
+```yaml
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+```
+
+### 2. `user.context` — optional
+The `context` list (personalities, freeform constraints, preferences) is helpful but not required. You can have a profile with just a `role` and `goals`.
+
+### 3. `chatbot.fallback` — optional
+Recommended (it prevents endless loops with real bot fallback text), but not strictly mandatory.
+
+### 4. `chatbot.output` — optional
+You can run a profile without extracting any structured outputs. However — heads up! ⚠️ If you plan to write **profile-bound Sensei-check rules** that reference `conv[i].<field>`, those fields **must** exist in `chatbot.output`. So it's optional for running, but effectively required if rules depend on it.
+
+### 5. `conversation.max_cost` and `goal_style.max_cost` — optional
+These are cost caps. Nice for safety, but not required.
+
+### 6. `conversation.interaction_style` — optional
+You can leave it out and the simulator will behave naturally (equivalent to `default`).
+
+### 7. `conversation.goal_style` — optional
+If omitted, defaults apply. But you'll usually want to set it to control how/when conversations end.
+
+### 8. `conversation.number` — optional
+Defaults apply if omitted. But note: if you use `combinations`, you need at least two nested `forward()` or two `pairwise()` variables declared in `goals`.
+
+### 9. `test_name` — technically optional
+It's good practice to include it, but it's not a hard requirement.
+
+---
+
+## What **is** effectively required
+
+- `user.role` — describes the simulated user
+- `user.language`
+- `user.goals` — the actual things the user will say/do (with any `{{variables}}` declared here)
+- `chatbot.is_starter` — tells Sensei whether the bot or the user speaks first
+
+---
+
+So in short: **`llm`, `context`, `fallback`, `output`, cost caps, `interaction_style`, `goal_style`, and `number` are all optional** — but each one you skip means you're relying on defaults or giving up some control. Want me to show you a minimal profile that only uses the required fields? 🍕
+$$$

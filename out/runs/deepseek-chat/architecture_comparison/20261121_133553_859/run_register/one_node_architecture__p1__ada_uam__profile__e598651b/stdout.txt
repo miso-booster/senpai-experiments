@@ -1,0 +1,87 @@
+conversation ID: one_node_architecture__p1__ada_uam__profile__e598651b
+$$$
+¡Claro que sí! 😊 Aquí tienes un perfil listo para usar, con variables para las distintas formas en que el usuario podría intentar configurar eduroam (móvil, portátil, tablet…), y con `chatbot.output` pensado para que puedas escribir reglas después.
+
+```yaml
+test_name: "Configuración de eduroam en el dispositivo"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un miembro de la comunidad universitaria que intenta conectarse a la red
+    inalámbrica eduroam desde tu dispositivo, pero no consigues establecer la conexión
+    y necesitas ayuda paso a paso.
+  context:
+    - personality: personalities/impatient-user
+    - "Ya has intentado configurar eduroam por tu cuenta siguiendo instrucciones que encontraste, pero sin éxito."
+    - "No estás seguro de si el problema es la contraseña, el certificado o el método de configuración."
+    - "Necesitas que te guíen para dejar el dispositivo conectado a eduroam."
+  goals:
+    - "Explicar que no consigues conectarte a eduroam desde tu {{dispositivo}} y pedir ayuda."
+    - "Indicar que has intentado configurarlo mediante {{metodo_configuracion}} y no ha funcionado."
+    - "Preguntar qué credenciales necesitas usar para eduroam (usuario y contraseña)."
+    - "Solicitar los pasos concretos para configurar eduroam en tu {{dispositivo}}."
+    - "Preguntar qué hacer si sigue sin conectar tras seguir los pasos."
+    - dispositivo:
+        function: forward()
+        type: string
+        data: [móvil Android, iPhone, portátil Windows, portátil macOS, tablet iPad]
+    - metodo_configuracion:
+        function: pairwise()
+        type: string
+        data:
+          - el asistente de configuración automática (eduroam CAT)
+          - la configuración manual de la red Wi-Fi
+          - la app oficial de eduroam
+          - un perfil de configuración descargado
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - eduroam_credentials:
+        type: string
+        description: "Usuario y contraseña necesarios para conectarse a eduroam"
+    - setup_steps:
+        type: string
+        description: "Pasos indicados para configurar eduroam en el dispositivo"
+    - configuration_method:
+        type: string
+        description: "Método de configuración recomendado (automático, manual, app, perfil)"
+    - certificate_info:
+        type: string
+        description: "Información sobre el certificado o dominio a aceptar"
+    - troubleshooting_tips:
+        type: string
+        description: "Consejos para resolver problemas si la conexión falla"
+    - support_contact:
+        type: string
+        description: "Datos de contacto del CAU para soporte adicional"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+Un par de notas rápidas para que lo aproveches al máximo 👀:
+
+- **Variables**: `dispositivo` usa `forward()` (recorre todos los dispositivos de forma determinista) y `metodo_configuracion` usa `pairwise()` para cubrir combinaciones sin explotar el número de casos. Como hay dos funciones declaradas, `conversation.number: combinations(0.6, pairwise)` es válido.
+- **`chatbot.output`**: los campos están pensados para que puedas escribir reglas después, por ejemplo comprobando que se devuelven credenciales y pasos (`data_collected()`), o que el método recomendado coincide con el que el usuario intentó.
+- **Personalidad**: referencié `personalities/impatient-user`; si no la tienes en tu proyecto, cámbiala por una que exista o elimínala del `context`.
+
+¿Quieres que te prepare también una regla de Sensei-check que valide este perfil (por ejemplo, que siempre se devuelvan credenciales y pasos de configuración)? 😊
+$$$

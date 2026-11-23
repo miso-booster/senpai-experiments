@@ -1,0 +1,82 @@
+Hey there! 👋 Happy to help you get this profile working — I can see a few things that need fixing. Let me walk you through them 😊
+
+## What's broken and how to fix it
+
+### 1. `llm.temperature` must be a number, not a word
+`temperature: low` isn't valid — it needs a float between 0 and 1 (or higher). Use something like `0.0` for deterministic behavior.
+
+### 2. `chatbot.output` types: `str` and `money` aren't valid
+The valid primitive types are `int`, `float`, `string`, plus `time(...)`, `date(...)`, and `list[...]`. Custom types like `money` only work if you've defined a `types/money.yml` file in your project. Since I can't see one, safest is to use `string` (or `float` if you want a numeric value).
+
+### 3. Two output fields are missing `type`
+`seat_price` and `care_bike` have no `type` — every output field needs one.
+
+### 4. `conversation.number: 5` with no variables
+That's fine on its own (a fixed integer is allowed), but since your goals have no `{{variables}}`, running 5 conversations will just repeat the same script. Not an error, just a heads-up. If you want variety, add variables; otherwise `number: 1` is more sensible.
+
+### 5. `goal_style` is missing
+Not strictly required, but without it the conversation has no defined end condition. I'd recommend adding `all_answered` so it stops once all outputs are collected (this matches what your original `qa.yml` did).
+
+---
+
+## Fixed version ✅
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.0
+  model: gpt-4o-mini
+
+user:
+  language: English
+  role: you have to act as a user talking to a virtual assistant of a bike shop
+  context:
+    - You are interested in asking the items below.
+    - Just stick to asking opening times, prices of tire, price of tune-up, price of seat, and actions to the care of bike. Do not ask anything else.
+  goals:
+    - "opening and closing time of the bike shop"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: the opening and closing time of the shop
+    - tire:
+        type: string
+        description: the price of a new tire
+    - tune_up:
+        type: string
+        description: the price of a tune-up
+    - seat_price:
+        type: string
+        description: the price of a new seat
+    - care_bike:
+        type: string
+        description: actions to take care of the bike
+
+conversation:
+  number: 1
+  goal_style:
+    all_answered:
+      export: true
+      limit: 9
+  interaction_style:
+    - default
+```
+
+---
+
+## A couple of extra tips 💡
+
+- **Want numeric prices?** If you'd rather extract prices as numbers (useful for rules later), define a custom `money` type in `types/money.yml` and then `type: money` will work. Otherwise `string` is perfectly fine for QA-style checks.
+- **`is_starter: false`** means the bot speaks first. Your original had `true` — double-check which one matches your bot's actual behavior, otherwise the conversation may start awkwardly.
+- **`interaction_style: [default]`** is valid but redundant — you can omit the field entirely if you want natural behavior.
+
+Give this a run and let me know if anything else acts up — happy to dig deeper! 🚴‍♂️✨

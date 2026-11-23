@@ -1,0 +1,34 @@
+¡Hola! 😊 Encantado de ayudarte con esta regla para tu proyecto **ada_uam**. Vamos a crear una regla que verifique que el chatbot devuelve correctamente los tres datos del CAU: email, teléfono y dirección física.
+
+Como tienes tres campos en `chatbot.output` (`contact_email`, `contact_phone`, `physical_address`), la forma más limpia es usar el helper `semantic_content` para cada uno, porque así toleramos pequeñas variaciones de formato (por ejemplo, "91 497 40 29" vs "914974029") sin ser demasiado estrictos con la comparación exacta de strings. ✨
+
+Aquí tienes la regla lista para pegar:
+
+```yaml
+name: cau_contact_info_correct
+description: The chatbot provides the correct CAU contact information (email, phone, and physical address)
+conversations: 1
+oracle: >
+  semantic_content(contact_email, 'cau@uam.es') and
+  semantic_content(contact_phone, '91 497 4029') and
+  semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+### Un par de notas rápidas 👀
+
+- **`semantic_content(value, desc)`** es un helper respaldado por LLM, así que compara el *significado* del campo extraído contra la descripción esperada. Eso es ideal aquí porque la dirección puede aparecer con pequeñas variaciones de redacción y seguir siendo correcta.
+- Si prefieres una comprobación **más estricta** (por ejemplo, para el email, que debe ser exactamente `cau@uam.es`), puedes combinar ambos enfoques:
+
+```yaml
+name: cau_contact_info_correct
+description: The chatbot provides the correct CAU contact information (email, phone, and physical address)
+conversations: 1
+oracle: >
+  contact_email == 'cau@uam.es' and
+  semantic_content(contact_phone, '91 497 4029') and
+  semantic_content(physical_address, 'Higher Polytechnic School, C/ Francisco Tomás y Valiente nº 11, Building B, first floor, office TI-107')
+```
+
+- Recuerda que `semantic_content` es LLM-backed, así que puede haber mínima variabilidad — si ves falsos negativos, revisa cómo el perfil está extrayendo esos campos en `chatbot.output`. 🛠️
+
+¿Quieres que también te prepare una variante que compruebe que **ninguno** de los tres campos venga vacío (usando `data_collected()` o `missing_slots()`)? ¡Sería un buen complemento de robustez! 💪

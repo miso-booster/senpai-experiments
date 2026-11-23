@@ -1,0 +1,90 @@
+conversation ID: graph_based_architecture__p21__bikeshop__profile__273f1470
+$$$
+Hey there! 😊 Happy to help you build that profile — a customer who just got a new bike and wants it set up to their liking (new seat + handlebar grips) is a really nice, focused scenario. Let me walk you through it.
+
+## What you'll need
+
+Based on your project (`bikeshop`), I'd suggest creating a new file like `profiles/bike_setup_and_customization.yaml`. Here's a complete, runnable profile you can drop in and tweak:
+
+```yaml
+test_name: "bike_setup_and_customization"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who recently bought a new bike and wants the shop to set it up
+    and tailor it to your liking. You want to change the seat and the handlebar grips
+    so the bike feels comfortable and fits you well.
+  context:
+    - "You just bought a new bike and haven't ridden it much yet."
+    - "The stock seat is uncomfortable, so you want a different one."
+    - "You'd like the handlebar grips changed to something more comfortable."
+    - "You rely on the bike for daily commuting and weekend rides."
+  goals:
+    - "Tell the shop you just got a new bike and want it set up for you."
+    - "Ask if they can change the seat to a {{seat_type}} one."
+    - "Ask about the price of the new seat."
+    - "Ask if they can replace the handlebar grips with {{grip_type}} grips."
+    - "Ask about the price of the handlebar grips."
+    - "Ask if they can do the setup and changes today or schedule an appointment."
+    - seat_type:
+        function: forward()
+        type: string
+        data: [comfort, gel, ergonomic]
+    - grip_type:
+        function: forward()
+        type: string
+        data: [ergonomic, rubber, lock-on]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - seat_change_confirmation:
+        type: string
+        description: "Confirmation that the shop can change the seat. Look for phrases like 'Yes, we can change the seat'."
+    - seat_price:
+        type: money
+        description: "The price of the new seat as stated by the chatbot."
+    - grip_change_confirmation:
+        type: string
+        description: "Confirmation that the shop can replace the handlebar grips."
+    - grip_price:
+        type: money
+        description: "The price of the handlebar grips as stated by the chatbot."
+    - setup_appointment:
+        type: string
+        description: "Details of the setup appointment or confirmation that the bike can be set up today, including date/time if given."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+## A few notes on the choices 👀
+
+- **`chatbot.output` uses `money`** for prices — that matches how your other profiles (e.g. `bike_service_and_repair_inquirer.yaml`, `qa.yml`) extract prices, so it stays consistent and rule-friendly.
+- **`single question`** interaction style keeps each goal as its own turn — great for checking that the bot answers each request cleanly. If you'd rather test a more natural back-and-forth, swap it for `default`.
+- **`forward()` on `seat_type` and `grip_type`** gives you a deterministic grid. Since `conversation.number` is a fixed `3`, only the first 3 combinations will run — bump it up if you want more coverage.
+- **`all_answered` with `limit: 20`** makes sure every goal gets addressed before the conversation ends.
+
+## Want to go further?
+
+- If you want to check that the bot **confirms the setup appointment** with a real date/time, you could add a `date` output field (like `appointment.yml` does with `confirmed_date`).
+- If you'd like to test **price consistency** later with Sensei-check rules, the `seat_price` and `grip_price` fields are already there for rules like `conv[i].seat_price > 0`.
+
+Want me to adjust anything — maybe add a personality (like `personalities/curious-user`), change the interaction style, or add appointment scheduling? Just say the word! 😊
+$$$

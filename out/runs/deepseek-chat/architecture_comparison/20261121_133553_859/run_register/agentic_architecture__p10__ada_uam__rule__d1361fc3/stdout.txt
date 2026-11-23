@@ -1,0 +1,88 @@
+conversation ID: agentic_architecture__p10__ada_uam__rule__d1361fc3
+$$$
+¡Perfecto! 🎉 Tu perfil `Usuarios Nuevos y Admisiones` tiene muchísimo que extraer, así que hay mucho que validar. He revisado la documentación (`sensei-check-doc.md`, `rules-examples.md` y `sensei-chat-guide.md`) y he diseñado un pequeño set de reglas que **usan los campos reales de tu `chatbot.output`** y que además aprovechan los `goals` del perfil.
+
+## 🧠 Cómo lo he pensado
+
+Tu perfil expone estos campos clave (entre otros): `admission_to_grados_link`, `waitlist_info_link`, `future_students_link`, `welcome_day_link`, `grados_available`, `cursos_available`, `waitlist_procedures`, `welcome_day_date`, `welcome_day_time`, `admission_deadline`, `future_students_info`, `admission_requirements`, `event_location`, `enrollment_process`, `contact_admissions`, `application_fee`.
+
+Y tus `goals` piden: admisión a grados, listas de espera, cursos/grados, y Welcome Day. Así que propongo **4 reglas**:
+
+1. **Completitud de slots** (global, `data_collected`) → ¿el bot rellena todo lo que pides?
+2. **Enlaces no vacíos** (global, `chatbot_returns`) → ¿los links que devuelve son reales?
+3. **Idioma consistente** (global, `responds_in_same_language`) → el usuario habla español, el bot debería responder en español.
+4. **Welcome Day coherente** (profile-bound) → si hay fecha/hora del evento, deben existir y tener sentido.
+
+---
+
+### 1) Todos los slots rellenos
+
+```yaml
+name: admisiones_all_slots_filled
+description: El chatbot rellena todos los campos de chatbot.output del perfil "Usuarios Nuevos y Admisiones"
+conversations: 1
+active: true
+oracle: data_collected() == True
+yields: |
+  f"Slots sin rellenar: {missing_slots()}"
+```
+
+> ⚠️ Ojo: con 16 campos de salida y solo 6 conversaciones / 30 pasos, es **muy probable** que esta regla falle. Es útil justamente para detectar qué información no se está obteniendo. Si quieres una versión más indulgente, mira la regla 4.
+
+---
+
+### 2) Enlaces no vacíos
+
+```yaml
+name: admisiones_non_empty_links
+description: El chatbot no devuelve botones/links vacíos en el perfil de admisiones
+conversations: 1
+active: true
+oracle: |
+  not chatbot_returns("LINK: <empty>") and not chatbot_returns("AVAILABLE BUTTONS:", and_not="- BUTTON TEXT:")
+```
+
+> Basada en el ejemplo `non_empty_links` de `rules-examples.md`. Muy útil porque tu perfil espera varios `*_link`.
+
+---
+
+### 3) Responde en el mismo idioma
+
+```yaml
+name: admisiones_same_language
+description: El chatbot responde en español (mismo idioma que el usuario simulado)
+conversations: 1
+active: true
+oracle: responds_in_same_language()
+yields: "El chatbot no responde en el mismo idioma que el usuario"
+```
+
+> Regla global (no depende de `chatbot.output`), usa el helper `responds_in_same_language` documentado en `sensei-check-doc.md`.
+
+---
+
+### 4) Welcome Day coherente (profile-bound)
+
+```yaml
+name: admisiones_welcome_day_coherent
+description: Si se extrae información del Welcome Day, debe incluir fecha, hora y ubicación (perfil "Usuarios Nuevos y Admisiones")
+conversations: 1
+active: true
+if: conv[0].welcome_day_date is not None or conv[0].welcome_day_time is not None
+then: conv[0].event_location is not None and conv[0].welcome_day_link is not None
+yields: |
+  f"Welcome Day incompleto: fecha={conv[0].welcome_day_date}, hora={conv[0].welcome_day_time}, ubicación={conv[0].event_location}, link={conv[0].welcome_day_link}"
+```
+
+> Esta es **profile-bound**: usa `welcome_day_date`, `welcome_day_time`, `event_location` y `welcome_day_link`, todos presentes en tu `chatbot.output`. La lógica: si el bot habla del evento, debería dar la info completa.
+
+---
+
+## 💡 Consejos para probarlo
+
+- Empieza con las reglas **2, 3 y 4** (son las más "justas"). La regla **1** es la más exigente y probablemente te muestre huecos reales.
+- Si la regla 1 falla mucho, puedes subir `conversation.goal_style.steps` (ahora 30) o añadir más `conversation.number` para dar más oportunidades al bot.
+- Todas las reglas usan nombres de campo **exactos** de tu `chatbot.output`, así que no hay que tocar el perfil. ✅
+
+¿Quieres que te las guarde como archivos `.yaml` en tu proyecto, o prefieres ajustar alguna (por ejemplo, hacer la regla 1 más laxa o añadir una regla sobre `application_fee` o `admission_deadline`)? 😊
+$$$

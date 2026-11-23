@@ -1,0 +1,79 @@
+conversation ID: graph_based_architecture__p33__pizza_shop__profile__fc60ed9f
+$$$
+Hey there! 😊 Happy to help you fill in that `chatbot` section — it's the part that tells Sensei what to extract from the conversation at the end, and it's also the contract your rules will read later. Let's build it together!
+
+## What goes in `chatbot`
+
+Three things matter here:
+
+- **`is_starter`** → does the *bot* speak first? In your case, the user kicks things off with a question, so `false`.
+- **`fallback`** → the bot's *real* fallback message (helps Sensei avoid endless loops when the bot doesn't understand).
+- **`output`** → the schema of fields to extract at the end of each conversation. Each field needs a `type` and a `description`.
+
+## Mapping your goals → output fields
+
+Your goals ask about **pizza types**, **Margarita price**, **drinks & prices**, **operating hours**, and **delivery**. So let's extract exactly those 👇
+
+```yaml
+test_name: pizza_and_drinks_information_seeker
+
+llm:
+  temperature: 0.3
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: "A customer seeking information about pizza types, prices, available drinks, and shop hours before potentially placing an order."
+  context:
+    - personality: personalities/skeptical-user
+    - "You're planning a casual pizza night at home with friends this weekend and are considering ordering from a local pizzeria."
+    - "You want to gather all the necessary information before deciding what to order and whether to pick it up or have it delivered."
+    - "You have a variety of preferences among your friends, so you need to find options that cater to different tastes."
+  goals:
+    - "Ask about the available pizza types."
+    - "Ask about the price of a Margarita pizza."
+    - "Ask about the available drinks and their prices."
+    - "Ask about the shop's operating hours."
+    - "Ask if they deliver."
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - pizza_types:
+        type: string
+        description: "A list of the pizza types offered by the shop. Look for phrases like 'We offer [pizza types]' or a list of available pizzas."
+    - margarita_price:
+        type: money
+        description: "The price of a Margarita pizza. Extract the price, including currency if present. If multiple sizes are mentioned, extract the price for all sizes mentioned. Look for phrases like 'Margarita pizza costs [price]' or '[price] for a Margarita'."
+    - drinks_and_prices:
+        type: string
+        description: "A list of available drinks and their corresponding prices. Extract the list, including the name and price of each drink. Look for phrases like 'We have [drink] for [price]' or a list of available drinks and prices."
+    - operating_hours:
+        type: string
+        description: "The shop's operating hours, including opening and closing times. Look for phrases like 'Our hours are [hours]' or 'We are open from [opening time] to [closing time]'."
+    - delivery_availability:
+        type: string
+        description: "Indication of whether the shop delivers or not. Extract the confirmation. Look for phrases like 'We deliver' or 'We do not offer delivery'."
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+```
+
+## A couple of friendly tips 💡
+
+- **`money` vs `currency`**: your other profiles use `money` for prices, so I kept it consistent here. Just make sure a `types/money.yml` exists in your project — if it doesn't, swap it for `currency` (or a plain `string`) so validation doesn't complain.
+- **`drinks_and_prices` as `string`**: since it's a mixed name+price list, `string` is the safest bet. If you'd rather have structured data, you could split it into `list[string]` for names and `list[float]` for prices — but that's only worth it if a rule needs it.
+- **Rules later**: these field names (`pizza_types`, `margarita_price`, etc.) are what your Sensei-check rules will reference as `conv[i].<field_name>`, so keep them stable and descriptive. 👍
+
+Want me to also sketch a quick rule that uses, say, `margarita_price` or `delivery_availability`? Just say the word! 🍕
+$$$

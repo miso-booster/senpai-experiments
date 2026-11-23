@@ -1,0 +1,38 @@
+conversation ID: graph_based_architecture__p9__ada_uam__rule__686f7df4
+$$$
+¡Claro que sí! 😊 Vamos a crear una regla que verifique que el horario de la biblioteca sea de **9 a 20** (es decir, de 9:00 a 20:00).
+
+Como el perfil expone el campo `library_hours` en `chatbot.output`, la regla debe referirse a ese campo usando `conv[0].library_hours`. Para comprobar el contenido semántico del horario, lo más robusto es usar el helper `semantic_content`, que hace una verificación semántica con LLM (permite variaciones como "9:00 a 20:00", "de 9 a 8 de la noche", etc.).
+
+Aquí tienes la regla lista para pegar 👇
+
+```yaml
+name: library_hours_check
+description: El horario de atención de la biblioteca debe ser de 9 a 20 (perfil Préstamos y Recursos de la Biblioteca)
+conversations: 1
+oracle: semantic_content(conv[0].library_hours, 'Horario de atención de la biblioteca de 9:00 a 20:00')
+on-error: "El horario reportado no coincide con 9-20: {conv[0].library_hours}"
+```
+
+### ¿Por qué esta regla? 🤔
+
+- **`conversations: 1`** → es un oráculo de una sola conversación (no necesitamos comparar pares).
+- **`conv[0].library_hours`** → apunta directamente al slot `library_hours` que ya expone tu perfil en `chatbot.output`. ✅
+- **`semantic_content(...)`** → es la forma más flexible de comprobar el contenido, porque el chatbot puede responder "de 9:00 a 20:00", "de 9 de la mañana a 8 de la noche", etc., y todas esas variantes deberían pasar.
+- **`on-error`** → te muestra el valor real cuando falla, para que puedas depurar rápido.
+
+### Alternativa más estricta (opcional) 🔍
+
+Si prefieres una comprobación **literal** (por ejemplo, que el texto contenga exactamente "9" y "20"), podrías usar algo como:
+
+```yaml
+name: library_hours_literal_check
+description: El horario de la biblioteca debe mencionar 9 y 20
+conversations: 1
+oracle: "'9' in conv[0].library_hours and '20' in conv[0].library_hours"
+```
+
+Pero ojo 👀: esta versión es más frágil (fallaría con "8 de la noche" en vez de "20"), así que te recomiendo la primera con `semantic_content`.
+
+¿Quieres que también te arme una regla para verificar que el bot **no** dé horarios fuera de ese rango, o alguna relacionada con los otros slots (`laptop_loan_process_info`, `vpn_access_info`, etc.)? ¡Con gusto te ayudo! 🙌
+$$$

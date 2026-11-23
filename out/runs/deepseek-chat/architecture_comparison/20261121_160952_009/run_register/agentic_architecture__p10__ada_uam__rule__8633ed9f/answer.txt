@@ -1,0 +1,120 @@
+¡Perfecto! Tu perfil **"Usuarios Nuevos y Admisiones"** tiene un `chatbot.output` muy rico, así que hay mucho que puedes verificar. Aquí tienes una propuesta de reglas que combinan comprobaciones **globales** (no dependen del esquema) con **reglas específicas** que usan exactamente los campos de tu perfil.
+
+## Lo que veo en tu perfil
+
+- **URLs**: `admission_to_grados_link`, `waitlist_info_link`, `future_students_link`, `welcome_day_link`
+- **Listas/texto**: `grados_available`, `cursos_available`, `waitlist_procedures`, `admission_requirements`, `enrollment_process`, `contact_admissions`, `future_students_info`, `event_location`
+- **Fechas/horas**: `welcome_day_date`, `welcome_day_time`, `admission_deadline`
+- **Dinero**: `application_fee`
+
+Como el perfil es **profile-bound**, las reglas específicas deben referirse a esos nombres con `conv[i].campo`.
+
+---
+
+## 1. Regla global: el bot no repite respuestas
+
+```yaml
+name: chatbot_does_not_repeat
+description: El chatbot no repite respuestas a lo largo de la conversación
+conversations: 1
+active: True
+oracle: |
+  not repeated_answers(method='tf-idf', threshold=0.75)
+yields: |
+  f"El chatbot repite: {repeated_answers(method='tf-idf', threshold=0.75)}"
+```
+
+## 2. Regla global: responde en el mismo idioma
+
+```yaml
+name: chatbot_responds_in_same_language
+description: El chatbot responde en el mismo idioma que el usuario (español)
+conversations: 1
+active: True
+oracle: responds_in_same_language()
+yields: "El chatbot no responde en el mismo idioma que el usuario"
+```
+
+## 3. Regla global: se mantiene en el dominio de admisiones
+
+```yaml
+name: only_talks_about_admissions
+description: El chatbot solo habla de admisiones, grados, cursos y Welcome Day
+conversations: 1
+active: True
+oracle: only_talks_about('proceso de admisión, grados y cursos ofrecidos, listas de espera, evento Welcome Day, requisitos de inscripción, contacto de admisiones')
+```
+
+## 4. Regla específica: se recogen todos los datos clave
+
+```yaml
+name: chatbot_fills_all_slots
+description: Todos los campos de chatbot.output se rellenan al final de la conversación
+conversations: 1
+active: True
+oracle: data_collected() == True
+yields: |
+  f"Slots sin rellenar: {missing_slots()}"
+```
+
+## 5. Regla específica: los enlaces de admisión no están vacíos
+
+```yaml
+name: non_empty_admission_links
+description: El chatbot no devuelve botones/enlaces vacíos en las respuestas de admisión
+conversations: 1
+active: True
+oracle: |
+  not chatbot_returns("LINK: <empty>") and not chatbot_returns("AVAILABLE BUTTONS:", and_not="- BUTTON TEXT:")
+```
+
+## 6. Regla específica: la tasa de solicitud es positiva
+
+```yaml
+name: application_fee_positive
+description: El costo de la solicitud de admisión debe ser un importe positivo
+conversations: 1
+active: True
+when: application_fee is not None
+oracle: extract_float(application_fee) > 0
+yields: |
+  f"Tasa de solicitud inválida: {application_fee}"
+```
+
+## 7. Regla específica: los grados solicitados aparecen en la lista ofrecida
+
+```yaml
+name: requested_grados_are_offered
+description: Los grados que pide el usuario deben aparecer en grados_available
+conversations: 1
+active: True
+when: grados_available is not None
+oracle: |
+  all(g in grados_available for g in grados)
+yields: |
+  f"Algún grado solicitado no aparece en la lista ofrecida: {grados} vs {grados_available}"
+```
+
+## 8. Regla específica: los datos del Welcome Day están presentes
+
+```yaml
+name: welcome_day_data_present
+description: La fecha y la hora del Welcome Day deben estar presentes
+conversations: 1
+active: True
+when: welcome_day_date is not None
+oracle: welcome_day_date is not None and welcome_day_time is not None
+yields: |
+  f"Faltan datos del Welcome Day: fecha={welcome_day_date}, hora={welcome_day_time}"
+```
+
+---
+
+## ⚠️ Notas importantes
+
+1. **Reglas 1–3** son **globales** (usan solo helpers genéricos: `repeated_answers`, `responds_in_same_language`, `only_talks_about`). Funcionan sin depender del esquema.
+2. **Reglas 4–8** son **profile-bound**: usan exactamente los campos de tu `chatbot.output`. Si renombras un campo en el perfil, tendrás que actualizar la regla.
+3. La regla **7** asume que `grados` (la variable del goal) es accesible en la expresión. Si al ejecutarla da error de variable no encontrada, la ajustamos para comparar solo contra `grados_available` (por ejemplo, comprobando que no esté vacío).
+4. La regla **8** es una comprobación básica de presencia; si quieres validar que la fecha sea *realmente futura* necesitaríamos una comparación con la fecha actual, que el DSL no expone directamente — dime si quieres que lo intentemos de otra forma.
+
+¿Quieres que **guarde estas reglas** en tu proyecto (dime nombres de archivo, p. ej. `admissions_rules.yaml`), o prefieres que ajuste alguna antes? También puedo enfocarlas más en un aspecto concreto (por ejemplo, solo validar enlaces, o solo el Welcome Day). 😊

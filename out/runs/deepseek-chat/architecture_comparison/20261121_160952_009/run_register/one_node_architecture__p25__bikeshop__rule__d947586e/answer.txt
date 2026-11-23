@@ -1,0 +1,27 @@
+Hey there! 😊 Happy to help you build that rule.
+
+A quick heads-up before the YAML: your profile exposes `opening_and_closing` as a `str` and `seat_price` as a `str`, so I'll use `extract_float(...)` to pull the numbers out of them. Also, "opening and closing should be 10 to 20" is a bit ambiguous — I'll interpret it as *the opening hour and closing hour should both fall between 10 and 20 (i.e., 10:00–20:00)*. If you meant something else (like "the shop is open for 10–20 hours"), just let me know and I'll adjust! 🙌
+
+Here's a single-conversation rule that checks all four price/time constraints:
+
+```yaml
+name: qa_prices_and_hours
+description: Checks opening/closing hours are within 10-20, tune-up is 50, seat is 20, and tire is 20
+conversations: 1
+active: True
+oracle: |
+  extract_float(opening_and_closing[0]) >= 10 and extract_float(opening_and_closing[0]) <= 20
+  and extract_float(tune_up[0]) == 50
+  and extract_float(seat_price[0]) == 20
+  and extract_float(tire[0]) == 20
+yields: |
+  f"Expected hours in [10,20], tune-up=50, seat=20, tire=20 — got hours={opening_and_closing}, tune_up={tune_up}, seat={seat_price}, tire={tire}"
+```
+
+A couple of notes so it behaves the way you expect 👀:
+
+- **`extract_float` grabs the first number it finds.** For `opening_and_closing` like `"10:00 to 20:00"`, it'll pick up `10` — which is why I only check the *opening* value here. If you want to validate the closing hour too, the safest bet is to split the string first, or better yet, expose opening/closing as separate numeric fields in `chatbot.output`.
+- **`seat_price` is typed as `str`** in your profile — that's fine for `extract_float`, but if you plan to write more price rules later, switching it to `money` (like `tire` and `tune_up`) would make things cleaner and more consistent. 💡
+- If you'd rather have **four separate rules** (one per check) so failures are easier to pinpoint, I can split them for you — just say the word!
+
+Want me to also add a version that checks the closing hour separately, or split this into individual rules? 🚲

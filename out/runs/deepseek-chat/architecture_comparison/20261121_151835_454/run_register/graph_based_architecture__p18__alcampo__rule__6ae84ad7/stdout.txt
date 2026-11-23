@@ -1,0 +1,76 @@
+conversation ID: graph_based_architecture__p18__alcampo__rule__6ae84ad7
+$$$
+¡Hola! 😊 Claro que sí, te ayudo con esa regla. Antes de escribirla, déjame comentarte un par de cosas importantes para que quede bien conectada con tu perfil 👇
+
+## Puntos clave antes de la regla
+
+1. **La regla depende del perfil.** Para que `conv[0].eco_friendly_toys` funcione, tu SENSEI Chat profile debe exponer ese campo en `chatbot.output`. Si no existe, la regla no podrá leerlo.
+2. **Tipo de dato recomendado.** Como esperas una *lista* de juguetes, lo ideal es declararlo como `list[string]` en el perfil.
+3. **Comprobación de "no vacío".** Para verificar que el chatbot devolvió una lista con contenido, lo más limpio es comprobar que el campo no es `None` y que tiene al menos un elemento.
+
+## 1) Fragmento del perfil (`chatbot.output`)
+
+Así debería verse el slot en tu perfil para que la regla funcione:
+
+```yaml
+test_name: "eco_friendly_toys_profile"
+
+user:
+  language: English
+  role: "A customer looking for eco-friendly toys."
+  context:
+    - "You are interested in sustainable and environmentally friendly products."
+  goals:
+    - "Ask the chatbot for eco-friendly toys"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, could you rephrase that?"
+  output:
+    - eco_friendly_toys:
+        type: list[string]
+        description: List of eco-friendly toys returned by the chatbot
+
+conversation:
+  number: 1
+  goal_style:
+    steps: 5
+  interaction_style:
+    - default
+```
+
+## 2) La regla de Sensei-check
+
+```yaml
+name: eco_friendly_toys_returned
+description: The chatbot must return a non-empty list of eco-friendly toys during the conversation
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) > 0
+on-error: "Expected a non-empty eco_friendly_toys list, got: {conv[0].eco_friendly_toys}"
+```
+
+### ¿Qué hace exactamente? 🧐
+
+- `conversations: 1` → es una regla de una sola conversación (un oráculo clásico).
+- `conv[0].eco_friendly_toys is not None` → el slot fue rellenado (no quedó vacío).
+- `len(conv[0].eco_friendly_toys) > 0` → la lista tiene al menos un juguete.
+- `on-error` → te da un mensaje claro con el valor real cuando falla, súper útil para depurar.
+
+## 3) Variante opcional (más estricta)
+
+Si además quieres asegurarte de que **todos los slots del perfil** se rellenaron (no solo este), puedes combinarla con el helper `data_collected()`:
+
+```yaml
+name: eco_friendly_toys_returned_strict
+description: The chatbot must return a non-empty eco-friendly toys list and all profile slots must be filled
+conversations: 1
+oracle: conv[0].eco_friendly_toys is not None and len(conv[0].eco_friendly_toys) > 0 and data_collected() is True
+```
+
+## ⚠️ Recordatorio importante
+
+- Si en tu perfil el campo se llama distinto (por ejemplo `toys` o `eco_toys`), **debes usar exactamente ese nombre** en la regla. Los nombres deben coincidir al 100% con `chatbot.output`.
+- Si el campo aún no existe en el perfil, créalo primero y luego añade la regla.
+
+¿Quieres que te ayude también a revisar el perfil completo o a añadir alguna comprobación extra (por ejemplo, que los juguetes sean realmente "eco-friendly" con `semantic_content`)? 🌱🧸
+$$$

@@ -1,0 +1,102 @@
+conversation ID: graph_based_architecture__p1__ada_uam__profile__c35ac156
+$$$
+¡Hola! 😊 ¡Claro que sí! Te ayudo a crear un perfil de Sensei para un usuario que intenta configurar eduroam en su dispositivo y no lo consigue. Antes de escribir el YAML, déjame darte un par de apuntes rápidos para que quede bien alineado con las reglas de Sensei:
+
+- Las **variables** las declaramos dentro de `user.goals` y las usamos con `{{nombre}}` en los textos de los goals.
+- Como quieres cubrir **varias formas de intentar configurarlo**, `forward()` es perfecto para iterar de forma determinista por cada método. Si además quieres combinar método + sistema operativo, puedes anidar `forward()` (por ejemplo `forward(metodo)`).
+- Recuerda que en `chatbot.output` definimos los campos que luego podrán leer las reglas de Sensei-check como `conv[i].<campo>`.
+
+Aquí tienes el perfil completo 👇
+
+```yaml
+test_name: "Configuración de eduroam fallida"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un miembro de la comunidad universitaria que intenta configurar la red
+    eduroam en su dispositivo pero no lo consigue. Estás algo frustrado porque
+    necesitas conexión para tus tareas, y pides ayuda paso a paso al Centro de
+    Atención a Usuarios (CAU).
+  context:
+    - personality: personalities/impatient-user
+    - "Ya has intentado configurar eduroam por tu cuenta siguiendo las instrucciones de la web, pero la conexión no funciona."
+    - "No estás seguro de qué credenciales usar (usuario institucional vs. correo completo) ni del dominio correcto."
+    - "Necesitas que te guíen para descartar errores comunes y dejar el dispositivo conectado."
+  goals:
+    - "Explicar que no consigues conectarte a eduroam usando el método {{metodo_configuracion}} en mi dispositivo {{dispositivo}}."
+    - "Pedir ayuda para verificar las credenciales correctas ({{formato_usuario}}) y el dominio de la universidad."
+    - "Preguntar qué certificado o configuración de seguridad debo seleccionar para eduroam."
+    - "Solicitar pasos para olvidar la red y volver a intentar la conexión desde cero."
+    - "Preguntar a quién contactar si tras seguir los pasos sigo sin poder conectarme."
+    - metodo_configuracion:
+        function: forward()
+        type: string
+        data:
+          - la app oficial de eduroam (eduroam CAT)
+          - la configuración manual de la red Wi-Fi
+          - el instalador del perfil de configuración de la universidad
+          - la conexión mediante certificado descargado
+    - dispositivo:
+        function: forward(metodo_configuracion)
+        type: string
+        data:
+          - un portátil Windows
+          - un MacBook
+          - un móvil Android
+          - un iPhone
+    - formato_usuario:
+        function: random()
+        type: string
+        data:
+          - usuario institucional sin dominio
+          - correo completo con @universidad.es
+          - usuario con el dominio @uam.es añadido
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me puedes repetir la pregunta con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - eduroam_setup_steps:
+        type: string
+        description: "Pasos indicados para configurar eduroam"
+    - required_credentials:
+        type: string
+        description: "Credenciales y formato de usuario necesarios para eduroam"
+    - security_configuration:
+        type: string
+        description: "Certificado o método de seguridad recomendado para eduroam"
+    - troubleshooting_advice:
+        type: string
+        description: "Consejos para resolver el fallo de conexión"
+    - support_contact:
+        type: string
+        description: "Contacto de soporte para incidencias de eduroam"
+
+conversation:
+  number: combinations
+  goal_style:
+    steps: 25
+    max_cost: 0.1
+  interaction_style:
+    - single questions
+    - random:
+        - make spelling mistakes
+        - long phrases
+```
+
+Un par de detalles que te pueden interesar 👀:
+
+- **`conversation.number: combinations`** aprovecha la matriz que generan los dos `forward()` anidados (`metodo_configuracion` → `dispositivo`), así cubres cada combinación método/dispositivo una vez. Si quieres reducir el número de conversaciones, cámbialo por `combinations(0.6)` o similar.
+- **`formato_usuario`** usa `random()` porque no necesitas cubrir todas las variantes de credenciales en cada combinación; solo añade variedad realista.
+- Los campos de `chatbot.output` están pensados para que puedas escribir reglas después, por ejemplo: *"si `eduroam_setup_steps` está vacío, la respuesta es incompleta"* o *"`support_contact` debe contener un correo o teléfono"*.
+
+¿Quieres que te ayude también a escribir alguna **regla de Sensei-check** que valide este perfil (por ejemplo, que siempre se ofrezca un contacto de soporte)? ¡Dímelo y lo montamos! 🙌
+$$$

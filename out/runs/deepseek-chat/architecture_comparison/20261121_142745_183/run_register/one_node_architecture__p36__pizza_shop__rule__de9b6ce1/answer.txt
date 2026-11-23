@@ -1,0 +1,45 @@
+Hey there! 😊 Happy to help — I can see exactly what's going on with this rule.
+
+## What's wrong
+
+Your rule is missing the **`if:`** clause. Right now it only has `when` + `then`, so Sensei-check has no precondition to trigger the implication. The `then` is meant to be the *consequent* of an `if` — without the `if`, the metamorphic relation is incomplete and the rule can't evaluate the "more toppings ⇒ higher price" logic.
+
+Also, a couple of things worth checking against your project:
+
+- Your `pizza_order_test_custom.yml` profile exposes `price`, `time`, and `order_id` — but **not** `size`, `toppings`, or `drink` as separate `chatbot.output` fields. So `conv[0].size`, `conv[0].drink`, and `len(conv[0].toppings)` won't resolve unless those fields exist in the profile's `chatbot.output`.
+- The `when` filter compares `size` and `drink`, but the actual metamorphic condition (more toppings) lives in the missing `if`.
+
+## Fixed rule
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more (same size & drink)
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+## One more thing to make it actually run ✅
+
+For this rule to work, the profile it targets must expose `size`, `toppings`, `drink`, and `price` in `chatbot.output`. Your `pizza_order_test_custom.yml` currently only has `price`, `time`, `order_id`. You'd need to add something like:
+
+```yaml
+chatbot:
+  output:
+    - price:
+        type: currency
+        description: The final price of the pizza order
+    - size:
+        type: string
+        description: Pizza size (small, medium, big, extra large)
+    - toppings:
+        type: list[string]
+        description: Selected toppings
+    - drink:
+        type: string
+        description: Chosen drink
+```
+
+Want me to draft the full updated profile so the rule has matching fields to read? Just say the word 🙌

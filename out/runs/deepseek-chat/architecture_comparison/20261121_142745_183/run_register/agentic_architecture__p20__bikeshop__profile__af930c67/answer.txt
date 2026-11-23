@@ -1,0 +1,94 @@
+Here's a bike shop appointment profile designed to exercise how the chatbot handles dates and times, with several variables covering different days and time slots. 🚲
+
+```yaml
+test_name: "bike_shop_wheel_change_appointment"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer who wants to book an appointment at a bike shop to have
+    the wheels on your bicycle changed. You need to agree on a specific day and
+    time for the appointment, and you care about the shop's availability.
+  context:
+    - "You ride a road bike and want both wheels replaced with new ones."
+    - "You are flexible but you have a few preferred days and time slots."
+    - "You want the appointment confirmed with a clear date and time."
+    - "If the shop offers a slot you cannot make, ask for an alternative."
+  goals:
+    - "Book an appointment to change your bike wheels on {{preferred_day}} at {{preferred_time}}"
+    - "If that slot is unavailable, ask for the next available slot on {{alternative_day}}"
+    - "Confirm the final appointment date and time with the shop"
+    - preferred_day:
+        function: forward()
+        type: string
+        data:
+          - "Monday"
+          - "Wednesday"
+          - "Saturday"
+    - preferred_time:
+        function: pairwise()
+        type: string
+        data:
+          - "9:00 AM"
+          - "12:30 PM"
+          - "5:00 PM"
+    - alternative_day:
+        function: pairwise()
+        type: string
+        data:
+          - "Tuesday"
+          - "Thursday"
+          - "Friday"
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't catch that. Could you rephrase?"
+  output:
+    - appointment_date:
+        type: date("day-month-year")
+        description: "The confirmed appointment date for the wheel change"
+    - appointment_time:
+        type: time("hh:mm")
+        description: "The confirmed appointment time"
+    - service_type:
+        type: string
+        description: "The service booked (e.g., wheel change)"
+    - appointment_id:
+        type: string
+        description: "The appointment / booking reference, if provided"
+
+conversation:
+  number: combinations(0.6, pairwise)
+  goal_style:
+    steps: 6
+    max_cost: 0.1
+  interaction_style:
+    - change your mind
+    - random:
+        - long phrases
+        - make spelling mistakes
+        - single questions
+```
+
+### What this profile does 🎯
+
+- **Date/time variables to test scheduling:**
+  - `preferred_day` (forward) → cycles through Monday / Wednesday / Saturday so you cover different days of the week.
+  - `preferred_time` (pairwise) → covers morning, midday, and evening slots across the days.
+  - `alternative_day` (pairwise) → Tuesday / Thursday / Friday, used when the first slot is unavailable (tests the "fallback to another day" flow). Having two `pairwise()` variables lets the combination matrix cover day × time pairs efficiently.
+- **`conversation.number: combinations(0.6, pairwise)`** → uses 60% of the pairwise combination matrix, keeping the run efficient while still covering day × time pairs.
+- **`interaction_style: change your mind`** → deliberately makes the user switch preferred dates/times mid-conversation — perfect for testing how the bot re-handles scheduling. 🧠
+- **`chatbot.output`** extracts `appointment_date` (as a real `date`), `appointment_time` (as a real `time`), plus `service_type` and `appointment_id` — these are the fields you'd later reference in SENSEI-check rules (e.g., verifying the confirmed date matches what was agreed).
+
+A couple of things you may want to tweak:
+- The `chatbot.fallback` should be replaced with your bot's **real** fallback message to avoid loops.
+- If your bot uses a specific date format (e.g., `mm/dd/yyyy`), adjust the `date(...)` format in `chatbot.output` to match.
+
+Want me to also create a **SENSEI-check rule** that validates the appointment date/time (e.g., that the confirmed date is one the user actually agreed to)? Just say the word and I'll load the rules docs and build it for you 😊

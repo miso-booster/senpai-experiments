@@ -1,0 +1,78 @@
+conversation ID: one_node_architecture__p1__ada_uam__profile__0434d5fb
+$$$
+¡Hola! 😊 ¡Claro que sí! Te preparo un perfil para simular a un usuario que intenta configurar eduroam en su dispositivo y no lo consigue. He usado como variable las distintas formas de intentar configurarlo (asistente automático, manual, app oficial, etc.), así que cada conversación probará un camino diferente.
+
+Un par de notas rápidas antes del YAML:
+- Los campos de `chatbot.output` están pensados para que luego puedas escribir reglas de Sensei-check sobre ellos (por ejemplo, comprobar que se mencionan los pasos de configuración o el contacto de soporte).
+- El `forward()` en `metodo_configuracion` hace que cada conversación recorra un método distinto, así cubres todos los caminos sin repetir.
+
+```yaml
+test_name: "Configuración de eduroam en el dispositivo"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario de la universidad que intenta configurar la red eduroam
+    en tu dispositivo pero no lo consigues. Estás algo frustrado porque lo has
+    probado varias veces y sigues sin poder conectarte.
+  context:
+    - "Necesitas eduroam para acceder a internet en el campus y trabajar con normalidad."
+    - "No eres especialmente experto en temas técnicos, así que agradeces instrucciones claras."
+    - "Ya has intentado conectarte pero algo falla y no sabes exactamente qué."
+  goals:
+    - "Explicar que no consigues conectarte a eduroam en tu {{dispositivo}} usando el método de {{metodo_configuracion}}."
+    - "Pedir ayuda paso a paso para configurar eduroam correctamente."
+    - "Preguntar qué credenciales debes usar (usuario y contraseña) para eduroam."
+    - "Consultar qué hacer si sigues sin poder conectarte después de intentarlo."
+    - "Solicitar el contacto de soporte técnico por si necesitas ayuda adicional."
+    - dispositivo:
+        function: forward()
+        type: string
+        data: [portátil Windows, portátil Mac, móvil Android, iPhone, tablet iPad]
+    - metodo_configuracion:
+        function: forward(dispositivo)
+        type: string
+        data:
+          - asistente de configuración automática (eduroam CAT)
+          - configuración manual de la red
+          - aplicación oficial de eduroam
+          - perfil de configuración descargado de la web
+
+chatbot:
+  is_starter: false
+  fallback: "¿Me lo puedes repetir con otras palabras? También puedes consultar el catálogo de servicios del Centro de Atención a Usuarios."
+  output:
+    - eduroam_setup_steps:
+        type: string
+        description: "Pasos indicados para configurar eduroam"
+    - credentials_info:
+        type: string
+        description: "Credenciales (usuario y contraseña) necesarias para eduroam"
+    - troubleshooting_tips:
+        type: string
+        description: "Consejos para resolver problemas de conexión con eduroam"
+    - support_contact:
+        type: string
+        description: "Información de contacto del soporte técnico"
+    - device_mentioned:
+        type: string
+        description: "Dispositivo del usuario mencionado en la conversación"
+
+conversation:
+  number: combinations(1, forward)
+  goal_style:
+    steps: 20
+    max_cost: 0.5
+  interaction_style:
+    - single questions
+```
+
+¿Quieres que te añada también alguna regla de Sensei-check para este perfil (por ejemplo, comprobar que el bot siempre mencione los pasos de configuración o el contacto de soporte)? ¡Dímelo y te la preparo! 🙌
+$$$

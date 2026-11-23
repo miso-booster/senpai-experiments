@@ -1,0 +1,49 @@
+conversation ID: agentic_architecture__p4_basic__pizza_shop__profile__df606fe9
+$$$
+Hey! 😊 Quick heads-up before I dive in: I'm **Senpai**, specialized in the SENSEI DSL (rules / profiles / connectors in YAML). Writing a full standalone Python + LLM automation pipeline is a bit outside my lane — but the *hard part* of that automation is knowing exactly what a **valid profile** looks like, and that I can absolutely help you nail down. 💪
+
+I loaded `sensei-chat-guide.md` and peeked at your existing profiles (e.g. `pizza_order_test_custom.yml`) to ground this.
+
+## What your automation must generate (the "valid profile" contract)
+
+Based on `sensei-chat-guide.md`, a valid profile is a single YAML doc with these top-level sections:
+
+- **`test_name`** — string.
+- **`llm`** *(optional)* — `temperature`, `model`, `model_prov`, `format.type: text|speech`.
+- **`user`** — `language`, `role`, `context` (list, optional `personality:` refs), and `goals`.
+  - `goals` mixes **plain goal strings** (with `{{variables}}`) and **variable declarations** (`function`, `type`, `data`).
+  - Every `{{var}}` must have a matching declaration (case-sensitive).
+  - `function` ∈ `default() | random() | random(n) | random(rand) | another() | another(n) | forward() | forward(dep) | pairwise()`.
+  - `type` ∈ `int | float | string | <custom type name>` (no `list`/`time`/`date` here!).
+  - `data` = explicit list, `{min,max,step}` / `linspace`, `any("...")` LLM-generated items, or a custom list function file.
+- **`chatbot`** — `is_starter`, `fallback`, and `output` (the schema rules read as `conv[i].<field>`).
+  - `output` types: `int | float | string | time(...) | date(...) | list[...] | <custom>`.
+- **`conversation`** — `number` (int or `combinations(...)`), `max_cost`, `goal_style` (`steps` / `random steps` / `all_answered`), `interaction_style` (reserved keywords only).
+
+## Key validation gotchas your LLM generator should enforce ✅
+
+1. Every `{{var}}` in goal strings has a matching declaration.
+2. `random(n)` / `another(n)` → `n ≤ len(data)`.
+3. `combinations(...)` requires ≥2 `forward`/`pairwise` variables.
+4. `pairwise()` needs ≥2 pairwise-assigned variables.
+5. `interaction_style` uses **exact reserved keywords** (never translated/invented).
+6. `user.goals` types ≠ `chatbot.output` types (don't put `list`/`time`/`date` in goals).
+7. `chatbot.fallback` should be the bot's **real** fallback text.
+
+## Where I can genuinely help you build this 🛠️
+
+Rather than me writing the whole Python app, here's how I'd plug into your pipeline:
+
+- **Schema/spec**: I can produce a precise JSON-Schema-style spec of a valid profile (from the docs) that your LLM prompt + validator can target.
+- **Prompt design**: I can draft the system prompt that instructs your LLM to emit only valid SENSEI profile YAML.
+- **Validator logic**: I can spell out the exact checks (the 7 above) your Python code should run before accepting a generated profile.
+- **Post-generation fix-ups**: I can review generated YAML and correct it against the docs.
+
+So, a couple of quick questions to point you the right way 👇
+
+1. Do you want me to **(a)** write the *validation spec + LLM system prompt* your Python automation will use, or **(b)** just review/fix profiles your automation produces?
+2. What's the target domain for the generated profiles (pizza ordering like your existing ones, or something else)?
+3. Should generated profiles include `chatbot.output` fields (so rules can bind to them), or just the user-simulator part?
+
+Tell me which direction and I'll get building! 🚀
+$$$

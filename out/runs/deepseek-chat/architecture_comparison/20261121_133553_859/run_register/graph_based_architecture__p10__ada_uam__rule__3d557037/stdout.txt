@@ -1,0 +1,191 @@
+conversation ID: graph_based_architecture__p10__ada_uam__rule__3d557037
+$$$
+¡Hola! 😊 ¡Qué buen perfil tienes montado! Se nota que está bien pensado: un estudiante potencial que pregunta por admisión, listas de espera, grados, cursos y el Welcome Day. Vamos a darle caña con algunas reglas que te ayuden a **probarlo de verdad**.
+
+Antes de nada, un detalle importante 👀: tu perfil expone muchos campos en `chatbot.output` (links, fechas, horas, requisitos, etc.). Las reglas que te propongo usan **exactamente esos nombres**, así que deberían encajar sin tocar nada. Si renombras algún campo, recuerda actualizar las reglas también.
+
+---
+
+## 1) Regla global: el bot responde en el mismo idioma que el usuario 🇪🇸
+
+Como tu usuario habla en español, el chatbot debería responder en español. Es una regla **profile-agnostic** (no depende de tus campos), perfecta para detectar regresiones de idioma.
+
+```yaml
+name: responds_in_user_language
+description: El chatbot responde en el mismo idioma que el usuario (español)
+conversations: 1
+oracle: responds_in_same_language() is True
+```
+
+---
+
+## 2) Regla global: no se sale del tema 🎯
+
+El bot debe ceñirse a admisiones, grados, cursos y Welcome Day. Si empieza a hablar de recetas de cocina… ¡algo va mal!
+
+```yaml
+name: scope_guardrails
+description: El chatbot no se desvía del dominio de admisiones y vida universitaria
+conversations: 1
+oracle: only_talks_about('admisión, grados, cursos, listas de espera, Welcome Day, futuros estudiantes') is True
+```
+
+---
+
+## 3) Regla global: sin respuestas repetidas 🔁
+
+Con 6 conversaciones y estilos de "single questions", es fácil que el bot acabe copiando la misma respuesta. Esta regla lo detecta.
+
+```yaml
+name: no_repeated_answers
+description: El chatbot no repite respuestas casi idénticas entre turnos
+conversations: 1
+oracle: len(repeated_answers('tf-idf', 0.85)) == 0
+```
+
+---
+
+## 4) Regla de perfil: los datos clave se recogen ✅
+
+Tu perfil tiene muchos slots. Una buena prueba de humo es comprobar que, al final de la conversación, **no quedan slots vacíos** (o al menos los más importantes). Ojo: si el bot no llega a rellenar todos en cada conversación, esta regla puede ser estricta — ajústala a lo que esperes.
+
+```yaml
+name: key_slots_collected
+description: El chatbot recoge los datos clave de admisión y Welcome Day
+conversations: 1
+oracle: missing_slots() == []
+```
+
+> 💡 Si te resulta demasiado estricta, puedes relajarla comprobando campos concretos, por ejemplo:
+> ```yaml
+name: admission_requirements_and_welcome_day_present
+description: The chatbot provides both the admission requirements and the welcome day date
+conversations: 1
+oracle: conv[0].admission_requirements is not None and conv[0].welcome_day_date is not None
+```
+
+---
+
+## 5) Regla de perfil: los links deben ser URLs válidas 🔗
+
+Tienes cuatro campos de tipo link. Una regla sencilla y muy útil: si el bot los rellena, deben parecer URLs (contener `http`).
+
+```yaml
+name: links_are_urls
+description: Los links de admisión, listas de espera, futuros estudiantes y Welcome Day son URLs
+conversations: 1
+oracle: all('http' in conv[0].admission_to_grados_link for _ in [0]) and 'http' in conv[0].waitlist_info_link and 'http' in conv[0].future_students_link and 'http' in conv[0].welcome_day_link
+```
+
+> Si prefieres algo más limpio y tolerante a nulos, puedes dividirlo en varias reglas de una sola comprobación cada una. Por ejemplo:
+> ```yaml
+name: welcome_day_link_is_url
+description: El link del Welcome Day es una URL válida
+conversations: 1
+oracle: conv[0].welcome_day_link is None or 'http' in conv[0].welcome_day_link
+```
+
+---
+
+## 6) Regla de perfil: la cuota de solicitud tiene sentido 💰
+
+`application_fee` es de tipo `money`. Una comprobación de cordura: si existe, debe ser un importe positivo.
+
+```yaml
+name: application_fee_positive
+description: La cuota de solicitud, si se informa, es un importe positivo
+conversations: 1
+oracle: conv[0].application_fee is None or extract_float(conv[0].application_fee) > 0
+```
+
+---
+
+## 7) Regla de perfil: la fecha límite no está en el pasado 📅
+
+`admission_deadline` es una fecha. Si el bot la informa, debería ser futura (o al menos no absurda). Como comparar fechas en el DSL es limitado, una opción práctica es verificar que el campo existe y no está vacío:
+
+```yaml
+name: admission_deadline_present
+description: El chatbot informa de una fecha límite de admisión
+conversations: 1
+oracle: conv[0].admission_deadline is not None
+```
+
+> ⚠️ Si quieres validar que la fecha es *futura*, necesitarías lógica extra (parseo de fecha) que el DSL no cubre directamente con los helpers actuales. En ese caso, mejor apoyarte en `semantic_content` con una descripción esperada, por ejemplo:
+> ```yaml
+name: admission_deadline_is_future
+description: The admission deadline is a future admission date
+conversations: 1
+oracle: semantic_content(conv[0].admission_deadline, 'una fecha futura de admisión') is True
+```
+
+---
+
+## 8) Regla de perfil: el Welcome Day tiene fecha y hora coherentes 🎉
+
+Como tienes `welcome_day_date`, `welcome_day_time` y `event_location`, puedes comprobar que el evento está bien descrito:
+
+```yaml
+name: welcome_day_complete
+description: El Welcome Day incluye fecha, hora y ubicación
+conversations: 1
+oracle: conv[0].welcome_day_date is not None and conv[0].welcome_day_time is not None and conv[0].event_location is not None
+```
+
+---
+
+## 9) Regla global: los grados y cursos son únicos en el lote 🧾
+
+Con 6 conversaciones, tiene sentido que los grados/cursos no se dupliquen de forma rara. Aunque `is_unique` está pensado para propiedades escalares, puedes usarlo si tus campos son listas tratadas como texto. Si no, mejor una comprobación por conversación:
+
+```yaml
+name: grados_available_not_empty
+description: El chatbot informa de grados disponibles en cada conversación
+conversations: 1
+oracle: conv[0].grados_available is not None and len(conv[0].grados_available) > 0
+```
+
+Y lo mismo para cursos:
+
+```yaml
+name: cursos_available_not_empty
+description: El chatbot informa de cursos disponibles en cada conversación
+conversations: 1
+oracle: conv[0].cursos_available is not None and len(conv[0].cursos_available) > 0
+```
+
+---
+
+## 10) Regla de perfil: la conversación no se alarga sin control ⏱️
+
+Con `goal_style.steps: 30` y 6 conversaciones, conviene vigilar que el bot no dé demasiadas vueltas. Una regla sencilla:
+
+```yaml
+name: conversation_not_too_long
+description: El chatbot no genera conversaciones excesivamente largas
+conversations: 1
+oracle: conversation_length('assistant') <= 15
+```
+
+> Ajusta el `15` según lo que consideres razonable para tu flujo.
+
+---
+
+## 🧭 Orden sugerido para empezar
+
+Si quieres ir de menos a más, te recomiendo este orden:
+
+1. **`responds_in_user_language`** y **`scope_guardrails`** → pruebas de humo globales, rápidas y muy informativas.
+2. **`no_repeated_answers`** → detecta UX rara enseguida.
+3. **`key_slots_collected`** (o su versión relajada) → valida que tu `chatbot.output` se rellena.
+4. Las reglas de campos concretos (`links_are_urls`, `application_fee_positive`, `welcome_day_complete`, etc.) → afinan la calidad.
+
+---
+
+Un par de consejos finales 😊:
+
+- Como tu perfil usa `single questions` y 6 conversaciones, algunas reglas de "todos los slots llenos" pueden fallar por diseño (el bot quizá no pregunta todo en cada charla). Empieza con las globales y ve endureciendo.
+- Recuerda que `language`, `only_talks_about`, `responds_in_same_language` y `semantic_content` son **LLM-backed**, así que puede haber pequeña variabilidad entre ejecuciones. Calibra umbrales con cabeza.
+
+¿Quieres que te prepare una **versión "suite completa"** en un solo bloque listo para pegar, o prefieres que afinemos alguna regla concreta (por ejemplo, la de slots o la de fechas)? 🚀
+$$$

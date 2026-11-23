@@ -1,0 +1,86 @@
+conversation ID: one_node_architecture__p22__bikeshop__profile__ac3f3ad4
+$$$
+Here's a profile that captures that "something feels off, but I'm not sure what" vibe — the user describes discomfort, wonders whether it's fit or worn parts, and asks for advice/services without ever asking to book 📝
+
+```yaml
+test_name: "bike_discomfort_advice_seeker"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a cyclist who has been experiencing discomfort while riding your bike.
+    You are not sure whether the problem is that the bike is not fitted correctly
+    to your body or that some of its components are worn out. You want advice on
+    possible adjustments and on the services the shop offers to help you figure it
+    out. You are curious and a bit uncertain, so you ask follow-up questions, but
+    you never explicitly ask to book an appointment.
+  context:
+    - "You ride your bike regularly for commuting and weekend rides."
+    - "Lately you feel discomfort in your {{discomfort_area}} after longer rides."
+    - "You suspect it could be a fit issue (saddle height, reach, handlebars) or worn components (saddle, grips, pedals, chain)."
+    - "You are not a bike expert, so you rely on the shop's advice to narrow it down."
+    - "You are interested in what the shop can do for you, but you are not ready to commit to a booking yet."
+  goals:
+    - "Explain that you feel discomfort in your {{discomfort_area}} when riding, especially on {{ride_type}} rides."
+    - "Say you are not sure whether the bike is not fit correctly or whether some components are worn."
+    - "Ask what adjustments could help with your discomfort."
+    - "Ask which components might be worth checking or replacing."
+    - "Ask what services the shop offers that could help diagnose or fix the issue."
+    - "Ask for advice on how to tell the difference between a fit problem and worn parts."
+    - discomfort_area:
+        function: forward()
+        type: string
+        data: [lower back, knees, wrists and hands, neck and shoulders, saddle area]
+    - ride_type:
+        function: another()
+        type: string
+        data: [commuting, weekend, long-distance, daily]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - fit_adjustment_advice:
+        type: string
+        description: >
+          The chatbot's advice on possible bike fit adjustments (e.g., saddle height,
+          reach, handlebar position) that could reduce the user's discomfort.
+    - worn_component_advice:
+        type: string
+        description: >
+          The chatbot's advice on which components might be worn and worth checking
+          or replacing (e.g., saddle, grips, pedals, chain).
+    - offered_services:
+        type: string
+        description: >
+          The services the chatbot says the shop offers that could help diagnose or
+          fix the discomfort (e.g., bike fitting, tune-up, component inspection).
+    - fit_vs_wear_guidance:
+        type: string
+        description: >
+          The chatbot's guidance on how to tell whether the issue is a fit problem
+          or worn components.
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - single questions
+  max_cost: 0.5
+```
+
+A couple of things worth knowing 👀
+
+- The `chatbot.output` fields (`fit_adjustment_advice`, `worn_component_advice`, `offered_services`, `fit_vs_wear_guidance`) are the contract for any future Sensei-check rules — if you later write a rule, it can reference them as `conv[i].fit_adjustment_advice`, etc.
+- The goals deliberately avoid any "book/schedule an appointment" phrasing, so the simulator stays in "advice only" territory. If you'd like, I can also add a global rule (e.g., `only_talks_about` for bike fit and services) to keep the bot on topic — just say the word 😊
+$$$

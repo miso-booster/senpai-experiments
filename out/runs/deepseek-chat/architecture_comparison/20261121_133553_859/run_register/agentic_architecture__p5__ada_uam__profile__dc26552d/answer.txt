@@ -1,0 +1,71 @@
+Heads-up first 😊: your project already has a profile that's *very* close to what you're describing — `consultante_de_servicios_y_asistencia_del_cau.yaml`. It's a Spanish-language CAU support user, and its `chatbot.output` already extracts `contact_email`, `contact_phone`, `physical_address`, and `service_hours` — exactly the four things you want.
+
+However, that existing profile is broader (it also asks about the service catalog, FAQs, and ID-UAM services). Since you asked for a **focused** profile whose user *only* wants the CAU's phone, email, physical location, and opening hours, I'll create a new, tighter profile for that. Here it is:
+
+```yaml
+test_name: "Solicitud de datos de contacto del CAU (UAM)"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: Spanish
+  role: >
+    Eres un usuario que necesita ponerse en contacto con el Centro de Atención
+    a Usuarios (CAU) de la UAM y quieres obtener sus datos de contacto y de
+    atención al público.
+  context:
+    - "Necesitas contactar con el CAU para resolver una duda y quieres saber cómo hacerlo."
+    - "Te interesa conocer tanto los canales de contacto como la atención presencial."
+    - "Prefieres respuestas claras y concretas sobre los datos de contacto."
+  goals:
+    - "Solicitar el número de teléfono del Centro de Atención a Usuarios (CAU)."
+    - "Pedir la dirección de correo electrónico del CAU."
+    - "Preguntar por la ubicación física (dirección) del CAU."
+    - "Consultar el horario de apertura del CAU."
+
+chatbot:
+  is_starter: false
+  fallback: "Por favor, ¿me lo puedes decir con otras palabras? o, si lo prefieres, puedes consultar nuestro catálogo de servicios. Respondo a preguntas dirigidas al Centro de Atención a Usuarios del servicio de Tecnologías de la Información."
+  output:
+    - contact_phone:
+        type: string
+        description: "Número de teléfono del CAU"
+    - contact_email:
+        type: string
+        description: "Dirección de correo electrónico del CAU"
+    - physical_address:
+        type: string
+        description: "Ubicación física / dirección del CAU"
+    - opening_hours:
+        type: string
+        description: "Horario de apertura del CAU"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 10
+  interaction_style:
+    - single questions
+```
+
+### What this profile does & how it maps to the docs 📋
+
+Based on `sensei-chat-guide.md`:
+
+- **`user.role` / `user.context` / `user.goals`** — describe a Spanish-speaking user whose *only* intent is to get the CAU's phone, email, physical location, and opening hours. Each goal maps 1:1 to one of your four requested data points.
+- **`chatbot.output`** — this is the contract for future rules. I used stable, descriptive field names (`contact_phone`, `contact_email`, `physical_address`, `opening_hours`) so you can later write profile-bound rules referencing `conv[i].contact_phone`, etc. I deliberately reused the naming style already used in your existing CAU profiles for consistency.
+- **`chatbot.fallback`** — copied the real UAM CAU fallback message from your existing profiles to avoid endless loops.
+- **`conversation`** — `single questions` interaction style fits a user who asks one thing at a time; `steps: 10` is enough for four short questions; `max_cost: 0.5` caps spend.
+
+### A couple of things to confirm 🤔
+
+1. **Language** — I set it to **Spanish**, matching your other UAM/CAU profiles. Want English instead (or a `change language` interaction style)?
+2. **Duplicate vs. new** — if you'd rather just *reuse* the existing `consultante_de_servicios_y_asistencia_del_cau.yaml` (it already covers these four fields), let me know and I can instead trim it down or leave it as-is.
+3. **Field naming** — I used `opening_hours` (vs. `service_hours` in the existing profile). If you plan to write rules shared across CAU profiles, I can align the name to `service_hours` for consistency.
+
+Want me to adjust any of the above, or is this good to save as-is?

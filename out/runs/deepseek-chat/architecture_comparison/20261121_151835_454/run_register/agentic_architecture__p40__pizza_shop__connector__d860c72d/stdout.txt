@@ -1,0 +1,41 @@
+conversation ID: agentic_architecture__p40__pizza_shop__connector__d860c72d
+$$$
+¡Perfecto! 😊 This is another MillionBot-style API (same shape as the Ada UAM example in `custom-connector-guide.md` and `connector-examples.md`), so the mapping is straightforward.
+
+```yaml
+name: "SAIC Málaga"
+base_url: "https://api.1millionbot.com"
+send_message:
+  path: "/api/public/messages"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "64e5d1af081211d24e2cfecd"
+    Origin: "https://saic.malaga.eu"
+    Referer: "https://saic.malaga.eu/"
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+  payload_template:
+    conversation: "6977595c744ccf01954b8797"
+    sender_type: "User"
+    sender: "6977595c3e4824018e496b0c"
+    bot: "64e5d1af081211d24e2cfec8"
+    language: "es"
+    url: "https://saic.malaga.eu/"
+    message:
+      text: "{user_msg}"
+response_path: "response.0.text"
+```
+
+### How it maps to the docs (`custom-connector-guide.md`, `connector-examples.md`)
+
+- **`base_url` + `send_message.path`** → `https://api.1millionbot.com` + `/api/public/messages` (from the request line `POST /api/public/messages`).
+- **`headers`** → only the meaningful ones: `Content-Type: application/json` and the `Authorization` token from your capture. I also kept `Origin`, `Referer` and `User-Agent` since some bots validate them; the rest (`Accept-Encoding`, `Sec-Fetch-*`, `Priority`, `Cache-Control`, `Content-Length`…) are browser noise and are dropped.
+- **`payload_template`** → mirrors your JSON body exactly, with the user's message replaced by the `{user_msg}` placeholder inside `message.text`.
+- **`response_path: "response.0.text"`** → the reply lives in `response` (an array), first element, `text` field. Note the reply contains HTML (`<p>…<br>…</p>`), which is expected for this API.
+
+### Heads-up ⚠️
+- `conversation` and `sender` are session identifiers from your capture. If the bot rejects reused sessions or you want a fresh conversation per test run, you'll need to generate new IDs (the YAML connector can't do that dynamically — it's static).
+- The `Authorization` token is a bot API key, so treat this file as a secret.
+
+Want me to also create a matching SENSEI profile (e.g., a Spanish-language user simulator for the SAIC Málaga bot) to go with this connector? 🚀
+$$$

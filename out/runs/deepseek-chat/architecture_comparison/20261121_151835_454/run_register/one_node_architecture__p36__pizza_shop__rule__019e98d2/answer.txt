@@ -1,0 +1,29 @@
+Hey there! 😊 Good catch — I can see exactly what's going on with this rule.
+
+## The problem
+
+Your rule has a `then:` clause but **no `if:` clause**. In Sensei-check, `if`/`then` is an *implication*: "**if** X holds, **then** Y must hold." Without the `if`, there's no condition telling the checker *when* the price comparison should apply — so the relation has no precondition to trigger on, and the rule can't evaluate meaningfully.
+
+You also lost the actual metamorphic trigger: the comparison of topping counts. That's the whole point of "more toppings cost more" — you need to say *which* conversation has more toppings.
+
+## The fix
+
+Add the `if:` line that compares toppings, so the rule reads: *"If conv[0] has more toppings than conv[1] (same size & drink), then conv[0] must cost more."*
+
+```yaml
+name: more_toppings_cost_more
+description: Adding more toppings to a custom pizza costs more (same size & drink)
+active: true
+conversations: 2
+when: conv[0].size == conv[1].size and conv[0].drink == conv[1].drink
+if:   len(conv[0].toppings) > len(conv[1].toppings)
+then: extract_float(conv[0].price) > extract_float(conv[1].price)
+```
+
+## A couple of things worth double-checking 👀
+
+1. **Field names must match `chatbot.output`.** This rule reads `size`, `drink`, `toppings`, and `price` from your conversations. Make sure the target profile actually exposes all four in its `chatbot.output`. Looking at your project, `pizza_order_test_custom.yml` exposes `price` but **not** `toppings`, `size`, or `drink` as separate outputs — so this rule won't find those fields there. You'd need a profile that extracts them (e.g. a custom-pizza order profile with `size`, `toppings`, `drink`, `price` all defined).
+
+2. **`when:` needs comparable pairs.** For the rule to fire, you need at least two conversations with the *same* size and drink but *different* topping counts. If your profile uses `pairwise()`/`forward()` on toppings, make sure the generated set actually produces such pairs.
+
+Want me to help you adjust one of your profiles (like `pizza_order_test_custom.yml`) so it exposes `size`, `toppings`, and `drink` as outputs, so this rule can actually run? Just say the word! 🙌

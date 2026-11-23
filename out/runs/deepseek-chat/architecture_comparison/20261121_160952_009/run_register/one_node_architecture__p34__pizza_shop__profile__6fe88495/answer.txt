@@ -1,0 +1,72 @@
+Here's a profile that captures that "change of heart" scenario — the user starts customizing a pizza, then pivots to a predefined one 🍕
+
+```yaml
+test_name: "custom_to_predefined_pizza_switch"
+
+llm:
+  temperature: 0.7
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a customer ordering a pizza. You initially want to build a custom
+    pizza with your own toppings, but partway through the conversation you
+    change your mind and decide to order a predefined pizza instead.
+  context:
+    - "You are ordering for a casual dinner at home."
+    - "You start enthusiastic about a custom pizza, then reconsider because you realize a predefined option is simpler."
+    - "Once you switch, you stick with the predefined pizza and don't go back to customizing."
+  goals:
+    - "Ask to order a custom pizza."
+    - "Start specifying toppings for your custom pizza: {{toppings}}."
+    - "Change your mind and say you'd rather order a predefined {{pizza_type}} pizza instead."
+    - "Confirm the {{pizza_type}} pizza in size {{size}}."
+    - toppings:
+        function: forward()
+        type: string
+        data: [cheese, mushrooms, pepperoni, ham, olives]
+    - pizza_type:
+        function: forward()
+        type: string
+        data: [Margarita, Carbonara, Hawaiian, Vegetarian, Four cheese]
+    - size:
+        function: forward(pizza_type)
+        type: string
+        data: [small, medium, large]
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry, I did not get what you said. I can help you ordering predefined or custom pizzas, and then drinks."
+  output:
+    - custom_pizza_request:
+        type: string
+        description: "The chatbot's response when the user asks for a custom pizza, including any topping prompts."
+    - predefined_pizza_confirmation:
+        type: string
+        description: "The chatbot's confirmation of the predefined pizza type and size after the user switches."
+    - order_summary:
+        type: string
+        description: "The final summary of the order, confirming the predefined pizza type and size."
+
+conversation:
+  number: 3
+  goal_style:
+    all_answered:
+      export: false
+      limit: 20
+  interaction_style:
+    - change your mind
+    - single question
+```
+
+A few notes on the design 👇
+
+- **`change your mind` interaction style** is the key here — it nudges the simulator to naturally pivot mid-conversation, which pairs perfectly with your goal sequence (custom → predefined).
+- The **goals are ordered** so the switch happens after the custom toppings are mentioned, making the "halfway" moment explicit.
+- The **`chatbot.output` fields** (`custom_pizza_request`, `predefined_pizza_confirmation`, `order_summary`) give you hooks for later rules — e.g., you could write a rule checking that the final `order_summary` mentions the predefined pizza and *not* the custom toppings.
+
+Want me to also draft a Sensei-check rule that verifies the switch actually happened (e.g., the final summary reflects the predefined pizza)? Just say the word 😊

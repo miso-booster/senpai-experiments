@@ -1,0 +1,56 @@
+conversation ID: graph_based_architecture__p51__pizza_shop__documentation__810b3cd2
+$$$
+Hey there! 😊 Great question — connectors are basically the **bridge** between Sensei and your chatbot. Let me break it down for you!
+
+## What connectors are for 🔌
+
+A **connector** is a YAML file that tells Sensei **how to talk to your chatbot's API** — no code required! It describes:
+
+- Where the chatbot lives (the URL)
+- How to send a message (endpoint, method, headers, payload shape)
+- Where to find the bot's reply in the JSON response
+
+So when Sensei's simulated user sends a message, the connector handles the "plumbing" of actually delivering it to your bot and pulling out the answer. 🚀
+
+## The fields 📋
+
+Here's the full field reference from the Custom YAML Connector guide:
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Friendly name for your chatbot | No |
+| `base_url` | Base URL of the chatbot API | ✅ Yes |
+| `send_message.path` | API endpoint path (appended to `base_url`) | ✅ Yes |
+| `send_message.method` | HTTP method (POST, GET, PUT, DELETE) | No (default: POST) |
+| `send_message.headers` | Custom headers (e.g., Authorization) | No |
+| `send_message.payload_template` | JSON structure with `{user_msg}` placeholder | ✅ Yes |
+| `response_path` | Dot-separated path to extract the bot's reply from the JSON response | ✅ Yes |
+
+## A couple of quick notes 💡
+
+- **`{user_msg}`** is the magic placeholder — that's where the user's message gets injected into your payload.
+- **`response_path`** uses dot notation to dig into the JSON, like `"data.messages.0.content"` → `response["data"]["messages"][0]["content"]`.
+
+## Looking at your own connectors 👀
+
+You've got some nice examples in your project already:
+
+- **Echo Bot** (`postman.yaml`) — the simplest one, great for testing:
+  ```yaml
+  base_url: "https://postman-echo.com"
+  send_message:
+    path: "/post"
+    method: "POST"
+    payload_template:
+      message: "{user_msg}"
+  response_path: "json.message"
+  ```
+
+- **Ada UAM** (`ada-uam.yaml`) — shows how to add **auth headers** and a nested payload with `message.text: "{user_msg}"`, plus a nested `response_path: response.0.text`.
+
+- **Metro Madrid** (`metro-madrid.yml`) — a more complex payload with session/user info and browser-style headers.
+
+- **345634** (`345634_config.yml`) — a clean minimal template with a `Content-Type` header.
+
+Want me to help you **build a new connector**, **fix one that's not working**, or **walk through a specific field** in more detail? Just say the word! 🙌
+$$$

@@ -1,0 +1,43 @@
+Hey there! 😊 Great idea — a global, profile-agnostic rule that checks whether the chatbot actually talks about current promotions. Let me walk you through it 👇
+
+## The rule
+
+```yaml
+name: promotions_mentioned
+description: The chatbot must provide information about current promotions when asked
+conversations: 1
+oracle: utterance_index('assistant', 'current promotions or discounts') > 0
+```
+
+## Why this works 🧠
+
+Since you don't want it tied to any profile, we lean on **generic helpers** — no `chatbot.output` fields involved. Here's the breakdown:
+
+- **`conversations: 1`** → it's a single-conversation oracle, so each conversation is checked on its own.
+- **`utterance_index('assistant', 'current promotions or discounts')`** → this is an LLM-backed helper that returns the turn index where the assistant mentions the topic. If it returns `> 0`, the bot did bring up promotions somewhere in the dialogue. If it never does, you get `0` (or a non-positive value) and the rule fails. ✅
+
+## A couple of variations you might like 👀
+
+**Stricter — require it to happen early in the conversation:**
+
+```yaml
+name: promotions_mentioned_early
+description: The chatbot mentions current promotions within the first few turns
+conversations: 1
+oracle: 0 < utterance_index('assistant', 'current promotions or discounts') <= 3
+```
+
+**Scope-flavored — make sure it stays on the promotions topic without drifting:**
+
+```yaml
+name: promotions_scope
+description: When discussing promotions, the assistant stays on-topic
+conversations: 1
+oracle: only_talks_about('current promotions, discounts, special offers') is True
+```
+
+## Heads-up ⚠️
+
+`utterance_index` is **LLM-backed**, so expect a little natural variability — it's great for "did the bot mention X?" checks, but don't rely on exact turn numbers being rock-solid across runs. If you want a more deterministic feel, keep the threshold loose (like `> 0`).
+
+Want me to adapt this to a specific scenario (e.g., only check when the user *asks* about promotions)? Just say the word and I'll tailor it! 🙌

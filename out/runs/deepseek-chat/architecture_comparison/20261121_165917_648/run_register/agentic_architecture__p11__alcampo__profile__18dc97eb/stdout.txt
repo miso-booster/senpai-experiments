@@ -1,0 +1,77 @@
+conversation ID: agentic_architecture__p11__alcampo__profile__18dc97eb
+$$$
+Here's your profile — goals only, no variables, following the structure from `sensei-chat-guide.md` (sections 3, 4, 5, 6) and matching the conventions of your existing `delivery_and_subscription_services.yaml`:
+
+```yaml
+test_name: "subscription_services_and_benefits_inquiry"
+
+llm:
+  temperature: 0.6
+  model: gpt-4o-mini
+  format:
+    type: text
+
+user:
+  language: English
+  role: >
+    You are a prospective customer interested in learning about subscription
+    services and the benefits they offer. You want clear, practical information
+    to decide whether a subscription is worth it for you.
+  context:
+    - "personality: personalities/direct-user"
+    - "You are considering subscribing to save time and money on regular purchases."
+    - "You care about understanding exactly what perks, discounts, and exclusive advantages a subscription includes."
+    - "You want to know about costs, commitment terms, and how to cancel if needed."
+  goals:
+    - "Ask the chatbot to explain the available subscription services and what each one includes."
+    - "Inquire about the specific benefits and perks of the subscription, such as discounts, free delivery, or exclusive offers."
+    - "Ask how much the subscription costs and whether there are different plans or tiers."
+    - "Request details about the commitment terms, billing frequency, and how to cancel the subscription."
+    - "Ask whether there are any current promotions or trial periods for new subscribers."
+    - "Investigate whether the subscription benefits apply to all products or only to certain categories."
+
+chatbot:
+  is_starter: false
+  fallback: "Sorry, I didn't quite catch that. Could you rephrase your question about our subscription services?"
+  output:
+    - subscription_service_name:
+        type: string
+        description: "Name of the subscription service"
+    - subscription_benefits:
+        type: string
+        description: "Benefits and perks included in the subscription"
+    - subscription_cost:
+        type: money
+        description: "Cost of the subscription"
+    - plan_tiers:
+        type: string
+        description: "Available plans or tiers and what each includes"
+    - commitment_terms:
+        type: string
+        description: "Commitment terms, billing frequency, and cancellation policy"
+    - current_promotions:
+        type: string
+        description: "Current promotions or trial periods for new subscribers"
+    - benefit_coverage:
+        type: string
+        description: "Whether benefits apply to all products or only certain categories"
+
+conversation:
+  number: 3
+  max_cost: 0.5
+  goal_style:
+    steps: 20
+  interaction_style:
+    - single questions
+```
+
+### What I did & why
+
+- **Goals only, no variables** ✅ — every entry under `user.goals` is a plain string (no `{{...}}` placeholders and no variable declarations), exactly as you asked. Per `sensei-chat-guide.md` §4, that's fully valid.
+- **Structure** follows the anatomy in §3 of the guide: `test_name`, `llm`, `user`, `chatbot`, `conversation`.
+- **`chatbot.output`** is the contract for future rules (§2.1.1). I added sensible fields (service name, benefits, cost, tiers, terms, promotions, coverage) so you can later write profile-bound rules like `conv[0].subscription_cost`. Note: I used `type: money` to match your existing `delivery_and_subscription_services.yaml` convention — if you don't have a `money` custom type in `types/`, swap it to `currency` or `float`.
+- **`interaction_style: single questions`** keeps the simulated user asking one thing at a time, which suits an info-gathering inquiry.
+- **`fallback`** is a placeholder — replace it with your target bot's *real* fallback message (§9 best practice) to avoid loops.
+
+Want me to adjust the number of conversations, add interaction styles (e.g., `long phrases`, `change language`), or tweak the output fields? 😊
+$$$

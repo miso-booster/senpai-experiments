@@ -1,0 +1,120 @@
+conversation ID: graph_based_architecture__p23__bikeshop__profile__45b4d2d5
+$$$
+Hey there! 👋 Happy to help you get this profile working — I can see a few things that would trip Sensei up. Let me walk you through them, then give you a clean fixed version 😊
+
+## What's going wrong
+
+1. **`llm.temperature: low`** → this must be a **float** (e.g. `0.0`, `0.5`). `low` is not a valid value.
+2. **`type: str`** → in `chatbot.output` the primitive is **`string`**, not `str`. Same for `money` — that's a **custom type**, so it only works if you actually have a `types/money.yml` file in your project. If you don't, use `float` (or `string`).
+3. **`seat_price` and `care_bike` have no `type`** → every output field needs a `type`.
+4. **`conversation.number: 5` with `interaction_style: default`** → that's fine on its own, but combined with `all_answered`-style goals it's cleaner to keep the number small. Not an error though — just a note.
+5. **`is_starter: False`** → valid YAML, but I'd write `false` for consistency (both work, just tidier).
+
+## Fixed version ✅
+
+```yaml
+test_name: qa
+
+llm:
+  temperature: 0.0
+  model: gpt-4o-mini
+
+user:
+  language: English
+  role: you have to act as a user talking to a virtual assistant of a bike shop
+  context:
+    - You are interested in asking the items below.
+    - Just stick to asking opening times, prices of tire, price of tune-up, price of seat, and actions to the care of bike. Do not ask anything else.
+  goals:
+    - "opening and closing time of the bike shop"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: the opening and closing time of the shop
+    - tire:
+        type: float
+        description: the price of a new tire
+    - tune_up:
+        type: float
+        description: the price of a tune-up
+    - seat_price:
+        type: float
+        description: the price of a new seat
+    - care_bike:
+        type: string
+        description: actions to take care of the bike
+
+conversation:
+  number: 5
+  interaction_style:
+    - default
+```
+
+## A couple of things worth knowing 👀
+
+- **About `money`**: your original profile used `type: money` in the output. That only works if there's a `types/money.yml` in your project. I swapped it to `float` to be safe — if you *do* have a `money` custom type and want to keep it, just change `float` back to `money` for `tire`, `tune_up`, and `seat_price`.
+- **About `all_answered`**: your original also had `goal_style: all_answered: {export: true, limit: 9}`. I dropped it in the fix since you didn't include it, but if you want Sensei to keep going until every goal is answered (and export a CSV of what got satisfied), you can add it back:
+
+```yaml
+test_name: "bike_shop_qa_profile"
+
+llm:
+  temperature: 0.4
+  model: gpt-4o-mini
+  model_prov: openai
+  format:
+    type: text
+
+user:
+  language: English
+  role: "You are a customer talking to a virtual assistant of a bike shop."
+  context:
+    - "You are interested in asking about opening times, prices, and bike care."
+    - "Just stick to asking opening times, prices of tire, price of tune-up, price of seat, and actions to take care of bike. Do not ask anything else."
+  goals:
+    - "opening and closing time of the bike shop"
+    - "Which is the price of a new tire?"
+    - "Which is the price of a tune-up?"
+    - "Which is the price of a new seat?"
+    - "What can I do to take care of my bike?"
+
+chatbot:
+  is_starter: false
+  fallback: "I'm sorry it's a little loud in my shop, can you say that again?"
+  output:
+    - opening_and_closing:
+        type: string
+        description: "the opening and closing time of the shop"
+    - tire:
+        type: money
+        description: "the price of a new tire"
+    - tune_up:
+        type: money
+        description: "the price of a tune-up"
+    - seat_price:
+        type: string
+        description: "the price of a new seat"
+    - care_bike:
+        type: string
+        description: "actions to take care of the bike"
+
+conversation:
+  number: 5
+  goal_style:
+    all_answered:
+      export: true
+      limit: 9
+  interaction_style:
+    - default
+```
+
+That's it! Give it a run and it should validate cleanly now 🚴‍♂️✨ Want me to double-check anything else in this profile, or help you set up a `money` custom type?
+$$$
