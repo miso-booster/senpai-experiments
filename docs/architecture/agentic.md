@@ -24,7 +24,7 @@ flowchart LR
         emb["Embedding index and search<br/>embeddings/"]
         val["Validation wrapper<br/>assistant/validation.py"]
     end
-    llm{{"LLM"}}
+    llm{{"LLM<br/>agent reasoning, scope check,<br/>summaries, validation decisions, repairs"}}
     docs[["Domain documentation<br/>app/docs/*.md"]]
     ws[["Dojo workspace<br/>project profiles and rules,<br/>user connectors"]]
     pv[["senpai-validators<br/>DSL parsers"]]
@@ -35,7 +35,7 @@ flowchart LR
     tools -.-> ws
     tools -.-> emb -.-> ws
     post -.-> val -.-> pv
-    agent -->|"reason and call tools, classify scope,<br/>summarise, decide, repair"| llm
+    agent -->|LLM calls| llm
     post -->|"approval requests, answer"| user
 
     subgraph legend["Legend"]
@@ -43,7 +43,9 @@ flowchart LR
         la[" "]:::ghost -->|request processing| lb[" "]:::ghost
         lc[" "]:::ghost -.->|uses or reads| ld[" "]:::ghost
     end
+    pv ~~~ legend
     classDef ghost fill:none,stroke:none
+    style legend fill:#f2f2f2,stroke:#888
 ```
 
 ## Components

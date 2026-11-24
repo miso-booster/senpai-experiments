@@ -38,7 +38,9 @@ flowchart LR
         la[" "]:::ghost -->|request processing| lb[" "]:::ghost
         lc[" "]:::ghost -.->|uses or reads| ld[" "]:::ghost
     end
+    llm ~~~ legend
     classDef ghost fill:none,stroke:none
+    style legend fill:#f2f2f2,stroke:#888
 ```
 
 ## Components
