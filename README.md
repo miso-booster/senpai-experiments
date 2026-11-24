@@ -1,5 +1,5 @@
-Automated Prompt Interface
-==========================
+Evaluating LLM-Based Assistance Architectures: The Case of Senpai
+=================================================================
 
 This repository contains the experiment data and analysis artifacts for comparing three assistant architectures: monolithic, graph-based, and agentic. It also includes the Python workflows needed to reproduce or extend the experiments, and the source code of the three evaluated variants of the Senpai assistant (in [`assistants/`](assistants/)).
 
