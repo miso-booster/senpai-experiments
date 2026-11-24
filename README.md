@@ -96,7 +96,7 @@ The RQ4 experiment entails 20 runs x 15 prompts x 3 architectures x 5 models. It
 Raw execution workbooks and tracing exports are retained under [`out/runs/`](out/runs/), organized as `<model-label>/<experiment>/<run-group-id>/`. The append-only raw log is [`out/results.jsonl`](out/results.jsonl). The prompt benchmarks and architecture configurations used to generate the experiments are in [`configs/`](configs/).
 
 ### Assistant variants
-The source code of the three evaluated Senpai variants is in [`assistants/`](assistants/): [`one_node/`](assistants/one_node/) (monolithic), [`graph_based/`](assistants/graph_based/) (graph-based) and [`agentic/`](assistants/agentic/) (agentic). It is a snapshot of the development repository at the commits used for the experiments. See [`assistants/README.md`](assistants/README.md) for its provenance and instructions to run each variant.
+The source code of the three evaluated Senpai variants is in [`assistants/`](assistants/): [`one_node/`](assistants/one_node/) (monolithic), [`graph_based/`](assistants/graph_based/) (graph-based) and [`agentic/`](assistants/agentic/) (agentic). It is a snapshot of the development repository at the commits used for the experiments. See [`assistants/README.md`](assistants/README.md) for its provenance and instructions to run each variant. Their architecture (component views, responsibilities of each component, interaction views, and the mapping to the reference architectures of the paper) is documented in [`docs/architecture/`](docs/architecture/).
 
 Reproducing and Extending the Experiments
 ------------------------------------------

@@ -9,4 +9,4 @@ Main modules:
 - `app/nodes/answer/node_prompt.py`: the single answering node.
 - `app/assistant/prompt.py`, `app/assistant/project_context.py`: prompt construction and loading of the project and user context.
 
-See [`../README.md`](../README.md) for provenance and instructions to run it.
+See [`../README.md`](../README.md) for provenance and instructions to run it, and [`docs/architecture/`](../../docs/architecture/) for its architecture.

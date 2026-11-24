@@ -8,6 +8,8 @@ This folder contains the source code of the three variants of Senpai, the assist
 | [`graph_based/`](graph_based/) | Graph-based routed | LangGraph 0.6 / LangChain 0.3; intent router, task nodes, validation and repair loop |
 | [`agentic/`](agentic/) | Agentic | LangChain 1.1 / LangGraph 1.0; agent with tools, embedding search, middleware and human-in-the-loop |
 
+Their architecture is documented in [`docs/architecture/`](../docs/architecture/).
+
 The folder names match the `project_dir` values in [`../configs/architectures.json`](../configs/architectures.json).
 
 ## Provenance
