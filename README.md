@@ -3,6 +3,17 @@ Evaluating LLM-Based Assistance Architectures: The Case of Senpai
 
 This repository contains the experiment data and analysis artifacts for comparing three assistant architectures: monolithic, graph-based, and agentic. It also includes the Python workflows needed to reproduce or extend the experiments, and the source code of the three evaluated variants of the Senpai assistant (in [`assistants/`](assistants/)).
 
+Architectures
+-------------
+
+Senpai is the conversational assistant of the Chatbot Dojo platform for chatbot testing. It helps users create, fix and explain Dojo testing artefacts (profiles, rules and connectors, written in YAML-based DSLs). We implemented three variants of Senpai, one per architecture:
+
+- **Monolithic single-prompt** ([architecture](docs/architecture/monolithic.md), [code](assistants/one_node/)). Each request is answered with a single LLM call, whose prompt contains all the documentation and the whole Dojo project. The answer is not validated. This is the baseline of the comparison.
+- **Graph-based routed** ([architecture](docs/architecture/graph-based.md), [code](assistants/graph_based/)). A LangGraph workflow first classifies the request into one of seven intents, or rejects it as out of scope. A task-specific node then answers it with only the relevant documentation and artefacts. Generated YAML is validated with the Dojo DSL parsers and repaired by the LLM when invalid.
+- **Agentic** ([architecture](docs/architecture/agentic.md), [code](assistants/agentic/)). A LangChain agent decides which tools to call to retrieve documentation and to list, read, search, save or delete artefacts. Middleware adds a scope guardrail, planning, summarisation, validation with repair, and human approval of write and delete actions.
+
+The [architecture overview](docs/architecture/README.md) maps the elements of the reference architectures to the components of each variant and explains how the experiment harness runs them. The code in [`assistants/`](assistants/) is a snapshot of the development repository at the commits used for the experiments (see [`assistants/README.md`](assistants/README.md) for its provenance and how to run each variant).
+
 Experiments
 -----------
 
@@ -94,9 +105,6 @@ The RQ4 experiment entails 20 runs x 15 prompts x 3 architectures x 5 models. It
 
 ### Raw data and provenance
 Raw execution workbooks and tracing exports are retained under [`out/runs/`](out/runs/), organized as `<model-label>/<experiment>/<run-group-id>/`. The append-only raw log is [`out/results.jsonl`](out/results.jsonl). The prompt benchmarks and architecture configurations used to generate the experiments are in [`configs/`](configs/).
-
-### Assistant variants
-The source code of the three evaluated Senpai variants is in [`assistants/`](assistants/): [`one_node/`](assistants/one_node/) (monolithic), [`graph_based/`](assistants/graph_based/) (graph-based) and [`agentic/`](assistants/agentic/) (agentic). It is a snapshot of the development repository at the commits used for the experiments. See [`assistants/README.md`](assistants/README.md) for its provenance and instructions to run each variant. Their architecture (component views, responsibilities of each component, interaction views, and the mapping to the reference architectures of the paper) is documented in [`docs/architecture/`](docs/architecture/).
 
 Reproducing and Extending the Experiments
 ------------------------------------------
