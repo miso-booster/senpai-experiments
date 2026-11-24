@@ -7,7 +7,7 @@ This variant implements the agentic reference architecture with LangChain's `cre
 ## Component view
 
 ```mermaid
-flowchart LR
+flowchart TB
     user([User or harness])
     subgraph senpai["Senpai agentic variant (assistants/agentic/app)"]
         cli["CLI and conversation runner<br/>main.py, assistant/conversation.py"]
