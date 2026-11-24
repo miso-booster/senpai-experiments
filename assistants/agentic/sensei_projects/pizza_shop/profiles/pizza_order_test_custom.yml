@@ -1,0 +1,84 @@
+test_name: pizza_order_test_custom
+
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  model_prov: openai
+#  format:
+#    type: speech
+#    config: asr_configuration/default_asr_config.yml
+
+user:
+  language: English
+  role: you have to act as a user ordering a pizza to a pizza shop.
+  context:
+    - personality: conversational-user.yml
+    - your name is Jon Doe
+  goals:
+    - "a {{size}} custom pizza with {{toppings}}, {{size}}"
+    - "{{cans}} cans of {{drink}}"
+    - which are opening and closing times
+    - how much will it cost
+
+    - size:
+        function: pairwise()
+        type: string
+        data:
+          - small
+          - medium
+          - big
+          - extra large
+
+    - toppings:
+        function: pairwise()
+        type: string
+        data:
+          - cheese
+          - mushrooms
+          - pepperoni
+
+    - cans:
+        function: forward(drink)
+        type: int
+        data:
+            min: 1
+            max: 7
+            step: 1
+
+    - drink:
+        function: forward()
+        type: string
+        data:
+          - sprite
+          - coke
+          - Orange Fanta
+#          - any(3 free sugar drinks)
+
+chatbot:
+  is_starter: False
+  fallback: I'm sorry it's a little loud in my pizza shop, can you say that again?
+  output:
+    - price:
+        type: currency
+        description: The final price of the pizza order
+    - time:
+        type: time(hh:mm:ss)
+        description: just the opening time
+    - order_id:
+        type: string
+        description: my order ID
+
+conversation:
+  number: 2
+  goal_style:
+    steps: 2
+  interaction_style:
+    - long phrases
+    - random:
+      - make spelling mistakes
+#      - all questions
+#      - long phrases
+      - change language:
+          - italian
+          - portuguese
+          - chinese

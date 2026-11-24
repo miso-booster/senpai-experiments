@@ -1,7 +1,18 @@
-Automated Prompt Interface
-==========================
+Evaluating LLM-Based Assistance Architectures: The Case of Senpai
+=================================================================
 
-This repository contains the experiment data and analysis artifacts for comparing three assistant architectures: monolithic, graph-based, and agentic. It also includes the Python workflows needed to reproduce or extend the experiments.
+This repository contains the experiment data and analysis artifacts for comparing three assistant architectures: monolithic, graph-based, and agentic. It also includes the Python workflows needed to reproduce or extend the experiments, and the source code of the three evaluated variants of the Senpai assistant (in [`assistants/`](assistants/)).
+
+Architectures
+-------------
+
+Senpai is the conversational assistant of the Chatbot Dojo platform for chatbot testing. It helps users create, fix and explain Dojo testing artefacts (profiles, rules and connectors, written in YAML-based DSLs). We implemented three variants of Senpai, one per architecture:
+
+- **Monolithic single-prompt** ([architecture](docs/architecture/monolithic.md), [code](assistants/one_node/)). Each request is answered with a single LLM call, whose prompt contains all the documentation and the whole Dojo project. The answer is not validated. This is the baseline of the comparison.
+- **Graph-based routed** ([architecture](docs/architecture/graph-based.md), [code](assistants/graph_based/)). A LangGraph workflow first classifies the request into one of seven intents, or rejects it as out of scope. A task-specific node then answers it with only the relevant documentation and artefacts. Generated YAML is validated with the Dojo DSL parsers and repaired by the LLM when invalid.
+- **Agentic** ([architecture](docs/architecture/agentic.md), [code](assistants/agentic/)). A LangChain agent decides which tools to call to retrieve documentation and to list, read, search, save or delete artefacts. Middleware adds a scope guardrail, planning, summarisation, validation with repair, and human approval of write and delete actions.
+
+The [architecture overview](docs/architecture/README.md) maps the elements of the reference architectures to the components of each variant and explains how the experiment harness runs them. The code in [`assistants/`](assistants/) is a snapshot of the development repository at the commits used for the experiments (see [`assistants/README.md`](assistants/README.md) for its provenance and how to run each variant).
 
 Experiments
 -----------
@@ -172,7 +183,7 @@ The older fully expanded format still works.
 For each architecture, make sure:
 
 - `cmd` points to the correct Python executable
-- `cwd` points to the root of the target project
+- `cwd` points to the root of the target project (e.g., `{automation_root}/assistants/{project_dir}` to use the variants included in this repository)
 - `env_file` points to the `.env` file to load
 
 ### 2. Prompt sets
@@ -568,3 +579,8 @@ Useful flags:
 - `--gemini-model`
 - `--only-original-nonfallback`
 - `--decision-policy any-bypass`
+
+License
+-------
+
+The code in this repository, including the Senpai variants in [`assistants/`](assistants/), is released under the [MIT License](LICENSE).

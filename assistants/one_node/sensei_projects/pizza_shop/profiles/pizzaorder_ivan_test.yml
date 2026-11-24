@@ -1,0 +1,90 @@
+test_name: pizzaorder_ivan_test
+llm:
+  temperature: 0.8
+  model: gpt-4o-mini
+  format:
+    type: text
+user:
+  language: English
+  role: A customer looking to place a complete order for pizzas and drinks, selecting pizza type, size, quantity, and accompanying beverages.
+  context:
+  - 'personality: personalities/sarcastic-user'
+  - You are looking to place an order for a meal that includes both pizzas and drinks to enjoy with friends or family.
+  - You want to explore the available pizza options and sizes to choose the best combination that suits your preferences.
+  - Additionally, you plan to select drinks to complement the meal and want to confirm their types and prices before finalizing your order.
+  goals:
+  - Ask what types of pizzas are available to order.
+  - Select the pizza type {{chosen_pizza_type}} from the available options.
+  - Choose the pizza size {{chosen_pizza_size}} from small, medium, or large.
+  - Confirm the pizza order and specify the quantity of drinks as {{drink_quantity}} and the drink type as {{chosen_drink_type}}.
+  - Request the list of available drinks and their prices before finalizing the drink order.
+  - chosen_drink_type:
+      function: forward()
+      type: string
+      data:
+      - Coke
+      - Sprite
+      - Water
+      - Fanta
+  - chosen_pizza_size:
+      function: forward()
+      type: string
+      data:
+      - large
+      - medium
+      - small
+      - extra large
+  - chosen_pizza_type:
+      function: forward()
+      type: string
+      data:
+      - Carbonara
+      - Custom
+      - Four cheese
+      - Hawaiian
+      - Margarita
+      - Marinera
+      - Vegetarian
+      - BBQ Chicken
+  - drink_quantity:
+      function: forward()
+      type: int
+      data:
+        min: 1
+        max: 5
+        step: 1
+chatbot:
+  is_starter: false
+  fallback: I'm sorry, I did not get what you said. Can you rephrase?
+  output:
+  - available_pizza_types:
+      type: string
+      description: List of pizzas available for order
+  - selected_pizza_type:
+      type: string
+      description: Customer's chosen pizza type
+  - pizza_size_options:
+      type: string
+      description: List of pizza size options provided
+  - selected_pizza_size:
+      type: string
+      description: Customer's chosen pizza size
+  - pizza_order_confirmation:
+      type: string
+      description: Confirmation message for pizza order
+  - drink_options_and_prices:
+      type: string
+      description: List of available drinks with prices
+  - drink_quantity_requested:
+      type: int
+      description: Number of drinks the customer wants
+  - selected_drink_type:
+      type: string
+      description: Customer's chosen type of drink
+conversation:
+  number: 1
+  max_cost: 1.2
+  goal_style:
+    steps: 2
+  interaction_style:
+  - single question
