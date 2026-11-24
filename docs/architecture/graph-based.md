@@ -27,12 +27,19 @@ flowchart LR
 
     user -->|request| cli --> asst --> router
     router --> tasks --> qa
-    tasks --> ctx
-    ctx --> docs
-    ctx --> ws
-    qa --> val --> pv
+    tasks -.-> ctx
+    ctx -.-> docs
+    ctx -.-> ws
+    qa -.-> val -.-> pv
     wf -->|"classify, generate, decide,<br/>repair, failure message"| llm
     qa -->|answer| user
+
+    subgraph legend["Legend"]
+        direction LR
+        la[" "]:::ghost -->|request processing| lb[" "]:::ghost
+        lc[" "]:::ghost -.->|uses or reads| ld[" "]:::ghost
+    end
+    classDef ghost fill:none,stroke:none
 ```
 
 ## Workflow

@@ -18,7 +18,7 @@ flowchart LR
             loop["Agent loop<br/>model calls and tool calls"]
             post["Validation decision and validation,<br/>human-in-the-loop<br/>after model"]
             guard --> pre --> loop --> post
-            post -.->|repair or rejection feedback| loop
+            post -->|repair or rejection feedback| loop
         end
         tools["Project tools<br/>assistant/tools.py"]
         emb["Embedding index and search<br/>embeddings/"]
@@ -31,12 +31,19 @@ flowchart LR
 
     user -->|request| cli --> asst --> guard
     loop -->|tool calls| tools
-    tools --> docs
-    tools --> ws
-    tools --> emb --> ws
-    post --> val --> pv
+    tools -.-> docs
+    tools -.-> ws
+    tools -.-> emb -.-> ws
+    post -.-> val -.-> pv
     agent -->|"reason and call tools, classify scope,<br/>summarise, decide, repair"| llm
     post -->|"approval requests, answer"| user
+
+    subgraph legend["Legend"]
+        direction LR
+        la[" "]:::ghost -->|request processing| lb[" "]:::ghost
+        lc[" "]:::ghost -.->|uses or reads| ld[" "]:::ghost
+    end
+    classDef ghost fill:none,stroke:none
 ```
 
 ## Components

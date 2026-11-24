@@ -24,14 +24,21 @@ flowchart LR
     llm{{"LLM"}}
 
     user -->|request| cli --> asst --> onegraph --> node
-    asst --- mem
-    node --> prompt
-    node --> ctx
-    prompt --> docs
-    ctx --> proj
-    ctx --> usr
+    asst -.-> mem
+    node -.-> prompt
+    node -.-> ctx
+    prompt -.-> docs
+    ctx -.-> proj
+    ctx -.-> usr
     node -->|one call| llm
     node -->|answer| user
+
+    subgraph legend["Legend"]
+        direction LR
+        la[" "]:::ghost -->|request processing| lb[" "]:::ghost
+        lc[" "]:::ghost -.->|uses or reads| ld[" "]:::ghost
+    end
+    classDef ghost fill:none,stroke:none
 ```
 
 ## Components
