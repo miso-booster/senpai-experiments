@@ -648,10 +648,29 @@ def build_run_inventory(all_rows_df: pd.DataFrame, filtered_df: pd.DataFrame) ->
     return inv.sort_values(group_cols).reset_index(drop=True)
 
 
+def holm_adjust(df: pd.DataFrame, family_cols: Sequence[str]) -> pd.Series:
+    """Holm-Bonferroni adjusted p-values within each family (e.g., the pairwise tests of one model and metric)."""
+    adjusted = pd.Series(float("nan"), index=df.index)
+    groups = df.groupby(list(family_cols), sort=False).groups if family_cols else {None: df.index}
+    for idx in groups.values():
+        p = pd.to_numeric(df.loc[idx, "p_value"], errors="coerce").dropna().sort_values()
+        m = len(p)
+        running = 0.0
+        for rank, (row_idx, value) in enumerate(p.items()):
+            running = max(running, min(1.0, (m - rank) * float(value)))
+            adjusted.loc[row_idx] = running
+    return adjusted
+
+
 def build_pairwise_wilcoxon_summary(df: pd.DataFrame, metric_cols: Sequence[str]) -> pd.DataFrame:
     model_group_cols = [col for col in ("model_label",) if col in df.columns]
-    pair_cols = [col for col in PAIRWISE_ID_COLUMNS if col in df.columns and col not in model_group_cols]
-    required_pair_cols = {"run_group_id", "prompt_id"}
+    # Pair by request: each value is the request's mean outcome over its runs (n = number of requests).
+    pair_cols = [
+        col
+        for col in PAIRWISE_ID_COLUMNS
+        if col in df.columns and col not in model_group_cols and col != "run_group_id"
+    ]
+    required_pair_cols = {"prompt_id"}
     if not required_pair_cols.issubset(pair_cols):
         return pd.DataFrame()
 
@@ -765,7 +784,8 @@ def build_pairwise_wilcoxon_summary(df: pd.DataFrame, metric_cols: Sequence[str]
     out = pd.DataFrame(rows)
     if out.empty:
         return out
-    out["significant_p_lt_0_05"] = pd.to_numeric(out["p_value"], errors="coerce") < 0.05
+    out["p_value_holm"] = holm_adjust(out, [col for col in ("model_label", "metric") if col in out.columns])
+    out["significant_p_lt_0_05"] = pd.to_numeric(out["p_value_holm"], errors="coerce") < 0.05
     return out.sort_values(
         [col for col in ("model_label", "metric", "arch_a", "arch_b") if col in out.columns]
     ).reset_index(drop=True)

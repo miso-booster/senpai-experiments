@@ -165,7 +165,7 @@ def test_build_architecture_summary_computes_guardrail_rates() -> None:
     assert math.isclose(arch_b["false_block_rate"], 0.5)
 
 
-def test_build_pairwise_wilcoxon_summary_uses_matched_pairs_for_guardrail_metrics() -> None:
+def test_build_pairwise_wilcoxon_summary_pairs_by_request_for_guardrail_metrics() -> None:
     df = pd.DataFrame(
         [
             {"run_group_id": "r1", "prompt_id": "p1", "prompt": "A", "arch_id": "arch_a", "correct_behavior_int": 1},
@@ -180,13 +180,15 @@ def test_build_pairwise_wilcoxon_summary_uses_matched_pairs_for_guardrail_metric
     summary = build_pairwise_wilcoxon_summary(df, ["correct_behavior_int"])
     row = summary.iloc[0]
 
+    # Pairs are requests (p1, p2); each value is the request's mean over its runs.
     assert row["metric"] == "correct_behavior_int"
-    assert row["n_pairs"] == 3
+    assert row["n_pairs"] == 2
     assert row["n_nonzero_pairs"] == 2
     assert row["arch_a_gt_arch_b_count"] == 2
-    assert row["tie_count"] == 1
-    assert math.isclose(row["a12_arch_a_over_arch_b"], 5.0 / 6.0)
-    assert math.isclose(row["a12_arch_b_over_arch_a"], 1.0 / 6.0)
+    assert row["tie_count"] == 0
+    assert math.isclose(row["arch_a_mean"], 0.75)
+    assert math.isclose(row["a12_arch_a_over_arch_b"], 1.0)
+    assert math.isclose(row["a12_arch_b_over_arch_a"], 0.0)
     assert row["a12_magnitude"] == "large"
 
 
